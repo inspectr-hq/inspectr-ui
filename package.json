@@ -2,7 +2,7 @@
   "name": "@request-inspector/ui",
   "description": "React UI components for Request Inspector",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "author": "Tim Haselaars",
   "homepage": "https://github.com/thim81/request-inspector#readme",
   "bugs": "https://github.com/thim81/request-inspector-ui/issues",
@@ -48,5 +48,8 @@
     "@storybook/test": "^8.5.3",
     "@tailwindcss/vite": "^4.0.5",
     "storybook": "^8.5.3"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
