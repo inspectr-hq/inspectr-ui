@@ -9,10 +9,10 @@ const RequestContent = ({ request }) => {
     const renderTableRows = (data) =>
         Object.entries(data || {}).map(([key, value]) => (
             <tr key={key}>
-                <td className="px-2 py-1 font-mono text-slate-500 text-xs">
+                <td className="border border-slate-200 px-2 py-1 font-mono text-slate-500 text-xs">
                     {key}
                 </td>
-                <td className="px-2 py-1 font-mono text-xs">{value}</td>
+                <td className="border border-slate-200 px-2 py-1 font-mono text-xs">{value}</td>
             </tr>
         ));
 
@@ -23,6 +23,15 @@ const RequestContent = ({ request }) => {
         (typeof payload === 'object' && Object.keys(payload).length === 0) ||
         (typeof payload === 'string' &&
             (payload.trim() === '' || payload.trim() === '{}'));
+
+    const formatPayload = (payload) => {
+        try {
+            const parsed = JSON.parse(payload);
+            return JSON.stringify(parsed, null, 2);
+        } catch (e) {
+            return payload;
+        }
+    }
 
     return (
         <div>
@@ -39,8 +48,8 @@ const RequestContent = ({ request }) => {
                         <table className="w-full border-collapse border border-gray-300">
                             <thead>
                             <tr className="bg-gray-100">
-                                <th className="px-2 py-1 w-1/4 text-left">Key</th>
-                                <th className="px-2 py-1 text-left">Value</th>
+                                <th className="border border-slate-200 px-2 py-1 w-1/4 text-left">Key</th>
+                                <th className="border border-slate-200 px-2 py-1 text-left">Value</th>
                             </tr>
                             </thead>
                             <tbody>{renderTableRows(request.request.queryParams)}</tbody>
@@ -62,8 +71,8 @@ const RequestContent = ({ request }) => {
                         <table className="w-full border-collapse border border-gray-300">
                             <thead>
                             <tr className="bg-gray-100">
-                                <th className="px-2 py-1 w-1/4 text-left">Header</th>
-                                <th className="px-2 py-1 text-left">Value</th>
+                                <th className="border border-slate-200 px-2 py-1 w-1/4 text-left">Header</th>
+                                <th className="border border-slate-200 px-2 py-1 text-left">Value</th>
                             </tr>
                             </thead>
                             <tbody>{renderTableRows(request.request.headers)}</tbody>
@@ -80,19 +89,18 @@ const RequestContent = ({ request }) => {
                 {isEmptyPayload ? (
                     <div className="hidden"></div>
                 ) : (
-                    <div className="bg-white rounded-b shadow p-0 h-96">
+                    <div className="bg-white rounded-b shadow p-0 h-100">
                         <Editor
                             height="100%"
                             defaultLanguage="json"
-                            value={
-                                typeof payload === 'string'
-                                    ? payload
-                                    : JSON.stringify(payload, null, 2)
-                            }
+                            value={formatPayload(payload)}
                             options={{
                                 readOnly: true,
                                 minimap: { enabled: false },
                                 automaticLayout: true,
+                                fontFamily: '"Cascadia Code", "Jetbrains Mono", "Fira Code", "Menlo", "Consolas", monospace',
+                                tabSize: 2,
+                                scrollBeyondLastLine: false
                             }}
                         />
                     </div>
