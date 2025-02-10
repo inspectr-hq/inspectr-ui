@@ -1,0 +1,52 @@
+{
+  "name": "@request-inspector/ui",
+  "description": "React UI components for Request Inspector",
+  "type": "module",
+  "version": "0.0.1",
+  "author": "Tim Haselaars",
+  "homepage": "https://github.com/thim81/request-inspector#readme",
+  "bugs": "https://github.com/thim81/request-inspector-ui/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thim81/request-inspector-ui.git"
+  },
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "types": "index.d.ts",
+  "files": [
+    "src/components",
+    "src/styles",
+    "src/utils",
+    "src/index.js",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "release": "npx np --branch main"
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0-rc.0",
+    "tailwindcss": "^4.0.5"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "postcss": "^8.5.1",
+    "@tailwindcss/postcss": "^4.0.5"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@chromatic-com/storybook": "^3.2.4",
+    "@storybook/addon-essentials": "^8.5.3",
+    "@storybook/addon-interactions": "^8.5.3",
+    "@storybook/addon-onboarding": "^8.5.3",
+    "@storybook/blocks": "^8.5.3",
+    "@storybook/react": "^8.5.3",
+    "@storybook/react-vite": "^8.5.3",
+    "@storybook/test": "^8.5.3",
+    "@tailwindcss/vite": "^4.0.5",
+    "storybook": "^8.5.3"
+  }
+}
