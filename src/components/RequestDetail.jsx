@@ -4,6 +4,26 @@ import {getStatusClass} from "../utils/getStatusClass.js";
 
 const RequestDetail = ({ request }) => {
 
+    const formatTimestamp = (isoString) => {
+        if (!isoString) return "N/A"; // Handle missing timestamp
+        const date = new Date(isoString);
+
+        const formattedDate = date.toLocaleDateString("en-CA", { // YYYY-MM-DD format
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+        });
+
+        const formattedTime = date.toLocaleTimeString([], { // HH:MM:SS in local time
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false, // 24-hour format
+        });
+
+        return `${formattedDate} at ${formattedTime}`;
+    };
+
     return (
         <div className="mb-4 p-4 bg-white rounded shadow">
             <h2 className="font-bold text-lg mb-2">Request Details</h2>
@@ -21,7 +41,7 @@ const RequestDetail = ({ request }) => {
                 </div>
                 <div className="text-gray-600">{request.url}</div>
                 <div className="text-gray-500 text-xs">
-                    Received on {request.timestamp} • Took {request.latency}ms to resolve
+                    Received on {formatTimestamp(request.timestamp)} • Took {request.latency}ms to respond
                 </div>
             </div>
         </div>
