@@ -1,0 +1,12 @@
+{
+  "include": [
+    "**/*"
+  ],
+  "exclude": [
+    "dist"
+  ],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
+  }
+}
