@@ -1,8 +1,8 @@
-declare module "@request-inspector/ui" {
+declare module "@inspectr/ui" {
 
-    export interface InspectorAppProps {
+    export interface InspectrAppProps {
         sseUrl?: string;
     }
 
-    export const InspectorApp: React.FC<InspectorAppProps>;
+    export const InspectrApp: React.FC<InspectrAppProps>;
 }

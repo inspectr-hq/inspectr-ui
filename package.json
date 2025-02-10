@@ -1,6 +1,6 @@
 {
   "name": "@inspectr/ui",
-  "description": "React UI components for Request Inspector",
+  "description": "React UI components for Inspectr",
   "type": "module",
   "version": "0.0.0",
   "author": "Tim Haselaars",
