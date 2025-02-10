@@ -1,12 +1,12 @@
-// stories/InspectorApp.stories.jsx
+// stories/InspectrApp.stories.jsx
 import React from "react";
-import InspectorApp from "../src/components/InspectorApp";
+import InspectrApp from "../src/components/InspectrApp.jsx";
 
 export default {
-    title: "Inspector/InspectorApp",
-    component: InspectorApp,
+    title: "Inspectr/InspectrApp",
+    component: InspectrApp,
 };
 
-const Template = (args) => <InspectorApp {...args} />;
+const Template = (args) => <InspectrApp {...args} />;
 
 export const Default = Template.bind({});

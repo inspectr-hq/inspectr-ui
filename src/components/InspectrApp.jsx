@@ -1,10 +1,10 @@
-// src/components/InspectorApp.jsx
+// src/components/InspectrApp.jsx
 import React, { useState, useEffect } from 'react';
 import RequestList from './RequestList';
 import RequestDetailsPanel from './RequestDetailsPanel';
 import SettingsPanel from "./SettingsPanel";
 
-const InspectorApp = ({ sseEndpoint: propSseEndpoint }) => {
+const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
     const [requests, setRequests] = useState([]);
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [currentTab, setCurrentTab] = useState('request');
@@ -110,4 +110,4 @@ const InspectorApp = ({ sseEndpoint: propSseEndpoint }) => {
     );
 };
 
-export default InspectorApp;
+export default InspectrApp;
