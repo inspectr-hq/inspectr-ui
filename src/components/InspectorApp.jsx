@@ -23,6 +23,8 @@ const InspectorApp = ({ sseEndpoint: propSseEndpoint }) => {
 
     // Connect to SSE when the component mounts.
     useEffect(() => {
+        const generateId = () => `req-${Math.random().toString(36).substr(2, 9)}`;
+
         const eventSource = new EventSource(sseEndpoint);
         console.log(`EventSource created with URL: ${sseEndpoint}`);
 
@@ -36,6 +38,7 @@ const InspectorApp = ({ sseEndpoint: propSseEndpoint }) => {
                 const data = JSON.parse(e.data);
                 // console.log('Received event:', data);
                 // Update the list and, if it's the first event, select it.
+                if (!data.id) data.id = generateId();
                 setRequests((prev) => {
                     if (prev.length === 0) {
                         setSelectedRequest(data);
@@ -84,6 +87,7 @@ const InspectorApp = ({ sseEndpoint: propSseEndpoint }) => {
                         onSelect={setSelectedRequest}
                         onRemove={removeRequest}
                         clearRequests={clearRequests}
+                        selectedRequest={selectedRequest}
                     />
                 </div>
 

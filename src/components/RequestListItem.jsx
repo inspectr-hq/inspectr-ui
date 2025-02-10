@@ -5,10 +5,16 @@ import {getStatusClass} from "../utils/getStatusClass.js";
 const selectedClass = ["bg-blue-100", "border-l-4", "border-blue-700"].join(" ");
 
 const RequestListItem = ({request, reqId, onSelect, onRemove, selected}) => {
+    const handleSelect = (request) => {
+        onSelect(request);
+    };
+
     return (
         <li
             className={`flex items-center cursor-pointer hover:bg-gray-200 ${selected ? selectedClass : ""}`}
-            onClick={() => onSelect(request)}
+            onClick={() => {
+                handleSelect(request);
+            }}
         >
             <div className="flex items-center p-2 w-full">
                 <div className="w-16 flex justify-center">

@@ -2,14 +2,7 @@
 import React, {useState} from 'react';
 import RequestListItem from './RequestListItem';
 
-const RequestList = ({requests, onSelect, onRemove, clearRequests}) => {
-    const [selectedReqId, setSelectedReqId] = useState(null);
-
-    const handleSelect = (request) => {
-        setSelectedReqId(request.id);
-        onSelect(request);
-    };
-
+const RequestList = ({requests, onSelect, onRemove, clearRequests, selectedRequest}) => {
     return (
         <div className="flex flex-col h-full">
             <div className="p-4 flex justify-between items-center">
@@ -41,9 +34,9 @@ const RequestList = ({requests, onSelect, onRemove, clearRequests}) => {
                             key={reqId}
                             reqId={reqId}
                             request={req}
-                            onSelect={handleSelect}
+                            onSelect={onSelect}
                             onRemove={onRemove}
-                            selected={reqId === selectedReqId}
+                            selected={selectedRequest && selectedRequest.id === reqId}
                         />
                     );
                 })}
