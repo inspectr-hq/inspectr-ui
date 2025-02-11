@@ -1,5 +1,6 @@
 // src/components/SettingsPanel.jsx
 import React, { useState, useEffect } from "react";
+import logo from "../assets/inspectr_logo_small.png";
 
 const SettingsPanel = ({ sseEndpoint, setSseEndpoint, isConnected }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -32,18 +33,31 @@ const SettingsPanel = ({ sseEndpoint, setSseEndpoint, isConnected }) => {
                 onClick={() => setIsOpen((prev) => !prev)} // Toggle on click
             >
                 {/* Connection Status Indicator */}
-                <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        isConnected ? "bg-green-500" : "bg-red-500"
-                    } flex items-center`}
-                >
+                <div className="flex items-center gap-4">
                     <span
-                        className={`w-2 h-2 rounded-full mr-1 ${
-                            isConnected ? "bg-green-800" : "bg-red-800"
+                        className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center ${
+                            isConnected ? "bg-green-500" : "bg-red-500"
                         }`}
-                    ></span>
-                    {isConnected ? "Connected" : "Disconnected"}
-                </span>
+                    >
+                        <span
+                            className={`w-2 h-2 rounded-full mr-1 ${
+                                isConnected ? "bg-green-800" : "bg-red-800"
+                            }`}
+                        ></span>
+                        {isConnected ? "Connected" : "Disconnected"}
+                    </span>
+                </div>
+
+                {/* Inspectr Logo & Name */}
+                <a
+                    href="https://github.com/thim81/inspectr"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2"
+                >
+                    <img src={logo} alt="Inspectr Logo" className="h-6" />
+                    <span className="text-gray-700 font-semibold text-sm">Inspectr</span>
+                </a>
             </div>
 
             {/* Configuration Panel */}
