@@ -14,10 +14,7 @@
   "module": "src/index.js",
   "types": "index.d.ts",
   "files": [
-    "src/components",
-    "src/styles",
-    "src/utils",
-    "src/index.js",
+    "src",
     "index.d.ts"
   ],
   "scripts": {
