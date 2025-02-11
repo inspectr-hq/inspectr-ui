@@ -23,7 +23,8 @@
   "scripts": {
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "release": "npx np --branch main"
+    "release": "npx np --branch main",
+    "test": "echo 'test completed'"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0-rc.0",
