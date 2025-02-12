@@ -21,7 +21,7 @@
     "build": "vite build",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "release": "npx np --branch main",
+    "release": "npm run build && npx np --branch main",
     "test": "echo 'test completed'"
   },
   "dependencies": {
