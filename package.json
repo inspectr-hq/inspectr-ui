@@ -12,10 +12,8 @@
   },
   "main": "dist/inspectr-ui.umd.js",
   "module": "dist/inspectr-ui.es.js",
-  "types": "index.d.ts",
   "files": [
-    "dist",
-    "index.d.ts"
+    "dist"
   ],
   "scripts": {
     "build": "vite build",

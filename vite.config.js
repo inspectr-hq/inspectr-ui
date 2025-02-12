@@ -30,6 +30,7 @@ export default defineConfig({
             // Consumers must install these.
             external: ['react', 'react-dom'],
             output: {
+                exports: 'named',
                 globals: {
                     // Provide global variable names for UMD builds.
                     react: 'React',
