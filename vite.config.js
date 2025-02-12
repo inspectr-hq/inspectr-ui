@@ -5,15 +5,15 @@ import path from 'path'
 
 export default defineConfig({
     plugins: [react()],
-    resolve: {
-        alias: {
-            // Optional: Create convenient aliases for your folders
-            '@assets': path.resolve(__dirname, 'src/assets'),
-            '@components': path.resolve(__dirname, 'src/components'),
-            '@utils': path.resolve(__dirname, 'src/utils'),
-            '@style': path.resolve(__dirname, 'style')
-        }
-    },
+    // resolve: {
+    //     alias: {
+    //         Optional: Create convenient aliases for your folders
+            // '@assets': path.resolve(__dirname, 'src/assets'),
+            // '@components': path.resolve(__dirname, 'src/components'),
+            // '@utils': path.resolve(__dirname, 'src/utils'),
+            // '@style': path.resolve(__dirname, 'style')
+        // }
+    // },
     build: {
         lib: {
             // Entry point of your library (should export all components/utilities)
