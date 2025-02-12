@@ -19,8 +19,8 @@
     "build": "vite build",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "release": "npm run build && npx np --branch main",
-    "test": "echo 'test completed'"
+    "test": "echo 'test completed'",
+    "release": "npm run build && npx np --branch main"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0-rc.0",
