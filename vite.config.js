@@ -17,7 +17,7 @@ export default defineConfig({
     build: {
         lib: {
             // Entry point of your library (should export all components/utilities)
-            entry: path.resolve(__dirname, 'src/index.js'),
+            entry: path.resolve(__dirname, 'src/index.jsx'),
             // The exposed global name (for UMD builds)
             name: 'InspectrUI',
             // File name pattern for different module formats

@@ -1,4 +1,4 @@
-// src/components/index.js
+// src/components/index.jsx
 
 export { default as InspectrApp } from './InspectrApp.jsx';
 export { default as RequestContent } from './RequestContent.jsx';
