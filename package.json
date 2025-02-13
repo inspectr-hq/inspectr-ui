@@ -16,7 +16,8 @@
     ".": {
       "import": "./dist/inspectr-ui.es.js",
       "require": "./dist/inspectr-ui.umd.js"
-    }
+    },
+    "./ui.css": "./dist/ui.css"
   },
   "files": [
     "dist"
