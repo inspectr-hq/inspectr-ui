@@ -5,19 +5,19 @@ import path from 'path'
 
 export default defineConfig({
     plugins: [react()],
-    resolve: {
-        alias: {
-            // Optional: Create convenient aliases for your folders
-            '@assets': path.resolve(__dirname, 'src/assets'),
-            '@components': path.resolve(__dirname, 'src/components'),
-            '@utils': path.resolve(__dirname, 'src/utils'),
-            '@style': path.resolve(__dirname, 'style')
-        }
-    },
+    // resolve: {
+    //     alias: {
+    //         Optional: Create convenient aliases for your folders
+            // '@assets': path.resolve(__dirname, 'src/assets'),
+            // '@components': path.resolve(__dirname, 'src/components'),
+            // '@utils': path.resolve(__dirname, 'src/utils'),
+            // '@style': path.resolve(__dirname, 'style')
+        // }
+    // },
     build: {
         lib: {
             // Entry point of your library (should export all components/utilities)
-            entry: path.resolve(__dirname, 'src/index.js'),
+            entry: path.resolve(__dirname, 'src/index.jsx'),
             // The exposed global name (for UMD builds)
             name: 'InspectrUI',
             // File name pattern for different module formats

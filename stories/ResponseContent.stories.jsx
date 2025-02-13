@@ -8,5 +8,12 @@ export default {
 };
 
 export const DefaultResponse = () => (
-    <ResponseContent request={{ response: { payload: { key: "value" }, headers: { "X-Test": "Header" } } }} />
+    <ResponseContent
+        request={{
+            response: {
+                payload: JSON.stringify({ key: "value" }, null, "\t"),
+                headers: JSON.stringify({ "X-Test": "Header" }, null, "\t"),
+            },
+        }}
+    />
 );

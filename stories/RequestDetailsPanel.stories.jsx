@@ -8,14 +8,23 @@ export default {
 };
 
 export const DefaultPanel = () => (
-    <RequestDetailsPanel request={{
-        request: {
-            method: "POST",
-            queryParams: { search: "test" },
-            headers: { "Content-Type": "application/json" },
-            payload: { key: "value" },
-        },
-        response: {status: 201, payload: {key: "value"}, headers: {"X-Test": "Header"}},
-        endpoint: "/api/create",
-    }} currentTab="request" setCurrentTab={() => {}} />
+    <RequestDetailsPanel
+        request={{
+            request: {
+                method: "POST",
+                queryParams: JSON.stringify({search: "test"}, null, "\t"),
+                headers: JSON.stringify({"Content-Type": "application/json"}, null, "\t"),
+                payload: JSON.stringify({key: "value"}, null, "\t"),
+            },
+            response: {
+                status: 201,
+                payload: JSON.stringify({key: "value"}, null, "\t"),
+                headers: JSON.stringify({"X-Test": "Header"}, null, "\t"),
+            },
+            endpoint: "/api/create",
+        }}
+        currentTab="request"
+        setCurrentTab={() => {
+        }}
+    />
 );
