@@ -1,6 +1,6 @@
 // src/index.jsx
 
-import './styles/global.css';
+import './styles/global.css'
 
-export * from './components/index.jsx';
-export * from './utils/getStatusClass.js';
+export * from './components/index.jsx'
+export * from './utils/getStatusClass.js'
