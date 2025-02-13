@@ -2,10 +2,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
-import dtsPlugin from 'vite-plugin-dts'
+import dts from "vite-plugin-dts";
 
 export default defineConfig({
-    plugins: [react(), dtsPlugin({ include: ["src"], insertTypesEntry: true })],
+    plugins: [react(), dts({ include: ["src"], insertTypesEntry: true })],
     // resolve: {
     //     alias: {
     //         Optional: Create convenient aliases for your folders
