@@ -24,6 +24,7 @@
   ],
   "scripts": {
     "build": "vite build",
+    "watch": "vite build --watch",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "format": "npx prettier --write src//**/*.{ts,jsx,css} --config ./.prettierrc",

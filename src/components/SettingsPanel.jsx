@@ -36,7 +36,7 @@ const SettingsPanel = ({ sseEndpoint, setSseEndpoint, isConnected }) => {
         <div className="flex items-center gap-4">
           <span
             className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center ${
-              isConnected ? 'bg-green-500' : 'bg-red-500'
+              isConnected ? 'bg-green-500 text-white' : 'bg-red-500'
             }`}
           >
             <span

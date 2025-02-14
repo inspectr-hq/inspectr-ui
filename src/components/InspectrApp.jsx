@@ -26,10 +26,10 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
     const generateId = () => `req-${Math.random().toString(36).substr(2, 9)}`;
 
     const eventSource = new EventSource(sseEndpoint);
-    console.log(`EventSource created with URL: ${sseEndpoint}`);
+    console.log(`Inspectr EventSource created with URL: ${sseEndpoint}`);
 
     eventSource.onopen = () => {
-      console.log('SSE connection opened');
+      console.log('SSE Inspectr connection opened');
       setIsConnected(true);
     };
 
@@ -39,25 +39,29 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
         // console.log('Received event:', data);
         // Update the list and, if it's the first event, select it.
         if (!data.id) data.id = generateId();
-        setRequests((prev) => {
-          if (prev.length === 0) {
-            setSelectedRequest(data);
-          }
-          return [data, ...prev];
-        });
+        if (data?.data) {
+          const reqData = data.data;
+          reqData.id = data.id;
+          setRequests((prev) => {
+            if (prev.length === 0) {
+              setSelectedRequest(reqData);
+            }
+            return [reqData, ...prev];
+          });
+        }
       } catch (error) {
-        console.error('Error parsing SSE data:', error);
+        console.error('Error parsing SSE Inspectr data:', error);
       }
     };
 
     eventSource.onerror = (err) => {
-      console.error('SSE error:', err);
+      console.error('SSE Inspectr error:', err);
       setIsConnected(false);
       // The EventSource object will try to reconnect automatically.
     };
 
     return () => {
-      console.log('Closing EventSource');
+      console.log('Closing Inspectr EventSource');
       eventSource.close();
       setIsConnected(false);
     };

@@ -74,7 +74,7 @@ const ResponseContent = ({ request }) => {
                 fontFamily:
                   '"Cascadia Code", "Jetbrains Mono", "Fira Code", "Menlo", "Consolas", monospace',
                 tabSize: 2,
-                scrollBeyondLastLine: false,
+                scrollBeyondLastLine: false
               }}
             />
           </div>
