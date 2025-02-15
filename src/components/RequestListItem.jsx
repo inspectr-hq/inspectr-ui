@@ -30,7 +30,7 @@ const RequestListItem = ({ request, reqId, onSelect, onRemove, selected }) => {
         <div className="flex-grow truncate text-left">{request.path || request.url}</div>
         <div className="w-20 text-gray-500 text-center">{request.latency}ms</div>
         <button
-          className="w-8 h-8 flex items-center justify-center text-red-500 hover:text-red-700"
+          className="w-8 h-8 flex items-center justify-center cursor-pointer text-red-500 hover:text-red-700"
           onClick={(e) => {
             e.stopPropagation();
             onRemove(reqId);
