@@ -20,17 +20,17 @@ const RequestListItem = ({ request, reqId, onSelect, onRemove, selected }) => {
         <div className="w-16 flex justify-center">
           <span
             className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(
-              request.response.status
+              request.response.statusCode
             )}`}
           >
-            {request.response.status || 'N/A'}
+            {request.response.statusCode || 'N/A'}
           </span>
         </div>
-        <div className="w-20 text-center font-medium">{request.request.method || 'GET'}</div>
-        <div className="flex-grow truncate text-left">{request.endpoint || request.url}</div>
+        <div className="w-20 text-center font-medium">{request.method || 'GET'}</div>
+        <div className="flex-grow truncate text-left">{request.path || request.url}</div>
         <div className="w-20 text-gray-500 text-center">{request.latency}ms</div>
         <button
-          className="w-8 h-8 flex items-center justify-center text-red-500 hover:text-red-700"
+          className="w-8 h-8 flex items-center justify-center cursor-pointer text-red-500 hover:text-red-700"
           onClick={(e) => {
             e.stopPropagation();
             onRemove(reqId);
