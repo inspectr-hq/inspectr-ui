@@ -1,17 +1,29 @@
 // src/components/InspectrApp.jsx
 import React, { useState, useEffect } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import RequestList from './RequestList';
 import RequestDetailsPanel from './RequestDetailsPanel';
 import SettingsPanel from './SettingsPanel';
+import eventDB from '../utils/eventDB';
 
 const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
-  const [requests, setRequests] = useState([]);
+  // const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [currentTab, setCurrentTab] = useState('request');
   const [sseEndpoint, setSseEndpoint] = useState('/api/sse');
-  const [isConnected, setIsConnected] = useState(false); // Track connection status
+  const [isConnected, setIsConnected] = useState(false);
 
-  // Ensure localStorage is only accessed on the client
+  // Live query: automatically returns updated events from the DB,
+  // sorted descending by time. Adjust page and pageSize as needed.
+  const requests = useLiveQuery(() => {
+    return eventDB.queryEvents({
+      sort: { field: 'time', order: 'desc' },
+      page: 1,
+      pageSize: 3
+    });
+  }, []);
+
+  // Ensure localStorage is only accessed on the client.
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedSseEndpoint = localStorage.getItem('sseEndpoint');
@@ -19,7 +31,7 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
         setSseEndpoint(storedSseEndpoint);
       }
     }
-  }, [sseEndpoint]);
+  }, [propSseEndpoint]);
 
   // Connect to SSE when the component mounts.
   useEffect(() => {
@@ -39,15 +51,15 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
         // console.log('Received event:', data);
         // Update the list and, if it's the first event, select it.
         if (!data.id) data.id = generateId();
-        if (data?.data) {
-          const reqData = data.data;
-          reqData.id = data.id;
-          setRequests((prev) => {
-            if (prev.length === 0) {
-              setSelectedRequest(reqData);
-            }
-            return [reqData, ...prev];
-          });
+
+        // Save the incoming event to the DB.
+        eventDB.upsertEvent(data).catch(err =>
+          console.error('Error saving event to DB:', err)
+        );
+
+        // Optionally, set the first event as selected.
+        if (!selectedRequest && data?.data) {
+          setSelectedRequest(data.data);
         }
       } catch (error) {
         console.error('Error parsing SSE Inspectr data:', error);
@@ -68,15 +80,21 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
   }, [sseEndpoint]); // Run only once on mount
 
   const clearRequests = () => {
-    setRequests([]);
+    // setRequests([]);
     setSelectedRequest(null);
+    eventDB.clearEvents().catch(err =>
+      console.error('Error clearing events from DB:', err)
+    );
   };
 
   const removeRequest = (reqId) => {
-    setRequests((prev) => prev.filter((req, i) => (req.id ? req.id !== reqId : i !== reqId)));
+    // setRequests((prev) => prev.filter((req, i) => (req.id ? req.id !== reqId : i !== reqId)));
     if (selectedRequest && (selectedRequest.id || '') === reqId) {
       setSelectedRequest(null);
     }
+    eventDB.deleteEvent(reqId).catch(err =>
+      console.error('Error deleting event from DB:', err)
+    );
   };
 
   return (
@@ -85,7 +103,7 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
         {/* Left Panel */}
         <div className="w-1/3 border-r border-gray-300 overflow-y-auto">
           <RequestList
-            requests={requests}
+            requests={requests || []}
             onSelect={setSelectedRequest}
             onRemove={removeRequest}
             clearRequests={clearRequests}

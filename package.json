@@ -33,6 +33,8 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0-rc.0",
+    "dexie": "^4.0.11",
+    "dexie-react-hooks": "^1.1.7",
     "tailwindcss": "^4.0.6"
   },
   "peerDependencies": {
