@@ -7,7 +7,6 @@ import SettingsPanel from './SettingsPanel';
 import eventDB from '../utils/eventDB';
 
 const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
-  // const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [currentTab, setCurrentTab] = useState('request');
   const [sseEndpoint, setSseEndpoint] = useState('/api/sse');
@@ -60,11 +59,6 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
 
         // Save the incoming event to the DB.
         eventDB.upsertEvent(data).catch((err) => console.error('Error saving event to DB:', err));
-
-        // Optionally, set the first event as selected.
-        if (!selectedRequest && data?.data) {
-          setSelectedRequest(data.data);
-        }
       } catch (error) {
         console.error('Error parsing SSE Inspectr data:', error);
       }
@@ -83,8 +77,14 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
     };
   }, [sseEndpoint]); // Run only once on mount
 
+  // If no request is selected but there are requests (e.g. historical items), select the first one.
+  useEffect(() => {
+    if (!selectedRequest && requests && requests.length > 0) {
+      setSelectedRequest(requests[0]);
+    }
+  }, [requests, selectedRequest]);
+
   const clearRequests = () => {
-    // setRequests([]);
     setSelectedRequest(null);
     eventDB.clearEvents().catch((err) => console.error('Error clearing events from DB:', err));
   };
