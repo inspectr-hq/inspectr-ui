@@ -15,14 +15,19 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
   const pageSize = 100;
   const [page, setPage] = useState(1);
 
+  const [sortField, setSortField] = useState('time');
+  const [sortDirection, setSortDirection] = useState('desc');
+  const [filters, setFilters] = useState({});
+
   // Live query: get the events for the current page.
   const requests = useLiveQuery(() => {
     return eventDB.queryEvents({
-      sort: { field: 'time', order: 'desc' },
+      sort: { field: sortField, order: sortDirection },
+      filters,
       page,
       pageSize
     });
-  }, [page]);
+  }, [page, sortField, sortDirection, filters]);
 
   // Live query to get total count.
   const totalCount = useLiveQuery(() => eventDB.db.events.count(), []);
@@ -112,6 +117,12 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
             totalPages={totalPages}
             totalCount={totalCount || 0}
             onPageChange={setPage}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            filters={filters}
+            setSortField={setSortField}
+            setSortDirection={setSortDirection}
+            setFilters={setFilters}
           />
         </div>
 

@@ -1,18 +1,27 @@
 // src/components/RequestList.jsx
 import React, { useState } from 'react';
 import RequestListItem from './RequestListItem';
+import RequestListSidePanel from './RequestListSidePanel';
 
 const RequestList = ({
-  requests,
-  onSelect,
-  onRemove,
-  clearRequests,
-  selectedRequest,
-  currentPage,
-  totalPages,
-  totalCount,
-  onPageChange
-}) => {
+                       requests,
+                       onSelect,
+                       onRemove,
+                       clearRequests,
+                       selectedRequest,
+                       currentPage,
+                       totalPages,
+                       totalCount,
+                       onPageChange,
+                       sortField,
+                       sortDirection,
+                       filters,
+                       setSortField,
+                       setSortDirection,
+                       setFilters
+                     }) => {
+  const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
+
   // Helper function to compute page numbers with ellipsis when totalPages > 7.;
   const getPageNumbers = (currentPage, totalPages) => {
     const pages = [];
@@ -52,14 +61,26 @@ const RequestList = ({
   const pageNumbers = getPageNumbers(currentPage, totalPages);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       <div className="p-4 flex justify-between items-center">
         <span className="font-bold text-xl">
           Requests ({requests.length} of {totalCount})
         </span>
-        <button className="px-3 py-1 bg-red-500 text-white rounded text-xs" onClick={clearRequests}>
-          Clear All
-        </button>
+        <div className="space-x-2">
+          {/* Button to open the side panel */}
+          <button
+            className="px-3 py-1 bg-blue-500 text-white rounded text-xs"
+            onClick={() => setIsSidePanelOpen(true)}
+          >
+            Filters
+          </button>
+          <button
+            className="px-3 py-1 bg-red-500 text-white rounded text-xs"
+            onClick={clearRequests}
+          >
+            Clear All
+          </button>
+        </div>
       </div>
 
       {/* Table Header */}
@@ -124,7 +145,8 @@ const RequestList = ({
             if (item === 'ellipsis') {
               return (
                 <li key={`ellipsis-${index}`}>
-                  <span className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300">
+                  <span
+                    className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300">
                     ...
                   </span>
                 </li>
@@ -174,6 +196,18 @@ const RequestList = ({
           </li>
         </ul>
       </nav>
+
+      {/* Slide-In Side Panel */}
+      <RequestListSidePanel
+        isOpen={isSidePanelOpen}
+        onClose={() => setIsSidePanelOpen(false)}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        filters={filters}
+        setSortField={setSortField}
+        setSortDirection={setSortDirection}
+        setFilters={setFilters}
+      />
     </div>
   );
 };
