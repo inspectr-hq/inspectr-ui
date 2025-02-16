@@ -13,15 +13,21 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
   const [sseEndpoint, setSseEndpoint] = useState('/api/sse');
   const [isConnected, setIsConnected] = useState(false);
 
-  // Live query: automatically returns updated events from the DB,
-  // sorted descending by time. Adjust page and pageSize as needed.
+  const pageSize = 100;
+  const [page, setPage] = useState(1);
+
+  // Live query: get the events for the current page.
   const requests = useLiveQuery(() => {
     return eventDB.queryEvents({
       sort: { field: 'time', order: 'desc' },
-      page: 1,
-      pageSize: 3
+      page,
+      pageSize
     });
-  }, []);
+  }, [page]);
+
+  // Live query to get total count.
+  const totalCount = useLiveQuery(() => eventDB.db.events.count(), []);
+  const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
 
   // Ensure localStorage is only accessed on the client.
   useEffect(() => {
@@ -53,9 +59,7 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
         if (!data.id) data.id = generateId();
 
         // Save the incoming event to the DB.
-        eventDB.upsertEvent(data).catch(err =>
-          console.error('Error saving event to DB:', err)
-        );
+        eventDB.upsertEvent(data).catch((err) => console.error('Error saving event to DB:', err));
 
         // Optionally, set the first event as selected.
         if (!selectedRequest && data?.data) {
@@ -82,9 +86,7 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
   const clearRequests = () => {
     // setRequests([]);
     setSelectedRequest(null);
-    eventDB.clearEvents().catch(err =>
-      console.error('Error clearing events from DB:', err)
-    );
+    eventDB.clearEvents().catch((err) => console.error('Error clearing events from DB:', err));
   };
 
   const removeRequest = (reqId) => {
@@ -92,9 +94,7 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
     if (selectedRequest && (selectedRequest.id || '') === reqId) {
       setSelectedRequest(null);
     }
-    eventDB.deleteEvent(reqId).catch(err =>
-      console.error('Error deleting event from DB:', err)
-    );
+    eventDB.deleteEvent(reqId).catch((err) => console.error('Error deleting event from DB:', err));
   };
 
   return (
@@ -108,6 +108,10 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
             onRemove={removeRequest}
             clearRequests={clearRequests}
             selectedRequest={selectedRequest}
+            currentPage={page}
+            totalPages={totalPages}
+            totalCount={totalCount || 0}
+            onPageChange={setPage}
           />
         </div>
 
