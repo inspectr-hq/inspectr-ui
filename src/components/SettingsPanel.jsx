@@ -30,7 +30,7 @@ const SettingsPanel = ({ sseEndpoint, setSseEndpoint, isConnected }) => {
       {/* Bottom Panel */}
       <div
         className="flex items-center justify-between bg-gray-200 px-4 py-2 w-full cursor-pointer select-none"
-        onClick={() => setIsOpen((prev) => !prev)} // Toggle on click
+        onClick={() => setIsOpen((prev) => !prev)}
       >
         {/* Connection Status Indicator */}
         <div className="flex items-center gap-4">
@@ -52,6 +52,7 @@ const SettingsPanel = ({ sseEndpoint, setSseEndpoint, isConnected }) => {
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2"
+          onClick={(event) => event.stopPropagation()}
         >
           <img src={logo} alt="Inspectr Logo" className="h-6" />
           <span className="text-gray-700 font-semibold text-sm">Inspectr</span>
