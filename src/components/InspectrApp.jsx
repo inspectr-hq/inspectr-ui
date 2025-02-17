@@ -106,8 +106,8 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
         page: 1,
         pageSize: Number.MAX_SAFE_INTEGER
       });
-      await Promise.all(filteredRequests.map(record => eventDB.deleteEvent(record.id)));
-      if (selectedRequest && filteredRequests.some(record => record.id === selectedRequest.id)) {
+      await Promise.all(filteredRequests.map((record) => eventDB.deleteEvent(record.id)));
+      if (selectedRequest && filteredRequests.some((record) => record.id === selectedRequest.id)) {
         setSelectedRequest(null);
       }
     } catch (error) {

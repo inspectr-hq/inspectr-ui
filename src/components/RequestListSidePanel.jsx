@@ -181,6 +181,7 @@ const RequestListSidePanel = ({
                   className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
                   <option value="">Any</option>
+                  <option value="15M">Last 15 minutes</option>
                   <option value="30M">Last 30 minutes</option>
                   <option value="1H">Last 1 hour</option>
                   <option value="3H">Last 3 hours</option>

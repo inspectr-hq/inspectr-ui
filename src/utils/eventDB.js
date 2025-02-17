@@ -69,6 +69,9 @@ class EventDB {
       if (typeof filters.timestampRange === 'string') {
         let startTime = new Date();
         switch (filters.timestampRange) {
+          case '15M':
+            startTime.setMinutes(startTime.getMinutes() - 15);
+            break;
           case '30M':
             startTime.setMinutes(startTime.getMinutes() - 30);
             break;

@@ -6,23 +6,23 @@ import RequestListPagination from './RequestListPagination';
 import DialogConfirmClear from './DialogConfirmClear.jsx';
 
 const RequestList = ({
-                       requests,
-                       onSelect,
-                       onRemove,
-                       clearRequests,
-                       clearFilteredRequests,
-                       selectedRequest,
-                       currentPage,
-                       totalPages,
-                       totalCount,
-                       onPageChange,
-                       sortField,
-                       sortDirection,
-                       filters,
-                       setSortField,
-                       setSortDirection,
-                       setFilters
-                     }) => {
+  requests,
+  onSelect,
+  onRemove,
+  clearRequests,
+  clearFilteredRequests,
+  selectedRequest,
+  currentPage,
+  totalPages,
+  totalCount,
+  onPageChange,
+  sortField,
+  sortDirection,
+  filters,
+  setSortField,
+  setSortDirection,
+  setFilters
+}) => {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -54,8 +54,7 @@ const RequestList = ({
           >
             Filters
             {activeFiltersCount > 0 && (
-              <span
-                className="absolute -top-1 -right-1 bg-green-700 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
+              <span className="absolute -top-1 -right-1 bg-green-700 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
                 {activeFiltersCount}
               </span>
             )}
