@@ -96,7 +96,6 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
   };
 
   const removeRequest = (reqId) => {
-    // setRequests((prev) => prev.filter((req, i) => (req.id ? req.id !== reqId : i !== reqId)));
     if (selectedRequest && (selectedRequest.id || '') === reqId) {
       setSelectedRequest(null);
     }

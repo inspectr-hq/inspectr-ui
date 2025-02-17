@@ -73,9 +73,7 @@ const RequestListPagination = ({ currentPage, totalPages, onPageChange }) => {
           if (item === 'ellipsis') {
             return (
               <li key={`ellipsis-${index}`}>
-                <span
-                  className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 cursor-pointer"
-                >
+                <span className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 cursor-pointer">
                   ...
                 </span>
               </li>

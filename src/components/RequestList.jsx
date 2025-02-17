@@ -5,22 +5,22 @@ import RequestListSidePanel from './RequestListSidePanel';
 import RequestListPagination from './RequestListPagination';
 
 const RequestList = ({
-                       requests,
-                       onSelect,
-                       onRemove,
-                       clearRequests,
-                       selectedRequest,
-                       currentPage,
-                       totalPages,
-                       totalCount,
-                       onPageChange,
-                       sortField,
-                       sortDirection,
-                       filters,
-                       setSortField,
-                       setSortDirection,
-                       setFilters
-                     }) => {
+  requests,
+  onSelect,
+  onRemove,
+  clearRequests,
+  selectedRequest,
+  currentPage,
+  totalPages,
+  totalCount,
+  onPageChange,
+  sortField,
+  sortDirection,
+  filters,
+  setSortField,
+  setSortDirection,
+  setFilters
+}) => {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
 
   return (
@@ -47,8 +47,10 @@ const RequestList = ({
       </div>
 
       {/* Table Header */}
-      <div className="flex items-center bg-gray-200 p-2 border-b border-gray-300 text-sm font-bold cursor-pointer"
-           onClick={() => setIsSidePanelOpen(true)}>
+      <div
+        className="flex items-center bg-gray-200 p-2 border-b border-gray-300 text-sm font-bold cursor-pointer"
+        onClick={() => setIsSidePanelOpen(true)}
+      >
         <div className="w-16 text-center">Status</div>
         <div className="w-20 text-center">Method</div>
         <div className="flex-grow text-left">Path</div>

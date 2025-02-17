@@ -2,15 +2,15 @@
 import React from 'react';
 
 const RequestListSidePanel = ({
-                                isOpen,
-                                onClose,
-                                sortField,
-                                sortDirection,
-                                filters,
-                                setSortField,
-                                setSortDirection,
-                                setFilters
-                              }) => {
+  isOpen,
+  onClose,
+  sortField,
+  sortDirection,
+  filters,
+  setSortField,
+  setSortDirection,
+  setFilters
+}) => {
   // Reset sort options
   const handleResetSort = () => {
     setSortField('time');
@@ -148,30 +148,22 @@ const RequestListSidePanel = ({
             <div className="space-y-4">
               {/* Status Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <input
                   type="number"
                   placeholder="e.g. 200"
                   value={filters.status || ''}
-                  onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, status: e.target.value }))
-                  }
+                  onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
                   className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
 
               {/* Method Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Method
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Method</label>
                 <select
                   value={filters.method || ''}
-                  onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, method: e.target.value }))
-                  }
+                  onChange={(e) => setFilters((prev) => ({ ...prev, method: e.target.value }))}
                   className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
                   <option value="">Any</option>
@@ -186,16 +178,12 @@ const RequestListSidePanel = ({
 
               {/* Path Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Path
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Path</label>
                 <input
                   type="text"
                   placeholder="e.g. /api/users"
                   value={filters.path || ''}
-                  onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, path: e.target.value }))
-                  }
+                  onChange={(e) => setFilters((prev) => ({ ...prev, path: e.target.value }))}
                   className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
@@ -229,16 +217,12 @@ const RequestListSidePanel = ({
 
               {/* Host Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Host
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Host</label>
                 <input
                   type="text"
                   placeholder="e.g. localhost"
                   value={filters.host || ''}
-                  onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, host: e.target.value }))
-                  }
+                  onChange={(e) => setFilters((prev) => ({ ...prev, host: e.target.value }))}
                   className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
