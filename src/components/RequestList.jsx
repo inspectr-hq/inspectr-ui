@@ -84,7 +84,8 @@ const RequestList = ({
       </div>
 
       {/* Table Header */}
-      <div className="flex items-center bg-gray-200 p-2 border-b border-gray-300 text-sm font-bold">
+      <div className="flex items-center bg-gray-200 p-2 border-b border-gray-300 text-sm font-bold cursor-pointer"
+           onClick={() => setIsSidePanelOpen(true)}>
         <div className="w-16 text-center">Status</div>
         <div className="w-20 text-center">Method</div>
         <div className="flex-grow text-left">Path</div>
