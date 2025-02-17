@@ -14,7 +14,7 @@ const RequestListSidePanel = ({
   // Reset sort options
   const handleResetSort = () => {
     setSortField('time');
-    setSortDirection('asc');
+    setSortDirection('desc');
   };
 
   // Reset filters
