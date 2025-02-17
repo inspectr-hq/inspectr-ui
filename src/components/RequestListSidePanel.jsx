@@ -11,6 +11,17 @@ const RequestListSidePanel = ({
                                 setSortDirection,
                                 setFilters
                               }) => {
+  // Reset sort options
+  const handleResetSort = () => {
+    setSortField('time');
+    setSortDirection('asc');
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setFilters({});
+  };
+
   return (
     <>
       {/* Overlay */}
@@ -44,9 +55,17 @@ const RequestListSidePanel = ({
         <div className="p-4 overflow-y-auto h-full">
           {/* Sort Section */}
           <section className="mb-6 ml-4 mr-4">
-            <h3 className="mb-3 text-xs font-bold text-gray-600 uppercase tracking-wide">
-              Sort By
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="mb-3 text-xs font-bold text-gray-600 uppercase tracking-wide">
+                Sort By
+              </h3>
+              <button
+                onClick={handleResetSort}
+                className="text-xs text-blue-600 hover:underline cursor-pointer"
+              >
+                Reset
+              </button>
+            </div>
             <div className="space-y-3">
               <label className="flex items-center">
                 <input
@@ -115,9 +134,17 @@ const RequestListSidePanel = ({
 
           {/* Filter Section */}
           <section className="mb-6 ml-4 mr-4">
-            <h3 className="mb-3 text-xs font-bold text-gray-600 uppercase tracking-wide">
-              Filters
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="mb-3 text-xs font-bold text-gray-600 uppercase tracking-wide">
+                Filters
+              </h3>
+              <button
+                onClick={handleResetFilters}
+                className="text-xs text-blue-600 hover:underline cursor-pointer"
+              >
+                Reset
+              </button>
+            </div>
             <div className="space-y-4">
               {/* Status Filter */}
               <div>
@@ -151,7 +178,7 @@ const RequestListSidePanel = ({
                   <option value="GET">GET</option>
                   <option value="POST">POST</option>
                   <option value="PUT">PUT</option>
-                  <option value="PUT">PATCH</option>
+                  <option value="PATCH">PATCH</option>
                   <option value="DELETE">DELETE</option>
                   <option value="OPTIONS">OPTIONS</option>
                 </select>
