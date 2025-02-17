@@ -46,20 +46,6 @@ class EventDB {
   }
 
   // Query events with optional filters, sorting, and pagination.
-  // Options structure:
-  // {
-  //   filters: {
-  //     timestampRange: '24H' | '48H' | 'week' | 'month' | { start, end },
-  //     status: number,
-  //     method: string,
-  //     path: string,
-  //     duration: { min?: number, max?: number },
-  //     host: string
-  //   },
-  //   sort: { field: 'time'|'statusCode'|'method'|'path'|'latency', order: 'asc'|'desc' },
-  //   page: number,          // 1-indexed
-  //   pageSize: number
-  // }
   async queryEvents(options = {}) {
     const {
       filters = {},
@@ -69,37 +55,69 @@ class EventDB {
     } = options;
 
     // Log total record count.
-    const totalCount = await this.db.events.count();
+    // const totalCount = await this.db.events.count();
     // console.log('[EventDB] Total records in DB:', totalCount);
 
     // Start with the complete collection.
     let collection = this.db.events.toCollection();
-    const allItemsPreFilter = await collection.toArray();
+    // const allItemsPreFilter = await collection.toArray();
     // console.log('[EventDB] All items before filtering:', allItemsPreFilter);
 
     // --- Filtering by timestamp range ---
     if (filters.timestampRange) {
-      let startTime = new Date();
-      if (filters.timestampRange === '24H') {
-        startTime.setHours(startTime.getHours() - 24);
-      } else if (filters.timestampRange === '48H') {
-        startTime.setHours(startTime.getHours() - 48);
-      } else if (filters.timestampRange === 'week') {
-        startTime.setDate(startTime.getDate() - 7);
-      } else if (filters.timestampRange === 'month') {
-        startTime.setMonth(startTime.getMonth() - 1);
-      } else if (filters.timestampRange.start && filters.timestampRange.end) {
-        // Custom range provided as an object {start, end}
-        const start = new Date(filters.timestampRange.start);
-        const end = new Date(filters.timestampRange.end);
-        collection = collection.filter(item => {
-          const itemTime = new Date(item.time);
-          return itemTime >= start && itemTime <= end;
-        });
-      }
-      // For the predefined ranges, filter items with time >= computed startTime.
-      if (['24H', '48H', 'week', 'month'].includes(filters.timestampRange)) {
+      // If the timestampRange is provided as a string, handle preset ranges.
+      if (typeof filters.timestampRange === 'string') {
+        let startTime = new Date();
+        switch (filters.timestampRange) {
+          case '30M':
+            startTime.setMinutes(startTime.getMinutes() - 30);
+            break;
+          case '1H':
+            startTime.setHours(startTime.getHours() - 1);
+            break;
+          case '3H':
+            startTime.setHours(startTime.getHours() - 3);
+            break;
+          case '6H':
+            startTime.setHours(startTime.getHours() - 6);
+            break;
+          case '12H':
+            startTime.setHours(startTime.getHours() - 12);
+            break;
+          case '24H':
+            startTime.setHours(startTime.getHours() - 24);
+            break;
+          case '48H':
+            startTime.setHours(startTime.getHours() - 48);
+            break;
+          case 'week':
+            startTime.setDate(startTime.getDate() - 7);
+            break;
+          case 'month':
+            startTime.setMonth(startTime.getMonth() - 1);
+            break;
+          default:
+            break;
+        }
+        // Filter items with time >= computed startTime.
         collection = collection.filter(item => new Date(item.time) >= startTime);
+      } else if (typeof filters.timestampRange === 'object') {
+        // Specific range: support "from" (start), "to" (end), or both.
+        if (filters.timestampRange.start && filters.timestampRange.end) {
+
+          const start = new Date(filters.timestampRange.start);
+          const end = new Date(filters.timestampRange.end);
+          collection = collection.filter(item => {
+            const itemTime = new Date(item.time);
+            return itemTime >= start && itemTime <= end;
+          });
+        } else if (filters.timestampRange.start) {
+          const start = new Date(filters.timestampRange.start);
+          collection = collection.filter(item => new Date(item.time) >= start);
+        } else if (filters.timestampRange.end) {
+          const end = new Date(filters.timestampRange.end);
+          collection = collection.filter(item => new Date(item.time) <= end);
+        }
       }
     }
 
@@ -157,20 +175,11 @@ class EventDB {
       });
     }
 
-    // Log sorted items (for debugging).
-    let sortedArray;
-    if (Array.isArray(sortedCollection)) {
-      sortedArray = sortedCollection;
-    } else {
-      sortedArray = await sortedCollection.toArray();
-    }
-    // console.log('[EventDB] Sorted array before pagination:', sortedArray);
-
     // --- Pagination ---
     const offset = (page - 1) * pageSize;
     let results;
     if (Array.isArray(sortedCollection)) {
-      results = sortedArray.slice(offset, offset + pageSize);
+      results = sortedCollection.slice(offset, offset + pageSize);
     } else if (typeof sortedCollection.offset === 'function') {
       results = await sortedCollection.offset(offset).limit(pageSize).toArray();
     } else {
