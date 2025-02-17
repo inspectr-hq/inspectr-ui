@@ -250,6 +250,7 @@ const RequestListSidePanel = ({
                   <option value="PATCH">PATCH</option>
                   <option value="DELETE">DELETE</option>
                   <option value="OPTIONS">OPTIONS</option>
+                  <option value="HEAD">HEAD</option>
                 </select>
               </div>
 
