@@ -117,13 +117,13 @@ class EventDB {
       collection = collection.filter(item => item.path.includes(filters.path));
     }
     // --- Filter on Duration ---
-    if (filters.duration) {
-      if (filters.duration.min !== undefined) {
-        collection = collection.filter(item => item.latency >= Number(filters.duration.min));
-      }
-      if (filters.duration.max !== undefined) {
-        collection = collection.filter(item => item.latency <= Number(filters.duration.max));
-      }
+    if (filters.durationMin) {
+      console.log('[EventDB] Min filtering:', filters);
+      collection = collection.filter(item => Number(item.latency) >= Number(filters.durationMin));
+    }
+    if (filters.durationMax) {
+      console.log('[EventDB] Max filtering:', filters);
+      collection = collection.filter(item => Number(item.latency) <= Number(filters.durationMax));
     }
     // --- Filter on Host ---
     if (filters.host) {
