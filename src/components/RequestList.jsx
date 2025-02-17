@@ -5,23 +5,39 @@ import RequestListSidePanel from './RequestListSidePanel';
 import RequestListPagination from './RequestListPagination';
 
 const RequestList = ({
-  requests,
-  onSelect,
-  onRemove,
-  clearRequests,
-  selectedRequest,
-  currentPage,
-  totalPages,
-  totalCount,
-  onPageChange,
-  sortField,
-  sortDirection,
-  filters,
-  setSortField,
-  setSortDirection,
-  setFilters
-}) => {
+                       requests,
+                       onSelect,
+                       onRemove,
+                       clearRequests,
+                       selectedRequest,
+                       currentPage,
+                       totalPages,
+                       totalCount,
+                       onPageChange,
+                       sortField,
+                       sortDirection,
+                       filters,
+                       setSortField,
+                       setSortDirection,
+                       setFilters
+                     }) => {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
+
+  // Calculate the number of active filters.
+  const activeFiltersCount = Object.entries(filters || {}).reduce((count, [key, value]) => {
+    // For custom timestampRange, check if object and has at least one non-empty field.
+    if (key === 'timestampRange' && typeof value === 'object') {
+      if (value.start || value.end) {
+        return count + 1;
+      }
+      return count;
+    }
+    return value ? count + 1 : count;
+  }, 0);
+
+  // Determine button background based on active filters.
+  const filtersButtonClass =
+    activeFiltersCount > 0 ? 'bg-green-500 text-white' : 'bg-blue-500 text-white';
 
   return (
     <div className="flex flex-col h-full relative">
@@ -29,13 +45,19 @@ const RequestList = ({
         <span className="font-bold text-xl">
           Requests ({requests.length} of {totalCount})
         </span>
-        <div className="space-x-2">
+        <div className="space-x-2 relative">
           {/* Button to open the side panel */}
           <button
-            className="px-3 py-1 bg-blue-500 text-white rounded text-xs cursor-pointer"
+            className={`relative px-3 py-1 rounded text-xs cursor-pointer ${filtersButtonClass}`}
             onClick={() => setIsSidePanelOpen(true)}
           >
             Filters
+            {activeFiltersCount > 0 && (
+              <span
+                className="absolute -top-1 -right-1 bg-green-700 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
+                {activeFiltersCount}
+              </span>
+            )}
           </button>
           <button
             className="px-3 py-1 bg-red-500 text-white rounded text-xs cursor-pointer"
