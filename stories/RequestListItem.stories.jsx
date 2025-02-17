@@ -1,17 +1,19 @@
 // stories/RequestListItem.stories.jsx
-import React from "react";
-import RequestListItem from "../src/components/RequestListItem";
+import React from 'react';
+import RequestListItem from '../src/components/RequestListItem';
 
 export default {
-    title: "Components/RequestListItem",
-    component: RequestListItem,
+  title: 'Components/RequestListItem',
+  component: RequestListItem
 };
 
 export const DefaultItem = () => (
-    <RequestListItem
-        request={{ request: { method: "GET" }, response: { status: 200 }, endpoint: "/api/test", latency: 123 }}
-        reqId={1}
-        onSelect={() => {}}
-        onRemove={() => {}}
-    />
+  <RequestListItem
+    request={{ method: 'GET', request: {}, response: { statusCode: 200 }, endpoint: '/api/test', latency: 123 }}
+    reqId={1}
+    onSelect={() => {
+    }}
+    onRemove={() => {
+    }}
+  />
 );

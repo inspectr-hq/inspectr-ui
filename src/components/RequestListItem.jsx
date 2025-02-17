@@ -20,10 +20,10 @@ const RequestListItem = ({ request, reqId, onSelect, onRemove, selected }) => {
         <div className="w-16 flex justify-center">
           <span
             className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(
-              request.response.statusCode
+              request?.response?.statusCode
             )}`}
           >
-            {request.response.statusCode || 'N/A'}
+            {request?.response?.statusCode || 'N/A'}
           </span>
         </div>
         <div className="w-20 text-center font-medium">{request.method || 'GET'}</div>

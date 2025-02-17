@@ -1,17 +1,40 @@
 // src/components/InspectrApp.jsx
 import React, { useState, useEffect } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import RequestList from './RequestList';
 import RequestDetailsPanel from './RequestDetailsPanel';
 import SettingsPanel from './SettingsPanel';
+import eventDB from '../utils/eventDB';
 
 const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
-  const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [currentTab, setCurrentTab] = useState('request');
   const [sseEndpoint, setSseEndpoint] = useState('/api/sse');
-  const [isConnected, setIsConnected] = useState(false); // Track connection status
+  const [isConnected, setIsConnected] = useState(false);
 
-  // Ensure localStorage is only accessed on the client
+  const pageSize = 100;
+  const [page, setPage] = useState(1);
+
+  const [sortField, setSortField] = useState('time');
+  const [sortDirection, setSortDirection] = useState('desc');
+  const [filters, setFilters] = useState({});
+
+  // Live query: get the events for the current page.
+  const requests = useLiveQuery(() => {
+    // console.log('[Inspectr] filters', filters);
+    return eventDB.queryEvents({
+      sort: { field: sortField, order: sortDirection },
+      filters,
+      page,
+      pageSize
+    });
+  }, [page, sortField, sortDirection, filters]);
+
+  // Live query to get total count.
+  const totalCount = useLiveQuery(() => eventDB.db.events.count(), []);
+  const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
+
+  // Ensure localStorage is only accessed on the client.
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedSseEndpoint = localStorage.getItem('sseEndpoint');
@@ -19,7 +42,7 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
         setSseEndpoint(storedSseEndpoint);
       }
     }
-  }, [sseEndpoint]);
+  }, [propSseEndpoint]);
 
   // Connect to SSE when the component mounts.
   useEffect(() => {
@@ -36,19 +59,12 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
     eventSource.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data);
-        // console.log('Received event:', data);
+        // console.log('[Inspectr] Received event:', data);
         // Update the list and, if it's the first event, select it.
         if (!data.id) data.id = generateId();
-        if (data?.data) {
-          const reqData = data.data;
-          reqData.id = data.id;
-          setRequests((prev) => {
-            if (prev.length === 0) {
-              setSelectedRequest(reqData);
-            }
-            return [reqData, ...prev];
-          });
-        }
+
+        // Save the incoming event to the DB.
+        eventDB.upsertEvent(data).catch((err) => console.error('Error saving event to DB:', err));
       } catch (error) {
         console.error('Error parsing SSE Inspectr data:', error);
       }
@@ -67,16 +83,23 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
     };
   }, [sseEndpoint]); // Run only once on mount
 
+  // If no request is selected but there are requests (e.g. historical items), select the first one.
+  useEffect(() => {
+    if (!selectedRequest && requests && requests.length > 0) {
+      setSelectedRequest(requests[0]);
+    }
+  }, [requests, selectedRequest]);
+
   const clearRequests = () => {
-    setRequests([]);
     setSelectedRequest(null);
+    eventDB.clearEvents().catch((err) => console.error('Error clearing events from DB:', err));
   };
 
   const removeRequest = (reqId) => {
-    setRequests((prev) => prev.filter((req, i) => (req.id ? req.id !== reqId : i !== reqId)));
     if (selectedRequest && (selectedRequest.id || '') === reqId) {
       setSelectedRequest(null);
     }
+    eventDB.deleteEvent(reqId).catch((err) => console.error('Error deleting event from DB:', err));
   };
 
   return (
@@ -85,11 +108,21 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
         {/* Left Panel */}
         <div className="w-1/3 border-r border-gray-300 overflow-y-auto">
           <RequestList
-            requests={requests}
+            requests={requests || []}
             onSelect={setSelectedRequest}
             onRemove={removeRequest}
             clearRequests={clearRequests}
             selectedRequest={selectedRequest}
+            currentPage={page}
+            totalPages={totalPages}
+            totalCount={totalCount || 0}
+            onPageChange={setPage}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            filters={filters}
+            setSortField={setSortField}
+            setSortDirection={setSortDirection}
+            setFilters={setFilters}
           />
         </div>
 

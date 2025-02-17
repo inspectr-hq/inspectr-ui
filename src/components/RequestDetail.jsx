@@ -34,10 +34,10 @@ const RequestDetail = ({ request }) => {
           <span className="text-blue-600">{request.path}</span>
           <span
             className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(
-              request.response.statusCode
+              request?.response?.statusCode
             )}`}
           >
-            {request.response.statusCode}
+            {request?.response?.statusCode}
           </span>
           <span className="text-sm">{request.response.statusMessage}</span>
         </div>
