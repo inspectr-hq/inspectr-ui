@@ -103,25 +103,29 @@ class EventDB {
       }
     }
 
-    // --- Other Filters ---
-    if (filters.status !== undefined) {
-      collection = collection.filter(item => item.statusCode === filters.status);
+    // --- Filter on Status Code ---
+    if (filters.status !== undefined && filters?.status.length > 2) {
+      collection = collection.filter(item => Number(item.statusCode) === Number(filters.status));
     }
+    // --- Filter on HTTP Method ---
     if (filters.method) {
       collection = collection.filter(item => item.method.toLowerCase() === filters.method.toLowerCase());
     }
+    // --- Filter on Path ---
     if (filters.path) {
       // Partial match search on path.
       collection = collection.filter(item => item.path.includes(filters.path));
     }
+    // --- Filter on Duration ---
     if (filters.duration) {
       if (filters.duration.min !== undefined) {
-        collection = collection.filter(item => item.latency >= filters.duration.min);
+        collection = collection.filter(item => item.latency >= Number(filters.duration.min));
       }
       if (filters.duration.max !== undefined) {
-        collection = collection.filter(item => item.latency <= filters.duration.max);
+        collection = collection.filter(item => item.latency <= Number(filters.duration.max));
       }
     }
+    // --- Filter on Host ---
     if (filters.host) {
       collection = collection.filter(item => item.server.toLowerCase().includes(filters.host.toLowerCase()));
     }

@@ -21,6 +21,7 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
 
   // Live query: get the events for the current page.
   const requests = useLiveQuery(() => {
+    console.log('filters', filters);
     return eventDB.queryEvents({
       sort: { field: sortField, order: sortDirection },
       filters,
