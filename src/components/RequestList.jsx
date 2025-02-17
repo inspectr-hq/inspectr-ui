@@ -3,12 +3,14 @@ import React, { useState } from 'react';
 import RequestListItem from './RequestListItem';
 import RequestListSidePanel from './RequestListSidePanel';
 import RequestListPagination from './RequestListPagination';
+import DialogConfirmClear from './DialogConfirmClear.jsx';
 
 const RequestList = ({
                        requests,
                        onSelect,
                        onRemove,
                        clearRequests,
+                       clearFilteredRequests,
                        selectedRequest,
                        currentPage,
                        totalPages,
@@ -22,14 +24,13 @@ const RequestList = ({
                        setFilters
                      }) => {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Calculate the number of active filters.
   const activeFiltersCount = Object.entries(filters || {}).reduce((count, [key, value]) => {
     // For custom timestampRange, check if object and has at least one non-empty field.
     if (key === 'timestampRange' && typeof value === 'object') {
-      if (value.start || value.end) {
-        return count + 1;
-      }
+      if (value.start || value.end) return count + 1;
       return count;
     }
     return value ? count + 1 : count;
@@ -61,7 +62,7 @@ const RequestList = ({
           </button>
           <button
             className="px-3 py-1 bg-red-500 text-white rounded text-xs cursor-pointer"
-            onClick={clearRequests}
+            onClick={() => setIsDialogOpen(true)}
           >
             Clear All
           </button>
@@ -116,6 +117,15 @@ const RequestList = ({
         setSortField={setSortField}
         setSortDirection={setSortDirection}
         setFilters={setFilters}
+      />
+
+      {/* Clear All Dialog */}
+      <DialogConfirmClear
+        open={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onConfirmAll={clearRequests}
+        onConfirmFiltered={clearFilteredRequests}
+        hasFilters={activeFiltersCount > 0}
       />
     </div>
   );
