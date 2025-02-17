@@ -31,7 +31,7 @@ class EventDB {
   // Store or update (upsert) an event.
   async upsertEvent(event) {
     const record = this.transformEvent(event);
-    console.log('[EventDB] upsertEvent record:', record);
+    // console.log('[EventDB] upsertEvent record:', record);
     return await this.db.events.put(record);
   }
 
@@ -70,12 +70,12 @@ class EventDB {
 
     // Log total record count.
     const totalCount = await this.db.events.count();
-    console.log('[EventDB] Total records in DB:', totalCount);
+    // console.log('[EventDB] Total records in DB:', totalCount);
 
     // Start with the complete collection.
     let collection = this.db.events.toCollection();
     const allItemsPreFilter = await collection.toArray();
-    console.log('[EventDB] All items before filtering:', allItemsPreFilter);
+    // console.log('[EventDB] All items before filtering:', allItemsPreFilter);
 
     // --- Filtering by timestamp range ---
     if (filters.timestampRange) {
@@ -118,11 +118,9 @@ class EventDB {
     }
     // --- Filter on Duration ---
     if (filters.durationMin) {
-      console.log('[EventDB] Min filtering:', filters);
       collection = collection.filter(item => Number(item.latency) >= Number(filters.durationMin));
     }
     if (filters.durationMax) {
-      console.log('[EventDB] Max filtering:', filters);
       collection = collection.filter(item => Number(item.latency) <= Number(filters.durationMax));
     }
     // --- Filter on Host ---
@@ -166,7 +164,7 @@ class EventDB {
     } else {
       sortedArray = await sortedCollection.toArray();
     }
-    console.log('[EventDB] Sorted array before pagination:', sortedArray);
+    // console.log('[EventDB] Sorted array before pagination:', sortedArray);
 
     // --- Pagination ---
     const offset = (page - 1) * pageSize;
@@ -178,7 +176,7 @@ class EventDB {
     } else {
       results = [];
     }
-    console.log('[EventDB] queryEvents raw returning records:', results);
+    // console.log('[EventDB] queryEvents raw returning records:', results);
 
     // --- Transform Results ---
     // Instead of exposing the full stored record, only return the inner raw.data along with the id.
@@ -186,7 +184,7 @@ class EventDB {
       id: record.id,
       ...record.raw.data
     }));
-    console.log('[EventDB] Transformed results:', transformedResults);
+    // console.log('[EventDB] Transformed results:', transformedResults);
 
     return transformedResults;
   }

@@ -21,7 +21,7 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
 
   // Live query: get the events for the current page.
   const requests = useLiveQuery(() => {
-    console.log('filters', filters);
+    // console.log('[Inspectr] filters', filters);
     return eventDB.queryEvents({
       sort: { field: sortField, order: sortDirection },
       filters,
@@ -59,7 +59,7 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
     eventSource.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data);
-        // console.log('Received event:', data);
+        // console.log('[Inspectr] Received event:', data);
         // Update the list and, if it's the first event, select it.
         if (!data.id) data.id = generateId();
 
