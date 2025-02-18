@@ -11,3 +11,4 @@ export { default as RequestListPagination } from './RequestListPagination.jsx';
 export { default as RequestListSidePanel } from './RequestListSidePanel.jsx';
 export { default as ResponseContent } from './ResponseContent.jsx';
 export { default as SettingsPanel } from './SettingsPanel.jsx';
+export { default as ToastNotification } from './ToastNotification.jsx';

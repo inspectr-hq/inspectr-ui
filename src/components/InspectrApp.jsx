@@ -6,10 +6,10 @@ import RequestDetailsPanel from './RequestDetailsPanel';
 import SettingsPanel from './SettingsPanel';
 import eventDB from '../utils/eventDB';
 
-const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
+const InspectrApp = ({ sseEndpoint: initialSseEndpoint = '/api/sse' }) => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [currentTab, setCurrentTab] = useState('request');
-  const [sseEndpoint, setSseEndpoint] = useState('/api/sse');
+  const [sseEndpoint, setSseEndpoint] = useState(initialSseEndpoint);
   const [isConnected, setIsConnected] = useState(false);
 
   const pageSize = 100;
@@ -38,11 +38,11 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedSseEndpoint = localStorage.getItem('sseEndpoint');
-      if (!propSseEndpoint && storedSseEndpoint) {
+      if (!sseEndpoint && storedSseEndpoint) {
         setSseEndpoint(storedSseEndpoint);
       }
     }
-  }, [propSseEndpoint]);
+  }, [sseEndpoint]);
 
   // Connect to SSE when the component mounts.
   useEffect(() => {
