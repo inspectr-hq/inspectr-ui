@@ -11,20 +11,21 @@ export const DefaultPanel = () => (
   <RequestDetailsPanel
     request={{
       method: 'POST',
+      url: 'http://localhost:3000/api/create',
+      path: '/api/create',
       latency: 123,
       request: {
-        queryParams: JSON.stringify({ search: 'test' }, null, '\t'),
-        headers: JSON.stringify({ 'Content-Type': 'application/json' }, null, '\t'),
+        queryParams: { search: 'test' },
+        headers: { 'Content-Type': 'application/json' },
         payload: JSON.stringify({ key: 'value' }, null, '\t'),
         timestamp: new Date()
       },
       response: {
         statusCode: 201,
         payload: JSON.stringify({ key: 'value' }, null, '\t'),
-        headers: JSON.stringify({ 'X-Test': 'Header' }, null, '\t'),
+        headers: { 'X-Test': 'Header' },
         timestamp: new Date()
-      },
-      path: '/api/create'
+      }
     }}
     currentTab="request"
     setCurrentTab={() => {
