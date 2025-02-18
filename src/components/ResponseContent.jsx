@@ -60,7 +60,7 @@ const ResponseContent = ({ request }) => {
       <div>
         <button className="w-full p-2 text-left font-bold bg-gray-200">Response Body</button>
         {isEmptyPayload ? (
-          <div className="hidden"></div>
+          <div className="p-4 bg-white rounded-b shadow">No payload</div>
         ) : (
           <div className="bg-white rounded-b shadow p-0 h-100">
             <Editor

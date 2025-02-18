@@ -6,10 +6,10 @@ import RequestDetailsPanel from './RequestDetailsPanel';
 import SettingsPanel from './SettingsPanel';
 import eventDB from '../utils/eventDB';
 
-const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
+const InspectrApp = ({ sseEndpoint: initialSseEndpoint = '/api/sse' }) => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [currentTab, setCurrentTab] = useState('request');
-  const [sseEndpoint, setSseEndpoint] = useState('/api/sse');
+  const [sseEndpoint, setSseEndpoint] = useState(initialSseEndpoint);
   const [isConnected, setIsConnected] = useState(false);
 
   const pageSize = 100;
@@ -38,11 +38,11 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedSseEndpoint = localStorage.getItem('sseEndpoint');
-      if (!propSseEndpoint && storedSseEndpoint) {
+      if (!sseEndpoint && storedSseEndpoint) {
         setSseEndpoint(storedSseEndpoint);
       }
     }
-  }, [propSseEndpoint]);
+  }, [sseEndpoint]);
 
   // Connect to SSE when the component mounts.
   useEffect(() => {
@@ -90,11 +90,32 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
     }
   }, [requests, selectedRequest]);
 
+  // Clear all requests.
   const clearRequests = () => {
     setSelectedRequest(null);
     eventDB.clearEvents().catch((err) => console.error('Error clearing events from DB:', err));
   };
 
+  // Clear only the requests matching the active filters.
+  const clearFilteredRequests = async () => {
+    try {
+      // Query all filtered requests using a very high pageSize.
+      const filteredRequests = await eventDB.queryEvents({
+        filters,
+        sort: { field: 'time', order: 'desc' },
+        page: 1,
+        pageSize: Number.MAX_SAFE_INTEGER
+      });
+      await Promise.all(filteredRequests.map((record) => eventDB.deleteEvent(record.id)));
+      if (selectedRequest && filteredRequests.some((record) => record.id === selectedRequest.id)) {
+        setSelectedRequest(null);
+      }
+    } catch (error) {
+      console.error('Error clearing filtered requests:', error);
+    }
+  };
+
+  // Remove a single request.
   const removeRequest = (reqId) => {
     if (selectedRequest && (selectedRequest.id || '') === reqId) {
       setSelectedRequest(null);
@@ -112,6 +133,7 @@ const InspectrApp = ({ sseEndpoint: propSseEndpoint }) => {
             onSelect={setSelectedRequest}
             onRemove={removeRequest}
             clearRequests={clearRequests}
+            clearFilteredRequests={clearFilteredRequests}
             selectedRequest={selectedRequest}
             currentPage={page}
             totalPages={totalPages}

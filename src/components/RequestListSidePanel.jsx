@@ -14,12 +14,36 @@ const RequestListSidePanel = ({
   // Reset sort options
   const handleResetSort = () => {
     setSortField('time');
-    setSortDirection('asc');
+    setSortDirection('desc');
   };
 
   // Reset filters
   const handleResetFilters = () => {
     setFilters({});
+  };
+
+  // Handle preset time range change
+  const handlePresetTimeRangeChange = (e) => {
+    const value = e.target.value;
+    // When a preset is selected, update timestampRange as string and clear any custom range values.
+    setFilters((prev) => ({
+      ...prev,
+      timestampRange: value,
+      customStart: undefined,
+      customEnd: undefined
+    }));
+  };
+
+  // Handle custom range change - update the timestampRange as an object.
+  const handleCustomRangeChange = (field, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      // clear the preset if any custom value is provided
+      timestampRange: {
+        ...((typeof prev.timestampRange === 'object' && prev.timestampRange) || {}),
+        [field]: value
+      }
+    }));
   };
 
   return (
@@ -146,6 +170,59 @@ const RequestListSidePanel = ({
               </button>
             </div>
             <div className="space-y-4">
+              {/* Time Range Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Quick Time Range
+                </label>
+                <select
+                  value={typeof filters.timestampRange === 'string' ? filters.timestampRange : ''}
+                  onChange={handlePresetTimeRangeChange}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                >
+                  <option value="">Any</option>
+                  <option value="15M">Last 15 minutes</option>
+                  <option value="30M">Last 30 minutes</option>
+                  <option value="1H">Last 1 hour</option>
+                  <option value="3H">Last 3 hours</option>
+                  <option value="6H">Last 6 hours</option>
+                  <option value="12H">Last 12 hours</option>
+                  <option value="24H">Last 24 hours</option>
+                  <option value="48H">Last 2 days</option>
+                  <option value="week">Last Week</option>
+                  <option value="month">Last Month</option>
+                </select>
+              </div>
+
+              {/* Specific Time Range */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Specific Time Range
+                </label>
+                <div className="flex space-x-2">
+                  <input
+                    type="datetime-local"
+                    value={
+                      typeof filters.timestampRange === 'object' && filters.timestampRange.start
+                        ? filters.timestampRange.start
+                        : ''
+                    }
+                    onChange={(e) => handleCustomRangeChange('start', e.target.value)}
+                    className="w-1/2 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                  <input
+                    type="datetime-local"
+                    value={
+                      typeof filters.timestampRange === 'object' && filters.timestampRange.end
+                        ? filters.timestampRange.end
+                        : ''
+                    }
+                    onChange={(e) => handleCustomRangeChange('end', e.target.value)}
+                    className="w-1/2 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+
               {/* Status Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -173,6 +250,7 @@ const RequestListSidePanel = ({
                   <option value="PATCH">PATCH</option>
                   <option value="DELETE">DELETE</option>
                   <option value="OPTIONS">OPTIONS</option>
+                  <option value="HEAD">HEAD</option>
                 </select>
               </div>
 
