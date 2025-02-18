@@ -9,7 +9,7 @@ export default {
 
 export const DefaultItem = () => (
   <RequestListItem
-    request={{ method: 'GET', request: {}, response: { statusCode: 200 }, endpoint: '/api/test', latency: 123 }}
+    request={{ method: 'GET', request: {}, response: { statusCode: 200 }, path: '/api/test', latency: 123 }}
     reqId={1}
     onSelect={() => {
     }}

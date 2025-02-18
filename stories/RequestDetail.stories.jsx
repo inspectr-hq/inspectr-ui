@@ -12,7 +12,7 @@ export const DefaultRequestDetail = () => (
     method: 'GET',
     request: {},
     response: { statusCode: 200 },
-    endpoint: '/api/test',
+    path: '/api/test',
     url: 'http://example.com/api/test',
     timestamp: '2024-02-09T12:00:00Z',
     latency: 150
