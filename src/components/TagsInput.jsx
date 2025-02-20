@@ -56,11 +56,11 @@ const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...',
 
   return (
     <div className="w-full max-w-md relative">
-      <div className="flex flex-wrap items-center border border-gray-300 rounded-md shadow-sm p-2">
+      <div className="flex flex-wrap items-center border border-gray-300 rounded-md shadow-sm px-2 py-1">
         {selected.map((tag) => (
           <div
             key={tag}
-            className={`flex items-center rounded-full px-3 py-1 mr-2 my-1 ${
+            className={`flex items-center rounded-full px-2 py-1 mr-2 my-1 text-xs ${
               colorFn ? colorFn(tag) : 'bg-indigo-100 text-indigo-700'
             }`}
           >
@@ -68,11 +68,11 @@ const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...',
             <button
               type="button"
               onClick={() => removeTag(tag)}
-              className="ml-1 focus:outline-none"
+              className="ml-1 focus:outline-none cursor-pointer"
               aria-label={`Remove ${tag}`}
             >
               <svg
-                className="w-4 h-4"
+                className="w-3 h-3"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -105,7 +105,7 @@ const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...',
           {filteredOptions.map((option, index) => (
             <li
               key={option}
-              className={`cursor-pointer p-2 hover:bg-indigo-100 ${
+              className={`cursor-pointer px-2 py-1 hover:bg-indigo-100 ${
                 index === highlightedIndex ? 'bg-indigo-200' : ''
               }`}
               onMouseEnter={() => setHighlightedIndex(index)}
