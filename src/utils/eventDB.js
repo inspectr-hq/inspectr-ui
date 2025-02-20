@@ -125,12 +125,17 @@ class EventDB {
     }
 
     // --- Filter on Status Code ---
-    if (filters.status !== undefined && filters?.status.length > 2) {
-      collection = collection.filter(item => Number(item.statusCode) === Number(filters.status));
+    if (filters.status && Array.isArray(filters.status) && filters.status.length > 0) {
+      collection = collection.filter(item =>
+        filters.status.includes(String(item.statusCode))
+      );
     }
     // --- Filter on HTTP Method ---
-    if (filters.method) {
-      collection = collection.filter(item => item.method.toLowerCase() === filters.method.toLowerCase());
+    if (filters.method && Array.isArray(filters.method) && filters.method.length > 0) {
+      const selectedMethods = filters.method.map(method => method.toLowerCase());
+      collection = collection.filter(item =>
+        selectedMethods.includes(item.method.toLowerCase())
+      );
     }
     // --- Filter on Path ---
     if (filters.path) {
