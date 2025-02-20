@@ -26,7 +26,8 @@ const RequestListItem = ({ request, reqId, onSelect, onRemove, selected }) => {
             {request?.response?.statusCode || 'N/A'}
           </span>
         </div>
-        <div className="w-20 text-center font-medium">{request.method || 'GET'}</div>
+        <div
+          className={`w-20 text-center font-medium`}>{request?.method || 'GET'}</div>
         <div className="flex-grow truncate text-left">{request.path || request.url}</div>
         <div className="w-20 text-gray-500 text-center">{request.latency}ms</div>
         <button

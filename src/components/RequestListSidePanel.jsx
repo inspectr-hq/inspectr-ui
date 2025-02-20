@@ -1,6 +1,8 @@
 // src/components/RequestListSidePanel.jsx
 import React from 'react';
 import TagsInput from './TagsInput.jsx';
+import { getStatusClass } from '../utils/getStatusClass.js';
+import { getMethodTagClass } from '../utils/getMethodClass.js';
 
 const RequestListSidePanel = ({
                                 isOpen,
@@ -233,9 +235,10 @@ const RequestListSidePanel = ({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <TagsInput
                   options={statusCodeOptions}
-                  selected={filters.statusCodes || []}
-                  onChange={(codes) => setFilters((prev) => ({ ...prev, statusCodes: codes }))}
+                  selected={filters.status || []}
+                  onChange={(codes) => setFilters((prev) => ({ ...prev, status: codes }))}
                   placeholder="Add status code..."
+                  colorFn={getStatusClass}
                 />
               </div>
 
@@ -247,6 +250,7 @@ const RequestListSidePanel = ({
                   selected={filters.method || []}
                   onChange={(methods) => setFilters((prev) => ({ ...prev, method: methods }))}
                   placeholder="Add method..."
+                  colorFn={getMethodTagClass}
                 />
               </div>
 

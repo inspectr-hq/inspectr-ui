@@ -1,7 +1,7 @@
 // src/components/TagsInput.jsx
 import React, { useState, useRef, useEffect } from 'react';
 
-const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...' }) => {
+const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...', colorFn }) => {
   const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
@@ -39,7 +39,8 @@ const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...' 
       // Move highlight up
       e.preventDefault();
       setHighlightedIndex((prev) => (prev - 1 >= 0 ? prev - 1 : 0));
-    } else if (e.key === 'Enter' && inputValue.trim()) {
+    } else if (e.key === 'Enter') {
+      console.log('enter', highlightedIndex);
       e.preventDefault();
       // If there are any filtered options, add the highlighted one
       if (filteredOptions.length > 0) {
@@ -55,11 +56,13 @@ const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...' 
 
   return (
     <div className="w-full max-w-md relative">
-      <div className="flex flex-wrap items-center border border-gray-300 rounded-md p-2">
+      <div className="flex flex-wrap items-center border border-gray-300 rounded-md shadow-sm p-2">
         {selected.map((tag) => (
           <div
             key={tag}
-            className="flex items-center bg-indigo-100 text-indigo-700 rounded-full px-3 py-1 mr-2 mb-2"
+            className={`flex items-center rounded-full px-3 py-1 mr-2 my-1 ${
+              colorFn ? colorFn(tag) : 'bg-indigo-100 text-indigo-700'
+            }`}
           >
             <span>{tag}</span>
             <button
