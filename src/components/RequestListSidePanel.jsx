@@ -1,16 +1,17 @@
 // src/components/RequestListSidePanel.jsx
 import React from 'react';
+import TagsInput from './TagsInput.jsx';
 
 const RequestListSidePanel = ({
-  isOpen,
-  onClose,
-  sortField,
-  sortDirection,
-  filters,
-  setSortField,
-  setSortDirection,
-  setFilters
-}) => {
+                                isOpen,
+                                onClose,
+                                sortField,
+                                sortDirection,
+                                filters,
+                                setSortField,
+                                setSortDirection,
+                                setFilters
+                              }) => {
   // Reset sort options
   const handleResetSort = () => {
     setSortField('time');
@@ -45,6 +46,10 @@ const RequestListSidePanel = ({
       }
     }));
   };
+
+  // Define options for HTTP methods and status codes.
+  const methodOptions = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'];
+  const statusCodeOptions = ['200', '201', '204', '301', '302', '400', '401', '403', '404', '500', '502', '503'];
 
   return (
     <>
@@ -226,32 +231,23 @@ const RequestListSidePanel = ({
               {/* Status Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <input
-                  type="number"
-                  placeholder="e.g. 200"
-                  value={filters.status || ''}
-                  onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                <TagsInput
+                  options={statusCodeOptions}
+                  selected={filters.statusCodes || []}
+                  onChange={(codes) => setFilters((prev) => ({ ...prev, statusCodes: codes }))}
+                  placeholder="Add status code..."
                 />
               </div>
 
               {/* Method Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Method</label>
-                <select
-                  value={filters.method || ''}
-                  onChange={(e) => setFilters((prev) => ({ ...prev, method: e.target.value }))}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                  <option value="">Any</option>
-                  <option value="GET">GET</option>
-                  <option value="POST">POST</option>
-                  <option value="PUT">PUT</option>
-                  <option value="PATCH">PATCH</option>
-                  <option value="DELETE">DELETE</option>
-                  <option value="OPTIONS">OPTIONS</option>
-                  <option value="HEAD">HEAD</option>
-                </select>
+                <TagsInput
+                  options={methodOptions}
+                  selected={filters.method || []}
+                  onChange={(methods) => setFilters((prev) => ({ ...prev, method: methods }))}
+                  placeholder="Add method..."
+                />
               </div>
 
               {/* Path Filter */}
