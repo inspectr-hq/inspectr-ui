@@ -5,15 +5,15 @@ import { getStatusClass } from '../utils/getStatusClass.js';
 import { getMethodTagClass } from '../utils/getMethodClass.js';
 
 const RequestListSidePanel = ({
-                                isOpen,
-                                onClose,
-                                sortField,
-                                sortDirection,
-                                filters,
-                                setSortField,
-                                setSortDirection,
-                                setFilters
-                              }) => {
+  isOpen,
+  onClose,
+  sortField,
+  sortDirection,
+  filters,
+  setSortField,
+  setSortDirection,
+  setFilters
+}) => {
   // Reset sort options
   const handleResetSort = () => {
     setSortField('time');
@@ -51,7 +51,20 @@ const RequestListSidePanel = ({
 
   // Define options for HTTP methods and status codes.
   const methodOptions = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'];
-  const statusCodeOptions = ['200', '201', '204', '301', '302', '400', '401', '403', '404', '500', '502', '503'];
+  const statusCodeOptions = [
+    '200',
+    '201',
+    '204',
+    '301',
+    '302',
+    '400',
+    '401',
+    '403',
+    '404',
+    '500',
+    '502',
+    '503'
+  ];
 
   return (
     <>

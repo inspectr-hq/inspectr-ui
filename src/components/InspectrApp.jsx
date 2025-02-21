@@ -6,11 +6,17 @@ import RequestDetailsPanel from './RequestDetailsPanel';
 import SettingsPanel from './SettingsPanel';
 import eventDB from '../utils/eventDB';
 
-const InspectrApp = ({ sseEndpoint: initialSseEndpoint = '/api/sse' }) => {
+const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [currentTab, setCurrentTab] = useState('request');
-  const [sseEndpoint, setSseEndpoint] = useState(initialSseEndpoint);
+  const [apiEndpoint, setApiEndpoint] = useState(initialApiEndpoint);
   const [isConnected, setIsConnected] = useState(false);
+
+  // Registration details state.
+  const [sseEndpoint, setSseEndpoint] = useState(''); // Will be set after registration.
+  const [accessCode, setAccessCode] = useState('');
+  const [channel, setChannel] = useState('');
+  const [token, setToken] = useState('');
 
   const pageSize = 100;
   const [page, setPage] = useState(1);
@@ -37,17 +43,63 @@ const InspectrApp = ({ sseEndpoint: initialSseEndpoint = '/api/sse' }) => {
   // Ensure localStorage is only accessed on the client.
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const storedSseEndpoint = localStorage.getItem('sseEndpoint');
-      if (!sseEndpoint && storedSseEndpoint) {
-        setSseEndpoint(storedSseEndpoint);
+      const storedApiEndpoint = localStorage.getItem('apiEndpoint');
+      if (!apiEndpoint && storedApiEndpoint) {
+        setApiEndpoint(storedApiEndpoint);
+      }
+      const storedAccessCode = localStorage.getItem('accessCode');
+      if (storedAccessCode) {
+        setAccessCode(storedAccessCode);
+      }
+      const storedChannel = localStorage.getItem('channel');
+      if (storedChannel) {
+        setChannel(storedChannel);
       }
     }
-  }, [sseEndpoint]);
+  }, [apiEndpoint]);
+
+  // Registration handler.
+  const handleRegister = async () => {
+    try {
+      const response = await fetch(`${apiEndpoint}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ accessCode, channel })
+      });
+      const result = await response.json();
+      if (result?.token && result?.sse_endpoint && result?.access_code) {
+        setAccessCode(result.access_code);
+        localStorage.setItem('accessCode', result.access_code);
+        setChannel(result.channel);
+        localStorage.setItem('channel', result.channel);
+        setToken(result.token);
+        localStorage.setItem('token', result.token);
+        if (result.sse_endpoint) {
+          setSseEndpoint(result.sse_endpoint);
+          localStorage.setItem('sseEndpoint', result.sse_endpoint);
+        }
+        console.log('Registration successful');
+      } else {
+        console.error('Registration failed:');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+    }
+  };
+
+  // Automatically trigger registration when a channel is present and token is not yet set.
+  useEffect(() => {
+    if (!channel && !token) {
+      handleRegister();
+    }
+  }, [channel, token]);
 
   // Connect to SSE when the component mounts.
   useEffect(() => {
+    if (!sseEndpoint) return;
     const generateId = () => `req-${Math.random().toString(36).substr(2, 9)}`;
-
     const eventSource = new EventSource(sseEndpoint);
     console.log(`Inspectr EventSource created with URL: ${sseEndpoint}`);
 
@@ -159,9 +211,14 @@ const InspectrApp = ({ sseEndpoint: initialSseEndpoint = '/api/sse' }) => {
       </div>
       {/* Bottom Panel */}
       <SettingsPanel
-        sseEndpoint={sseEndpoint}
-        setSseEndpoint={setSseEndpoint}
+        apiEndpoint={apiEndpoint}
+        setApiEndpoint={setApiEndpoint}
         isConnected={isConnected}
+        accessCode={accessCode}
+        setAccessCode={setAccessCode}
+        channel={channel}
+        setChannel={setChannel}
+        onRegister={handleRegister}
       />
     </div>
   );

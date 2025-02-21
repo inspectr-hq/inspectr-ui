@@ -2,27 +2,59 @@
 import React, { useState, useEffect } from 'react';
 import logo from '../assets/inspectr_logo_small.png';
 
-const SettingsPanel = ({ sseEndpoint, setSseEndpoint, isConnected }) => {
+const SettingsPanel = ({
+  apiEndpoint,
+  setApiEndpoint,
+  isConnected,
+  accessCode,
+  setAccessCode,
+  channel,
+  setChannel,
+  onRegister
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [inputValue, setInputValue] = useState(sseEndpoint);
+  const [endpointInput, setEndpointInput] = useState(apiEndpoint);
+  const [accessCodeInput, setAccessCodeInput] = useState(accessCode);
+  const [channelInput, setChannelInput] = useState(channel);
 
   // Load stored value on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const storedEndpoint = localStorage.getItem('sseEndpoint');
-      if (!sseEndpoint && storedEndpoint) {
-        setInputValue(storedEndpoint);
-        setSseEndpoint(storedEndpoint);
+      const storedApiEndpoint = localStorage.getItem('apiEndpoint');
+      const defaultEndpoint = storedApiEndpoint || window.location.origin + '/api';
+      setEndpointInput(defaultEndpoint);
+      setApiEndpoint(defaultEndpoint);
+
+      const storedAccessCode = localStorage.getItem('accessCode');
+      if (storedAccessCode) {
+        setAccessCodeInput(storedAccessCode);
+        setAccessCode(storedAccessCode);
+      }
+      const storedChannel = localStorage.getItem('channel');
+      if (storedChannel) {
+        setChannelInput(storedChannel);
+        setChannel(storedChannel);
       }
     }
-  }, [sseEndpoint, setSseEndpoint]);
+  }, [setApiEndpoint, setAccessCode, setChannel]);
 
-  const handleSave = () => {
+  // Save API Endpoint configuration.
+  const handleSaveEndpoint = () => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('sseEndpoint', inputValue);
+      localStorage.setItem('apiEndpoint', endpointInput);
     }
-    setSseEndpoint(inputValue);
-    setIsOpen(false);
+    setApiEndpoint(endpointInput);
+  };
+
+  // Save registration details and trigger the registration process.
+  const handleRegister = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('accessCode', accessCodeInput);
+      localStorage.setItem('channel', channelInput);
+    }
+    setAccessCode(accessCodeInput);
+    setChannel(channelInput);
+    onRegister();
   };
 
   return (
@@ -62,37 +94,61 @@ const SettingsPanel = ({ sseEndpoint, setSseEndpoint, isConnected }) => {
       {/* Configuration Panel */}
       <div
         className={`bg-gray-100 border-t border-gray-300 transition-all duration-300 overflow-hidden ${
-          isOpen ? 'max-h-40 opacity-100 py-4' : 'max-h-0 opacity-0 py-0'
+          isOpen ? 'max-h-96 opacity-100 py-4' : 'max-h-0 opacity-0 py-0'
         }`}
       >
         <div className="px-6">
-          {/* Title */}
-
-          {/* Two-column Layout */}
-          <div className="grid grid-cols-2 gap-4 items-center">
-            {/* Left Column (Empty for now) */}
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Configuration</h2>
+          <div className="grid grid-cols-3 gap-6">
+            {/* Column 1: API Endpoint */}
             <div>
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Configuration</h2>
-            </div>
-
-            {/* Right Column (Label + Input in the same row) */}
-            <div className="flex items-center gap-2">
-              <label className="text-gray-700 font-semibold whitespace-nowrap">SSE Endpoint:</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Inspectr API Endpoint
+              </label>
               <input
                 type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                className="border p-2 rounded flex-1 bg-white"
-                placeholder="Enter SSE Endpoint..."
+                placeholder="Enter API Endpoint..."
+                value={endpointInput}
+                onChange={(e) => setEndpointInput(e.target.value)}
+                className="w-full border bg-white border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+              <button
+                onClick={handleSaveEndpoint}
+                className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-md"
+              >
+                Save
+              </button>
+            </div>
+
+            {/* Column 2: Access Code */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Channel</label>
+              <input
+                type="text"
+                placeholder="Enter Channel..."
+                value={channelInput}
+                onChange={(e) => setChannelInput(e.target.value)}
+                className="w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+              <button
+                onClick={handleRegister}
+                className="mt-2 bg-green-600 text-white px-4 py-2 rounded-md"
+              >
+                Register
+              </button>
+            </div>
+
+            {/* Column 3: Channel */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Access Code</label>
+              <input
+                type="text"
+                placeholder="Enter Access Code..."
+                value={accessCodeInput}
+                onChange={(e) => setAccessCodeInput(e.target.value)}
+                className="w-full border bg-white border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               />
             </div>
-          </div>
-
-          {/* Apply Button */}
-          <div className="flex justify-end mt-4">
-            <button onClick={handleSave} className="bg-green-600 text-white px-4 py-2 rounded-md">
-              Apply
-            </button>
           </div>
         </div>
       </div>
