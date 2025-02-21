@@ -149,10 +149,10 @@ const RequestContent = ({ request }) => {
           <div className="p-0">
             <table className="table-fixed w-full border-collapse border border-gray-300">
               <thead>
-              <tr className="bg-gray-100">
-                <th className="border border-slate-200 px-2 py-1 w-1/4 text-left">Key</th>
-                <th className="border border-slate-200 px-2 py-1 text-left">Value</th>
-              </tr>
+                <tr className="bg-gray-100">
+                  <th className="border border-slate-200 px-2 py-1 w-1/4 text-left">Key</th>
+                  <th className="border border-slate-200 px-2 py-1 text-left">Value</th>
+                </tr>
               </thead>
               <tbody>{renderTableRows(request.request.queryParams)}</tbody>
             </table>
@@ -172,10 +172,10 @@ const RequestContent = ({ request }) => {
           <div className="p-0">
             <table className="table-fixed w-full border-collapse border border-gray-300">
               <thead>
-              <tr className="bg-gray-100">
-                <th className="border border-slate-200 px-2 py-1 w-1/4 text-left">Header</th>
-                <th className="border border-slate-200 px-2 py-1 text-left">Value</th>
-              </tr>
+                <tr className="bg-gray-100">
+                  <th className="border border-slate-200 px-2 py-1 w-1/4 text-left">Header</th>
+                  <th className="border border-slate-200 px-2 py-1 text-left">Value</th>
+                </tr>
               </thead>
               <tbody>{renderTableRows(request.request.headers)}</tbody>
             </table>
