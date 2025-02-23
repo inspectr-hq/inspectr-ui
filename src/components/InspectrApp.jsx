@@ -5,6 +5,7 @@ import RequestList from './RequestList';
 import RequestDetailsPanel from './RequestDetailsPanel';
 import SettingsPanel from './SettingsPanel';
 import eventDB from '../utils/eventDB';
+import ToastNotification from './ToastNotification.jsx';
 
 const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -13,10 +14,15 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const [isConnected, setIsConnected] = useState(false);
 
   // Registration details state.
-  const [sseEndpoint, setSseEndpoint] = useState(''); // Will be set after registration.
+  const [sseEndpoint, setSseEndpoint] = useState('');
   const [accessCode, setAccessCode] = useState('');
   const [channel, setChannel] = useState('');
   const [token, setToken] = useState('');
+
+  // Track when localStorage is fully loaded
+  const [localStorageLoaded, setLocalStorageLoaded] = useState(false);
+
+  const [toast, setToast] = useState(null);
 
   const pageSize = 100;
   const [page, setPage] = useState(1);
@@ -40,34 +46,39 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const totalCount = useLiveQuery(() => eventDB.db.events.count(), []);
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
 
-  // Ensure localStorage is only accessed on the client.
+  // Load from localStorage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedApiEndpoint = localStorage.getItem('apiEndpoint');
       if (!apiEndpoint && storedApiEndpoint) {
         setApiEndpoint(storedApiEndpoint);
       }
-      const storedAccessCode = localStorage.getItem('accessCode');
-      if (storedAccessCode) {
-        setAccessCode(storedAccessCode);
-      }
-      const storedChannel = localStorage.getItem('channel');
-      if (storedChannel) {
-        setChannel(storedChannel);
-      }
+      setAccessCode(localStorage.getItem('accessCode') || '');
+      setChannel(localStorage.getItem('channel') || '');
     }
+    setLocalStorageLoaded(true);
   }, [apiEndpoint]);
 
   // Registration handler.
-  const handleRegister = async () => {
+  const handleRegister = async (
+    newAccessCode = accessCode,
+    newChannel = channel,
+    showNotification
+  ) => {
     try {
+      // Construct request body
+      const requestBody =
+        newAccessCode && newChannel ? { channel: newChannel, access_code: newAccessCode } : {};
+
       const response = await fetch(`${apiEndpoint}/register`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-inspectr-client': 'inspectr-app'
         },
-        body: JSON.stringify({ accessCode, channel })
+        body: JSON.stringify(requestBody)
       });
+
       const result = await response.json();
       if (result?.token && result?.sse_endpoint && result?.access_code) {
         setAccessCode(result.access_code);
@@ -80,21 +91,45 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
           setSseEndpoint(result.sse_endpoint);
           localStorage.setItem('sseEndpoint', result.sse_endpoint);
         }
+
+        if (showNotification) {
+          setToast({
+            message: 'Registration Successful',
+            subMessage: 'Your channel and access code have been registered.'
+          });
+        }
+
         console.log('Registration successful');
       } else {
-        console.error('Registration failed:');
+        console.log('Registration failed:');
+        setToast({
+          message: 'Registration Failed',
+          subMessage: 'Please check your channel and access code.',
+          type: 'error'
+        });
       }
     } catch (error) {
       console.error('Registration error:', error);
+      setToast({
+        message: 'Registration Error',
+        subMessage: error.message || 'An error occurred during registration.',
+        type: 'error'
+      });
     }
   };
 
   // Automatically trigger registration when a channel is present and token is not yet set.
   useEffect(() => {
-    if (!channel && !token) {
-      handleRegister();
+    if (localStorageLoaded) {
+      if (channel && accessCode) {
+        console.log('Automatically trigger reregistration', channel, accessCode);
+        handleRegister(accessCode, channel);
+      } else {
+        console.log('Automatically trigger new registration');
+        handleRegister();
+      }
     }
-  }, [channel, token]);
+  }, [localStorageLoaded, channel, accessCode]);
 
   // Connect to SSE when the component mounts.
   useEffect(() => {
@@ -220,6 +255,14 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         setChannel={setChannel}
         onRegister={handleRegister}
       />
+      {toast && (
+        <ToastNotification
+          message={toast.message}
+          subMessage={toast.subMessage}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

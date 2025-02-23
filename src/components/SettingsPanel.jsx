@@ -3,40 +3,36 @@ import React, { useState, useEffect } from 'react';
 import logo from '../assets/inspectr_logo_small.png';
 
 const SettingsPanel = ({
-  apiEndpoint,
-  setApiEndpoint,
-  isConnected,
-  accessCode,
-  setAccessCode,
-  channel,
-  setChannel,
-  onRegister
-}) => {
+                         apiEndpoint,
+                         setApiEndpoint,
+                         isConnected,
+                         accessCode,
+                         setAccessCode,
+                         channel,
+                         setChannel,
+                         onRegister
+                       }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [endpointInput, setEndpointInput] = useState(apiEndpoint);
   const [accessCodeInput, setAccessCodeInput] = useState(accessCode);
   const [channelInput, setChannelInput] = useState(channel);
 
-  // Load stored value on mount
+  // Sync input fields with props when they change
+  useEffect(() => {
+    setEndpointInput(apiEndpoint);
+    setAccessCodeInput(accessCode);
+    setChannelInput(channel);
+  }, [apiEndpoint, accessCode, channel]);
+
+  // Load stored values on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedApiEndpoint = localStorage.getItem('apiEndpoint');
       const defaultEndpoint = storedApiEndpoint || window.location.origin + '/api';
       setEndpointInput(defaultEndpoint);
       setApiEndpoint(defaultEndpoint);
-
-      const storedAccessCode = localStorage.getItem('accessCode');
-      if (storedAccessCode) {
-        setAccessCodeInput(storedAccessCode);
-        setAccessCode(storedAccessCode);
-      }
-      const storedChannel = localStorage.getItem('channel');
-      if (storedChannel) {
-        setChannelInput(storedChannel);
-        setChannel(storedChannel);
-      }
     }
-  }, [setApiEndpoint, setAccessCode, setChannel]);
+  }, [setApiEndpoint]);
 
   // Save API Endpoint configuration.
   const handleSaveEndpoint = () => {
@@ -54,7 +50,7 @@ const SettingsPanel = ({
     }
     setAccessCode(accessCodeInput);
     setChannel(channelInput);
-    onRegister();
+    onRegister(accessCodeInput, channelInput, true);
   };
 
   return (
