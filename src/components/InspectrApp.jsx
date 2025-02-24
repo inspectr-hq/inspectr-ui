@@ -95,7 +95,6 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
    */
   useEffect(() => {
     if (!isInitialized) return;
-
     console.log('🔄 Auto-registering with stored credentials:', channel, accessCode);
 
     if (channel && accessCode) {

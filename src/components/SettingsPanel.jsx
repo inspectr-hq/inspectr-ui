@@ -3,15 +3,15 @@ import React, { useState, useEffect } from 'react';
 import logo from '../assets/inspectr_logo_small.png';
 
 const SettingsPanel = ({
-                         apiEndpoint,
-                         setApiEndpoint,
-                         isConnected,
-                         accessCode,
-                         setAccessCode,
-                         channel,
-                         setChannel,
-                         onRegister
-                       }) => {
+  apiEndpoint,
+  setApiEndpoint,
+  isConnected,
+  accessCode,
+  setAccessCode,
+  channel,
+  setChannel,
+  onRegister
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [endpointInput, setEndpointInput] = useState(apiEndpoint);
   const [accessCodeInput, setAccessCodeInput] = useState(accessCode);

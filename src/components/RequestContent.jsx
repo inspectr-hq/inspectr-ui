@@ -68,7 +68,7 @@ const RequestContent = ({ request }) => {
             {isJWT(value) && (
               <button
                 onClick={() => handleDecodeJWT(value)}
-                className="ml-2 text-blue-500 text-xs border border-slate-600 rounded cursor-pointer"
+                className="ml-2 p-1 text-blue-500 text-xs border border-slate-600 rounded cursor-pointer"
               >
                 <svg className="w-4 h-4" viewBox="0 0 48 48">
                   <polygon

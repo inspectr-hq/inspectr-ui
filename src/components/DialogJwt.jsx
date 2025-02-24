@@ -16,6 +16,10 @@ const DialogJwt = ({ open, onClose, decoded }) => {
       });
   };
 
+  const formatTimestamp = (timestamp) => {
+    return timestamp ? new Date(timestamp * 1000).toLocaleString() : 'N/A';
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
@@ -103,6 +107,19 @@ const DialogJwt = ({ open, onClose, decoded }) => {
           <pre className="bg-gray-100 p-2 rounded text-xs text-gray-700 overflow-x-auto">
             {JSON.stringify(decoded, null, 2)}
           </pre>
+          {decoded && (
+            <div className="mt-2 text-sm text-gray-600">
+              {decoded?.payload?.iat && (
+                <p>Issued At (iat): {formatTimestamp(decoded.payload.iat)}</p>
+              )}
+              {decoded?.payload?.nbf && (
+                <p>Not Before (nbf): {formatTimestamp(decoded.payload.nbf)}</p>
+              )}
+              {decoded?.payload?.exp && (
+                <p>Expires At (exp): {formatTimestamp(decoded.payload.exp)}</p>
+              )}
+            </div>
+          )}
         </div>
         <div className="mt-6 flex justify-end">
           <button
