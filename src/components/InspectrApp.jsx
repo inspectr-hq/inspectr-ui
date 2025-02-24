@@ -7,6 +7,8 @@ import SettingsPanel from './SettingsPanel';
 import eventDB from '../utils/eventDB';
 import ToastNotification from './ToastNotification.jsx';
 
+const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+
 const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [currentTab, setCurrentTab] = useState('request');
@@ -19,8 +21,8 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const [channel, setChannel] = useState('');
   const [token, setToken] = useState('');
 
-  // Track when localStorage is fully loaded
-  const [localStorageLoaded, setLocalStorageLoaded] = useState(false);
+  // Track initialization state
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const [toast, setToast] = useState(null);
 
@@ -46,29 +48,80 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const totalCount = useLiveQuery(() => eventDB.db.events.count(), []);
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
 
-  // Load from localStorage on mount
+  /**
+   * 🏁 Step 1: Load credentials from localStorage on mount
+   */
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedApiEndpoint = localStorage.getItem('apiEndpoint');
-      if (!apiEndpoint && storedApiEndpoint) {
-        setApiEndpoint(storedApiEndpoint);
-      }
-      setAccessCode(localStorage.getItem('accessCode') || '');
-      setChannel(localStorage.getItem('channel') || '');
+    if (typeof window === 'undefined') return;
+
+    const storedAccessCode = localStorage.getItem('accessCode');
+    const storedChannel = localStorage.getItem('channel');
+    const storedToken = localStorage.getItem('token');
+
+    if (storedAccessCode && storedChannel && storedToken) {
+      console.log('✅ Using stored credentials from localStorage');
+      setAccessCode(storedAccessCode);
+      setChannel(storedChannel);
+      setToken(storedToken);
+    } else if (isLocalhost) {
+      console.log('🔄 Fetching /app/config (Localhost, No credentials found)');
+      fetch('/app/config')
+        .then((res) => res.json())
+        .then((result) => {
+          if (result?.token && result?.sse_endpoint && result?.access_code) {
+            console.log('✅ Loaded from /app/config:', result);
+
+            setAccessCode(result.access_code);
+            localStorage.setItem('accessCode', result.access_code);
+
+            setChannel(result.channel);
+            localStorage.setItem('channel', result.channel);
+
+            setToken(result.token);
+            localStorage.setItem('token', result.token);
+
+            setSseEndpoint(result.sse_endpoint);
+            localStorage.setItem('sseEndpoint', result.sse_endpoint);
+          }
+        })
+        .catch((err) => console.error('❌ Failed to load /app/config:', err));
     }
-    setLocalStorageLoaded(true);
-  }, [apiEndpoint]);
+
+    setIsInitialized(true);
+  }, []);
+
+  /**
+   * 🏁 Step 2: When `isInitialized` is true, register using stored credentials
+   */
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    console.log('🔄 Auto-registering with stored credentials:', channel, accessCode);
+
+    if (channel && accessCode) {
+      handleRegister(accessCode, channel);
+    } else {
+      console.log('⚠️ Missing credentials for auto-registration, skipping.');
+    }
+  }, [isInitialized, channel, accessCode]);
 
   // Registration handler.
   const handleRegister = async (
     newAccessCode = accessCode,
     newChannel = channel,
+    newToken = token,
     showNotification
   ) => {
     try {
       // Construct request body
-      const requestBody =
-        newAccessCode && newChannel ? { channel: newChannel, access_code: newAccessCode } : {};
+      let requestBody = {};
+      if (newAccessCode && newChannel) {
+        requestBody = { channel: newChannel, access_code: newAccessCode };
+      } else if (newToken) {
+        requestBody = { token: newToken };
+      }
+
+      console.log('📤 Registering with:', requestBody);
 
       const response = await fetch(`${apiEndpoint}/register`, {
         method: 'POST',
@@ -80,17 +133,21 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
       });
 
       const result = await response.json();
+
       if (result?.token && result?.sse_endpoint && result?.access_code) {
+        console.log('✅ Registration successful');
+
         setAccessCode(result.access_code);
         localStorage.setItem('accessCode', result.access_code);
+
         setChannel(result.channel);
         localStorage.setItem('channel', result.channel);
+
         setToken(result.token);
         localStorage.setItem('token', result.token);
-        if (result.sse_endpoint) {
-          setSseEndpoint(result.sse_endpoint);
-          localStorage.setItem('sseEndpoint', result.sse_endpoint);
-        }
+
+        setSseEndpoint(result.sse_endpoint);
+        localStorage.setItem('sseEndpoint', result.sse_endpoint);
 
         if (showNotification) {
           setToast({
@@ -98,10 +155,8 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
             subMessage: 'Your channel and access code have been registered.'
           });
         }
-
-        console.log('Registration successful');
       } else {
-        console.log('Registration failed:');
+        console.error('❌ Registration failed:', result);
         setToast({
           message: 'Registration Failed',
           subMessage: 'Please check your channel and access code.',
@@ -109,7 +164,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         });
       }
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('❌ Registration error:', error);
       setToast({
         message: 'Registration Error',
         subMessage: error.message || 'An error occurred during registration.',
@@ -119,17 +174,17 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   };
 
   // Automatically trigger registration when a channel is present and token is not yet set.
-  useEffect(() => {
-    if (localStorageLoaded) {
-      if (channel && accessCode) {
-        console.log('Automatically trigger reregistration', channel, accessCode);
-        handleRegister(accessCode, channel);
-      } else {
-        console.log('Automatically trigger new registration');
-        handleRegister();
-      }
-    }
-  }, [localStorageLoaded, channel, accessCode]);
+  // useEffect(() => {
+  //   if (localStorageLoaded) {
+  //     if (channel && accessCode) {
+  //       console.log('Automatically trigger reregistration', channel, accessCode);
+  //       handleRegister(accessCode, channel);
+  //     } else {
+  //       console.log('Automatically trigger new registration');
+  //       handleRegister();
+  //     }
+  //   }
+  // }, [localStorageLoaded, channel, accessCode]);
 
   // Connect to SSE when the component mounts.
   useEffect(() => {
