@@ -54,37 +54,68 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const storedAccessCode = localStorage.getItem('accessCode');
-    const storedChannel = localStorage.getItem('channel');
-    const storedToken = localStorage.getItem('token');
+    // Read query parameters using URLSearchParams
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryAccessCode = urlParams.get('accessCode');
+    const queryChannel = urlParams.get('channel');
+    const queryToken = urlParams.get('token');
 
-    if (storedAccessCode && storedChannel && storedToken) {
-      console.log('✅ Using stored credentials from localStorage');
-      setAccessCode(storedAccessCode);
-      setChannel(storedChannel);
-      setToken(storedToken);
-    } else if (isLocalhost) {
-      console.log('🔄 Fetching /app/config (Localhost, No credentials found)');
-      fetch('/app/config')
-        .then((res) => res.json())
-        .then((result) => {
-          if (result?.token && result?.sse_endpoint && result?.access_code) {
-            console.log('✅ Loaded from /app/config:', result);
+    // Query parameters take precedence
+    if (queryAccessCode || queryChannel || queryToken) {
+      console.log('🔍 Found credentials in query params');
 
-            setAccessCode(result.access_code);
-            localStorage.setItem('accessCode', result.access_code);
+      if (queryAccessCode) {
+        setAccessCode(queryAccessCode);
+        localStorage.setItem('accessCode', queryAccessCode);
+      }
 
-            setChannel(result.channel);
-            localStorage.setItem('channel', result.channel);
+      if (queryChannel) {
+        setChannel(queryChannel);
+        localStorage.setItem('channel', queryChannel);
+      }
 
-            setToken(result.token);
-            localStorage.setItem('token', result.token);
+      if (queryToken) {
+        setToken(queryToken);
+        localStorage.setItem('token', queryToken);
+      }
 
-            setSseEndpoint(result.sse_endpoint);
-            localStorage.setItem('sseEndpoint', result.sse_endpoint);
-          }
-        })
-        .catch((err) => console.error('❌ Failed to load /app/config:', err));
+      // Update the URL without reloading the page
+      window.history.replaceState({}, '', `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`);
+    
+    } else {
+      // Otherwise, check localStorage
+      const storedAccessCode = localStorage.getItem('accessCode');
+      const storedChannel = localStorage.getItem('channel');
+      const storedToken = localStorage.getItem('token');
+
+      if (storedAccessCode && storedChannel && storedToken) {
+        console.log('✅ Using stored credentials from localStorage');
+        setAccessCode(storedAccessCode);
+        setChannel(storedChannel);
+        setToken(storedToken);
+      } else if (isLocalhost) {
+        console.log('🔄 Fetching /app/config (Localhost, No credentials found)');
+        fetch('/app/config')
+          .then((res) => res.json())
+          .then((result) => {
+            if (result?.token && result?.sse_endpoint && result?.access_code) {
+              console.log('✅ Loaded from /app/config:', result);
+
+              setAccessCode(result.access_code);
+              localStorage.setItem('accessCode', result.access_code);
+
+              setChannel(result.channel);
+              localStorage.setItem('channel', result.channel);
+
+              setToken(result.token);
+              localStorage.setItem('token', result.token);
+
+              setSseEndpoint(result.sse_endpoint);
+              localStorage.setItem('sseEndpoint', result.sse_endpoint);
+            }
+          })
+          .catch((err) => console.error('❌ Failed to load /app/config:', err));
+      }
     }
 
     setIsInitialized(true);
