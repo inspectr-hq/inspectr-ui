@@ -10,8 +10,7 @@ const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...',
   // Filter options based on input while excluding already selected items.
   const filteredOptions = options.filter(
     (option) =>
-      option.toLowerCase().includes(inputValue.toLowerCase()) &&
-      !selected.includes(option)
+      option.toLowerCase().includes(inputValue.toLowerCase()) && !selected.includes(option)
   );
 
   // Reset highlighted index when the filtered list changes.
@@ -27,7 +26,7 @@ const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...',
   };
 
   const removeTag = (tag) => {
-    onChange(selected.filter(item => item !== tag));
+    onChange(selected.filter((item) => item !== tag));
   };
 
   const handleKeyDown = (e) => {
@@ -71,11 +70,7 @@ const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...',
               className="ml-1 focus:outline-none cursor-pointer"
               aria-label={`Remove ${tag}`}
             >
-              <svg
-                className="w-3 h-3"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
                   d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414
@@ -100,8 +95,7 @@ const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...',
         />
       </div>
       {isFocused && filteredOptions.length > 0 && (
-        <ul
-          className="absolute left-0 right-0 border border-gray-300 mt-1 rounded-md shadow-lg bg-white max-h-40 overflow-y-auto z-10">
+        <ul className="absolute left-0 right-0 border border-gray-300 mt-1 rounded-md shadow-lg bg-white max-h-40 overflow-y-auto z-10">
           {filteredOptions.map((option, index) => (
             <li
               key={option}
