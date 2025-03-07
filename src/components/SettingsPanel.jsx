@@ -76,7 +76,7 @@ const SettingsPanel = ({
 
         {/* Inspectr Logo & Name */}
         <a
-          href="https://github.com/thim81/inspectr"
+          href="https://github.com/inspectr-hq/inspectr"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2"
