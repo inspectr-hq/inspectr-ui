@@ -10,7 +10,7 @@ import ToastNotification from './ToastNotification.jsx';
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 
 const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
-  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [selectedOperation, setSelectedOperation] = useState(null);
   const [currentTab, setCurrentTab] = useState('request');
   const [apiEndpoint, setApiEndpoint] = useState(initialApiEndpoint);
   const [isConnected, setIsConnected] = useState(false);
@@ -34,7 +34,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const [filters, setFilters] = useState({});
 
   // Live query: get the events for the current page.
-  const requests = useLiveQuery(() => {
+  const operations = useLiveQuery(() => {
     // console.log('[Inspectr] filters', filters);
     return eventDB.queryEvents({
       sort: { field: sortField, order: sortDirection },
@@ -230,13 +230,13 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
     eventSource.onmessage = (e) => {
       try {
-        const data = JSON.parse(e.data);
-        // console.log('[Inspectr] Received event:', data);
+        const event = JSON.parse(e.data);
+        console.log('[Inspectr] Received event:', event);
         // Update the list and, if it's the first event, select it.
-        if (!data.id) data.id = generateId();
+        if (!event.id) event.id = generateId();
 
         // Save the incoming event to the DB.
-        eventDB.upsertEvent(data).catch((err) => console.error('Error saving event to DB:', err));
+        eventDB.upsertEvent(event).catch((err) => console.error('Error saving event to DB:', err));
       } catch (error) {
         console.error('Error parsing SSE Inspectr data:', error);
       }
@@ -255,44 +255,44 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
     };
   }, [sseEndpoint]); // Run only once on mount
 
-  // If no request is selected but there are requests (e.g. historical items), select the first one.
+  // If no operation is selected but there are operations (e.g. historical items), select the first one.
   useEffect(() => {
-    if (!selectedRequest && requests && requests.length > 0) {
-      setSelectedRequest(requests[0]);
+    if (!selectedOperation && operations && operations.length > 0) {
+      setSelectedOperation(operations[0]);
     }
-  }, [requests, selectedRequest]);
+  }, [operations, selectedOperation]);
 
-  // Clear all requests.
-  const clearRequests = () => {
-    setSelectedRequest(null);
+  // Clear all operations.
+  const clearOperations = () => {
+    setSelectedOperation(null);
     eventDB.clearEvents().catch((err) => console.error('Error clearing events from DB:', err));
   };
 
-  // Clear only the requests matching the active filters.
-  const clearFilteredRequests = async () => {
+  // Clear only the operations matching the active filters.
+  const clearFilteredOperations = async () => {
     try {
-      // Query all filtered requests using a very high pageSize.
-      const filteredRequests = await eventDB.queryEvents({
+      // Query all filtered operations using a very high pageSize.
+      const filteredOperations = await eventDB.queryEvents({
         filters,
         sort: { field: 'time', order: 'desc' },
         page: 1,
         pageSize: Number.MAX_SAFE_INTEGER
       });
-      await Promise.all(filteredRequests.map((record) => eventDB.deleteEvent(record.id)));
-      if (selectedRequest && filteredRequests.some((record) => record.id === selectedRequest.id)) {
-        setSelectedRequest(null);
+      await Promise.all(filteredOperations.map((record) => eventDB.deleteEvent(record.id)));
+      if (selectedOperation && filteredOperations.some((record) => record.id === selectedOperation.id)) {
+        setSelectedOperation(null);
       }
     } catch (error) {
-      console.error('Error clearing filtered requests:', error);
+      console.error('Error clearing filtered operations:', error);
     }
   };
 
   // Remove a single request.
-  const removeRequest = (reqId) => {
-    if (selectedRequest && (selectedRequest.id || '') === reqId) {
-      setSelectedRequest(null);
+  const removeOperation = (opId) => {
+    if (selectedOperation && (selectedOperation.id || '') === opId) {
+      setSelectedOperation(null);
     }
-    eventDB.deleteEvent(reqId).catch((err) => console.error('Error deleting event from DB:', err));
+    eventDB.deleteEvent(opId).catch((err) => console.error('Error deleting event from DB:', err));
   };
 
   return (
@@ -301,12 +301,12 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         {/* Left Panel */}
         <div className="w-1/3 border-r border-gray-300 overflow-y-auto">
           <RequestList
-            requests={requests || []}
-            onSelect={setSelectedRequest}
-            onRemove={removeRequest}
-            clearRequests={clearRequests}
-            clearFilteredRequests={clearFilteredRequests}
-            selectedRequest={selectedRequest}
+            operations={operations || []}
+            onSelect={setSelectedOperation}
+            onRemove={removeOperation}
+            clearOperations={clearOperations}
+            clearFilteredOperations={clearFilteredOperations}
+            selectedOperation={selectedOperation}
             currentPage={page}
             totalPages={totalPages}
             totalCount={totalCount || 0}
@@ -323,7 +323,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         {/* Right Panel */}
         <div className="w-2/3 p-4">
           <RequestDetailsPanel
-            request={selectedRequest}
+            operation={selectedOperation}
             currentTab={currentTab}
             setCurrentTab={setCurrentTab}
           />

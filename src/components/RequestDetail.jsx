@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { getStatusClass } from '../utils/getStatusClass.js';
 import ToastNotification from './ToastNotification';
 
-const RequestDetail = ({ request }) => {
+const RequestDetail = ({ operation }) => {
   const [showToast, setShowToast] = useState(false);
   const [showUrlToast, setShowUrlToast] = useState(false);
   const [showReplayToast, setShowReplayToast] = useState(false);
@@ -29,19 +29,24 @@ const RequestDetail = ({ request }) => {
 
   // Generate a cURL command string from the request data
   const generateCurlCommand = () => {
-    const { method, url, request: req } = request;
+    if (!operation?.request) {
+      return
+    }
+    const { request } = operation; // Destructure the request object
+    const { method, url, headers, body } = request;
+
     let curlCommand = `curl -X ${method} '${url}'`;
 
     // Add headers
-    if (req.headers) {
-      Object.entries(req.headers).forEach(([key, value]) => {
-        curlCommand += ` -H '${key}: ${value}'`;
+    if (headers) {
+      headers.forEach((header) => {
+        curlCommand += ` -H '${header.name}: ${header.value}'`;
       });
     }
 
     // Add payload if it exists
-    if (req.payload) {
-      curlCommand += ` --data '${req.payload}'`;
+    if (body) {
+      curlCommand += ` --data '${body}'`;
     }
     return curlCommand;
   };
@@ -62,7 +67,7 @@ const RequestDetail = ({ request }) => {
   // Copy the URL to the clipboard
   const handleCopyUrl = () => {
     navigator.clipboard
-      .writeText(request.url)
+      .writeText(operation.request.url)
       .then(() => {
         setShowUrlToast(true);
       })
@@ -73,10 +78,12 @@ const RequestDetail = ({ request }) => {
 
   // POST the request event to /api/replay endpoint
   const handleReplay = () => {
+    const { meta, timing, response, ...opRequest } = operation;
+
     fetch('/api/replay', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request)
+      body: JSON.stringify(opRequest)
     })
       .then((response) => {
         if (!response.ok) {
@@ -144,20 +151,20 @@ const RequestDetail = ({ request }) => {
       </div>
       <div className="flex flex-col space-y-1">
         <div className="flex items-center space-x-2 font-mono text-lg">
-          <span className="font-bold">{request.method}</span>
-          <span className="text-blue-600">{request.path}</span>
+          <span className="font-bold">{operation?.request?.method}</span>
+          <span className="text-blue-600">{operation?.request?.path}</span>
           <span
             className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(
-              request?.response?.statusCode
+              operation?.response?.status
             )}`}
           >
-            {request?.response?.statusCode}
+            {operation?.response?.status}
           </span>
-          <span className="text-sm">{request.response.statusMessage}</span>
+          <span className="text-sm">{operation?.response?.status_text}</span>
         </div>
         <div className="flex items-center text-gray-600">
           <span onClick={handleCopyUrl} className="cursor-pointer">
-            {request.url}
+            {operation?.request?.url}
           </span>
           <button onClick={handleCopyUrl} className="cursor-pointer">
             <svg
@@ -175,7 +182,7 @@ const RequestDetail = ({ request }) => {
           </button>
         </div>
         <div className="text-gray-500 text-xs">
-          Received on {formatTimestamp(request.request.timestamp)} • Took {request.latency}ms to
+          Received on {formatTimestamp(operation?.request?.timestamp)} • Took {operation?.timing?.duration}ms to
           respond
         </div>
       </div>

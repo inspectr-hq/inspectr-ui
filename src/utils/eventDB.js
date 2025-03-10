@@ -17,13 +17,14 @@ class EventDB {
     return {
       id,
       time,
-      method: data.method,
-      url: data.url,
-      server: data.server,
-      path: data.path,
-      clientIp: data.clientIp,
-      latency: data.latency,
-      statusCode: data.response?.statusCode,
+      operation_id: data.operation_id,
+      method: data.request.method,
+      url: data.request.url,
+      server: data.request.server,
+      path: data.request.path,
+      clientIp: data.request.client_ip,
+      latency: data.timing.duration,
+      statusCode: data.response?.status,
       raw: event
     };
   }
@@ -127,31 +128,31 @@ class EventDB {
     // --- Filter on Status Code ---
     if (filters.status && Array.isArray(filters.status) && filters.status.length > 0) {
       collection = collection.filter(item =>
-        filters.status.includes(String(item.statusCode))
+        filters.status.includes(String(item.response.status))
       );
     }
     // --- Filter on HTTP Method ---
     if (filters.method && Array.isArray(filters.method) && filters.method.length > 0) {
       const selectedMethods = filters.method.map(method => method.toLowerCase());
       collection = collection.filter(item =>
-        selectedMethods.includes(item.method.toLowerCase())
+        selectedMethods.includes(item.request.method.toLowerCase())
       );
     }
     // --- Filter on Path ---
     if (filters.path) {
       // Partial match search on path.
-      collection = collection.filter(item => item.path.includes(filters.path));
+      collection = collection.filter(item => item.request.path.includes(filters.path));
     }
     // --- Filter on Duration ---
     if (filters.durationMin) {
-      collection = collection.filter(item => Number(item.latency) >= Number(filters.durationMin));
+      collection = collection.filter(item => Number(item.timing.duration) >= Number(filters.durationMin));
     }
     if (filters.durationMax) {
-      collection = collection.filter(item => Number(item.latency) <= Number(filters.durationMax));
+      collection = collection.filter(item => Number(item.timing.duration) <= Number(filters.durationMax));
     }
     // --- Filter on Host ---
     if (filters.host) {
-      collection = collection.filter(item => item.server.toLowerCase().includes(filters.host.toLowerCase()));
+      collection = collection.filter(item => item.request.server.toLowerCase().includes(filters.host.toLowerCase()));
     }
 
     // --- Sorting ---

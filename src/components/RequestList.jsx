@@ -6,12 +6,12 @@ import RequestListPagination from './RequestListPagination';
 import DialogConfirmClear from './DialogConfirmClear.jsx';
 
 const RequestList = ({
-  requests,
+  operations,
   onSelect,
   onRemove,
-  clearRequests,
+  clearOperations,
   clearFilteredRequests,
-  selectedRequest,
+  selectedOperation,
   currentPage,
   totalPages,
   totalCount,
@@ -44,7 +44,7 @@ const RequestList = ({
     <div className="flex flex-col h-full relative">
       <div className="p-4 flex justify-between items-center">
         <span className="font-bold text-xl">
-          Requests ({requests.length} of {totalCount})
+          Requests ({operations.length} of {totalCount})
         </span>
         <div className="space-x-2 relative">
           {/* Button to open the side panel */}
@@ -110,16 +110,16 @@ const RequestList = ({
         className="overflow-y-auto flex-grow"
         style={{ maxHeight: 'calc(100vh - 40px - 100px - 49px)' }}
       >
-        {requests.map((req, index) => {
-          const reqId = req.id || index;
+        {operations.map((op, index) => {
+          const opId = op.id || index;
           return (
             <RequestListItem
-              key={reqId}
-              reqId={reqId}
-              request={req}
+              key={opId}
+              opId={opId}
+              operation={op}
               onSelect={onSelect}
               onRemove={onRemove}
-              selected={selectedRequest && selectedRequest.id === reqId}
+              selected={selectedOperation && selectedOperation.id === opId}
             />
           );
         })}
@@ -148,7 +148,7 @@ const RequestList = ({
       <DialogConfirmClear
         open={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
-        onConfirmAll={clearRequests}
+        onConfirmAll={clearOperations}
         onConfirmFiltered={clearFilteredRequests}
         hasFilters={activeFiltersCount > 0}
       />

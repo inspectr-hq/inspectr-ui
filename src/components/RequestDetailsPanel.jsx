@@ -4,14 +4,14 @@ import RequestDetail from './RequestDetail';
 import RequestContent from './RequestContent';
 import ResponseContent from './ResponseContent';
 
-const RequestDetailsPanel = ({ request, currentTab, setCurrentTab }) => {
-  if (!request) {
+const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
+  if (!operation) {
     return <div className="text-gray-500">No request selected.</div>;
   }
 
   return (
     <div>
-      <RequestDetail request={request} />
+      <RequestDetail operation={operation} />
 
       {/* Tabs for Request and Response */}
       <div className="flex space-x-2">
@@ -36,9 +36,9 @@ const RequestDetailsPanel = ({ request, currentTab, setCurrentTab }) => {
       {/* Tab Content */}
       <div className="p-4 bg-white rounded-b shadow">
         {currentTab === 'request' ? (
-          <RequestContent request={request} />
+          <RequestContent operation={operation} />
         ) : (
-          <ResponseContent request={request} />
+          <ResponseContent operation={operation} />
         )}
       </div>
     </div>
