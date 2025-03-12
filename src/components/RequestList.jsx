@@ -102,7 +102,8 @@ const RequestList = ({
         <div className="w-16 text-center">Status</div>
         <div className="w-20 text-center">Method</div>
         <div className="flex-grow text-left">Path</div>
-        <div className="w-20 text-center">Duration</div>
+        <div className="w-20 text-left">Timestamp</div>
+        <div className="w-16 text-right">Duration</div>
         <div className="w-10"></div>
       </div>
 

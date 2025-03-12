@@ -4,9 +4,26 @@ import { getStatusClass } from '../utils/getStatusClass.js';
 
 const selectedClass = ['bg-blue-100', 'border-l-4', 'border-blue-700'].join(' ');
 
+
 const RequestListItem = ({ operation, opId, onSelect, onRemove, selected }) => {
   const handleSelect = (operation) => {
     onSelect(operation);
+  };
+
+  const formatDate = (timestamp) => {
+    const date = new Date(timestamp);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
   };
 
   return (
@@ -28,7 +45,15 @@ const RequestListItem = ({ operation, opId, onSelect, onRemove, selected }) => {
         </div>
         <div className={`w-20 text-center font-medium`}>{operation?.request?.method || 'GET'}</div>
         <div className="flex-grow truncate text-left">{operation?.request.path || operation?.request.url}</div>
-        <div className="w-20 text-gray-500 text-center">{operation?.timing?.duration}ms</div>
+        <div className="flex flex-col text-left">
+          <div className="w-20 text-gray-500 text-xs font-bold">
+            {operation?.request?.timestamp ? formatDate(operation.request.timestamp) : 'N/A'}
+          </div>
+          <div className="w-20 text-gray-500 text-xs">
+            {operation?.request?.timestamp ? formatTime(operation.request.timestamp) : 'N/A'}
+          </div>
+        </div>
+        <div className="w-16 text-gray-500 text-center text-xs">{operation?.timing?.duration}ms</div>
         <button
           className="w-8 h-8 flex items-center justify-center cursor-pointer text-red-500 hover:text-red-700"
           onClick={(e) => {

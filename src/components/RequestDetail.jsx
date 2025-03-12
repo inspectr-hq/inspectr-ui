@@ -182,8 +182,7 @@ const RequestDetail = ({ operation }) => {
           </button>
         </div>
         <div className="text-gray-500 text-xs">
-          Received on {formatTimestamp(operation?.request?.timestamp)} • Took {operation?.timing?.duration}ms to
-          respond
+          Received on <span className="font-semibold">{formatTimestamp(operation?.request?.timestamp)}</span> • Took <span className="font-semibold">{operation?.timing?.duration}ms</span> to respond
         </div>
       </div>
 
