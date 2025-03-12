@@ -14,7 +14,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const [currentTab, setCurrentTab] = useState('request');
   const [apiEndpoint, setApiEndpoint] = useState(initialApiEndpoint);
 
-  const [connectionStatus, setConnectionStatus] = useState("disconnected");
+  const [connectionStatus, setConnectionStatus] = useState('disconnected');
 
   // Registration details state.
   const [sseEndpoint, setSseEndpoint] = useState('');
@@ -89,8 +89,11 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
       }
 
       // Update the URL without reloading the page
-      window.history.replaceState({}, '', `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`);
-    
+      window.history.replaceState(
+        {},
+        '',
+        `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`
+      );
     } else {
       // Otherwise, check localStorage
       const storedAccessCode = localStorage.getItem('accessCode');
@@ -196,7 +199,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
           });
         }
         // Update the connection status.
-        setConnectionStatus("connected");
+        setConnectionStatus('connected');
         return true;
       } else {
         console.error('❌ Registration failed:', result);
@@ -222,8 +225,9 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
     if (registrationRetryCountRef.current < maxRegistrationRetries) {
       registrationRetryCountRef.current += 1;
       console.log(
-        `🔄 Attempting re-registration (${registrationRetryCountRef.current}/${maxRegistrationRetries}) in ${retryDelay /
-        1000} seconds...`
+        `🔄 Attempting re-registration (${registrationRetryCountRef.current}/${maxRegistrationRetries}) in ${
+          retryDelay / 1000
+        } seconds...`
       );
       setTimeout(async () => {
         try {
@@ -239,7 +243,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
       registrationRetryCountRef.current = 0;
       reRegistrationFailedRef.current = true; // Prevent further attempts
       // Set final connection status to "disconnected"
-      setConnectionStatus("disconnected");
+      setConnectionStatus('disconnected');
     }
   };
 
@@ -266,7 +270,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
     eventSource.onopen = () => {
       console.log('📡️ SSE connection opened.');
       wasConnectedRef.current = true;
-      setConnectionStatus("connected");
+      setConnectionStatus('connected');
     };
 
     eventSource.onmessage = (e) => {
@@ -287,11 +291,11 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
     eventSource.onerror = (err) => {
       console.error('❌ SSE connection error:', err);
       wasConnectedRef.current = false;
-      setConnectionStatus("reconnecting");
+      setConnectionStatus('reconnecting');
 
       if (reRegistrationFailedRef.current) {
         console.log('❌ Maximum re-registration attempts reached. Closing EventSource.');
-        setConnectionStatus("disconnected");
+        setConnectionStatus('disconnected');
         eventSource.close();
         return;
       }
@@ -307,7 +311,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
     return () => {
       console.log('Closing SSE EventSource connection');
       eventSource.close();
-      setConnectionStatus("disconnected");
+      setConnectionStatus('disconnected');
     };
   }, [sseEndpoint]); // Run only once on mount
 
@@ -335,7 +339,10 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         pageSize: Number.MAX_SAFE_INTEGER
       });
       await Promise.all(filteredOperations.map((record) => eventDB.deleteEvent(record.id)));
-      if (selectedOperation && filteredOperations.some((record) => record.id === selectedOperation.id)) {
+      if (
+        selectedOperation &&
+        filteredOperations.some((record) => record.id === selectedOperation.id)
+      ) {
         setSelectedOperation(null);
       }
     } catch (error) {
