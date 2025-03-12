@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { getStatusClass } from '../utils/getStatusClass.js';
 import ToastNotification from './ToastNotification';
+import { getMethodTextClass } from '../utils/getMethodClass.js';
 
 const RequestDetail = ({ operation }) => {
   const [showToast, setShowToast] = useState(false);
@@ -151,7 +152,7 @@ const RequestDetail = ({ operation }) => {
       </div>
       <div className="flex flex-col space-y-1">
         <div className="flex items-center space-x-2 font-mono text-lg">
-          <span className="font-bold">{operation?.request?.method}</span>
+          <span className={`font-bold ${getMethodTextClass(operation?.request?.method )}`}>{operation?.request?.method}</span>
           <span className="text-blue-600">{operation?.request?.path}</span>
           <span
             className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(

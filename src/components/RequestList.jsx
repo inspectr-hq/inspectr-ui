@@ -4,6 +4,7 @@ import RequestListItem from './RequestListItem';
 import RequestListSidePanel from './RequestListSidePanel';
 import RequestListPagination from './RequestListPagination';
 import DialogConfirmClear from './DialogConfirmClear.jsx';
+import DividerText from './DividerText.jsx';
 
 const RequestList = ({
   operations,
@@ -39,6 +40,28 @@ const RequestList = ({
   // Determine button background based on active filters.
   const filtersButtonClass =
     activeFiltersCount > 0 ? 'bg-green-500 text-white' : 'bg-blue-500 text-white';
+
+  const formatGroupDate = (timestamp) => {
+    const date = new Date(timestamp);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${year}-${month}-${day}`;
+  };
+
+  // Group operations by date.
+  const groupOperationsByDate = (ops) => {
+    return ops.reduce((groups, op) => {
+      const groupKey = op.request.timestamp ? formatGroupDate(op.request.timestamp) : 'N/A';
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push(op);
+      return groups;
+    }, {});
+  };
+
+  const groupedOperations = groupOperationsByDate(operations);
 
   return (
     <div className="flex flex-col h-full relative">
@@ -102,7 +125,7 @@ const RequestList = ({
         <div className="w-16 text-center">Status</div>
         <div className="w-20 text-center">Method</div>
         <div className="flex-grow text-left">Path</div>
-        <div className="w-20 text-left">Timestamp</div>
+        <div className="w-20 text-center">Timestamp</div>
         <div className="w-16 text-right">Duration</div>
         <div className="w-10"></div>
       </div>
@@ -111,19 +134,39 @@ const RequestList = ({
         className="overflow-y-auto flex-grow"
         style={{ maxHeight: 'calc(100vh - 40px - 100px - 49px)' }}
       >
-        {operations.map((op, index) => {
-          const opId = op.id || index;
-          return (
-            <RequestListItem
-              key={opId}
-              opId={opId}
-              operation={op}
-              onSelect={onSelect}
-              onRemove={onRemove}
-              selected={selectedOperation && selectedOperation.id === opId}
-            />
-          );
-        })}
+        {/*{operations.map((op, index) => {*/}
+        {/*  const opId = op.id || index;*/}
+        {/*  return (*/}
+        {/*    <RequestListItem*/}
+        {/*      key={opId}*/}
+        {/*      opId={opId}*/}
+        {/*      operation={op}*/}
+        {/*      onSelect={onSelect}*/}
+        {/*      onRemove={onRemove}*/}
+        {/*      selected={selectedOperation && selectedOperation.id === opId}*/}
+        {/*    />*/}
+        {/*  );*/}
+        {/*})}*/}
+        {Object.entries(groupedOperations).map(([date, ops]) => (
+          <React.Fragment key={date}>
+            <li>
+              <DividerText text={date} align={'center'} />
+            </li>
+            {ops.map((op, index) => {
+              const opId = op.id || index;
+              return (
+                <RequestListItem
+                  key={opId}
+                  opId={opId}
+                  operation={op}
+                  onSelect={onSelect}
+                  onRemove={onRemove}
+                  selected={selectedOperation && selectedOperation.id === opId}
+                />
+              );
+            })}
+          </React.Fragment>
+        ))}
       </ul>
 
       {/* Pagination */}

@@ -39,8 +39,18 @@ export const DefaultList = () => {
         },
         {
           id: 4,
-          request: { method: 'POST', url: 'http://example.com', timestamp: '2025-03-12T16:06:32.344451Z' },
+          request: { method: 'POST', url: 'http://example.com', timestamp: '2025-03-11T16:06:32.344451Z' },
           response: { status: 500 },
+          timing: { duration: 123 }
+        },{
+          id: 5,
+          request: { method: 'POST', url: 'http://example.com', timestamp: '2025-03-11T16:06:32.344451Z' },
+          response: { status: 200 },
+          timing: { duration: 123 }
+        },{
+          id: 6,
+          request: { method: 'POST', url: 'http://example.com', timestamp: '2025-03-11T16:06:32.344451Z' },
+          response: { status: 301 },
           timing: { duration: 123 }
         }
       ]}
