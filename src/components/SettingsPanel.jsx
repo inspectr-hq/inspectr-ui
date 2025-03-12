@@ -5,7 +5,7 @@ import logo from '../assets/inspectr_logo_small.png';
 const SettingsPanel = ({
   apiEndpoint,
   setApiEndpoint,
-  isConnected,
+  connectionStatus, // now a string: "connected", "reconnecting", or "disconnected"
   accessCode,
   setAccessCode,
   channel,
@@ -50,7 +50,7 @@ const SettingsPanel = ({
     }
     setAccessCode(accessCodeInput);
     setChannel(channelInput);
-    onRegister(accessCodeInput, channelInput, true);
+    onRegister(accessCodeInput, channelInput, "" ,true);
   };
 
   return (
@@ -63,14 +63,26 @@ const SettingsPanel = ({
         {/* Connection Status Indicator */}
         <div className="flex items-center gap-4">
           <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center ${
-              isConnected ? 'bg-green-500 text-white' : 'bg-red-500'
-            }`}
+            className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center 
+              ${
+                connectionStatus === 'connected'
+                  ? 'bg-green-500 text-white'
+                  : connectionStatus === 'reconnecting'
+                  ? 'bg-yellow-500 text-black'
+                  : 'bg-red-500'
+              }`}
           >
             <span
-              className={`w-2 h-2 rounded-full mr-1 ${isConnected ? 'bg-green-800' : 'bg-red-800'}`}
+              className={`w-2 h-2 rounded-full mr-1 
+                ${
+                  connectionStatus === 'connected'
+                    ? 'bg-green-800'
+                    : connectionStatus === 'reconnecting'
+                    ? 'bg-yellow-800'
+                    : 'bg-red-800'
+                }`}
             ></span>
-            {isConnected ? 'Connected' : 'Disconnected'}
+            {connectionStatus.charAt(0).toUpperCase() + connectionStatus.slice(1)}
           </span>
         </div>
 
@@ -110,7 +122,7 @@ const SettingsPanel = ({
               />
               <button
                 onClick={handleSaveEndpoint}
-                className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-md"
+                className="mt-2 bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm"
               >
                 Save
               </button>
@@ -128,7 +140,7 @@ const SettingsPanel = ({
               />
               <button
                 onClick={handleRegister}
-                className="mt-2 bg-green-600 text-white px-4 py-2 rounded-md"
+                className="mt-2 bg-green-600 text-white px-3 py-1.5 rounded-md text-sm"
               >
                 Register
               </button>

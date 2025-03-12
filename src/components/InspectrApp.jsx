@@ -1,5 +1,5 @@
 // src/components/InspectrApp.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import RequestList from './RequestList';
 import RequestDetailsPanel from './RequestDetailsPanel';
@@ -13,13 +13,15 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const [selectedOperation, setSelectedOperation] = useState(null);
   const [currentTab, setCurrentTab] = useState('request');
   const [apiEndpoint, setApiEndpoint] = useState(initialApiEndpoint);
-  const [isConnected, setIsConnected] = useState(false);
+
+  const [connectionStatus, setConnectionStatus] = useState("disconnected");
 
   // Registration details state.
   const [sseEndpoint, setSseEndpoint] = useState('');
   const [accessCode, setAccessCode] = useState('');
   const [channel, setChannel] = useState('');
   const [token, setToken] = useState('');
+  const [expires, setExpires] = useState('');
 
   // Track initialization state
   const [isInitialized, setIsInitialized] = useState(false);
@@ -32,6 +34,13 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const [sortField, setSortField] = useState('time');
   const [sortDirection, setSortDirection] = useState('desc');
   const [filters, setFilters] = useState({});
+
+  // Reconnection handling
+  const wasConnectedRef = useRef(false);
+  const registrationRetryCountRef = useRef(0);
+  const reRegistrationFailedRef = useRef(false);
+  const maxRegistrationRetries = 6;
+  const retryDelay = 5000; // milliseconds
 
   // Live query: get the events for the current page.
   const operations = useLiveQuery(() => {
@@ -166,16 +175,17 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
       if (result?.token && result?.sse_endpoint && result?.access_code) {
         console.log('✅ Registration successful');
+        registrationRetryCountRef.current = 0;
+        reRegistrationFailedRef.current = false;
 
         setAccessCode(result.access_code);
         localStorage.setItem('accessCode', result.access_code);
-
         setChannel(result.channel);
         localStorage.setItem('channel', result.channel);
-
         setToken(result.token);
         localStorage.setItem('token', result.token);
-
+        setExpires(result.expires);
+        localStorage.setItem('expires', result.expires);
         setSseEndpoint(result.sse_endpoint);
         localStorage.setItem('sseEndpoint', result.sse_endpoint);
 
@@ -185,6 +195,9 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
             subMessage: 'Your channel and access code have been registered.'
           });
         }
+        // Update the connection status.
+        setConnectionStatus("connected");
+        return true;
       } else {
         console.error('❌ Registration failed:', result);
         setToast({
@@ -192,14 +205,41 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
           subMessage: 'Please check your channel and access code.',
           type: 'error'
         });
+        throw new Error('Registration failed');
       }
     } catch (error) {
       console.error('❌ Registration error:', error);
       setToast({
         message: 'Registration Error',
-        subMessage: error.message || 'An error occurred during registration.',
+        subMessage: 'An error occurred during registration.',
         type: 'error'
       });
+      throw error;
+    }
+  };
+
+  const attemptReRegistration = () => {
+    if (registrationRetryCountRef.current < maxRegistrationRetries) {
+      registrationRetryCountRef.current += 1;
+      console.log(
+        `🔄 Attempting re-registration (${registrationRetryCountRef.current}/${maxRegistrationRetries}) in ${retryDelay /
+        1000} seconds...`
+      );
+      setTimeout(async () => {
+        try {
+          await handleRegister();
+        } catch (error) {
+          console.log('❌ Re-registration attempt failed:', error);
+          // Try again recursively.
+          attemptReRegistration();
+        }
+      }, retryDelay);
+    } else {
+      console.log(`❌ Re-registration failed after ${maxRegistrationRetries} attempts. Giving up.`);
+      registrationRetryCountRef.current = 0;
+      reRegistrationFailedRef.current = true; // Prevent further attempts
+      // Set final connection status to "disconnected"
+      setConnectionStatus("disconnected");
     }
   };
 
@@ -221,17 +261,19 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
     if (!sseEndpoint) return;
     const generateId = () => `req-${Math.random().toString(36).substr(2, 9)}`;
     const eventSource = new EventSource(sseEndpoint);
-    console.log(`Inspectr EventSource created with URL: ${sseEndpoint}`);
+    console.log(`🔄 SSE connecting with ${sseEndpoint}`);
 
     eventSource.onopen = () => {
-      console.log('SSE Inspectr connection opened');
-      setIsConnected(true);
+      console.log('📡️ SSE connection opened.');
+      wasConnectedRef.current = true;
+      setConnectionStatus("connected");
     };
 
     eventSource.onmessage = (e) => {
       try {
         const event = JSON.parse(e.data);
-        console.log('[Inspectr] Received event:', event);
+        // DEBUG
+        // console.log('[Inspectr] Received event:', event);
         // Update the list and, if it's the first event, select it.
         if (!event.id) event.id = generateId();
 
@@ -243,19 +285,33 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
     };
 
     eventSource.onerror = (err) => {
-      console.error('SSE Inspectr error:', err);
-      setIsConnected(false);
-      // The EventSource object will try to reconnect automatically.
+      console.error('❌ SSE connection error:', err);
+      wasConnectedRef.current = false;
+      setConnectionStatus("reconnecting");
+
+      if (reRegistrationFailedRef.current) {
+        console.log('❌ Maximum re-registration attempts reached. Closing EventSource.');
+        setConnectionStatus("disconnected");
+        eventSource.close();
+        return;
+      }
+
+      // Start the re-registration retry loop if not already in progress.
+      if (!reRegistrationFailedRef.current && registrationRetryCountRef.current === 0) {
+        console.log('🔄 Starting re-registration retry loop due to SSE error.');
+        attemptReRegistration();
+      }
+      // The EventSource will try to reconnect automatically.
     };
 
     return () => {
-      console.log('Closing Inspectr EventSource');
+      console.log('Closing SSE EventSource connection');
       eventSource.close();
-      setIsConnected(false);
+      setConnectionStatus("disconnected");
     };
   }, [sseEndpoint]); // Run only once on mount
 
-  // If no operation is selected but there are operations (e.g. historical items), select the first one.
+  // If no operation is selected but there are operations, select the first one.
   useEffect(() => {
     if (!selectedOperation && operations && operations.length > 0) {
       setSelectedOperation(operations[0]);
@@ -333,7 +389,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
       <SettingsPanel
         apiEndpoint={apiEndpoint}
         setApiEndpoint={setApiEndpoint}
-        isConnected={isConnected}
+        connectionStatus={connectionStatus}
         accessCode={accessCode}
         setAccessCode={setAccessCode}
         channel={channel}
