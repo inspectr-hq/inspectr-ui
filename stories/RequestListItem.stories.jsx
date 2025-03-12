@@ -9,8 +9,8 @@ export default {
 
 export const DefaultItem = () => (
   <RequestListItem
-    request={{ method: 'GET', request: {}, response: { statusCode: 200 }, path: '/api/test', latency: 123 }}
-    reqId={1}
+    operation={{  request: {method: 'GET', path: '/api/test', timestamp:'2025-03-12T16:06:32.344451Z'}, response: { status: 200 },timing: {duration: 123 }}}
+    opId={1}
     onSelect={() => {
     }}
     onRemove={() => {

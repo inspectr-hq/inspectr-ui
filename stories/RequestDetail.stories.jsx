@@ -8,13 +8,18 @@ export default {
 };
 
 export const DefaultRequestDetail = () => (
-  <RequestDetail request={{
-    method: 'GET',
-    request: {},
-    response: { statusCode: 200 },
-    path: '/api/test',
-    url: 'http://example.com/api/test',
-    timestamp: '2024-02-09T12:00:00Z',
-    latency: 150
+  <RequestDetail operation={
+     {
+      request: {
+        method: 'GET',
+        path: '/api/test',
+        url: 'http://example.com/api/test',
+        timestamp: '2024-02-09T12:00:00Z'
+      },
+      response: { status: 200, status_text: 'OK' },
+      timing: {
+        duration: 150
+      }
+
   }} />
 );

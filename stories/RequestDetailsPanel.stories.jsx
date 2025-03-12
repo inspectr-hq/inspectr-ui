@@ -9,24 +9,27 @@ export default {
 
 export const DefaultPanel = () => (
   <RequestDetailsPanel
-    request={{
-      method: 'POST',
-      url: 'http://localhost:3000/api/create',
-      path: '/api/create',
-      latency: 123,
+    operation={{operation: {
+
       request: {
-        queryParams: { search: 'test' },
-        headers: { 'Content-Type': 'application/json' },
-        payload: JSON.stringify({ key: 'value' }, null, '\t'),
+        method: 'POST',
+        url: 'http://localhost:3000/api/create',
+        path: '/api/create',
+        query_params: { search: 'test' },
+        headers: {  'name':'Content-Type', 'value': 'application/json' },
+        body: JSON.stringify({ key: 'value' }, null, '\t'),
         timestamp: new Date()
       },
       response: {
         statusCode: 201,
-        payload: JSON.stringify({ key: 'value' }, null, '\t'),
-        headers: { 'X-Test': 'Header' },
+        body: JSON.stringify({ key: 'value' }, null, '\t'),
+        headers: { 'name':'X-Test', 'value': 'Header' },
         timestamp: new Date()
+      },
+      timing: {
+        duration: 123,
       }
-    }}
+    }}}
     currentTab="request"
     setCurrentTab={() => {
     }}
