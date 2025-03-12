@@ -201,6 +201,7 @@ const RequestListSidePanel = ({
                   className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
                   <option value="">Any</option>
+                  <option value="5M">Last 5 minutes</option>
                   <option value="15M">Last 15 minutes</option>
                   <option value="30M">Last 30 minutes</option>
                   <option value="1H">Last 1 hour</option>
@@ -208,7 +209,7 @@ const RequestListSidePanel = ({
                   <option value="6H">Last 6 hours</option>
                   <option value="12H">Last 12 hours</option>
                   <option value="24H">Last 24 hours</option>
-                  <option value="48H">Last 2 days</option>
+                  <option value="48H">Last 48 hours</option>
                   <option value="week">Last Week</option>
                   <option value="month">Last Month</option>
                 </select>

@@ -6,7 +6,7 @@
  * @returns {string} Tailwind CSS classes for text color.
  */
 export const getMethodTextClass = (method) => {
-  if(!method) return ''; // TO REVIEW
+  if(method) return ''; // TO REVIEW
 
   switch (method.toUpperCase()) {
     case 'GET':
