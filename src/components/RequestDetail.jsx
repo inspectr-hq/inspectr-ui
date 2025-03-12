@@ -31,7 +31,7 @@ const RequestDetail = ({ operation }) => {
   // Generate a cURL command string from the request data
   const generateCurlCommand = () => {
     if (!operation?.request) {
-      return
+      return;
     }
     const { request } = operation; // Destructure the request object
     const { method, url, headers, body } = request;
@@ -152,7 +152,9 @@ const RequestDetail = ({ operation }) => {
       </div>
       <div className="flex flex-col space-y-1">
         <div className="flex items-center space-x-2 font-mono text-lg">
-          <span className={`font-bold ${getMethodTextClass(operation?.request?.method )}`}>{operation?.request?.method}</span>
+          <span className={`font-bold ${getMethodTextClass(operation?.request?.method)}`}>
+            {operation?.request?.method}
+          </span>
           <span className="text-blue-600">{operation?.request?.path}</span>
           <span
             className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(
@@ -183,7 +185,9 @@ const RequestDetail = ({ operation }) => {
           </button>
         </div>
         <div className="text-gray-500 text-xs">
-          Received on <span className="font-semibold">{formatTimestamp(operation?.request?.timestamp)}</span> • Took <span className="font-semibold">{operation?.timing?.duration}ms</span> to respond
+          Received on{' '}
+          <span className="font-semibold">{formatTimestamp(operation?.request?.timestamp)}</span> •
+          Took <span className="font-semibold">{operation?.timing?.duration}ms</span> to respond
         </div>
       </div>
 

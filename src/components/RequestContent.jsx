@@ -154,7 +154,7 @@ const RequestContent = ({ operation }) => {
                   <th className="border border-slate-200 px-2 py-1 text-left">Value</th>
                 </tr>
               </thead>
-              <tbody>{renderTableRows((operation?.request?.query_params ?? []))}</tbody>
+              <tbody>{renderTableRows(operation?.request?.query_params ?? [])}</tbody>
             </table>
           </div>
         )}
@@ -177,7 +177,7 @@ const RequestContent = ({ operation }) => {
                   <th className="border border-slate-200 px-2 py-1 text-left">Value</th>
                 </tr>
               </thead>
-              <tbody>{renderTableRows((operation?.request?.headers ?? []))}</tbody>
+              <tbody>{renderTableRows(operation?.request?.headers ?? [])}</tbody>
             </table>
           </div>
         )}

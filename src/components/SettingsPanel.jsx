@@ -50,7 +50,7 @@ const SettingsPanel = ({
     }
     setAccessCode(accessCodeInput);
     setChannel(channelInput);
-    onRegister(accessCodeInput, channelInput, "" ,true);
+    onRegister(accessCodeInput, channelInput, '', true);
   };
 
   return (
@@ -68,8 +68,8 @@ const SettingsPanel = ({
                 connectionStatus === 'connected'
                   ? 'bg-green-500 text-white'
                   : connectionStatus === 'reconnecting'
-                  ? 'bg-yellow-500 text-black'
-                  : 'bg-red-500'
+                    ? 'bg-yellow-500 text-black'
+                    : 'bg-red-500'
               }`}
           >
             <span
@@ -78,8 +78,8 @@ const SettingsPanel = ({
                   connectionStatus === 'connected'
                     ? 'bg-green-800'
                     : connectionStatus === 'reconnecting'
-                    ? 'bg-yellow-800'
-                    : 'bg-red-800'
+                      ? 'bg-yellow-800'
+                      : 'bg-red-800'
                 }`}
             ></span>
             {connectionStatus.charAt(0).toUpperCase() + connectionStatus.slice(1)}

@@ -134,39 +134,32 @@ const RequestList = ({
         className="overflow-y-auto flex-grow"
         style={{ maxHeight: 'calc(100vh - 40px - 100px - 49px)' }}
       >
-        {/*{operations.map((op, index) => {*/}
-        {/*  const opId = op.id || index;*/}
-        {/*  return (*/}
-        {/*    <RequestListItem*/}
-        {/*      key={opId}*/}
-        {/*      opId={opId}*/}
-        {/*      operation={op}*/}
-        {/*      onSelect={onSelect}*/}
-        {/*      onRemove={onRemove}*/}
-        {/*      selected={selectedOperation && selectedOperation.id === opId}*/}
-        {/*    />*/}
-        {/*  );*/}
-        {/*})}*/}
-        {Object.entries(groupedOperations).map(([date, ops]) => (
-          <React.Fragment key={date}>
-            <li>
-              <DividerText text={date} align={'center'} />
-            </li>
-            {ops.map((op, index) => {
-              const opId = op.id || index;
-              return (
-                <RequestListItem
-                  key={opId}
-                  opId={opId}
-                  operation={op}
-                  onSelect={onSelect}
-                  onRemove={onRemove}
-                  selected={selectedOperation && selectedOperation.id === opId}
-                />
-              );
-            })}
-          </React.Fragment>
-        ))}
+        {operations.length === 0 ? (
+          <li className="flex items-center justify-center h-full text-gray-500 text-2xl">
+            No operations
+          </li>
+        ) : (
+          Object.entries(groupedOperations).map(([date, ops]) => (
+            <React.Fragment key={date}>
+              <li>
+                <DividerText text={date} align={'center'} />
+              </li>
+              {ops.map((op, index) => {
+                const opId = op.id || index;
+                return (
+                  <RequestListItem
+                    key={opId}
+                    opId={opId}
+                    operation={op}
+                    onSelect={onSelect}
+                    onRemove={onRemove}
+                    selected={selectedOperation && selectedOperation.id === opId}
+                  />
+                );
+              })}
+            </React.Fragment>
+          ))
+        )}
       </ul>
 
       {/* Pagination */}

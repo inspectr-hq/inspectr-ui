@@ -44,8 +44,14 @@ const RequestListItem = ({ operation, opId, onSelect, onRemove, selected }) => {
             {operation?.response?.status || 'N/A'}
           </span>
         </div>
-        <div className={`w-20 text-center font-medium ${getMethodTextClass( operation?.request?.method )}`}>{operation?.request?.method || 'GET'}</div>
-        <div className="flex-grow truncate text-left">{operation?.request.path || operation?.request.url}</div>
+        <div
+          className={`w-20 text-center font-medium ${getMethodTextClass(operation?.request?.method)}`}
+        >
+          {operation?.request?.method || 'GET'}
+        </div>
+        <div className="flex-grow truncate text-left">
+          {operation?.request.path || operation?.request.url}
+        </div>
         <div className="w-20 text-gray-900 text-center text-xs">
           {operation?.request?.timestamp ? formatTime(operation.request.timestamp) : 'N/A'}
         </div>
@@ -57,7 +63,9 @@ const RequestListItem = ({ operation, opId, onSelect, onRemove, selected }) => {
         {/*    {operation?.request?.timestamp ? formatTime(operation.request.timestamp) : 'N/A'}*/}
         {/*  </div>*/}
         {/*</div>*/}
-        <div className="w-16 text-gray-500 text-center text-xs">{operation?.timing?.duration}ms</div>
+        <div className="w-16 text-gray-500 text-center text-xs">
+          {operation?.timing?.duration}ms
+        </div>
         <button
           className="w-8 h-8 flex items-center justify-center cursor-pointer text-red-500 hover:text-red-700"
           onClick={(e) => {
