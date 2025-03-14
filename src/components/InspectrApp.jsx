@@ -277,7 +277,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
       try {
         const event = JSON.parse(e.data);
         // DEBUG
-        console.log('[Inspectr] Received event:', event);
+        // console.log('[Inspectr] Received event:', event);
         // Update the list and, if it's the first event, select it.
         if (!event.id) event.id = generateId();
 
