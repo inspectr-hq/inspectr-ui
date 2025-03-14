@@ -34,6 +34,7 @@ export const getMethodTextClass = (method) => {
  * @returns {string} Tailwind CSS classes for text and border colors.
  */
 export const getMethodTagClass = (method) => {
+  if(method) return ''; // TO REVIEW
   switch (method.toUpperCase()) {
     case 'GET':
       return 'text-green-700 border border-green-700';

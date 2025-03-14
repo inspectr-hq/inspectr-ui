@@ -18,7 +18,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
   // Registration details state.
   const [sseEndpoint, setSseEndpoint] = useState('');
-  const [accessCode, setAccessCode] = useState('');
+  const [channelCode, setChannelCode] = useState('');
   const [channel, setChannel] = useState('');
   const [token, setToken] = useState('');
   const [expires, setExpires] = useState('');
@@ -65,17 +65,17 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
     // Read query parameters using URLSearchParams
     const urlParams = new URLSearchParams(window.location.search);
-    const queryAccessCode = urlParams.get('accessCode');
+    const queryChannelCode = urlParams.get('channelCode');
     const queryChannel = urlParams.get('channel');
     const queryToken = urlParams.get('token');
 
     // Query parameters take precedence
-    if (queryAccessCode || queryChannel || queryToken) {
+    if (queryChannelCode || queryChannel || queryToken) {
       console.log('🔍 Found credentials in query params');
 
-      if (queryAccessCode) {
-        setAccessCode(queryAccessCode);
-        localStorage.setItem('accessCode', queryAccessCode);
+      if (queryChannelCode) {
+        setChannelCode(queryChannelCode);
+        localStorage.setItem('channelCode', queryChannelCode);
       }
 
       if (queryChannel) {
@@ -96,13 +96,13 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
       );
     } else {
       // Otherwise, check localStorage
-      const storedAccessCode = localStorage.getItem('accessCode');
+      const storedChannelCode = localStorage.getItem('channelCode');
       const storedChannel = localStorage.getItem('channel');
       const storedToken = localStorage.getItem('token');
 
-      if (storedAccessCode && storedChannel && storedToken) {
+      if (storedChannelCode && storedChannel && storedToken) {
         console.log('✅ Using stored credentials from localStorage');
-        setAccessCode(storedAccessCode);
+        setChannelCode(storedChannelCode);
         setChannel(storedChannel);
         setToken(storedToken);
       } else if (isLocalhost) {
@@ -110,11 +110,11 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         fetch('/app/config')
           .then((res) => res.json())
           .then((result) => {
-            if (result?.token && result?.sse_endpoint && result?.access_code) {
+            if (result?.token && result?.sse_endpoint && result?.channel_code) {
               console.log('✅ Loaded from /app/config:', result);
 
-              setAccessCode(result.access_code);
-              localStorage.setItem('accessCode', result.access_code);
+              setChannelCode(result.channel_code);
+              localStorage.setItem('channelCode', result.channel_code);
 
               setChannel(result.channel);
               localStorage.setItem('channel', result.channel);
@@ -138,18 +138,18 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
    */
   useEffect(() => {
     if (!isInitialized) return;
-    console.log('🔄 Auto-registering with stored credentials:', channel, accessCode);
+    console.log('🔄 Auto-registering with stored credentials:', channel, channelCode);
 
-    if (channel && accessCode) {
-      handleRegister(accessCode, channel);
+    if (channel && channelCode) {
+      handleRegister(channelCode, channel);
     } else {
       console.log('⚠️ Missing credentials for auto-registration, skipping.');
     }
-  }, [isInitialized, channel, accessCode]);
+  }, [isInitialized, channel, channelCode]);
 
   // Registration handler.
   const handleRegister = async (
-    newAccessCode = accessCode,
+    newChannelCode = channelCode,
     newChannel = channel,
     newToken = token,
     showNotification
@@ -157,8 +157,8 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
     try {
       // Construct request body
       let requestBody = {};
-      if (newAccessCode && newChannel) {
-        requestBody = { channel: newChannel, access_code: newAccessCode };
+      if (newChannelCode && newChannel) {
+        requestBody = { channel: newChannel, channel_code: newChannelCode };
       } else if (newToken) {
         requestBody = { token: newToken };
       }
@@ -176,13 +176,13 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
       const result = await response.json();
 
-      if (result?.token && result?.sse_endpoint && result?.access_code) {
+      if (result?.token && result?.sse_endpoint && result?.channel_code) {
         console.log('✅ Registration successful');
         registrationRetryCountRef.current = 0;
         reRegistrationFailedRef.current = false;
 
-        setAccessCode(result.access_code);
-        localStorage.setItem('accessCode', result.access_code);
+        setChannelCode(result.channel_code);
+        localStorage.setItem('channelCode', result.channel_code);
         setChannel(result.channel);
         localStorage.setItem('channel', result.channel);
         setToken(result.token);
@@ -250,15 +250,15 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   // Automatically trigger registration when a channel is present and token is not yet set.
   // useEffect(() => {
   //   if (localStorageLoaded) {
-  //     if (channel && accessCode) {
-  //       console.log('Automatically trigger reregistration', channel, accessCode);
-  //       handleRegister(accessCode, channel);
+  //     if (channel && channelCode) {
+  //       console.log('Automatically trigger reregistration', channel, channelCode);
+  //       handleRegister(channelCode, channel);
   //     } else {
   //       console.log('Automatically trigger new registration');
   //       handleRegister();
   //     }
   //   }
-  // }, [localStorageLoaded, channel, accessCode]);
+  // }, [localStorageLoaded, channel, channelCode]);
 
   // Connect to SSE when the component mounts.
   useEffect(() => {
@@ -277,7 +277,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
       try {
         const event = JSON.parse(e.data);
         // DEBUG
-        // console.log('[Inspectr] Received event:', event);
+        console.log('[Inspectr] Received event:', event);
         // Update the list and, if it's the first event, select it.
         if (!event.id) event.id = generateId();
 
@@ -397,8 +397,8 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         apiEndpoint={apiEndpoint}
         setApiEndpoint={setApiEndpoint}
         connectionStatus={connectionStatus}
-        accessCode={accessCode}
-        setAccessCode={setAccessCode}
+        channelCode={channelCode}
+        setChannelCode={setChannelCode}
         channel={channel}
         setChannel={setChannel}
         onRegister={handleRegister}

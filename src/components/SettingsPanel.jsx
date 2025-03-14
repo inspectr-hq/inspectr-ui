@@ -6,23 +6,23 @@ const SettingsPanel = ({
   apiEndpoint,
   setApiEndpoint,
   connectionStatus, // now a string: "connected", "reconnecting", or "disconnected"
-  accessCode,
-  setAccessCode,
+  channelCode,
+  setChannelCode,
   channel,
   setChannel,
   onRegister
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [endpointInput, setEndpointInput] = useState(apiEndpoint);
-  const [accessCodeInput, setAccessCodeInput] = useState(accessCode);
+  const [channelCodeInput, setChannelCodeInput] = useState(channelCode);
   const [channelInput, setChannelInput] = useState(channel);
 
   // Sync input fields with props when they change
   useEffect(() => {
     setEndpointInput(apiEndpoint);
-    setAccessCodeInput(accessCode);
+    setChannelCodeInput(channelCode);
     setChannelInput(channel);
-  }, [apiEndpoint, accessCode, channel]);
+  }, [apiEndpoint, channelCode, channel]);
 
   // Load stored values on mount
   useEffect(() => {
@@ -45,12 +45,12 @@ const SettingsPanel = ({
   // Save registration details and trigger the registration process.
   const handleRegister = () => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('accessCode', accessCodeInput);
+      localStorage.setItem('channelCode', channelCodeInput);
       localStorage.setItem('channel', channelInput);
     }
-    setAccessCode(accessCodeInput);
+    setChannelCode(channelCodeInput);
     setChannel(channelInput);
-    onRegister(accessCodeInput, channelInput, '', true);
+    onRegister(channelCodeInput, channelInput, '', true);
   };
 
   return (
@@ -152,8 +152,8 @@ const SettingsPanel = ({
               <input
                 type="text"
                 placeholder="Enter Access Code..."
-                value={accessCodeInput}
-                onChange={(e) => setAccessCodeInput(e.target.value)}
+                value={channelCodeInput}
+                onChange={(e) => setChannelCodeInput(e.target.value)}
                 className="w-full border bg-white border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               />
             </div>
