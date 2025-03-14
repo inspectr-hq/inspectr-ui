@@ -11,11 +11,11 @@ const Template = (args) => <RequestContent {...args} />;
 
 export const Default = Template.bind({});
 Default.args = {
-  request: {
+  operation: {
     request: {
-      queryParams: { search: 'test' },
-      headers: { 'Content-Type': 'application/json' },
-      payload: JSON.stringify({ key: 'value' }, null, '\t')
+      query_params: [{ key:search, value: 'test' }],
+      headers:  [{ 'key':'Content-Type', 'value':'application/json' }],
+      body: JSON.stringify({ key: 'value' }, null, '\t')
     }
   }
 };

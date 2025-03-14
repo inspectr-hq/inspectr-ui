@@ -17,33 +17,50 @@ export const DefaultList = () => {
 
   return (
     <RequestList
-      requests={[
-        { id: 1, method: 'GET', request: {}, response: { statusCode: 200 }, url: 'http://example.com', latency: 123 },
-        { id: 2, method: 'POST', request: {}, response: { statusCode: 301 }, url: 'http://example.com', latency: 123 },
+      operations={[
+        {
+          id: 1,
+          request: { method: 'GET', url: 'http://example.com', timestamp: '2025-03-12T16:06:32.344451Z' },
+          response: { status: 200 },
+          timing: { duration: 123 }
+        },
+        {
+          id: 2,
+          request: { method: 'POST', url: 'http://example.com', timestamp: '2025-03-12T16:06:32.344451Z' },
+          response: { status: 301 },
+          timing: { duration: 123 }
+        },
         {
           id: 3,
           method: 'POST',
-          request: { method: 'POST' },
-          response: { statusCode: 404 },
-          url: 'http://example.com',
-          latency: 123
+          request: { method: 'POST', url: 'http://example.com', timestamp: '2025-03-12T16:06:32.344451Z' },
+          response: { status: 404 },
+          timing: { duration: 123 }
         },
         {
           id: 4,
-          method: 'POST',
-          request: { method: 'POST' },
-          response: { statusCode: 500 },
-          url: 'http://example.com',
-          latency: 123
+          request: { method: 'POST', url: 'http://example.com', timestamp: '2025-03-11T16:06:32.344451Z' },
+          response: { status: 500 },
+          timing: { duration: 123 }
+        },{
+          id: 5,
+          request: { method: 'POST', url: 'http://example.com', timestamp: '2025-03-11T16:06:32.344451Z' },
+          response: { status: 200 },
+          timing: { duration: 123 }
+        },{
+          id: 6,
+          request: { method: 'POST', url: 'http://example.com', timestamp: '2025-03-11T16:06:32.344451Z' },
+          response: { status: 301 },
+          timing: { duration: 123 }
         }
       ]}
       onSelect={() => {
       }}
       onRemove={() => {
       }}
-      clearRequests={() => {
+      clearOperations={() => {
       }}
-      selectedRequest={null}
+      selectedOperation={null}
       currentPage={currentPage}
       totalPages={5}        // You can adjust as needed.
       totalCount={10}       // You can adjust as needed.

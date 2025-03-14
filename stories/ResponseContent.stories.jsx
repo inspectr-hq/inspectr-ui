@@ -9,10 +9,10 @@ export default {
 
 export const DefaultResponse = () => (
   <ResponseContent
-    request={{
+    operation={{
       response: {
-        payload: JSON.stringify({ key: 'value' }, null, '\t'),
-        headers: { 'X-Test': 'Header' }
+        body: JSON.stringify({ key: 'value' }, null, '\t'),
+        headers: [{ 'key': 'X-Test', 'value': 'Header' }]
       }
     }}
   />

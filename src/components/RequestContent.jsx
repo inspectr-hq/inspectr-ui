@@ -37,7 +37,7 @@ const isJWT = (token) => {
   return jwtRegex.test(token);
 };
 
-const RequestContent = ({ request }) => {
+const RequestContent = ({ operation }) => {
   const [showQueryParams, setShowQueryParams] = useState(false);
   const [showRequestHeaders, setShowRequestHeaders] = useState(false);
   const [jwtDialogOpen, setJwtDialogOpen] = useState(false);
@@ -57,17 +57,17 @@ const RequestContent = ({ request }) => {
   // Render table rows for a given data object.
   // For JWT values, display a Decode button next to the value.
   const renderTableRows = (data) =>
-    Object.entries(data || {}).map(([key, value]) => (
-      <tr key={key}>
+    data.map((row) => (
+      <tr key={row.name}>
         <td className="border border-slate-200 px-2 py-1 font-mono text-slate-500 text-xs">
-          {key}
+          {row.name}
         </td>
         <td className="border border-slate-200 px-2 py-1 font-mono text-xs">
           <div className="flex flex-wrap items-center">
-            <span className="min-w-0 break-all flex-1">{value}</span>
-            {isJWT(value) && (
+            <span className="min-w-0 break-all flex-1">{row.value}</span>
+            {isJWT(row.value) && (
               <button
-                onClick={() => handleDecodeJWT(value)}
+                onClick={() => handleDecodeJWT(row.value)}
                 className="ml-2 p-1 text-blue-500 text-xs border border-slate-600 rounded cursor-pointer"
               >
                 <svg className="w-4 h-4" viewBox="0 0 48 48">
@@ -120,7 +120,7 @@ const RequestContent = ({ request }) => {
     ));
 
   // Check if the request body has content.
-  const payload = request.request.payload;
+  const payload = operation.request.body;
   const isEmptyPayload =
     !payload ||
     (typeof payload === 'object' && Object.keys(payload).length === 0) ||
@@ -143,7 +143,7 @@ const RequestContent = ({ request }) => {
           className="w-full p-2 text-left font-bold bg-gray-200"
           onClick={() => setShowQueryParams(!showQueryParams)}
         >
-          Query Parameters ({Object.keys(request.request.queryParams || {}).length})
+          Query Parameters ({(operation?.request?.query_params ?? []).length})
         </button>
         {showQueryParams && (
           <div className="p-0">
@@ -154,7 +154,7 @@ const RequestContent = ({ request }) => {
                   <th className="border border-slate-200 px-2 py-1 text-left">Value</th>
                 </tr>
               </thead>
-              <tbody>{renderTableRows(request.request.queryParams)}</tbody>
+              <tbody>{renderTableRows(operation?.request?.query_params ?? [])}</tbody>
             </table>
           </div>
         )}
@@ -166,7 +166,7 @@ const RequestContent = ({ request }) => {
           className="w-full p-2 text-left font-bold bg-gray-200"
           onClick={() => setShowRequestHeaders(!showRequestHeaders)}
         >
-          Headers ({Object.keys(request.request.headers || {}).length})
+          Headers ({(operation?.request?.headers ?? []).length})
         </button>
         {showRequestHeaders && (
           <div className="p-0">
@@ -177,7 +177,7 @@ const RequestContent = ({ request }) => {
                   <th className="border border-slate-200 px-2 py-1 text-left">Value</th>
                 </tr>
               </thead>
-              <tbody>{renderTableRows(request.request.headers)}</tbody>
+              <tbody>{renderTableRows(operation?.request?.headers ?? [])}</tbody>
             </table>
           </div>
         )}

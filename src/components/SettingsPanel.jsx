@@ -5,24 +5,24 @@ import logo from '../assets/inspectr_logo_small.png';
 const SettingsPanel = ({
   apiEndpoint,
   setApiEndpoint,
-  isConnected,
-  accessCode,
-  setAccessCode,
+  connectionStatus, // now a string: "connected", "reconnecting", or "disconnected"
+  channelCode,
+  setChannelCode,
   channel,
   setChannel,
   onRegister
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [endpointInput, setEndpointInput] = useState(apiEndpoint);
-  const [accessCodeInput, setAccessCodeInput] = useState(accessCode);
+  const [channelCodeInput, setChannelCodeInput] = useState(channelCode);
   const [channelInput, setChannelInput] = useState(channel);
 
   // Sync input fields with props when they change
   useEffect(() => {
     setEndpointInput(apiEndpoint);
-    setAccessCodeInput(accessCode);
+    setChannelCodeInput(channelCode);
     setChannelInput(channel);
-  }, [apiEndpoint, accessCode, channel]);
+  }, [apiEndpoint, channelCode, channel]);
 
   // Load stored values on mount
   useEffect(() => {
@@ -45,12 +45,12 @@ const SettingsPanel = ({
   // Save registration details and trigger the registration process.
   const handleRegister = () => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('accessCode', accessCodeInput);
+      localStorage.setItem('channelCode', channelCodeInput);
       localStorage.setItem('channel', channelInput);
     }
-    setAccessCode(accessCodeInput);
+    setChannelCode(channelCodeInput);
     setChannel(channelInput);
-    onRegister(accessCodeInput, channelInput, true);
+    onRegister(channelCodeInput, channelInput, '', true);
   };
 
   return (
@@ -63,20 +63,32 @@ const SettingsPanel = ({
         {/* Connection Status Indicator */}
         <div className="flex items-center gap-4">
           <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center ${
-              isConnected ? 'bg-green-500 text-white' : 'bg-red-500'
-            }`}
+            className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center 
+              ${
+                connectionStatus === 'connected'
+                  ? 'bg-green-500 text-white'
+                  : connectionStatus === 'reconnecting'
+                    ? 'bg-yellow-500 text-black'
+                    : 'bg-red-500'
+              }`}
           >
             <span
-              className={`w-2 h-2 rounded-full mr-1 ${isConnected ? 'bg-green-800' : 'bg-red-800'}`}
+              className={`w-2 h-2 rounded-full mr-1 
+                ${
+                  connectionStatus === 'connected'
+                    ? 'bg-green-800'
+                    : connectionStatus === 'reconnecting'
+                      ? 'bg-yellow-800'
+                      : 'bg-red-800'
+                }`}
             ></span>
-            {isConnected ? 'Connected' : 'Disconnected'}
+            {connectionStatus.charAt(0).toUpperCase() + connectionStatus.slice(1)}
           </span>
         </div>
 
         {/* Inspectr Logo & Name */}
         <a
-          href="https://github.com/thim81/inspectr"
+          href="https://github.com/inspectr-hq/inspectr"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2"
@@ -110,7 +122,7 @@ const SettingsPanel = ({
               />
               <button
                 onClick={handleSaveEndpoint}
-                className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-md"
+                className="mt-2 bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm"
               >
                 Save
               </button>
@@ -128,7 +140,7 @@ const SettingsPanel = ({
               />
               <button
                 onClick={handleRegister}
-                className="mt-2 bg-green-600 text-white px-4 py-2 rounded-md"
+                className="mt-2 bg-green-600 text-white px-3 py-1.5 rounded-md text-sm"
               >
                 Register
               </button>
@@ -140,8 +152,8 @@ const SettingsPanel = ({
               <input
                 type="text"
                 placeholder="Enter Access Code..."
-                value={accessCodeInput}
-                onChange={(e) => setAccessCodeInput(e.target.value)}
+                value={channelCodeInput}
+                onChange={(e) => setChannelCodeInput(e.target.value)}
                 className="w-full border bg-white border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               />
             </div>

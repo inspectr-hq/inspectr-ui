@@ -2,21 +2,25 @@
 import React, { useState } from 'react';
 import Editor from '@monaco-editor/react';
 
-const ResponseContent = ({ request }) => {
+const ResponseContent = ({ operation }) => {
   const [showResponseHeaders, setShowResponseHeaders] = useState(false);
 
   const renderTableRows = (data) =>
-    Object.entries(data || {}).map(([key, value]) => (
-      <tr key={key}>
+    data.map((row) => (
+      <tr key={row.name}>
         <td className="border border-slate-200 px-2 py-1 font-mono text-slate-500 text-xs">
-          {key}
+          {row.name}
         </td>
-        <td className="border border-slate-200 px-2 py-1 font-mono text-xs">{value}</td>
+        <td className="border border-slate-200 px-2 py-1 font-mono text-xs">
+          <div className="flex flex-wrap items-center">
+            <span className="min-w-0 break-all flex-1">{row.value}</span>
+          </div>
+        </td>
       </tr>
     ));
 
   // Check if the response body has content.
-  const payload = request.response.payload;
+  const payload = operation.response.body;
   const isEmptyPayload =
     !payload ||
     (typeof payload === 'object' && Object.keys(payload).length === 0) ||
@@ -39,7 +43,7 @@ const ResponseContent = ({ request }) => {
           className="w-full p-2 text-left font-bold bg-gray-200"
           onClick={() => setShowResponseHeaders(!showResponseHeaders)}
         >
-          Headers ({Object.keys(request.response.headers || {}).length})
+          Headers ({(operation?.request?.headers ?? []).length})
         </button>
         {showResponseHeaders && (
           <div className="p-0">
@@ -50,7 +54,7 @@ const ResponseContent = ({ request }) => {
                   <th className="border border-slate-200 px-2 py-1 text-left">Value</th>
                 </tr>
               </thead>
-              <tbody>{renderTableRows(request.response.headers)}</tbody>
+              <tbody>{renderTableRows(operation?.request?.headers ?? [])}</tbody>
             </table>
           </div>
         )}

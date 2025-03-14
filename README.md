@@ -1,12 +1,12 @@
 # Inspectr UI
 
-React UI components for [Inspectr](https://github.com/thim81/inspectr#readme).
+React UI components for [Inspectr](https://github.com/inspectr-hq/inspectr#readme).
 
-<img src="https://raw.githubusercontent.com/thim81/inspectr/main/assets/inspectr-app.png" alt="Request Inspectr" width="80%">
+<img src="https://raw.githubusercontent.com/inspectr-hq/inspectr/main/assets/inspectr-app.png" alt="Request Inspectr" width="80%">
 
 ## Introduction
 
-**Inspectr UI** is a collection of React UI components built for the [Inspectr](https://github.com/thim81/inspectr#readme) project. It leverages modern tools like Vite and TailwindCSS to provide a fast, customizable, and modular UI library for your React applications.
+**Inspectr UI** is a collection of React UI components built for the [Inspectr](https://github.com/inspectr-hq/inspectr#readme) project. It leverages modern tools like Vite and TailwindCSS to provide a fast, customizable, and modular UI library for your React applications.
 
 ## Installation
 
@@ -55,8 +55,8 @@ npm run build-storybook
 
 ## Contributing
 
-Contributions are welcome! If you have ideas, improvements, or bug fixes, please open an issue or submit a pull request via the [GitHub repository](https://github.com/thim81/inspectr-ui).
+Contributions are welcome! If you have ideas, improvements, or bug fixes, please open an issue or submit a pull request via the [GitHub repository](https://github.com/inspectr-hq/inspectr-ui).
 
 ## Bugs & Issues
 
-Found a bug or have a feature request? Please report it via the [issue tracker](https://github.com/thim81/inspectr-ui/issues).
+Found a bug or have a feature request? Please report it via the [issue tracker](https://github.com/inspectr-hq/inspectr-ui/issues).

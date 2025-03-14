@@ -7,7 +7,7 @@ class EventDB {
     // Define the "events" table with indexes on the key fields.
     // Here "id" is the primary key.
     this.db.version(1).stores({
-      events: 'id, time, method, statusCode, path, latency, server'
+      events: 'id, time, method, statusCode, path, duration, server'
     });
   }
 
@@ -17,13 +17,14 @@ class EventDB {
     return {
       id,
       time,
-      method: data.method,
-      url: data.url,
-      server: data.server,
-      path: data.path,
-      clientIp: data.clientIp,
-      latency: data.latency,
-      statusCode: data.response?.statusCode,
+      operation_id: data.operation_id,
+      method: data.request.method,
+      url: data.request.url,
+      server: data.request.server,
+      path: data.request.path,
+      clientIp: data.request.client_ip,
+      duration: data.timing.duration,
+      statusCode: data.response?.status,
       raw: event
     };
   }
@@ -144,10 +145,10 @@ class EventDB {
     }
     // --- Filter on Duration ---
     if (filters.durationMin) {
-      collection = collection.filter(item => Number(item.latency) >= Number(filters.durationMin));
+      collection = collection.filter(item => Number(item.duration) >= Number(filters.durationMin));
     }
     if (filters.durationMax) {
-      collection = collection.filter(item => Number(item.latency) <= Number(filters.durationMax));
+      collection = collection.filter(item => Number(item.duration) <= Number(filters.durationMax));
     }
     // --- Filter on Host ---
     if (filters.host) {
