@@ -13,7 +13,7 @@ export const Default = Template.bind({});
 Default.args = {
   operation: {
     request: {
-      query_params: [{ key:search, value: 'test' }],
+      query_params: [{ key:'search', value: 'test' }],
       headers:  [{ 'key':'Content-Type', 'value':'application/json' }],
       body: JSON.stringify({ key: 'value' }, null, '\t')
     }
