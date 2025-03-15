@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Editor from '@monaco-editor/react';
 import DialogJwt from './DialogJwt.jsx';
+import CopyButton from './CopyButton.jsx';
 
 // Utility to convert Base64 URL strings to standard Base64.
 const base64UrlDecode = (str) => {
@@ -140,7 +141,7 @@ const RequestContent = ({ operation }) => {
       {/* Query Parameters Section */}
       <div className="mb-4">
         <button
-          className="w-full p-2 text-left font-bold bg-gray-200"
+          className="w-full p-2 text-left font-bold bg-gray-200 cursor-pointer"
           onClick={() => setShowQueryParams(!showQueryParams)}
         >
           Query Parameters ({(operation?.request?.query_params ?? []).length})
@@ -163,7 +164,7 @@ const RequestContent = ({ operation }) => {
       {/* Request Headers Section */}
       <div className="mb-4">
         <button
-          className="w-full p-2 text-left font-bold bg-gray-200"
+          className="w-full p-2 text-left font-bold bg-gray-200 cursor-pointer"
           onClick={() => setShowRequestHeaders(!showRequestHeaders)}
         >
           Headers ({(operation?.request?.headers ?? []).length})
@@ -185,7 +186,13 @@ const RequestContent = ({ operation }) => {
 
       {/* Request Body Section */}
       <div>
-        <button className="w-full p-2 text-left font-bold bg-gray-200">Request Body</button>
+        {/*<button className="w-full p-2 text-left font-bold bg-gray-200">Request Body</button>*/}
+        <div className="flex justify-between items-center bg-gray-200">
+          <button className="p-2 text-left font-bold flex-grow">
+            Request Body
+          </button>
+          <CopyButton textToCopy={formatPayload(payload)} />
+        </div>
         {isEmptyPayload ? (
           <div className="p-4 bg-white rounded-b shadow">No payload</div>
         ) : (

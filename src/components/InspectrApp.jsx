@@ -8,6 +8,11 @@ import eventDB from '../utils/eventDB';
 import ToastNotification from './ToastNotification.jsx';
 
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+const debugMode = typeof window !== 'undefined' && localStorage.getItem('debug') === 'true';
+
+if (debugMode) {
+  console.log('[Inspectr] Debug Mode enabled');
+}
 
 const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const [selectedOperation, setSelectedOperation] = useState(null);
@@ -276,8 +281,9 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
     eventSource.onmessage = (e) => {
       try {
         const event = JSON.parse(e.data);
-        // DEBUG
-        // console.log('[Inspectr] Received event:', event);
+        if (debugMode) {
+          console.log('[Inspectr] Received event:', event);
+        }
         // Update the list and, if it's the first event, select it.
         if (!event.id) event.id = generateId();
 
@@ -384,12 +390,14 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         </div>
 
         {/* Right Panel */}
-        <div className="w-2/3 p-4">
-          <RequestDetailsPanel
-            operation={selectedOperation}
-            currentTab={currentTab}
-            setCurrentTab={setCurrentTab}
-          />
+        <div className="w-2/3 p-4 h-full overflow-y-auto">
+          <div className="flex flex-col h-full">
+            <RequestDetailsPanel
+              operation={selectedOperation}
+              currentTab={currentTab}
+              setCurrentTab={setCurrentTab}
+            />
+          </div>
         </div>
       </div>
       {/* Bottom Panel */}
