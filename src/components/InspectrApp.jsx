@@ -8,6 +8,11 @@ import eventDB from '../utils/eventDB';
 import ToastNotification from './ToastNotification.jsx';
 
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+const debugMode = typeof window !== 'undefined' && localStorage.getItem('debug') === 'true';
+
+if (debugMode) {
+  console.log('[Inspectr] Debug Mode enabled');
+}
 
 const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const [selectedOperation, setSelectedOperation] = useState(null);
@@ -276,8 +281,9 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
     eventSource.onmessage = (e) => {
       try {
         const event = JSON.parse(e.data);
-        // DEBUG
-        // console.log('[Inspectr] Received event:', event);
+        if (debugMode) {
+          console.log('[Inspectr] Received event:', event);
+        }
         // Update the list and, if it's the first event, select it.
         if (!event.id) event.id = generateId();
 
