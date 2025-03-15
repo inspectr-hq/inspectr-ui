@@ -43,7 +43,7 @@ const ResponseContent = ({ operation }) => {
           className="w-full p-2 text-left font-bold bg-gray-200"
           onClick={() => setShowResponseHeaders(!showResponseHeaders)}
         >
-          Headers ({(operation?.request?.headers ?? []).length})
+          Headers ({(operation?.response?.headers ?? []).length})
         </button>
         {showResponseHeaders && (
           <div className="p-0">
@@ -54,7 +54,7 @@ const ResponseContent = ({ operation }) => {
                   <th className="border border-slate-200 px-2 py-1 text-left">Value</th>
                 </tr>
               </thead>
-              <tbody>{renderTableRows(operation?.request?.headers ?? [])}</tbody>
+              <tbody>{renderTableRows(operation?.response?.headers ?? [])}</tbody>
             </table>
           </div>
         )}
