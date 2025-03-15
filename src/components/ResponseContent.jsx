@@ -63,11 +63,8 @@ const ResponseContent = ({ operation }) => {
 
       {/* Response Body Section */}
       <div>
-        {/*<button className="w-full p-2 text-left font-bold bg-gray-200">Response Body</button>*/}
         <div className="flex justify-between items-center bg-gray-200">
-          <button className="p-2 text-left font-bold flex-grow">
-            Response Body
-          </button>
+          <button className="p-2 text-left font-bold flex-grow">Response Body</button>
           <CopyButton textToCopy={formatPayload(payload)} />
         </div>
         {isEmptyPayload ? (
