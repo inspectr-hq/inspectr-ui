@@ -10,7 +10,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   }
 
   return (
-    <div>
+    <div className="flex flex-col h-full">
       <RequestDetail operation={operation} />
 
       {/* Tabs for Request and Response */}
@@ -34,7 +34,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
       </div>
 
       {/* Tab Content */}
-      <div className="p-4 bg-white rounded-b shadow">
+      <div className="p-4 bg-white rounded-b shadow flex-grow overflow-y-auto" style={{ maxHeight: 'calc(100vh - 270px)' }}>
         {currentTab === 'request' ? (
           <RequestContent operation={operation} />
         ) : (

@@ -390,12 +390,14 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         </div>
 
         {/* Right Panel */}
-        <div className="w-2/3 p-4">
-          <RequestDetailsPanel
-            operation={selectedOperation}
-            currentTab={currentTab}
-            setCurrentTab={setCurrentTab}
-          />
+        <div className="w-2/3 p-4 h-full overflow-y-auto">
+          <div className="flex flex-col h-full">
+            <RequestDetailsPanel
+              operation={selectedOperation}
+              currentTab={currentTab}
+              setCurrentTab={setCurrentTab}
+            />
+          </div>
         </div>
       </div>
       {/* Bottom Panel */}
