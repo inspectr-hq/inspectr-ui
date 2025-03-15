@@ -1,6 +1,7 @@
 // src/components/ResponseContent.jsx
 import React, { useState } from 'react';
 import Editor from '@monaco-editor/react';
+import CopyButton from './CopyButton.jsx';
 
 const ResponseContent = ({ operation }) => {
   const [showResponseHeaders, setShowResponseHeaders] = useState(false);
@@ -40,7 +41,7 @@ const ResponseContent = ({ operation }) => {
       {/* Response Headers Section */}
       <div className="mb-4">
         <button
-          className="w-full p-2 text-left font-bold bg-gray-200"
+          className="w-full p-2 text-left font-bold bg-gray-200 cursor-pointer"
           onClick={() => setShowResponseHeaders(!showResponseHeaders)}
         >
           Headers ({(operation?.response?.headers ?? []).length})
@@ -62,7 +63,13 @@ const ResponseContent = ({ operation }) => {
 
       {/* Response Body Section */}
       <div>
-        <button className="w-full p-2 text-left font-bold bg-gray-200">Response Body</button>
+        {/*<button className="w-full p-2 text-left font-bold bg-gray-200">Response Body</button>*/}
+        <div className="flex justify-between items-center bg-gray-200">
+          <button className="p-2 text-left font-bold flex-grow">
+            Response Body
+          </button>
+          <CopyButton textToCopy={formatPayload(payload)} />
+        </div>
         {isEmptyPayload ? (
           <div className="p-4 bg-white rounded-b shadow">No payload</div>
         ) : (

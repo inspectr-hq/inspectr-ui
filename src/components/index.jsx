@@ -1,6 +1,7 @@
 // src/components/index.jsx
 
 export { default as InspectrApp } from './InspectrApp.jsx';
+export { default as CopyButton } from './CopyButton.jsx';
 export { default as DialogConfirmClear } from './DialogConfirmClear.jsx';
 export { default as DialogJwt } from './DialogJwt.jsx';
 export { default as DividerText } from './DividerText.jsx';
