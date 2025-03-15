@@ -101,7 +101,7 @@ const RequestDetail = ({ operation }) => {
   };
 
   return (
-    <div className="mb-4 p-4 bg-white rounded shadow relative">
+    <div className="mb-4 p-4 bg-white border border-gray-300 rounded shadow relative">
       <div className="flex items-center justify-between mb-2">
         <h2 className="font-bold text-2xl">Request Details</h2>
         <div className="flex space-x-2">

@@ -34,7 +34,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
       </div>
 
       {/* Tab Content */}
-      <div className="p-4 bg-white rounded-b shadow flex-grow overflow-y-auto" style={{ maxHeight: 'calc(100vh - 270px)' }}>
+      <div className="p-4 bg-white border border-gray-300 rounded-b shadow flex-grow overflow-y-auto" style={{ maxHeight: 'calc(100vh - 270px)' }}>
         {currentTab === 'request' ? (
           <RequestContent operation={operation} />
         ) : (
