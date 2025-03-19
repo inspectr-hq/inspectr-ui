@@ -5,12 +5,14 @@ import ToastNotification from './ToastNotification';
 import { getMethodTextClass } from '../utils/getMethodClass.js';
 
 const RequestDetail = ({ operation }) => {
-  const [showToast, setShowToast] = useState(false);
+  const [copiedCurl, setCopiedCurl] = useState(false);
+  const [showCurlErrorToast, setShowCurlErrorToast] = useState(false);
   const [showUrlToast, setShowUrlToast] = useState(false);
   const [showReplayToast, setShowReplayToast] = useState(false);
+  const [replayed, setReplayed] = useState(false);
 
   const formatTimestamp = (isoString) => {
-    if (!isoString) return 'N/A'; // Handle missing timestamp
+    if (!isoString) return 'N/A';
     const date = new Date(isoString);
     const formattedDate = date.toLocaleDateString('en-CA', {
       // YYYY-MM-DD format
@@ -30,12 +32,9 @@ const RequestDetail = ({ operation }) => {
 
   // Generate a cURL command string from the request data
   const generateCurlCommand = () => {
-    if (!operation?.request) {
-      return;
-    }
-    const { request } = operation; // Destructure the request object
+    if (!operation?.request) return;
+    const { request } = operation;
     const { method, url, headers, body } = request;
-
     let curlCommand = `curl -X ${method} '${url}'`;
 
     // Add headers
@@ -58,10 +57,12 @@ const RequestDetail = ({ operation }) => {
     navigator.clipboard
       .writeText(curlCommand)
       .then(() => {
-        setShowToast(true);
+        setCopiedCurl(true);
+        setTimeout(() => setCopiedCurl(false), 2500);
       })
       .catch((err) => {
         console.error('[Inspectr] Failed to copy cURL command:', err);
+        setShowCurlErrorToast(true);
       });
   };
 
@@ -80,7 +81,6 @@ const RequestDetail = ({ operation }) => {
   // POST the request event to /api/replay endpoint
   const handleReplay = () => {
     const { meta, timing, response, ...opRequest } = operation;
-
     fetch('/api/replay', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -93,12 +93,30 @@ const RequestDetail = ({ operation }) => {
         return response.json();
       })
       .then(() => {
-        setShowReplayToast(true);
+        setReplayed(true);
+        setTimeout(() => setReplayed(false), 2500);
       })
       .catch((err) => {
         console.error('[Inspectr] Failed to replay request:', err);
+        setShowReplayToast(true);
       });
   };
+
+  const buttonClasses =
+    'flex items-center space-x-2 px-2 py-1 border border-slate-600 text-slate-600 rounded focus:outline-none cursor-pointer transition-transform duration-150 ease-in-out active:scale-95 active:bg-slate-200 active:ring active:ring-slate-300';
+
+  // check icon SVG.
+  const CheckIcon = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+    </svg>
+  );
 
   return (
     <div className="mb-4 p-4 bg-white border border-gray-300 rounded shadow relative">
@@ -106,47 +124,48 @@ const RequestDetail = ({ operation }) => {
         <h2 className="font-bold text-2xl">Request Details</h2>
         <div className="flex space-x-2">
           {/* Copy as cURL Button */}
-          <button
-            onClick={handleCopyCurl}
-            className="flex items-center space-x-2 px-2 py-1 border border-slate-600 text-slate-600 rounded focus:outline-none cursor-pointer"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="h-4 w-4"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="m6.75 7.5 3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 18V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v12a2.25 2.25 0 0 0 2.25 2.25Z"
-              />
-            </svg>
-            <span className="text-xs">Copy as cURL</span>
+          <button onClick={handleCopyCurl} className={buttonClasses}>
+            {copiedCurl ? (
+              <CheckIcon />
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                stroke="currentColor"
+                className="h-4 w-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m6.75 7.5 3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 18V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v12a2.25 2.25 0 0 0 2.25 2.25Z"
+                />
+              </svg>
+            )}
+            <span className="text-xs">{copiedCurl ? 'Copied cURL' : 'Copy as cURL'}</span>
           </button>
           {/* Replay Button */}
-          <button
-            onClick={handleReplay}
-            className="flex items-center space-x-2 px-2 py-1 border border-slate-600 text-slate-600 rounded focus:outline-none cursor-pointer"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="h-4 w-4"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-              />
-            </svg>
-
-            <span className="text-xs">Replay</span>
+          <button onClick={handleReplay} className={buttonClasses}>
+            {replayed ? (
+              <CheckIcon />
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="h-4 w-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+                />
+              </svg>
+            )}
+            <span className="text-xs">{replayed ? 'Replayed' : 'Replay'}</span>
           </button>
         </div>
       </div>
@@ -195,11 +214,11 @@ const RequestDetail = ({ operation }) => {
       </div>
 
       {/* Toast Notifications */}
-      {showToast && (
+      {showCurlErrorToast && (
         <ToastNotification
-          message="cURL command copied!"
-          subMessage="You can now paste it into your terminal."
-          onClose={() => setShowToast(false)}
+          message="Failed to copy cURL command!"
+          subMessage="Please try again."
+          onClose={() => setShowCurlErrorToast(false)}
         />
       )}
       {showUrlToast && (
@@ -211,8 +230,8 @@ const RequestDetail = ({ operation }) => {
       )}
       {showReplayToast && (
         <ToastNotification
-          message="Replay sent!"
-          subMessage="The request event has been replayd."
+          message="Replay failed!"
+          subMessage="Failed to replay the request. Please try again."
           onClose={() => setShowReplayToast(false)}
         />
       )}
