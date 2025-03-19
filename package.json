@@ -2,7 +2,7 @@
   "name": "@inspectr/ui",
   "description": "React UI components for Inspectr",
   "type": "module",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "author": "Tim Haselaars",
   "homepage": "https://github.com/inspectr-hq/inspectr#readme",
   "bugs": "https://github.com/inspectr-hq/inspectr-ui/issues",
