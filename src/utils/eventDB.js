@@ -7,24 +7,24 @@ class EventDB {
     // Define the "events" table with indexes on the key fields.
     // Here "id" is the primary key.
     this.db.version(1).stores({
-      events: 'id, time, method, statusCode, path, duration, server'
+      events: 'id, time, operation_id, method, status_code, path, duration, server'
     });
   }
 
   // Helper method to transform a raw SSE event into a flattened record.
   transformEvent(event) {
-    const { id, time, data } = event;
+    const { id, time, data, operation_id } = event;
     return {
       id,
       time,
-      operation_id: data.operation_id,
+      operation_id,
       method: data.request.method,
       url: data.request.url,
       server: data.request.server,
       path: data.request.path,
-      clientIp: data.request.client_ip,
+      client_ip: data.request.client_ip,
       duration: data.timing.duration,
-      statusCode: data.response?.status,
+      status_code: data.response?.status,
       raw: event
     };
   }
@@ -131,7 +131,7 @@ class EventDB {
     // --- Filter on Status Code ---
     if (filters.status && Array.isArray(filters.status) && filters.status.length > 0) {
       collection = collection.filter(item =>
-        filters.status.includes(String(item.statusCode))
+        filters.status.includes(String(item.status_code))
       );
     }
     // --- Filter on HTTP Method ---

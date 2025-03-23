@@ -64,19 +64,13 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const totalCount = useLiveQuery(() => eventDB.db.events.count(), []);
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
 
-  /**
-   * 🏁 Step 1: Load credentials from localStorage on mount
-   */
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    // Read query parameters using URLSearchParams
+  // Load credentials from URL query parameters
+  const loadCredentialsFromQueryParams = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const queryChannelCode = urlParams.get('channelCode');
     const queryChannel = urlParams.get('channel');
     const queryToken = urlParams.get('token');
 
-    // Query parameters take precedence
     if (queryChannelCode || queryChannel || queryToken) {
       console.log('🔍 Found credentials in query params');
       if (queryChannelCode) {
@@ -91,46 +85,72 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         setToken(queryToken);
         localStorage.setItem('token', queryToken);
       }
-
-      // Update the URL without reloading the page
+      // Update the URL without reloading the page.
       window.history.replaceState(
         {},
         '',
         `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`
       );
-    } else {
-      // Otherwise, check localStorage
-      const storedChannelCode = localStorage.getItem('channelCode');
-      const storedChannel = localStorage.getItem('channel');
-      const storedToken = localStorage.getItem('token');
-
-      if (storedChannelCode && storedChannel && storedToken) {
-        console.log('✅ Using stored credentials from localStorage');
-        setChannelCode(storedChannelCode);
-        setChannel(storedChannel);
-        setToken(storedToken);
-      } else if (isLocalhost) {
-        console.log('🔄 Fetching /app/config (Localhost, No credentials found)');
-        fetch('/app/config')
-          .then((res) => res.json())
-          .then((result) => {
-            if (result?.token && result?.sse_endpoint && result?.channel_code) {
-              console.log('✅ Loaded from /app/config:', result);
-              setChannelCode(result.channel_code);
-              localStorage.setItem('channelCode', result.channel_code);
-              setChannel(result.channel);
-              localStorage.setItem('channel', result.channel);
-              setToken(result.token);
-              localStorage.setItem('token', result.token);
-              setSseEndpoint(result.sse_endpoint);
-              localStorage.setItem('sseEndpoint', result.sse_endpoint);
-            }
-          })
-          .catch((err) => console.error('❌ Failed to load /app/config:', err));
-      }
+      return true;
     }
+    return false;
+  };
 
-    setIsInitialized(true);
+  // Load credentials from local storage
+  const loadCredentialsFromLocalStorage = () => {
+    const storedChannelCode = localStorage.getItem('channelCode');
+    const storedChannel = localStorage.getItem('channel');
+    const storedToken = localStorage.getItem('token');
+
+    if (storedChannelCode && storedChannel && storedToken) {
+      console.log('✅ Using stored credentials from localStorage');
+      setChannelCode(storedChannelCode);
+      setChannel(storedChannel);
+      setToken(storedToken);
+      return true;
+    }
+    return false;
+  };
+
+
+  // Load credentials from REST API
+  const loadCredentialsFromApi = async () => {
+    console.log('🔄 Fetching /app/config (Localhost, No credentials found)');
+    try {
+      const result = await getConfigApi();
+      if (result?.token && result?.sse_endpoint && result?.channel_code) {
+        console.log('✅ Loaded from /app/config:', result);
+        setChannelCode(result.channel_code);
+        localStorage.setItem('channelCode', result.channel_code);
+        setChannel(result.channel);
+        localStorage.setItem('channel', result.channel);
+        setToken(result.token);
+        localStorage.setItem('token', result.token);
+        setSseEndpoint(result.sse_endpoint);
+        localStorage.setItem('sseEndpoint', result.sse_endpoint);
+      }
+    } catch (err) {
+      console.error('❌ Failed to load /app/config:', err);
+    }
+  };
+
+  /**
+   * 🏁 Step 1: Load credentials from localStorage on mount
+   */
+  useEffect(() => {
+    const loadCredentials = async () => {
+      if (typeof window === 'undefined') return;
+
+      if (!loadCredentialsFromQueryParams()) {
+        if (!loadCredentialsFromLocalStorage() && isLocalhost) {
+          await loadCredentialsFromApi();
+        }
+      }
+
+      setIsInitialized(true);
+    };
+
+    loadCredentials();
   }, []);
 
   /**
@@ -165,16 +185,8 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
       console.log('📤 Registering with:', requestBody);
 
-      const response = await fetch(`${apiEndpoint}/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-inspectr-client': 'inspectr-app'
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      const result = await response.json();
+      // Register App with Inspectr
+      const result = await registerApi(requestBody);
 
       if (result?.token && result?.sse_endpoint && result?.channel_code) {
         console.log('✅ Registration successful');
@@ -335,7 +347,12 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   // Clear all operations.
   const clearOperations = () => {
     setSelectedOperation(null);
+    // Clear operations locally
     eventDB.clearEvents().catch((err) => console.error('Error clearing events from DB:', err));
+    // Clear operations from Inspectr
+    deleteAllOperationsApi().catch((err) => console.error('Error deleting operations from Inspectr:', err));
+    // Unset lastEventId
+    localStorage.removeItem('lastEventId');
   };
 
   // Clear only the operations matching the active filters.
@@ -348,7 +365,14 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         page: 1,
         pageSize: Number.MAX_SAFE_INTEGER
       });
-      await Promise.all(filteredOperations.map((record) => eventDB.deleteEvent(record.id)));
+      await Promise.all(
+        filteredOperations.map(async (record) => {
+          // Delete operation from local Dexie DB.
+          await eventDB.deleteEvent(record.id);
+          // Delete operation from the API.
+          await deleteOperationApi(record.operation_id);
+        })
+      );
       if (
         selectedOperation &&
         filteredOperations.some((record) => record.id === selectedOperation.id)
@@ -361,11 +385,88 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   };
 
   // Remove a single request.
-  const removeOperation = (opId) => {
+  const removeOperation = async (opId) => {
     if (selectedOperation && (selectedOperation.id || '') === opId) {
       setSelectedOperation(null);
     }
+    const operation = await eventDB.getEvent(opId);
+    // Clear operation locally
     eventDB.deleteEvent(opId).catch((err) => console.error('Error deleting event from DB:', err));
+    deleteOperationApi(operation.operation_id).catch((err) => console.error('Error deleting operation from Inspectr:', err));
+  };
+
+  /**
+   * Inspectr API methods
+   */
+  // Delete all operations via REST API
+  const deleteAllOperationsApi = async () => {
+    try {
+      const response = await fetch(`${apiEndpoint}/operations`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-inspectr-client': 'inspectr-app'
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete all operations');
+      }
+    } catch (error) {
+      console.error('Error deleting all operations:', error);
+      setToast({
+        message: 'Error deleting all operations',
+        subMessage: error.message,
+        type: 'error'
+      });
+    }
+  };
+
+  // Delete a single operation via REST API
+  const deleteOperationApi = async (id) => {
+    try {
+      const response = await fetch(`${apiEndpoint}/operations/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-inspectr-client': 'inspectr-app'
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to delete operation ${id}`);
+      }
+    } catch (error) {
+      console.error(`Error deleting operation ${id}:`, error);
+      setToast({
+        message: 'Error deleting operation',
+        subMessage: error.message,
+        type: 'error'
+      });
+    }
+  };
+
+  // Register Inspectr App via REST API
+  const registerApi = async (requestBody) => {
+    const response = await fetch(`${apiEndpoint}/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-inspectr-client': 'inspectr-app'
+      },
+      body: JSON.stringify(requestBody)
+    });
+    if (!response.ok) {
+      throw new Error(`Registration API call failed with status ${response.status}`);
+    }
+    return await response.json();
+  };
+
+  // Get local Inspectr App config via REST API
+  const getConfigApi = async () => {
+    const response = await fetch('/app/config');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch config: ${response.status}`);
+    }
+    return await response.json();
   };
 
   return (
