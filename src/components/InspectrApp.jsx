@@ -49,7 +49,9 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
   // Live query: get the events for the current page.
   const operations = useLiveQuery(() => {
-    // console.log('[Inspectr] filters', filters);
+    if (debugMode) {
+      console.log('[Inspectr] filters', filters);
+    }
     return eventDB.queryEvents({
       sort: { field: sortField, order: sortDirection },
       filters,
@@ -77,17 +79,14 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
     // Query parameters take precedence
     if (queryChannelCode || queryChannel || queryToken) {
       console.log('🔍 Found credentials in query params');
-
       if (queryChannelCode) {
         setChannelCode(queryChannelCode);
         localStorage.setItem('channelCode', queryChannelCode);
       }
-
       if (queryChannel) {
         setChannel(queryChannel);
         localStorage.setItem('channel', queryChannel);
       }
-
       if (queryToken) {
         setToken(queryToken);
         localStorage.setItem('token', queryToken);
@@ -117,16 +116,12 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
           .then((result) => {
             if (result?.token && result?.sse_endpoint && result?.channel_code) {
               console.log('✅ Loaded from /app/config:', result);
-
               setChannelCode(result.channel_code);
               localStorage.setItem('channelCode', result.channel_code);
-
               setChannel(result.channel);
               localStorage.setItem('channel', result.channel);
-
               setToken(result.token);
               localStorage.setItem('token', result.token);
-
               setSseEndpoint(result.sse_endpoint);
               localStorage.setItem('sseEndpoint', result.sse_endpoint);
             }
@@ -268,9 +263,17 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   // Connect to SSE when the component mounts.
   useEffect(() => {
     if (!sseEndpoint) return;
+
+    // Retrieve the last_event_id from localStorage
+    const lastEventId = localStorage.getItem('lastEventId');
+    let sseUrl = sseEndpoint;
+    if (lastEventId) {
+      sseUrl += sseUrl.includes('?') ? `&last_event_id=${lastEventId}` : `?last_event_id=${lastEventId}`;
+    }
+
     const generateId = () => `req-${Math.random().toString(36).substr(2, 9)}`;
-    const eventSource = new EventSource(sseEndpoint);
-    console.log(`🔄 SSE connecting with ${sseEndpoint}`);
+    const eventSource = new EventSource(sseUrl);
+    console.log(`🔄 SSE connecting with ${sseUrl}`);
 
     eventSource.onopen = () => {
       console.log('📡️ SSE connection opened.');
@@ -286,6 +289,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         }
         // Update the list and, if it's the first event, select it.
         if (!event.id) event.id = generateId();
+        if (event.operation_id) localStorage.setItem('lastEventId', event.operation_id);
 
         // Save the incoming event to the DB.
         eventDB.upsertEvent(event).catch((err) => console.error('Error saving event to DB:', err));
