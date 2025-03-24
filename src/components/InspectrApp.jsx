@@ -112,7 +112,6 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
     return false;
   };
 
-
   // Load credentials from REST API
   const loadCredentialsFromApi = async () => {
     console.log('🔄 Fetching /app/config (Localhost, No credentials found)');
@@ -280,7 +279,9 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
     const lastEventId = localStorage.getItem('lastEventId');
     let sseUrl = sseEndpoint;
     if (lastEventId) {
-      sseUrl += sseUrl.includes('?') ? `&last_event_id=${lastEventId}` : `?last_event_id=${lastEventId}`;
+      sseUrl += sseUrl.includes('?')
+        ? `&last_event_id=${lastEventId}`
+        : `?last_event_id=${lastEventId}`;
     }
 
     const generateId = () => `req-${Math.random().toString(36).substr(2, 9)}`;
@@ -350,7 +351,9 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
     // Clear operations locally
     eventDB.clearEvents().catch((err) => console.error('Error clearing events from DB:', err));
     // Clear operations from Inspectr
-    deleteAllOperationsApi().catch((err) => console.error('Error deleting operations from Inspectr:', err));
+    deleteAllOperationsApi().catch((err) =>
+      console.error('Error deleting operations from Inspectr:', err)
+    );
     // Unset lastEventId
     localStorage.removeItem('lastEventId');
   };
@@ -392,7 +395,9 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
     const operation = await eventDB.getEvent(opId);
     // Clear operation locally
     eventDB.deleteEvent(opId).catch((err) => console.error('Error deleting event from DB:', err));
-    deleteOperationApi(operation.operation_id).catch((err) => console.error('Error deleting operation from Inspectr:', err));
+    deleteOperationApi(operation.operation_id).catch((err) =>
+      console.error('Error deleting operation from Inspectr:', err)
+    );
   };
 
   /**
