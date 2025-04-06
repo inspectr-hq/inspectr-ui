@@ -70,7 +70,7 @@ const ResponseContent = ({ operation }) => {
         {isEmptyPayload ? (
           <div className="p-4 bg-white rounded-b shadow">No payload</div>
         ) : (
-          <div className="bg-white rounded-b shadow p-0 h-100">
+          <div className="bg-white rounded-b shadow p-0 h-[400px]">
             <Editor
               height="100%"
               defaultLanguage="json"
