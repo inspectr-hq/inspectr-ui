@@ -1,77 +1,41 @@
-// 'use client';
+// src/components/DashBoardBarList.jsx
 
 import { useState } from 'react';
 import { BarList, Card } from '@tremor/react';
 
-const pages = [
-  {
-    name: '/home',
-    value: 2019,
-  },
-  {
-    name: '/blocks',
-    value: 1053,
-  },
-  {
-    name: '/components',
-    value: 997,
-  },
-  {
-    name: '/docs/getting-started/installation',
-    value: 982,
-  },
-  {
-    name: '/docs/components/button',
-    value: 782,
-  },
-  {
-    name: '/docs/components/table',
-    value: 752,
-  },
-  {
-    name: '/docs/components/area-chart',
-    value: 741,
-  },
-  {
-    name: '/docs/components/badge',
-    value: 750,
-  },
-  {
-    name: '/docs/components/bar-chart',
-    value: 750,
-  },
-  {
-    name: '/docs/components/tabs',
-    value: 720,
-  },
-];
-
 const valueFormatter = (number) =>
   `${Intl.NumberFormat('us').format(number).toString()}`;
 
-export default function DashBoardBarList() {
+export default function DashBoardBarList({ title, data, toggleable = true }) {
   const [extended, setExtended] = useState(true);
-  return (
-    <>
-      {/*<Card className="p-0 sm:mx-auto sm:max-w-lg">*/}
-      <Card className="mt-4 rounded-tremor-small p-2">
-        <div className="flex items-center justify-between border-b border-tremor-border p-6 dark:border-dark-tremor-border">
-          <p className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-            Top Endpoints
-          </p>
-          <p className="text-tremor-label font-medium uppercase text-tremor-content dark:text-dark-tremor-content">
-            Visitors
-          </p>
-        </div>
-        <div
-          className={`overflow-hidden p-6 ${extended ? '' : 'max-h-[260px]'}`}
-        >
-          <BarList data={pages} valueFormatter={valueFormatter} />
-        </div>
+  // If toggleable is false, always show extended content.
+  const showExtended = toggleable ? extended : true;
 
+  // Transform data from { path, count } to { name, value }
+  const transformedData = data
+    ? data.map((item) => ({
+        name: item.path,
+        value: item.count,
+      }))
+    : [];
+
+  return (
+    <Card className="mt-4 rounded-tremor-small p-2">
+      <div className="flex items-center justify-between border-b border-tremor-border p-6 dark:border-dark-tremor-border">
+        <p className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+          {title}
+        </p>
+        <p className="text-tremor-label font-medium uppercase text-tremor-content dark:text-dark-tremor-content">
+          Visitors
+        </p>
+      </div>
+      <div className={`overflow-hidden p-6 ${showExtended ? '' : 'max-h-[260px]'}`}>
+        <BarList data={transformedData} valueFormatter={valueFormatter} />
+      </div>
+      {toggleable && (
         <div
           className={`flex justify-center ${
-            extended
+            actualExtended
               ? 'px-6 pb-6'
               : 'absolute inset-x-0 bottom-0 rounded-b-tremor-default bg-gradient-to-t from-tremor-background to-transparent py-7 dark:from-dark-tremor-background'
           }`}
@@ -83,7 +47,7 @@ export default function DashBoardBarList() {
             {extended ? 'Show less' : 'Show more'}
           </button>
         </div>
-      </Card>
-    </>
+      )}
+    </Card>
   );
 }

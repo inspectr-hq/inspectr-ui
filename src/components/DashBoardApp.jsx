@@ -1,12 +1,11 @@
-// 'use client';
-
-import { Card, Select, SelectItem } from '@tremor/react';
+// src/components/DashBoardApp.jsx
+import React, { useState, useEffect, useRef } from 'react';
+import { Card, Select, SelectItem, Button } from '@tremor/react';
 import DashBoardKpi from './DashBoardKpi.jsx';
 import DashBoardVolume from './DashBoardVolume.jsx';
 import DashBoardResponseTimes from './DashBoardResponseTimes.jsx';
 import DashBoardBarList from './DashBoardBarList.jsx';
 import DashBoardDonutChart from './DashBoardDonutChart.jsx';
-
 
 function ContentPlaceholder() {
   return (
@@ -39,12 +38,47 @@ function ContentPlaceholder() {
 }
 
 export default function DashBoardApp() {
+
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [apiEndpoint, setApiEndpoint] = useState('http://localhost:4004/api');
+
+  // Get operation statistics via REST API
+  const getStatsOperationsApi = async () => {
+    const response = await fetch(`${apiEndpoint}/stats/operations`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch stats operations: ${response.status}`);
+    }
+    return await response.json();
+  };
+
+  // Handler for refresh button
+  const handleLoadStats = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getStatsOperationsApi();
+      setStats(data);
+      console.log('Fetched stats operations:', data);
+    } catch (err) {
+      setError(err.message);
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Trigger fetching of statistics on component mount
+  useEffect(() => {
+    handleLoadStats();
+  }, []);
+
   return (
     <>
       <header>
         <div className="sm:flex sm:items-center sm:justify-between">
-          <h3
-            className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+          <h3 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
             Inspectr Dashboard
           </h3>
           <div className="mt-4 items-center sm:mt-0 sm:flex sm:space-x-2">
@@ -67,14 +101,22 @@ export default function DashBoardApp() {
               <SelectItem value="2">US-East</SelectItem>
               <SelectItem value="3">EU-Central-1</SelectItem>
             </Select>
+            {/* Refresh Button */}
+            <Button onClick={handleLoadStats} className="mt-2 sm:mt-0">
+              {loading ? 'Refreshing...' : 'Refresh'}
+            </Button>
           </div>
+          {error && (
+            <p className="mt-2 text-red-600 dark:text-red-400">
+              Error: {error}
+            </p>
+          )}
         </div>
       </header>
       <main>
         <div className="mt-6">
-          <DashBoardKpi></DashBoardKpi>
+          <DashBoardKpi overall={stats?.overall} />
         </div>
-
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card className="h-36 rounded-tremor-small p-2">
             <ContentPlaceholder />
@@ -92,19 +134,19 @@ export default function DashBoardApp() {
         </div>
         <div className="mt-6 grid grid-cols-3 gap-4 items-stretch">
           <div className="col-span-2">
-          <DashBoardResponseTimes />
+            <DashBoardResponseTimes />
           </div>
           <div className="col-span-1">
-          <DashBoardBarList />
+            <DashBoardBarList title="Top Endpoints" data={stats?.top_endpoints} toggleable={false} />
           </div>
         </div>
         <div className="mt-6 grid grid-cols-3 gap-4 md:grid-cols-3 lg:grid-cols-3">
-          <DashBoardDonutChart  />
-          <DashBoardDonutChart  />
-          <DashBoardDonutChart  />
+          <DashBoardDonutChart />
+          <DashBoardDonutChart />
+          <DashBoardDonutChart />
         </div>
         <div className="mt-6 grid grid-cols-3 gap-4 md:grid-cols-3 lg:grid-cols-3">
-          <DashBoardBarList  />
+          <DashBoardBarList title="Top Failed Endpoints" data={stats?.top_failed_endpoints} toggleable={false} />
         </div>
       </main>
     </>
