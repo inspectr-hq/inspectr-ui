@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Select, SelectItem, Button } from '@tremor/react';
 import DashBoardKpi from './DashBoardKpi.jsx';
-import DashBoardVolume from './DashBoardVolume.jsx';
-import DashBoardResponseTimes from './DashBoardResponseTimes.jsx';
+import DashBoardBarChart from './DashBoardBarChart.jsx';
+import DashBoardLineChart from './DashBoardLineChart.jsx';
 import DashBoardBarList from './DashBoardBarList.jsx';
 import DashBoardDonutChart from './DashBoardDonutChart.jsx';
 
@@ -78,7 +78,8 @@ export default function DashBoardApp() {
     <>
       <header>
         <div className="sm:flex sm:items-center sm:justify-between">
-          <h3 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+          <h3
+            className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
             Inspectr Dashboard
           </h3>
           <div className="mt-4 items-center sm:mt-0 sm:flex sm:space-x-2">
@@ -129,24 +130,45 @@ export default function DashBoardApp() {
           </Card>
         </div>
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-2">
-          <DashBoardVolume />
-          <DashBoardResponseTimes />
+          <DashBoardBarChart
+            title="Traffic Volume"
+            data={stats?.by_interval} />
+          <DashBoardLineChart
+            title="Average Response Times"
+            data={stats?.by_interval}
+            metricKey="average_response_time"
+            metricUnit="ms"
+            calculationLabel="Average Response Time"
+          />
         </div>
         <div className="mt-6 grid grid-cols-3 gap-4 items-stretch">
           <div className="col-span-2">
-            <DashBoardResponseTimes />
+            <DashBoardLineChart
+              title="Error Rate"
+              data={stats?.by_interval}
+              metricKey="errors"
+              metricUnit=""
+              calculationLabel="Average Errors"
+            />
           </div>
           <div className="col-span-1">
-            <DashBoardBarList title="Top Endpoints" data={stats?.top_endpoints} toggleable={false} />
+            <DashBoardBarList title="Top Endpoints" data={stats?.top_endpoints?.all} toggleable={false} />
           </div>
         </div>
         <div className="mt-6 grid grid-cols-3 gap-4 md:grid-cols-3 lg:grid-cols-3">
-          <DashBoardDonutChart />
-          <DashBoardDonutChart />
+          <DashBoardDonutChart
+            title="Method Ratio"
+            description="Distribution of HTTP methods"
+            data={stats?.totals?.method} />
+          <DashBoardDonutChart
+            title="Status Ratio"
+            description="Distribution of HTTP status codes"
+            data={stats?.totals?.status}
+          />
           <DashBoardDonutChart />
         </div>
         <div className="mt-6 grid grid-cols-3 gap-4 md:grid-cols-3 lg:grid-cols-3">
-          <DashBoardBarList title="Top Failed Endpoints" data={stats?.top_failed_endpoints} toggleable={false} />
+          <DashBoardBarList title="Top Failed Endpoints" data={stats?.top_endpoints?.error} toggleable={false} />
         </div>
       </main>
     </>

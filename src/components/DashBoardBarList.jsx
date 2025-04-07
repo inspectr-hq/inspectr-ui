@@ -26,7 +26,7 @@ export default function DashBoardBarList({ title, data, toggleable = true }) {
           {title}
         </p>
         <p className="text-tremor-label font-medium uppercase text-tremor-content dark:text-dark-tremor-content">
-          Visitors
+          Totals
         </p>
       </div>
       <div className={`overflow-hidden p-6 ${showExtended ? '' : 'max-h-[260px]'}`}>
