@@ -78,7 +78,7 @@ export default function DashBoardDonutChart({
           category="amount"
           index="name"
           valueFormatter={formatter}
-          showTooltip={false}
+          showTooltip={true}
           className="h-40"
           colors={donutChartColors}
         />

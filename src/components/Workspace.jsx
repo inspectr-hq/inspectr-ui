@@ -22,7 +22,7 @@ const Logo = (props) => (
 export default function Workspace() {
   return (
     <>
-      <div className="border-b border-tremor-border dark:border-dark-tremor-border">
+      <div className="border-b border-tremor-border dark:border-dark-tremor-border relative h-full overflow-hidden bg-gray-50 dark:bg-dark-tremor-background-subtle">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="overflow flex h-16 sm:space-x-7">
             <div className="hidden shrink-0 sm:flex sm:items-center">
@@ -53,7 +53,7 @@ export default function Workspace() {
           </div>
         </div>
       </div>
-      <div className="p-4 sm:p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-950">
         <DashBoardApp></DashBoardApp>
       </div>
     </>

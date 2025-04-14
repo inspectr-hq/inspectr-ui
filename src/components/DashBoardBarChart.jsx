@@ -114,20 +114,14 @@ function valueFormatter(number) {
 
 export default function DashBoardBarChart({
   title = 'Traffic Volume',
-  data = [],
+  data,
   valueFormatter,
 }) {
-  // Default value formatter: format numbers with compact notation.
-  const defaultValueFormatter = (number) =>
-    Intl.NumberFormat('en-US', {
-      maximumFractionDigits: 0,
-      notation: 'compact',
-      compactDisplay: 'short',
-    }).format(number);
-  const formatter = valueFormatter || defaultValueFormatter;
+  // Ensure data is an array (if data is null, use an empty array)
+  const safeData = Array.isArray(data) ? data : [];
 
   // Compute totals for the status codes from the provided API data.
-  const totals = data.reduce(
+  const totals = safeData.reduce(
     (acc, curr) => {
       acc['2xx'] += curr['2xx'] || 0;
       acc['3xx'] += curr['3xx'] || 0;
@@ -137,6 +131,15 @@ export default function DashBoardBarChart({
     },
     { '2xx': 0, '3xx': 0, '4xx': 0, '5xx': 0 }
   );
+
+  // Default value formatter: format numbers with compact notation.
+  const defaultValueFormatter = (number) =>
+    Intl.NumberFormat('en-US', {
+      maximumFractionDigits: 0,
+      notation: 'compact',
+      compactDisplay: 'short',
+    }).format(number);
+  const formatter = valueFormatter || defaultValueFormatter;
 
   // Define tabs using computed totals and assign appropriate colors.
   const tabs = [
@@ -176,7 +179,7 @@ export default function DashBoardBarChart({
         ))}
       </ul>
       <BarChart
-        data={data}
+        data={safeData}
         index="date"
         categories={['2xx', '3xx', '4xx', '5xx']}
         colors={['blue', 'orange', 'cyan', 'indigo']}
@@ -187,7 +190,7 @@ export default function DashBoardBarChart({
         className="mt-6 hidden h-56 sm:block"
       />
       <BarChart
-        data={data}
+        data={safeData}
         index="date"
         categories={['2xx', '3xx', '4xx', '5xx']}
         colors={['blue', 'orange', 'cyan', 'indigo']}

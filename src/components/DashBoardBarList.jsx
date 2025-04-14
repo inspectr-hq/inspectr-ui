@@ -21,7 +21,7 @@ export default function DashBoardBarList({ title, data, toggleable = true }) {
 
   return (
     <Card className="mt-4 rounded-tremor-small p-2">
-      <div className="flex items-center justify-between border-b border-tremor-border p-6 dark:border-dark-tremor-border">
+      <div className="flex items-center justify-between border-b border-tremor-border p-3 dark:border-dark-tremor-border">
         <p className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
           {title}
         </p>
