@@ -68,8 +68,8 @@ function DateRangeButtons({ selectedRange, onSelect }) {
           title={item.tooltip}
           className={joinClassNames(
             index === 0 ? 'rounded-l' : index === options.length - 1 ? '-ml-px rounded-r' : '-ml-px',
-            'px-3 py-1 border bg-gray-100 text-gray-600 hover:bg-gray-200 focus:outline-none',
-            selectedRange === item.label ? 'bg-blue-500 text-gray-800' : ''
+            'px-3 py-1 border bg-gray-100 text-gray-600 hover:bg-gray-200 focus:outline-none dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600',
+            selectedRange === item.label ? 'bg-blue-500 text-gray-800 dark:bg-blue-600 dark:text-white' : ''
           )}
         >
           {item.label}

@@ -187,7 +187,7 @@ export default function DashBoardBarChart({
         valueFormatter={formatter}
         yAxisWidth={50}
         stack={true}
-        className="mt-6 hidden h-56 sm:block"
+        className="mt-6 hidden h-80 w-full sm:block"
       />
       <BarChart
         data={safeData}
@@ -198,7 +198,7 @@ export default function DashBoardBarChart({
         valueFormatter={formatter}
         showYAxis={false}
         stack={true}
-        className="mt-6 h-48 sm:hidden"
+        className="mt-6 h-48 w-full sm:hidden"
       />
     </Card>
   );

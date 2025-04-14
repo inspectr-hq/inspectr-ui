@@ -79,7 +79,7 @@ export default function DashBoardDonutChart({
           index="name"
           valueFormatter={formatter}
           showTooltip={true}
-          className="h-40"
+          className="h-40 w-full"
           colors={donutChartColors}
         />
         <div className="mt-6 flex items-center sm:mt-0">

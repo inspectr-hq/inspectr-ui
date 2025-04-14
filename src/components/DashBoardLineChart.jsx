@@ -45,9 +45,9 @@ export default function DashBoardLineChart({
           // yAxisWidth={45}
           // xAxisLabel="Month"
           // yAxisLabel="MS"
-          tickGap={2}
+          // tickGap={2}
           valueFormatter={valueFormatter}
-          className="mt-8 hidden h-60 sm:block"
+          className="mt-8 hidden h-80 w-full sm:block"
         />
         <AreaChart
           data={data}
@@ -58,9 +58,9 @@ export default function DashBoardLineChart({
           // showYAxis={false}
           // startEndOnly={true}
           // yAxisLabel="MS"
-          tickGap={2}
+          // tickGap={2}
           valueFormatter={valueFormatter}
-          className="mt-8 h-48 sm:hidden"
+          className="mt-8 h-48 w-full sm:hidden"
         />
       </div>
     </Card>
