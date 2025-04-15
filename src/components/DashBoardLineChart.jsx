@@ -41,8 +41,9 @@ export default function DashBoardLineChart({
           index="date"
           categories={categories}
           // showLegend={false}
-          // showGradient={false}
+          showGradient={false}
           // yAxisWidth={45}
+          // startEndOnly={true}
           // xAxisLabel="Month"
           // yAxisLabel="MS"
           // tickGap={2}
@@ -53,8 +54,8 @@ export default function DashBoardLineChart({
           data={data}
           index="date"
           categories={categories}
-          showLegend={true}
-          // showGradient={false}
+          // showLegend={true}
+          showGradient={false}
           // showYAxis={false}
           // startEndOnly={true}
           // yAxisLabel="MS"

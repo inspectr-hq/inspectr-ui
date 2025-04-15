@@ -1,6 +1,7 @@
 // src/components/DashBoardApp.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Select, SelectItem, Button } from '@tremor/react';
+
 import DashBoardKpi from './DashBoardKpi.jsx';
 import DashBoardBarChart from './DashBoardBarChart.jsx';
 import DashBoardLineChart from './DashBoardLineChart.jsx';
@@ -68,8 +69,10 @@ function DateRangeButtons({ selectedRange, onSelect }) {
           title={item.tooltip}
           className={joinClassNames(
             index === 0 ? 'rounded-l' : index === options.length - 1 ? '-ml-px rounded-r' : '-ml-px',
-            'px-3 py-1 border bg-gray-100 text-gray-600 hover:bg-gray-200 focus:outline-none dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600',
-            selectedRange === item.label ? 'bg-blue-500 text-gray-800 dark:bg-blue-600 dark:text-white' : ''
+            'px-3 py-1 border focus:outline-none',
+            selectedRange === item.label
+              ? 'bg-tremor-brand dark:bg-dark-tremor-brand text-tremor-brand-inverted dark:text-dark-tremor-brand-inverted'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
           )}
         >
           {item.label}
@@ -143,7 +146,6 @@ export default function DashBoardApp() {
     try {
       const data = await getStatsOperationsApi();
       setStats(data);
-      console.log('Fetched stats operations:', data);
     } catch (err) {
       setError(err.message);
       console.error(err);
@@ -190,7 +192,7 @@ export default function DashBoardApp() {
 
             {/* Refresh Button */}
             <Button onClick={handleLoadStats} className="mt-2 sm:mt-0">
-              {loading ? 'Refreshing...' : 'Refresh'}
+              {loading ? 'Loading' : 'Refresh'}
             </Button>
           </div>
           {error && (
