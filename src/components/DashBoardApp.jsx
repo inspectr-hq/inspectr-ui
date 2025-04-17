@@ -32,32 +32,32 @@ function DateRangeButtons({ selectedRange, onSelect }) {
       label: 'Today',
       start: getStartOfDayUTC(today),
       end: getEndOfDayUTC(today),
-      tooltip: `${getStartOfDayUTC(today)} – ${getEndOfDayUTC(today)}`,
+      tooltip: `${getStartOfDayUTC(today)} – ${getEndOfDayUTC(today)}`
     },
     {
       label: '7D',
       start: getStartOfDayUTC(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)),
       end: getEndOfDayUTC(today),
-      tooltip: `${getStartOfDayUTC(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000))} – ${getEndOfDayUTC(today)}`,
+      tooltip: `${getStartOfDayUTC(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000))} – ${getEndOfDayUTC(today)}`
     },
     {
       label: '30D',
       start: getStartOfDayUTC(new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)),
       end: getEndOfDayUTC(today),
-      tooltip: `${getStartOfDayUTC(new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000))} – ${getEndOfDayUTC(today)}`,
+      tooltip: `${getStartOfDayUTC(new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000))} – ${getEndOfDayUTC(today)}`
     },
     {
       label: '3M',
       start: getStartOfDayUTC(new Date(today.getUTCFullYear(), today.getUTCMonth() - 3, today.getUTCDate())),
       end: getEndOfDayUTC(today),
-      tooltip: `${getStartOfDayUTC(new Date(today.getUTCFullYear(), today.getUTCMonth() - 3, today.getUTCDate()))} – ${getEndOfDayUTC(today)}`,
+      tooltip: `${getStartOfDayUTC(new Date(today.getUTCFullYear(), today.getUTCMonth() - 3, today.getUTCDate()))} – ${getEndOfDayUTC(today)}`
     },
     {
       label: '6M',
       start: getStartOfDayUTC(new Date(today.getUTCFullYear(), today.getUTCMonth() - 6, today.getUTCDate())),
       end: getEndOfDayUTC(today),
-      tooltip: `${getStartOfDayUTC(new Date(today.getUTCFullYear(), today.getUTCMonth() - 6, today.getUTCDate()))} – ${getEndOfDayUTC(today)}`,
-    },
+      tooltip: `${getStartOfDayUTC(new Date(today.getUTCFullYear(), today.getUTCMonth() - 6, today.getUTCDate()))} – ${getEndOfDayUTC(today)}`
+    }
   ];
 
   return (
@@ -118,20 +118,20 @@ export default function DashBoardApp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [apiEndpoint, setApiEndpoint] = useState('http://localhost:4004/api');
-  const [group, setGroup] = useState("hour");
+  const [group, setGroup] = useState('hour');
 
   // Default date range: Today
   const today = new Date();
   // Set defaultStart to the start of Today and defaultEnd to the end of Today.
   const defaultStart = getStartOfDayUTC(today);
   const defaultEnd = getEndOfDayUTC(today);
-  const [selectedRange, setSelectedRange] = useState("Today");
+  const [selectedRange, setSelectedRange] = useState('Today');
   const [start, setStart] = useState(defaultStart);
   const [end, setEnd] = useState(defaultEnd);
 
   // Get operation statistics via REST API
   const getStatsOperationsApi = async () => {
-    const url = `${apiEndpoint}/stats/operations?group=${group}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
+    const url = `${apiEndpoint}/stats/operations?group=${group}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to fetch stats operations: ${response.status}`);
@@ -172,7 +172,7 @@ export default function DashBoardApp() {
         <div className="sm:flex sm:items-center sm:justify-between">
           <h3
             className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-            Inspectr Dashboard
+            Inspectr Statistics
           </h3>
           <div className="mt-4 flex items-center space-x-2 sm:mt-0">
             {/* Date Range Buttons on the left */}
@@ -214,7 +214,7 @@ export default function DashBoardApp() {
           <DashBoardLineChart
             title="Average Response Times"
             data={stats?.by_interval}
-            metricKey={["min_response_time","average_response_time", "max_response_time"]}
+            metricKey={['min_response_time', 'average_response_time', 'max_response_time']}
             metricUnit="ms"
             highlightValue={stats?.overall?.average_response_time}
             highlightLabel="Average Response Time"
@@ -223,9 +223,9 @@ export default function DashBoardApp() {
         <div className="mt-6 grid grid-cols-3 gap-4 items-stretch">
           <div className="col-span-2">
             <DashBoardLineChart
-              title="Error Rate"
+              title="Success / Error Rate"
               data={stats?.by_interval}
-              metricKey={["errors"]}
+              metricKey={['success', 'errors']}
               metricUnit=""
               highlightValue={stats?.overall?.average_errors}
               highlightLabel="Average Errors"
@@ -247,8 +247,8 @@ export default function DashBoardApp() {
             data={stats?.totals?.status}
           />
           {/*<DashBoardDonutChart />*/}
-        {/*</div>*/}
-        {/*<div className="mt-6 grid grid-cols-3 gap-4 md:grid-cols-3 lg:grid-cols-3">*/}
+          {/*</div>*/}
+          {/*<div className="mt-6 grid grid-cols-3 gap-4 md:grid-cols-3 lg:grid-cols-3">*/}
           <DashBoardBarList title="Top Failed Endpoints" data={stats?.top_endpoints?.error} toggleable={false} />
         </div>
         {/*<div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">*/}

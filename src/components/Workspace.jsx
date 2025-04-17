@@ -1,14 +1,16 @@
-// 'use client';
+// src/components/Workspace.jsx
 
-import { DashBoardApp } from './index.jsx';
+import React, { useState } from 'react';
+import DashBoardApp  from './DashBoardApp.jsx';
+import InspectrApp  from './InspectrApp.jsx';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
 const navigation = [
-  { name: 'Request History', href: '#', current: true },
-  { name: 'Dashboard', href: '#', current: false }
+  { name: 'Request History', component: InspectrApp },
+  { name: 'Statistics', component: DashBoardApp },
   // { name: 'Settings', href: '#', current: false },
 ];
 
@@ -20,8 +22,11 @@ const Logo = (props) => (
 );
 
 export default function Workspace() {
+  const [currentTab, setCurrentTab] = useState(navigation[0]);
+  const ActiveComponent = currentTab.component;
+
   return (
-    <>
+    <div className="">
       <div className="border-b border-tremor-border dark:border-dark-tremor-border relative h-full overflow-hidden bg-gray-50 dark:bg-dark-tremor-background-subtle">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="overflow flex h-16 sm:space-x-7">
@@ -35,27 +40,37 @@ export default function Workspace() {
             </div>
             <nav className="-mb-px flex space-x-6" aria-label="Tabs">
               {navigation.map((item) => (
-                <a
+                <button
                   key={item.name}
-                  href={item.href}
+                  onClick={() => setCurrentTab(item)}
                   className={classNames(
-                    item.current
+                    item.name === currentTab.name
                       ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
                       : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong dark:text-dark-tremor-content-emphasis hover:dark:border-dark-tremor-content-subtle hover:dark:text-dark-tremor-content-strong',
                     'inline-flex items-center whitespace-nowrap border-b-2 px-2 text-tremor-default font-medium'
                   )}
-                  aria-current={item.current ? 'page' : undefined}
+                  aria-current={item.name === currentTab.name ? 'page' : undefined}
                 >
                   {item.name}
-                </a>
+                </button>
               ))}
             </nav>
           </div>
         </div>
       </div>
-      <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-950">
-        <DashBoardApp></DashBoardApp>
+
+      {/* ——— Content Area ——— */}
+      <div className="flex-grow overflow-auto">
+        {currentTab.name === 'Statistics' ? (
+          // Dashboard wants padding + background
+          <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-950">
+            <ActiveComponent key="dashboard" />
+          </div>
+        ) : (
+          // InspectrApp takes care of its own layout now
+          <ActiveComponent key="inspectr" />
+        )}
       </div>
-    </>
+    </div>
   );
 }
