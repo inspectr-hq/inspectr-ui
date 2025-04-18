@@ -76,6 +76,8 @@ const ResponseContent = ({ operation }) => {
               height="100%"
               defaultLanguage="json"
               value={formatPayload(payload)}
+              theme={getMonacoTheme()}
+              beforeMount={defineMonacoThemes}
               options={{
                 readOnly: true,
                 minimap: { enabled: false },
