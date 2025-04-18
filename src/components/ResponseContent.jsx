@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Editor from '@monaco-editor/react';
 import CopyButton from './CopyButton.jsx';
+import { defineMonacoThemes, getMonacoTheme } from '../utils/monacoTheme.js';
 
 const ResponseContent = ({ operation }) => {
   const [showResponseHeaders, setShowResponseHeaders] = useState(false);
@@ -9,10 +10,10 @@ const ResponseContent = ({ operation }) => {
   const renderTableRows = (data) =>
     data.map((row) => (
       <tr key={row.name}>
-        <td className="border border-slate-200 px-2 py-1 font-mono text-slate-500 text-xs">
+        <td className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 font-mono text-slate-500 dark:text-dark-tremor-content text-xs">
           {row.name}
         </td>
-        <td className="border border-slate-200 px-2 py-1 font-mono text-xs">
+        <td className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 font-mono text-xs dark:text-dark-tremor-content">
           <div className="flex flex-wrap items-center">
             <span className="min-w-0 break-all flex-1">{row.value}</span>
           </div>
@@ -41,18 +42,18 @@ const ResponseContent = ({ operation }) => {
       {/* Response Headers Section */}
       <div className="mb-4">
         <button
-          className="w-full p-2 text-left font-bold bg-gray-200 cursor-pointer"
+          className="w-full p-2 text-left font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong cursor-pointer"
           onClick={() => setShowResponseHeaders(!showResponseHeaders)}
         >
           Headers ({(operation?.response?.headers ?? []).length})
         </button>
         {showResponseHeaders && (
           <div className="p-0">
-            <table className="w-full border-collapse border border-gray-300">
+            <table className="w-full border-collapse border border-gray-300 dark:border-dark-tremor-border">
               <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-slate-200 px-2 py-1 w-1/4 text-left">Header</th>
-                  <th className="border border-slate-200 px-2 py-1 text-left">Value</th>
+                <tr className="bg-gray-100 dark:bg-blue-900/30">
+                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 w-1/4 text-left font-semibold text-gray-700 dark:text-white">Header</th>
+                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white">Value</th>
                 </tr>
               </thead>
               <tbody>{renderTableRows(operation?.response?.headers ?? [])}</tbody>
@@ -63,14 +64,14 @@ const ResponseContent = ({ operation }) => {
 
       {/* Response Body Section */}
       <div>
-        <div className="flex justify-between items-center bg-gray-200">
-          <button className="p-2 text-left font-bold flex-grow">Response Body</button>
+        <div className="flex justify-between items-center bg-gray-200 dark:bg-dark-tremor-background-subtle">
+          <button className="p-2 text-left font-bold flex-grow dark:text-dark-tremor-content-strong">Response Body</button>
           <CopyButton textToCopy={formatPayload(payload)} />
         </div>
         {isEmptyPayload ? (
-          <div className="p-4 bg-white rounded-b shadow">No payload</div>
+          <div className="p-4 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">No payload</div>
         ) : (
-          <div className="bg-white rounded-b shadow p-0 h-[400px]">
+          <div className="bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow p-0 h-[400px]">
             <Editor
               height="100%"
               defaultLanguage="json"

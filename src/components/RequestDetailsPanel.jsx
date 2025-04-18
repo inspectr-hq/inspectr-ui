@@ -6,7 +6,7 @@ import ResponseContent from './ResponseContent';
 
 const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   if (!operation) {
-    return <div className="text-gray-500">No request selected.</div>;
+    return <div className="text-gray-500 dark:text-gray-400">No request selected.</div>;
   }
 
   return (
@@ -17,7 +17,9 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
       <div className="flex space-x-2">
         <button
           className={`px-4 py-2 rounded-t ${
-            currentTab === 'request' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
+            currentTab === 'request' 
+              ? 'bg-blue-600 dark:bg-blue-700 text-white' 
+              : 'bg-gray-200 dark:bg-dark-tremor-background-subtle text-gray-700 dark:text-dark-tremor-content'
           }`}
           onClick={() => setCurrentTab('request')}
         >
@@ -25,7 +27,9 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
         </button>
         <button
           className={`px-4 py-2 rounded-t ${
-            currentTab === 'response' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
+            currentTab === 'response' 
+              ? 'bg-blue-600 dark:bg-blue-700 text-white' 
+              : 'bg-gray-200 dark:bg-dark-tremor-background-subtle text-gray-700 dark:text-dark-tremor-content'
           }`}
           onClick={() => setCurrentTab('response')}
         >
@@ -35,7 +39,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
 
       {/* Tab Content */}
       <div
-        className="p-4 bg-white border border-gray-300 rounded-b shadow flex-grow overflow-y-auto"
+        className="p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded-b shadow dark:shadow-dark-tremor-shadow flex-grow overflow-y-auto"
         style={{ maxHeight: 'calc(100vh - 270px - 64px)' }}
       >
         {currentTab === 'request' ? (

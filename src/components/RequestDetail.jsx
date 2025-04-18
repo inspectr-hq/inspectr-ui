@@ -103,7 +103,7 @@ const RequestDetail = ({ operation }) => {
   };
 
   const buttonClasses =
-    'flex items-center space-x-2 px-2 py-1 border border-slate-600 text-slate-600 rounded focus:outline-none cursor-pointer transition-transform duration-150 ease-in-out active:scale-95 active:bg-slate-200 active:ring active:ring-slate-300';
+    'flex items-center space-x-2 px-2 py-1 border border-slate-600 dark:border-blue-500 text-slate-700 dark:text-white bg-slate-100 dark:bg-blue-600 rounded focus:outline-none cursor-pointer transition-transform duration-150 ease-in-out active:scale-95 hover:bg-slate-200 dark:hover:bg-blue-700 active:ring active:ring-slate-300 dark:active:ring-blue-400';
 
   // check icon SVG.
   const CheckIcon = () => (
@@ -119,9 +119,9 @@ const RequestDetail = ({ operation }) => {
   );
 
   return (
-    <div className="mb-4 p-4 bg-white border border-gray-300 rounded shadow relative">
+    <div className="mb-4 p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded shadow dark:shadow-dark-tremor-shadow relative">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="font-bold text-2xl">Request Details</h2>
+        <h2 className="font-bold text-2xl text-tremor-content-strong dark:text-dark-tremor-content-strong">Request Details</h2>
         <div className="flex space-x-2">
           {/* Copy as cURL Button */}
           <button onClick={handleCopyCurl} className={buttonClasses}>
@@ -174,7 +174,7 @@ const RequestDetail = ({ operation }) => {
           <span className={`font-bold ${getMethodTextClass(operation?.request?.method)}`}>
             {operation?.request?.method}
           </span>
-          <span className="text-blue-600">{operation?.request?.path}</span>
+          <span className="text-blue-600 dark:text-blue-400">{operation?.request?.path}</span>
           <span
             className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(
               operation?.response?.status
@@ -182,9 +182,9 @@ const RequestDetail = ({ operation }) => {
           >
             {operation?.response?.status}
           </span>
-          <span className="text-sm">{operation?.response?.status_text}</span>
+          <span className="text-sm dark:text-dark-tremor-content">{operation?.response?.status_text}</span>
         </div>
-        <div className="flex items-center text-gray-600">
+        <div className="flex items-center text-gray-600 dark:text-dark-tremor-content">
           <span onClick={handleCopyUrl} className="cursor-pointer">
             {operation?.request?.url}
           </span>
@@ -206,7 +206,7 @@ const RequestDetail = ({ operation }) => {
             </svg>
           </button>
         </div>
-        <div className="text-gray-500 text-xs">
+        <div className="text-gray-500 dark:text-dark-tremor-content text-xs">
           Received on{' '}
           <span className="font-semibold">{formatTimestamp(operation?.request?.timestamp)}</span> •
           Took <span className="font-semibold">{operation?.timing?.duration}ms</span> to respond

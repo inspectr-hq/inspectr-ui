@@ -78,17 +78,17 @@ const RequestListSidePanel = ({
       )}
 
       <div
-        className={`fixed top-0 left-0 h-full w-100 bg-white shadow-xl transform transition-transform duration-300
+        className={`fixed top-0 left-0 h-full w-100 bg-white dark:bg-dark-tremor-background shadow-xl dark:shadow-dark-tremor-shadow transform transition-transform duration-300
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}
         style={{ zIndex: 9999 }}
       >
         {/* Panel Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-300 bg-gray-50">
-          <h2 className="pl-4 text-lg font-semibold text-gray-800">Filter & Sort</h2>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-300 dark:border-dark-tremor-border bg-gray-50 dark:bg-dark-tremor-background-subtle">
+          <h2 className="pl-4 text-lg font-semibold text-gray-800 dark:text-dark-tremor-content-strong">Filter & Sort</h2>
           <button
             onClick={onClose}
-            className="text-gray-600 hover:text-gray-800 focus:outline-none cursor-pointer"
+            className="text-gray-600 dark:text-dark-tremor-content hover:text-gray-800 dark:hover:text-dark-tremor-content-strong focus:outline-none cursor-pointer"
             aria-label="Close"
           >
             &times;
@@ -100,12 +100,12 @@ const RequestListSidePanel = ({
           {/* Sort Section */}
           <section className="mb-6 ml-4 mr-4">
             <div className="flex items-center justify-between">
-              <h3 className="mb-3 text-xs font-bold text-gray-600 uppercase tracking-wide">
+              <h3 className="mb-3 text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
                 Sort By
               </h3>
               <button
                 onClick={handleResetSort}
-                className="text-xs text-blue-600 hover:underline cursor-pointer"
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
               >
                 Reset
               </button>
@@ -118,9 +118,9 @@ const RequestListSidePanel = ({
                   value="time"
                   checked={sortField === 'time'}
                   onChange={(e) => setSortField(e.target.value)}
-                  className="form-radio text-blue-600"
+                  className="form-radio text-blue-600 dark:text-blue-500"
                 />
-                <span className="ml-3 text-gray-700">Timestamp</span>
+                <span className="ml-3 text-gray-700 dark:text-dark-tremor-content">Timestamp</span>
               </label>
               <label className="flex items-center">
                 <input
@@ -129,9 +129,9 @@ const RequestListSidePanel = ({
                   value="statusCode"
                   checked={sortField === 'statusCode'}
                   onChange={(e) => setSortField(e.target.value)}
-                  className="form-radio text-blue-600"
+                  className="form-radio text-blue-600 dark:text-blue-500"
                 />
-                <span className="ml-3 text-gray-700">Status</span>
+                <span className="ml-3 text-gray-700 dark:text-dark-tremor-content">Status</span>
               </label>
               <label className="flex items-center">
                 <input
@@ -140,13 +140,13 @@ const RequestListSidePanel = ({
                   value="method"
                   checked={sortField === 'method'}
                   onChange={(e) => setSortField(e.target.value)}
-                  className="form-radio text-blue-600"
+                  className="form-radio text-blue-600 dark:text-blue-500"
                 />
-                <span className="ml-3 text-gray-700">Method</span>
+                <span className="ml-3 text-gray-700 dark:text-dark-tremor-content">Method</span>
               </label>
             </div>
             <div className="mt-4">
-              <h4 className="mb-2 text-xs font-bold text-gray-600 uppercase tracking-wide">
+              <h4 className="mb-2 text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
                 Sort Direction
               </h4>
               <div className="space-y-3">
@@ -157,9 +157,9 @@ const RequestListSidePanel = ({
                     value="asc"
                     checked={sortDirection === 'asc'}
                     onChange={(e) => setSortDirection(e.target.value)}
-                    className="form-radio text-blue-600"
+                    className="form-radio text-blue-600 dark:text-blue-500"
                   />
-                  <span className="ml-3 text-gray-700">Ascending</span>
+                  <span className="ml-3 text-gray-700 dark:text-dark-tremor-content">Ascending</span>
                 </label>
                 <label className="flex items-center">
                   <input
@@ -168,9 +168,9 @@ const RequestListSidePanel = ({
                     value="desc"
                     checked={sortDirection === 'desc'}
                     onChange={(e) => setSortDirection(e.target.value)}
-                    className="form-radio text-blue-600"
+                    className="form-radio text-blue-600 dark:text-blue-500"
                   />
-                  <span className="ml-3 text-gray-700">Descending</span>
+                  <span className="ml-3 text-gray-700 dark:text-dark-tremor-content">Descending</span>
                 </label>
               </div>
             </div>
@@ -179,12 +179,12 @@ const RequestListSidePanel = ({
           {/* Filter Section */}
           <section className="mb-6 ml-4 mr-4">
             <div className="flex items-center justify-between">
-              <h3 className="mb-3 text-xs font-bold text-gray-600 uppercase tracking-wide">
+              <h3 className="mb-3 text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
                 Filters
               </h3>
               <button
                 onClick={handleResetFilters}
-                className="text-xs text-blue-600 hover:underline cursor-pointer"
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
               >
                 Reset
               </button>
@@ -192,13 +192,13 @@ const RequestListSidePanel = ({
             <div className="space-y-4">
               {/* Time Range Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
                   Quick Time Range
                 </label>
                 <select
                   value={typeof filters.timestampRange === 'string' ? filters.timestampRange : ''}
                   onChange={handlePresetTimeRangeChange}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="block w-full border border-gray-300 dark:border-dark-tremor-border bg-white dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
                   <option value="">Any</option>
                   <option value="5M">Last 5 minutes</option>
@@ -217,7 +217,7 @@ const RequestListSidePanel = ({
 
               {/* Specific Time Range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
                   Specific Time Range
                 </label>
                 <div className="flex space-x-2">
@@ -229,7 +229,7 @@ const RequestListSidePanel = ({
                         : ''
                     }
                     onChange={(e) => handleCustomRangeChange('start', e.target.value)}
-                    className="w-1/2 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-1/2 border border-gray-300 dark:border-dark-tremor-border bg-white dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   />
                   <input
                     type="datetime-local"
@@ -239,14 +239,14 @@ const RequestListSidePanel = ({
                         : ''
                     }
                     onChange={(e) => handleCustomRangeChange('end', e.target.value)}
-                    className="w-1/2 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-1/2 border border-gray-300 dark:border-dark-tremor-border bg-white dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   />
                 </div>
               </div>
 
               {/* Status Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">Status</label>
                 <TagsInput
                   options={statusCodeOptions}
                   selected={filters.status || []}
@@ -258,7 +258,7 @@ const RequestListSidePanel = ({
 
               {/* Method Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Method</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">Method</label>
                 <TagsInput
                   options={methodOptions}
                   selected={filters.method || []}
@@ -270,19 +270,19 @@ const RequestListSidePanel = ({
 
               {/* Path Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Path</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">Path</label>
                 <input
                   type="text"
                   placeholder="e.g. /api/users"
                   value={filters.path || ''}
                   onChange={(e) => setFilters((prev) => ({ ...prev, path: e.target.value }))}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="block w-full border border-gray-300 dark:border-dark-tremor-border bg-white dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
 
               {/* Duration (Latency) Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
                   Duration (ms)
                 </label>
                 <div className="flex space-x-2">
@@ -293,7 +293,7 @@ const RequestListSidePanel = ({
                     onChange={(e) =>
                       setFilters((prev) => ({ ...prev, durationMin: e.target.value }))
                     }
-                    className="w-1/2 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-1/2 border border-gray-300 dark:border-dark-tremor-border bg-white dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   />
                   <input
                     type="number"
@@ -302,20 +302,20 @@ const RequestListSidePanel = ({
                     onChange={(e) =>
                       setFilters((prev) => ({ ...prev, durationMax: e.target.value }))
                     }
-                    className="w-1/2 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-1/2 border border-gray-300 dark:border-dark-tremor-border bg-white dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   />
                 </div>
               </div>
 
               {/* Host Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Host</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">Host</label>
                 <input
                   type="text"
                   placeholder="e.g. localhost"
                   value={filters.host || ''}
                   onChange={(e) => setFilters((prev) => ({ ...prev, host: e.target.value }))}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="block w-full border border-gray-300 dark:border-dark-tremor-border bg-white dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
             </div>
