@@ -1,5 +1,5 @@
 
-// Format a timestamp to a human readable format
+// Format a timestamp to a human-readable format
 const formatTimestamp = (isoString) => {
   if (!isoString) return 'N/A';
   const date = new Date(isoString);
@@ -19,7 +19,7 @@ const formatTimestamp = (isoString) => {
   return `${formattedDate} at ${formattedTime}`;
 };
 
-// Format a duration in milliseconds to a human readable format (ms, s, or m)
+// Format a duration in milliseconds to a human-readable format (ms, s, or m)
 const formatDuration = (milliseconds) => {
   if (milliseconds === undefined || milliseconds === null) return 'N/A';
 
@@ -38,7 +38,7 @@ const formatDuration = (milliseconds) => {
   }
 };
 
-// Format a size in bytes to a human readable format (B, KB, MB, etc.)
+// Format a size in bytes to a human-readable format (B, KB, MB, etc.)
 const formatSize = (bytes) => {
   if (bytes === undefined || bytes === null) return 'N/A';
 
