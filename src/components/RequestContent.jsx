@@ -194,13 +194,27 @@ const RequestContent = ({ operation }) => {
         {isEmptyPayload ? (
           <div className="p-4 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">No payload</div>
         ) : (
-          <div className="bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow p-0 h-[400px]">
+          <div className="bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow p-0">
             <Editor
-              height="100%"
+              height="auto"
               defaultLanguage="json"
               value={formatPayload(payload)}
               theme={getMonacoTheme()}
               beforeMount={defineMonacoThemes}
+              onMount={(editor, monaco) => {
+                // Get the number of lines in the content
+                const lineCount = editor.getModel().getLineCount();
+
+                // Calculate height based on line count (add some padding)
+                const lineHeight = editor.getOption(monaco.editor.EditorOption.lineHeight);
+                const minHeight = 100; // Minimum height in pixels
+                const maxHeight = 440; // Maximum height in pixels
+                const calculatedHeight = Math.max(minHeight, Math.min(lineCount * lineHeight + 20, maxHeight));
+
+                // Set the editor's height
+                editor.getDomNode().style.height = `${calculatedHeight}px`;
+                editor.layout();
+              }}
               options={{
                 readOnly: true,
                 minimap: { enabled: false },
