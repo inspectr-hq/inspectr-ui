@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { getStatusClass } from '../utils/getStatusClass.js';
 import ToastNotification from './ToastNotification';
 import { getMethodTextClass } from '../utils/getMethodClass.js';
+import { formatTimestamp, formatDuration } from '../utils/formatters.js';
 
 const RequestDetail = ({ operation }) => {
   const [copiedCurl, setCopiedCurl] = useState(false);
@@ -10,25 +11,6 @@ const RequestDetail = ({ operation }) => {
   const [showUrlToast, setShowUrlToast] = useState(false);
   const [showReplayToast, setShowReplayToast] = useState(false);
   const [replayed, setReplayed] = useState(false);
-
-  const formatTimestamp = (isoString) => {
-    if (!isoString) return 'N/A';
-    const date = new Date(isoString);
-    const formattedDate = date.toLocaleDateString('en-CA', {
-      // YYYY-MM-DD format
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-    const formattedTime = date.toLocaleTimeString([], {
-      // HH:MM:SS in local time
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false // 24-hour format
-    });
-    return `${formattedDate} at ${formattedTime}`;
-  };
 
   // Generate a cURL command string from the request data
   const generateCurlCommand = () => {
@@ -209,7 +191,7 @@ const RequestDetail = ({ operation }) => {
         <div className="text-gray-500 dark:text-dark-tremor-content text-xs">
           Received on{' '}
           <span className="font-semibold">{formatTimestamp(operation?.request?.timestamp)}</span> •
-          Took <span className="font-semibold">{operation?.timing?.duration}ms</span> to respond
+          Took <span className="font-semibold">{formatDuration(operation?.timing?.duration)}</span> to respond
         </div>
       </div>
 
