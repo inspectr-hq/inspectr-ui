@@ -8,12 +8,23 @@ import Terminal from './Terminal';
 
 const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   const [ingressEndpoint, setIngressEndpoint] = useState('');
+  const [proxyEndpoint, setProxyEndpoint] = useState('');
+  const [expose, setExpose] = useState(false);
 
   useEffect(() => {
-    // Get the ingress_endpoint from localStorage
-    const endpoint = localStorage.getItem('ingressEndpoint');
-    if (endpoint) {
-      setIngressEndpoint(endpoint);
+    // Get the endpoints and expose setting from localStorage
+    const ingressEndpointValue = localStorage.getItem('ingressEndpoint');
+    const proxyEndpointValue = localStorage.getItem('proxyEndpoint');
+    const exposeValue = localStorage.getItem('expose');
+
+    if (ingressEndpointValue) {
+      setIngressEndpoint(ingressEndpointValue);
+    }
+    if (proxyEndpointValue) {
+      setProxyEndpoint(proxyEndpointValue);
+    }
+    if (exposeValue) {
+      setExpose(exposeValue === 'true');
     }
   }, []);
   if (!operation) {
@@ -25,10 +36,10 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
           </h4>
           <p className="mt-3 max-w-xl text-tremor-default leading-6 text-tremor-content dark:text-dark-tremor-content sm:text-base">
             Select a request from the list to view its details
-            or get started by making a request to {ingressEndpoint ? `"${ingressEndpoint}"` : "the ingress endpoint"}
+            or get started by making a request to {expose ? (ingressEndpoint ? `"${ingressEndpoint}"` : "the ingress endpoint") : (proxyEndpoint ? `"${proxyEndpoint}"` : "the proxy endpoint")}
           </p>
 
-          <Terminal endpoint={ingressEndpoint} showCopyButton={true} />
+          <Terminal endpoint={expose ? ingressEndpoint : proxyEndpoint} showCopyButton={true} />
 
           <div className="mt-8 sm:flex sm:items-center sm:justify-center sm:gap-x-3">
             <button

@@ -128,6 +128,8 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         setSseEndpoint(result.sse_endpoint);
         localStorage.setItem('sseEndpoint', result.sse_endpoint);
         localStorage.setItem('ingressEndpoint', result.ingress_endpoint);
+        localStorage.setItem('proxyEndpoint', result.proxy_endpoint);
+        localStorage.setItem('expose', result.expose ? 'true' : 'false');
       }
     } catch (err) {
       console.error('❌ Failed to load /app/config:', err);
@@ -204,6 +206,8 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         setSseEndpoint(result.sse_endpoint);
         localStorage.setItem('sseEndpoint', result.sse_endpoint);
         localStorage.setItem('ingressEndpoint', result.ingress_endpoint);
+        localStorage.setItem('proxyEndpoint', result.proxy_endpoint);
+        localStorage.setItem('expose', result.expose ? 'true' : 'false');
 
         if (showNotification) {
           setToast({
