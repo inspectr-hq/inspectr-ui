@@ -28,7 +28,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
             or get started by making a request to {ingressEndpoint ? `"${ingressEndpoint}"` : "the ingress endpoint"}
           </p>
 
-          <Terminal endpoint={ingressEndpoint} />
+          <Terminal endpoint={ingressEndpoint} showCopyButton={true} />
 
           <div className="mt-8 sm:flex sm:items-center sm:justify-center sm:gap-x-3">
             <button
