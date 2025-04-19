@@ -66,7 +66,7 @@ const RequestList = ({
   return (
     <div className="flex flex-col h-full relative">
       <div className="p-4 flex justify-between items-center">
-        <span className="font-bold text-xl">
+        <span className="font-bold text-xl text-tremor-content-strong dark:text-dark-tremor-content-strong">
           Requests ({operations.length} of {totalCount})
         </span>
         <div className="space-x-2 relative">
@@ -119,7 +119,7 @@ const RequestList = ({
 
       {/* Table Header */}
       <div
-        className="flex items-center bg-gray-200 p-2 border-b border-gray-300 text-sm font-bold cursor-pointer"
+        className="flex items-center bg-gray-200 dark:bg-dark-tremor-background-subtle p-2 border-b border-gray-300 dark:border-dark-tremor-border text-sm font-bold text-tremor-content-strong dark:text-dark-tremor-content-strong cursor-pointer"
         onClick={() => setIsSidePanelOpen(true)}
       >
         <div className="w-16 text-center">Status</div>
@@ -135,7 +135,7 @@ const RequestList = ({
         style={{ maxHeight: 'calc(100vh - 40px - 100px - 49px - 64px)' }}
       >
         {operations.length === 0 ? (
-          <li className="flex items-center justify-center h-full text-gray-500 text-2xl">
+          <li className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400 text-2xl">
             No operations
           </li>
         ) : (

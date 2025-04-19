@@ -475,11 +475,11 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   };
 
   return (
-    <div className="flex flex-col h-screen"
+    <div className="flex flex-col h-screen bg-white dark:bg-dark-tremor-background"
          style={{ maxHeight: 'calc(100vh - 64px)' }}>
       <div className="flex flex-grow">
         {/* Left Panel */}
-        <div className="w-1/3 border-r border-gray-300 overflow-y-auto">
+        <div className="w-1/3 border-r border-gray-300 dark:border-dark-tremor-border overflow-y-auto">
           <RequestList
             operations={operations || []}
             onSelect={setSelectedOperation}
@@ -501,7 +501,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         </div>
 
         {/* Right Panel */}
-        <div className="w-2/3 p-4 h-full overflow-y-auto">
+        <div className="w-2/3 p-4 h-full overflow-y-auto bg-white dark:bg-dark-tremor-background text-tremor-content-strong dark:text-dark-tremor-content-strong">
           <div className="flex flex-col h-full">
             <RequestDetailsPanel
               operation={selectedOperation}

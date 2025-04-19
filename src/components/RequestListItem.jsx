@@ -3,7 +3,7 @@ import React from 'react';
 import { getStatusClass } from '../utils/getStatusClass.js';
 import { getMethodTextClass } from '../utils/getMethodClass.js';
 
-const selectedClass = ['bg-blue-100', 'border-blue-700'].join(' ');
+const selectedClass = ['bg-blue-100 dark:bg-blue-900/30', 'border-blue-700 dark:border-blue-500'].join(' ');
 const baseBorderClass = 'border-l-4';
 
 const RequestListItem = ({ operation, opId, onSelect, onRemove, selected }) => {
@@ -29,7 +29,7 @@ const RequestListItem = ({ operation, opId, onSelect, onRemove, selected }) => {
 
   return (
     <li
-      className={`flex items-center cursor-pointer hover:bg-gray-200 ${baseBorderClass} ${selected ? selectedClass : 'border-transparent'}`}
+      className={`flex items-center cursor-pointer hover:bg-gray-200 dark:hover:bg-dark-tremor-background-subtle ${baseBorderClass} ${selected ? selectedClass : 'border-transparent'}`}
       onClick={() => {
         handleSelect(operation);
       }}
@@ -49,10 +49,10 @@ const RequestListItem = ({ operation, opId, onSelect, onRemove, selected }) => {
         >
           {operation?.request?.method || 'GET'}
         </div>
-        <div className="flex-grow truncate text-left">
+        <div className="flex-grow truncate text-left text-tremor-content-strong dark:text-dark-tremor-content-strong">
           {operation?.request.path || operation?.request.url}
         </div>
-        <div className="w-20 text-gray-900 text-center text-xs">
+        <div className="w-20 text-gray-900 dark:text-dark-tremor-content text-center text-xs">
           {operation?.request?.timestamp ? formatTime(operation.request.timestamp) : 'N/A'}
         </div>
         {/*<div className="flex flex-col text-left">*/}
@@ -63,11 +63,11 @@ const RequestListItem = ({ operation, opId, onSelect, onRemove, selected }) => {
         {/*    {operation?.request?.timestamp ? formatTime(operation.request.timestamp) : 'N/A'}*/}
         {/*  </div>*/}
         {/*</div>*/}
-        <div className="w-16 text-gray-500 text-center text-xs">
+        <div className="w-16 text-gray-500 dark:text-dark-tremor-content text-center text-xs">
           {operation?.timing?.duration}ms
         </div>
         <button
-          className="w-8 h-8 flex items-center justify-center cursor-pointer text-red-500 hover:text-red-700"
+          className="w-8 h-8 flex items-center justify-center cursor-pointer text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
           onClick={(e) => {
             e.stopPropagation();
             onRemove(opId);
