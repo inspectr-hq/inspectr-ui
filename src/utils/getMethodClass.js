@@ -34,23 +34,24 @@ export const getMethodTextClass = (method) => {
  * @returns {string} Tailwind CSS classes for text and border colors.
  */
 export const getMethodTagClass = (method) => {
-  if(method) return ' border border-slate-500'; // TO REVIEW
+  if(!method) return 'text-gray-700 dark:text-gray-200 border border-gray-700 dark:border-gray-200';
+
   switch (method.toUpperCase()) {
     case 'GET':
-      return 'text-green-700 border border-green-700';
+      return 'text-green-700 dark:text-green-300 border border-green-700 dark:border-green-300';
     case 'POST':
-      return 'text-sky-700 border border-sky-700';
+      return 'text-sky-700 dark:text-white border border-sky-700 dark:border-sky-300';
     case 'PUT':
-      return 'text-fuchsia-700 border border-fuchsia-700';
+      return 'text-fuchsia-700 dark:text-fuchsia-300 border border-fuchsia-700 dark:border-fuchsia-300';
     case 'PATCH':
-      return 'text-purple-700 border border-purple-700';
+      return 'text-purple-700 dark:text-purple-300 border border-purple-700 dark:border-purple-300';
     case 'DELETE':
-      return 'text-red-700 border border-red-700';
+      return 'text-red-700 dark:text-red-300 border border-red-700 dark:border-red-300';
     case 'OPTIONS':
-      return 'text-rose-700 border border-rose-700';
+      return 'text-rose-700 dark:text-rose-300 border border-rose-700 dark:border-rose-300';
     case 'HEAD':
-      return 'text-pink-700 border border-pink-700';
+      return 'text-pink-700 dark:text-pink-300 border border-pink-700 dark:border-pink-300';
     default:
-      return 'text-gray-700 border border-gray-700';
+      return 'text-gray-700 dark:text-gray-200 border border-gray-700 dark:border-gray-200';
   }
 };

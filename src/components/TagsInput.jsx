@@ -55,12 +55,12 @@ const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...',
 
   return (
     <div className="w-full max-w-md relative">
-      <div className="flex flex-wrap items-center border border-gray-300 rounded-md shadow-sm px-2 py-1">
+      <div className="flex flex-wrap items-center border border-gray-300 dark:border-dark-tremor-border rounded-md shadow-sm px-2 py-1 bg-white dark:bg-dark-tremor-background-subtle">
         {selected.map((tag) => (
           <div
             key={tag}
             className={`flex items-center rounded-full px-2 py-1 mr-2 my-1 text-xs ${
-              colorFn ? colorFn(tag) : 'bg-indigo-100 text-indigo-700'
+              colorFn ? colorFn(tag) : 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
             }`}
           >
             <span>{tag}</span>
@@ -85,7 +85,7 @@ const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...',
         <input
           ref={inputRef}
           type="text"
-          className="flex-grow outline-none p-1"
+          className="flex-grow outline-none p-1 text-gray-900 dark:text-dark-tremor-content placeholder-gray-400 dark:placeholder-dark-tremor-content-subtle bg-transparent dark:bg-dark-tremor-background-subtle border-0"
           placeholder={selected.length > 0 ? '' : placeholder}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
@@ -95,13 +95,13 @@ const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...',
         />
       </div>
       {isFocused && filteredOptions.length > 0 && (
-        <ul className="absolute left-0 right-0 border border-gray-300 mt-1 rounded-md shadow-lg bg-white max-h-40 overflow-y-auto z-10">
+        <ul className="absolute left-0 right-0 border border-gray-300 dark:border-dark-tremor-border mt-1 rounded-md shadow-lg bg-white dark:bg-dark-tremor-background-subtle max-h-40 overflow-y-auto z-10">
           {filteredOptions.map((option, index) => (
             <li
               key={option}
-              className={`cursor-pointer px-2 py-1 hover:bg-indigo-100 ${
-                index === highlightedIndex ? 'bg-indigo-200' : ''
-              }`}
+              className={`cursor-pointer px-2 py-1 hover:bg-indigo-100 dark:hover:bg-dark-tremor-background ${
+                index === highlightedIndex ? 'bg-indigo-200 dark:bg-dark-tremor-background-muted' : ''
+              } text-gray-900 dark:text-dark-tremor-content`}
               onMouseEnter={() => setHighlightedIndex(index)}
               onMouseDown={() => addTag(option)}
             >
