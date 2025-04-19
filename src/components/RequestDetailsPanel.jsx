@@ -4,6 +4,7 @@ import RequestDetail from './RequestDetail';
 import RequestContent from './RequestContent';
 import ResponseContent from './ResponseContent';
 import { RiExternalLinkLine } from "@remixicon/react";
+import Terminal from './Terminal';
 
 const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   const [ingressEndpoint, setIngressEndpoint] = useState('');
@@ -26,6 +27,9 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
             Select a request from the list to view its details
             or get started by making a request to {ingressEndpoint ? `"${ingressEndpoint}"` : "the ingress endpoint"}
           </p>
+
+          <Terminal endpoint={ingressEndpoint} />
+
           <div className="mt-8 sm:flex sm:items-center sm:justify-center sm:gap-x-3">
             <button
               type="button"
