@@ -31,12 +31,16 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
     return (
       <div className="h-96 min-h-full mb-20 flex flex-1 flex-col justify-center rounded-tremor-default border border-tremor-border bg-tremor-background-muted px-6 py-10 dark:border-dark-tremor-border dark:bg-dark-tremor-background-muted">
         <div className="mx-auto text-center">
-          <h4 className="text-tremor-metric font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+          <h4 className="text-tremor-metric font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong font-[Inter] font-sans">
             Request Inspectr
           </h4>
-          <p className="mt-3 max-w-xl text-tremor-default leading-6 text-tremor-content dark:text-dark-tremor-content sm:text-base">
-            Select a request from the list to view its details
-            or get started by making a request to {expose ? (ingressEndpoint ? `"${ingressEndpoint}"` : "the ingress endpoint") : (proxyEndpoint ? `"${proxyEndpoint}"` : "the proxy endpoint")}
+          <p
+            className="mt-3 max-w-xl text-tremor-default leading-6 text-tremor-content dark:text-dark-tremor-content sm:text-base">
+            Select a request from the list to view its details</p>
+          <p
+            className="max-w-xl text-tremor-default leading-6 text-tremor-content dark:text-dark-tremor-content sm:text-base">
+            or get started by making a request
+            to {expose ? (ingressEndpoint ? `"${ingressEndpoint}"` : 'the ingress endpoint') : (proxyEndpoint ? `"${proxyEndpoint}"` : 'the proxy endpoint')}.
           </p>
 
           <Terminal endpoint={expose ? ingressEndpoint : proxyEndpoint} showCopyButton={true} />
