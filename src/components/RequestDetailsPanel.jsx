@@ -1,21 +1,30 @@
 // src/components/RequestDetailsPanel.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import RequestDetail from './RequestDetail';
 import RequestContent from './RequestContent';
 import ResponseContent from './ResponseContent';
 import { RiExternalLinkLine } from "@remixicon/react";
 
 const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
+  const [ingressEndpoint, setIngressEndpoint] = useState('');
+
+  useEffect(() => {
+    // Get the ingress_endpoint from localStorage
+    const endpoint = localStorage.getItem('ingressEndpoint');
+    if (endpoint) {
+      setIngressEndpoint(endpoint);
+    }
+  }, []);
   if (!operation) {
     return (
       <div className="h-96 min-h-full mb-20 flex flex-1 flex-col justify-center rounded-tremor-default border border-tremor-border bg-tremor-background-muted px-6 py-10 dark:border-dark-tremor-border dark:bg-dark-tremor-background-muted">
         <div className="mx-auto text-center">
           <h4 className="text-tremor-metric font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-            Request Inspector
+            Request Inspectr
           </h4>
           <p className="mt-3 max-w-xl text-tremor-default leading-6 text-tremor-content dark:text-dark-tremor-content sm:text-base">
-            Select a request from the list to view its details, including headers, 
-            request body, response status, and response content.
+            Select a request from the list to view its details
+            or get started by making a request to {ingressEndpoint ? `"${ingressEndpoint}"` : "the ingress endpoint"}
           </p>
           <div className="mt-8 sm:flex sm:items-center sm:justify-center sm:gap-x-3">
             <button
