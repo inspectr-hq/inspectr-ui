@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import RequestDetail from './RequestDetail';
 import RequestContent from './RequestContent';
 import ResponseContent from './ResponseContent';
-import { RiExternalLinkLine } from "@remixicon/react";
 import Terminal from './Terminal';
+import { RiExternalLinkLine } from "@remixicon/react";
+
 
 const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   const [ingressEndpoint, setIngressEndpoint] = useState('');
