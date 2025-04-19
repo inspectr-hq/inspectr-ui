@@ -2,6 +2,12 @@
 
 export { default as InspectrApp } from './InspectrApp.jsx';
 export { default as CopyButton } from './CopyButton.jsx';
+export { default as DashBoardApp } from './DashBoardApp.jsx';
+export { default as DashBoardKpi } from './DashBoardKpi.jsx';
+export { default as DashBoardBarList } from './DashBoardBarList.jsx';
+export { default as DashBoardDonutChart } from './DashBoardDonutChart.jsx';
+export { default as DashBoardLineChart } from './DashBoardLineChart.jsx';
+export { default as DashBoardBarChart } from './DashBoardBarChart.jsx';
 export { default as DialogConfirmClear } from './DialogConfirmClear.jsx';
 export { default as DialogJwt } from './DialogJwt.jsx';
 export { default as DividerText } from './DividerText.jsx';
@@ -16,3 +22,4 @@ export { default as ResponseContent } from './ResponseContent.jsx';
 export { default as SettingsPanel } from './SettingsPanel.jsx';
 export { default as TagsInput } from './TagsInput.jsx';
 export { default as ToastNotification } from './ToastNotification.jsx';
+export { default as Workspace } from './Workspace.jsx';

@@ -132,7 +132,7 @@ const RequestList = ({
 
       <ul
         className="overflow-y-auto flex-grow"
-        style={{ maxHeight: 'calc(100vh - 40px - 100px - 49px)' }}
+        style={{ maxHeight: 'calc(100vh - 40px - 100px - 49px - 64px)' }}
       >
         {operations.length === 0 ? (
           <li className="flex items-center justify-center h-full text-gray-500 text-2xl">
