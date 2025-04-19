@@ -14,7 +14,9 @@ function joinClassNames(...classes) {
 
 // Helper: Get the start of a day (UTC) as an ISO string.
 function getStartOfDayUTC(date) {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())).toISOString();
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+  ).toISOString();
 }
 
 // Helper: Get the end of a day (UTC) as an ISO string.
@@ -48,13 +50,17 @@ function DateRangeButtons({ selectedRange, onSelect }) {
     },
     {
       label: '3M',
-      start: getStartOfDayUTC(new Date(today.getUTCFullYear(), today.getUTCMonth() - 3, today.getUTCDate())),
+      start: getStartOfDayUTC(
+        new Date(today.getUTCFullYear(), today.getUTCMonth() - 3, today.getUTCDate())
+      ),
       end: getEndOfDayUTC(today),
       tooltip: `${getStartOfDayUTC(new Date(today.getUTCFullYear(), today.getUTCMonth() - 3, today.getUTCDate()))} – ${getEndOfDayUTC(today)}`
     },
     {
       label: '6M',
-      start: getStartOfDayUTC(new Date(today.getUTCFullYear(), today.getUTCMonth() - 6, today.getUTCDate())),
+      start: getStartOfDayUTC(
+        new Date(today.getUTCFullYear(), today.getUTCMonth() - 6, today.getUTCDate())
+      ),
       end: getEndOfDayUTC(today),
       tooltip: `${getStartOfDayUTC(new Date(today.getUTCFullYear(), today.getUTCMonth() - 6, today.getUTCDate()))} – ${getEndOfDayUTC(today)}`
     }
@@ -68,7 +74,11 @@ function DateRangeButtons({ selectedRange, onSelect }) {
           onClick={() => onSelect(item)}
           title={item.tooltip}
           className={joinClassNames(
-            index === 0 ? 'rounded-l' : index === options.length - 1 ? '-ml-px rounded-r' : '-ml-px',
+            index === 0
+              ? 'rounded-l'
+              : index === options.length - 1
+                ? '-ml-px rounded-r'
+                : '-ml-px',
             'px-3 py-1 border focus:outline-none',
             selectedRange === item.label
               ? 'bg-tremor-brand dark:bg-dark-tremor-brand text-tremor-brand-inverted dark:text-dark-tremor-brand-inverted'
@@ -90,30 +100,17 @@ function ContentPlaceholder() {
         fill="none"
       >
         <defs>
-          <pattern
-            id="pattern-1"
-            x="0"
-            y="0"
-            width="10"
-            height="10"
-            patternUnits="userSpaceOnUse"
-          >
+          <pattern id="pattern-1" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
             <path d="M-3 13 15-5M-5 5l18-18M-1 21 17 3"></path>
           </pattern>
         </defs>
-        <rect
-          stroke="none"
-          fill="url(#pattern-1)"
-          width="100%"
-          height="100%"
-        ></rect>
+        <rect stroke="none" fill="url(#pattern-1)" width="100%" height="100%"></rect>
       </svg>
     </div>
   );
 }
 
 export default function DashBoardApp() {
-
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -170,8 +167,7 @@ export default function DashBoardApp() {
     <>
       <header>
         <div className="sm:flex sm:items-center sm:justify-between">
-          <h3
-            className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+          <h3 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
             Inspectr Statistics
           </h3>
           <div className="mt-4 flex items-center space-x-2 sm:mt-0">
@@ -195,11 +191,7 @@ export default function DashBoardApp() {
               {loading ? 'Loading' : 'Refresh'}
             </Button>
           </div>
-          {error && (
-            <p className="mt-2 text-red-600 dark:text-red-400">
-              Error: {error}
-            </p>
-          )}
+          {error && <p className="mt-2 text-red-600 dark:text-red-400">Error: {error}</p>}
         </div>
       </header>
       <main>
@@ -207,10 +199,7 @@ export default function DashBoardApp() {
           <DashBoardKpi overall={stats?.overall} />
         </div>
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-2">
-          <DashBoardBarChart
-            title="Traffic Volume"
-            data={stats?.by_interval}
-          />
+          <DashBoardBarChart title="Traffic Volume" data={stats?.by_interval} />
           <DashBoardLineChart
             title="Average Response Times"
             data={stats?.by_interval}
@@ -232,7 +221,11 @@ export default function DashBoardApp() {
             />
           </div>
           <div className="col-span-1">
-            <DashBoardBarList title="Top Endpoints" data={stats?.top_endpoints?.all} toggleable={false} />
+            <DashBoardBarList
+              title="Top Endpoints"
+              data={stats?.top_endpoints?.all}
+              toggleable={false}
+            />
           </div>
         </div>
         <div className="mt-6 grid grid-cols-3 gap-4 md:grid-cols-3 lg:grid-cols-3">
@@ -249,7 +242,11 @@ export default function DashBoardApp() {
           {/*<DashBoardDonutChart />*/}
           {/*</div>*/}
           {/*<div className="mt-6 grid grid-cols-3 gap-4 md:grid-cols-3 lg:grid-cols-3">*/}
-          <DashBoardBarList title="Top Failed Endpoints" data={stats?.top_endpoints?.error} toggleable={false} />
+          <DashBoardBarList
+            title="Top Failed Endpoints"
+            data={stats?.top_endpoints?.error}
+            toggleable={false}
+          />
         </div>
         {/*<div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">*/}
         {/*  <Card className="h-36 rounded-tremor-small p-2">*/}

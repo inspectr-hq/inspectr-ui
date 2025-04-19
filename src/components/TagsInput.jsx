@@ -60,7 +60,9 @@ const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...',
           <div
             key={tag}
             className={`flex items-center rounded-full px-2 py-1 mr-2 my-1 text-xs ${
-              colorFn ? colorFn(tag) : 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
+              colorFn
+                ? colorFn(tag)
+                : 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200'
             }`}
           >
             <span>{tag}</span>
@@ -100,7 +102,9 @@ const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...',
             <li
               key={option}
               className={`cursor-pointer px-2 py-1 hover:bg-indigo-100 dark:hover:bg-dark-tremor-background ${
-                index === highlightedIndex ? 'bg-indigo-200 dark:bg-dark-tremor-background-muted' : ''
+                index === highlightedIndex
+                  ? 'bg-indigo-200 dark:bg-dark-tremor-background-muted'
+                  : ''
               } text-gray-900 dark:text-dark-tremor-content`}
               onMouseEnter={() => setHighlightedIndex(index)}
               onMouseDown={() => addTag(option)}

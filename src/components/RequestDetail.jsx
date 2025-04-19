@@ -3,6 +3,9 @@ import React, { useState } from 'react';
 import { getStatusClass } from '../utils/getStatusClass.js';
 import ToastNotification from './ToastNotification';
 import { getMethodTextClass } from '../utils/getMethodClass.js';
+import { formatTimestamp, formatDuration, formatSize } from '../utils/formatters.js';
+import { Popover } from '@headlessui/react';
+import CopyButton from './CopyButton.jsx';
 
 const RequestDetail = ({ operation }) => {
   const [copiedCurl, setCopiedCurl] = useState(false);
@@ -11,24 +14,36 @@ const RequestDetail = ({ operation }) => {
   const [showReplayToast, setShowReplayToast] = useState(false);
   const [replayed, setReplayed] = useState(false);
 
-  const formatTimestamp = (isoString) => {
-    if (!isoString) return 'N/A';
-    const date = new Date(isoString);
-    const formattedDate = date.toLocaleDateString('en-CA', {
-      // YYYY-MM-DD format
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-    const formattedTime = date.toLocaleTimeString([], {
-      // HH:MM:SS in local time
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false // 24-hour format
-    });
-    return `${formattedDate} at ${formattedTime}`;
+  // Calculate request size details
+  const calculateRequestSize = () => {
+    if (!operation?.request) return { headers: 0, body: 0, total: 0 };
+
+    const headersSize = operation.request.headers_size || 0;
+    const bodySize = operation.request.body_size || 0;
+
+    return {
+      headers: headersSize,
+      body: bodySize,
+      total: headersSize + bodySize
+    };
   };
+
+  // Calculate response size details
+  const calculateResponseSize = () => {
+    if (!operation?.response) return { headers: 0, body: 0, total: 0 };
+
+    const headersSize = operation.response.headers_size || 0;
+    const bodySize = operation.response.body_size || 0;
+
+    return {
+      headers: headersSize,
+      body: bodySize,
+      total: headersSize + bodySize
+    };
+  };
+
+  const requestSize = calculateRequestSize();
+  const responseSize = calculateResponseSize();
 
   // Generate a cURL command string from the request data
   const generateCurlCommand = () => {
@@ -121,7 +136,9 @@ const RequestDetail = ({ operation }) => {
   return (
     <div className="mb-4 p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded shadow dark:shadow-dark-tremor-shadow relative">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="font-bold text-2xl text-tremor-content-strong dark:text-dark-tremor-content-strong">Request Details</h2>
+        <h2 className="font-bold text-2xl text-tremor-content-strong dark:text-dark-tremor-content-strong">
+          Request Details
+        </h2>
         <div className="flex space-x-2">
           {/* Copy as cURL Button */}
           <button onClick={handleCopyCurl} className={buttonClasses}>
@@ -182,34 +199,60 @@ const RequestDetail = ({ operation }) => {
           >
             {operation?.response?.status}
           </span>
-          <span className="text-sm dark:text-dark-tremor-content">{operation?.response?.status_text}</span>
+          <span className="text-sm dark:text-dark-tremor-content">
+            {operation?.response?.status_text}
+          </span>
         </div>
         <div className="flex items-center text-gray-600 dark:text-dark-tremor-content">
           <span onClick={handleCopyUrl} className="cursor-pointer">
             {operation?.request?.url}
           </span>
-          <button onClick={handleCopyUrl} className="cursor-pointer pl-1">
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="icon-xs"
-            >
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M7 5C7 3.34315 8.34315 2 10 2H19C20.6569 2 22 3.34315 22 5V14C22 15.6569 20.6569 17 19 17H17V19C17 20.6569 15.6569 22 14 22H5C3.34315 22 2 20.6569 2 19V10C2 8.34315 3.34315 7 5 7H7V5ZM9 7H14C15.6569 7 17 8.34315 17 10V15H19C19.5523 15 20 14.5523 20 14V5C20 4.44772 19.5523 4 19 4H10C9.44772 4 9 4.44772 9 5V7ZM5 9C4.44772 9 4 9.44772 4 10V19C4 19.5523 4.44772 20 5 20H14C14.5523 20 15 19.5523 15 19V10C15 9.44772 14.5523 9 14 9H5Z"
-                fill="currentColor"
-              />
-            </svg>
-          </button>
+          <CopyButton textToCopy={operation.request.url} showLabel={false} />
         </div>
         <div className="text-gray-500 dark:text-dark-tremor-content text-xs">
           Received on{' '}
           <span className="font-semibold">{formatTimestamp(operation?.request?.timestamp)}</span> •
-          Took <span className="font-semibold">{operation?.timing?.duration}ms</span> to respond
+          Took <span className="font-semibold">{formatDuration(operation?.timing?.duration)}</span>{' '}
+          to respond •
+          <Popover className="relative inline-block">
+            <span className="flex items-center pl-1">
+              size
+              <span className="font-semibold pl-1">{formatSize(responseSize.total)}</span>
+              <Popover.Button className="cursor-pointer pl-1">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  width="12"
+                  height="12"
+                >
+                  <path d="M20 22H4C3.44772 22 3 21.5523 3 21V3C3 2.44772 3.44772 2 4 2H20C20.5523 2 21 2.44772 21 3V21C21 21.5523 20.5523 22 20 22ZM19 20V4H5V20H19ZM8 7H16V9H8V7ZM8 11H16V13H8V11ZM8 15H16V17H8V15Z"></path>
+                </svg>
+              </Popover.Button>
+            </span>
+            <Popover.Panel className="absolute z-10 mt-2 w-72 -translate-x-1/2 transform px-4 sm:px-0">
+              <div className="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 bg-white dark:bg-dark-tremor-background p-3">
+                <div className="text-sm font-semibold mb-2">Request Size</div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>Total:</div>
+                  <div className="font-mono text-right">{formatSize(requestSize.total)}</div>
+                  <div>Headers:</div>
+                  <div className="font-mono text-right">{formatSize(requestSize.headers)}</div>
+                  <div>Body:</div>
+                  <div className="font-mono text-right">{formatSize(requestSize.body)}</div>
+                </div>
+                <div className="text-sm font-semibold mt-3 mb-2">Response Size</div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>Total:</div>
+                  <div className="font-mono text-right">{formatSize(responseSize.total)}</div>
+                  <div>Headers:</div>
+                  <div className="font-mono text-right">{formatSize(responseSize.headers)}</div>
+                  <div>Body:</div>
+                  <div className="font-mono text-right">{formatSize(responseSize.body)}</div>
+                </div>
+              </div>
+            </Popover.Panel>
+          </Popover>
         </div>
       </div>
 

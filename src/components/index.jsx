@@ -21,5 +21,6 @@ export { default as RequestListSidePanel } from './RequestListSidePanel.jsx';
 export { default as ResponseContent } from './ResponseContent.jsx';
 export { default as SettingsPanel } from './SettingsPanel.jsx';
 export { default as TagsInput } from './TagsInput.jsx';
+export { default as Terminal } from './Terminal.jsx';
 export { default as ToastNotification } from './ToastNotification.jsx';
 export { default as Workspace } from './Workspace.jsx';

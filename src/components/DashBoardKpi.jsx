@@ -17,26 +17,26 @@ export default function DashBoardKpi({ overall }) {
       stat: overall.total_requests,
       // Optionally, include change info if available
       change: '',
-      changeType: 'neutral',
+      changeType: 'neutral'
     },
     {
       name: 'Average Response Time',
       stat: `${overall.average_response_time} ms`,
       change: '',
-      changeType: 'neutral',
+      changeType: 'neutral'
     },
     {
       name: 'Success Rate',
       stat: `${(overall.success_rate * 100).toFixed(1)}%`,
       change: '',
-      changeType: 'neutral',
+      changeType: 'neutral'
     },
     {
       name: 'Error Rate',
       stat: `${(overall.error_rate * 100).toFixed(1)}%`,
       change: '',
-      changeType: 'neutral',
-    },
+      changeType: 'neutral'
+    }
   ];
 
   return (

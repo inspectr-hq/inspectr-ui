@@ -1,7 +1,13 @@
 // src/components/CopyButton.jsx
 import React, { useState } from 'react';
 
-const CopyButton = ({ textToCopy, copiedTimeout = 2500 }) => {
+const CopyButton = ({
+  textToCopy,
+  copiedTimeout = 2500,
+  showLabel = true,
+  labelText = 'Copy',
+  copiedText = 'Copied'
+}) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -34,7 +40,7 @@ const CopyButton = ({ textToCopy, copiedTimeout = 2500 }) => {
       <span data-state={copied ? 'copied' : 'closed'}>
         <button
           onClick={handleCopy}
-          className="flex gap-1 items-center select-none px-4 py-1 cursor-pointer"
+          className="flex gap-1 items-center select-none py-1 cursor-pointer"
           aria-label="Copy"
         >
           {copied ? (
@@ -56,7 +62,7 @@ const CopyButton = ({ textToCopy, copiedTimeout = 2500 }) => {
               />
             </svg>
           )}
-          {copied ? 'Copied' : 'Copy'}
+          {showLabel && (copied ? copiedText : labelText)}
         </button>
       </span>
     </div>

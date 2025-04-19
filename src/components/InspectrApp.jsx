@@ -127,6 +127,9 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         localStorage.setItem('token', result.token);
         setSseEndpoint(result.sse_endpoint);
         localStorage.setItem('sseEndpoint', result.sse_endpoint);
+        localStorage.setItem('ingressEndpoint', result.ingress_endpoint);
+        localStorage.setItem('proxyEndpoint', result.proxy_endpoint);
+        localStorage.setItem('expose', result.expose ? 'true' : 'false');
       }
     } catch (err) {
       console.error('❌ Failed to load /app/config:', err);
@@ -202,6 +205,9 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         localStorage.setItem('expires', result.expires);
         setSseEndpoint(result.sse_endpoint);
         localStorage.setItem('sseEndpoint', result.sse_endpoint);
+        localStorage.setItem('ingressEndpoint', result.ingress_endpoint);
+        localStorage.setItem('proxyEndpoint', result.proxy_endpoint);
+        localStorage.setItem('expose', result.expose ? 'true' : 'false');
 
         if (showNotification) {
           setToast({
@@ -346,16 +352,21 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   }, [operations, selectedOperation]);
 
   // Clear all operations.
-  const clearOperations = () => {
+  const clearOperations = async () => {
     setSelectedOperation(null);
-    // Clear operations locally
-    eventDB.clearEvents().catch((err) => console.error('Error clearing events from DB:', err));
-    // Clear operations from Inspectr
-    deleteAllOperationsApi().catch((err) =>
-      console.error('Error deleting operations from Inspectr:', err)
-    );
-    // Unset lastEventId
-    localStorage.removeItem('lastEventId');
+
+    try {
+      // Clear operations locally
+      await eventDB.clearEvents();
+
+      // Clear operations from Inspectr
+      await deleteAllOperationsApi();
+
+      // Unset lastEventId
+      localStorage.removeItem('lastEventId');
+    } catch (err) {
+      console.error('Error clearing all operations:', err);
+    }
   };
 
   // Clear only the operations matching the active filters.
@@ -389,15 +400,36 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
   // Remove a single request.
   const removeOperation = async (opId) => {
-    if (selectedOperation && (selectedOperation.id || '') === opId) {
-      setSelectedOperation(null);
-    }
+    const isCurrentlySelected = selectedOperation && (selectedOperation.id || '') === opId;
     const operation = await eventDB.getEvent(opId);
-    // Clear operation locally
-    eventDB.deleteEvent(opId).catch((err) => console.error('Error deleting event from DB:', err));
-    deleteOperationApi(operation.operation_id).catch((err) =>
-      console.error('Error deleting operation from Inspectr:', err)
-    );
+
+    try {
+      // Clear operation locally
+      await eventDB.deleteEvent(opId);
+
+      // Delete operation from Inspectr via API
+      await deleteOperationApi(operation.operation_id);
+
+      // Reset selection if the deleted operation was selected
+      if (isCurrentlySelected) {
+        setSelectedOperation(null);
+
+        // Get the updated list of operations to select a new one
+        const updatedOperations = await eventDB.queryEvents({
+          sort: { field: sortField, order: sortDirection },
+          filters,
+          page,
+          pageSize
+        });
+
+        // Select the first operation if available
+        if (updatedOperations && updatedOperations.length > 0) {
+          setSelectedOperation(updatedOperations[0]);
+        }
+      }
+    } catch (err) {
+      console.error('Error during operation removal:', err);
+    }
   };
 
   /**
@@ -475,8 +507,10 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-dark-tremor-background"
-         style={{ maxHeight: 'calc(100vh - 64px)' }}>
+    <div
+      className="flex flex-col h-screen bg-white dark:bg-dark-tremor-background"
+      style={{ maxHeight: 'calc(100vh - 64px)' }}
+    >
       <div className="flex flex-grow">
         {/* Left Panel */}
         <div className="w-1/3 border-r border-gray-300 dark:border-dark-tremor-border overflow-y-auto">

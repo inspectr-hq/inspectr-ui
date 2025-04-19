@@ -2,8 +2,12 @@
 import React from 'react';
 import { getStatusClass } from '../utils/getStatusClass.js';
 import { getMethodTextClass } from '../utils/getMethodClass.js';
+import { formatDuration } from '../utils/formatters.js';
 
-const selectedClass = ['bg-blue-100 dark:bg-blue-900/30', 'border-blue-700 dark:border-blue-500'].join(' ');
+const selectedClass = [
+  'bg-blue-100 dark:bg-blue-900/30',
+  'border-blue-700 dark:border-blue-500'
+].join(' ');
 const baseBorderClass = 'border-l-4';
 
 const RequestListItem = ({ operation, opId, onSelect, onRemove, selected }) => {
@@ -64,7 +68,7 @@ const RequestListItem = ({ operation, opId, onSelect, onRemove, selected }) => {
         {/*  </div>*/}
         {/*</div>*/}
         <div className="w-16 text-gray-500 dark:text-dark-tremor-content text-center text-xs">
-          {operation?.timing?.duration}ms
+          {formatDuration(operation?.timing?.duration)}
         </div>
         <button
           className="w-8 h-8 flex items-center justify-center cursor-pointer text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"

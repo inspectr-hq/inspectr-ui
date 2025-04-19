@@ -95,7 +95,9 @@ const SettingsPanel = ({
           onClick={(event) => event.stopPropagation()}
         >
           <img src={logo} alt="Inspectr Logo" className="h-6" />
-          <span className="text-gray-700 dark:text-dark-tremor-content font-semibold text-sm">Inspectr</span>
+          <span className="text-gray-700 dark:text-dark-tremor-content font-semibold text-sm">
+            Inspectr
+          </span>
         </a>
       </div>
 
@@ -106,7 +108,9 @@ const SettingsPanel = ({
         }`}
       >
         <div className="px-6">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-dark-tremor-content-strong mb-4">Configuration</h2>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-dark-tremor-content-strong mb-4">
+            Configuration
+          </h2>
           <div className="grid grid-cols-3 gap-6">
             {/* Column 1: API Endpoint */}
             <div>
@@ -130,7 +134,9 @@ const SettingsPanel = ({
 
             {/* Column 2: Access Code */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">Channel</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
+                Channel
+              </label>
               <input
                 type="text"
                 placeholder="Enter Channel..."
@@ -148,7 +154,9 @@ const SettingsPanel = ({
 
             {/* Column 3: Channel */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">Access Code</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
+                Access Code
+              </label>
               <input
                 type="text"
                 placeholder="Enter Access Code..."
