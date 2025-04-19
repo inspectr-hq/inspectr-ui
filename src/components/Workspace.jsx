@@ -30,7 +30,7 @@ export default function Workspace() {
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="overflow flex h-16 sm:space-x-7">
             <div className="hidden shrink-0 sm:flex sm:items-center">
-              <a href="#" className="p-1.5">
+              <a href="/" className="p-1.5">
                 <Logo
                   className="size-4 shrink-0 w-8 h-8 text-tremor-content-strong dark:text-dark-tremor-content-strong"
                   aria-hidden={true}

@@ -47,12 +47,12 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
           <Terminal endpoint={expose ? ingressEndpoint : proxyEndpoint} showCopyButton={true} />
 
           <div className="mt-8 sm:flex sm:items-center sm:justify-center sm:gap-x-3">
-            <button
-              type="button"
-              className="w-full whitespace-nowrap rounded-tremor-small bg-tremor-brand px-4 py-2 text-tremor-default font-medium text-tremor-brand-inverted shadow-tremor-input hover:bg-tremor-brand-emphasis dark:bg-dark-tremor-brand dark:text-dark-tremor-brand-inverted dark:shadow-dark-tremor-input dark:hover:bg-dark-tremor-brand-emphasis sm:w-fit"
-            >
-              View Documentation
-            </button>
+            {/*<button*/}
+            {/*  type="button"*/}
+            {/*  className="w-full whitespace-nowrap rounded-tremor-small bg-tremor-brand px-4 py-2 text-tremor-default font-medium text-tremor-brand-inverted shadow-tremor-input hover:bg-tremor-brand-emphasis dark:bg-dark-tremor-brand dark:text-dark-tremor-brand-inverted dark:shadow-dark-tremor-input dark:hover:bg-dark-tremor-brand-emphasis sm:w-fit"*/}
+            {/*>*/}
+            {/*  View Documentation*/}
+            {/*</button>*/}
             <a
               href="https://inspectr.dev"
               target="_blank"
