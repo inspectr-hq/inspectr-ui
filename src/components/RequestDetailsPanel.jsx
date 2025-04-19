@@ -4,8 +4,7 @@ import RequestDetail from './RequestDetail';
 import RequestContent from './RequestContent';
 import ResponseContent from './ResponseContent';
 import Terminal from './Terminal';
-import { RiExternalLinkLine } from "@remixicon/react";
-
+import { RiExternalLinkLine } from '@remixicon/react';
 
 const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   const [ingressEndpoint, setIngressEndpoint] = useState('');
@@ -35,13 +34,19 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
           <h4 className="text-tremor-metric font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong font-[Inter] font-sans">
             Request Inspectr
           </h4>
-          <p
-            className="mt-3 max-w-xl text-tremor-default leading-6 text-tremor-content dark:text-dark-tremor-content sm:text-base">
-            Select a request from the list to view its details</p>
-          <p
-            className="max-w-xl text-tremor-default leading-6 text-tremor-content dark:text-dark-tremor-content sm:text-base">
-            or get started by making a request
-            to {expose ? (ingressEndpoint ? `"${ingressEndpoint}"` : 'the ingress endpoint') : (proxyEndpoint ? `"${proxyEndpoint}"` : 'the proxy endpoint')}.
+          <p className="mt-3 max-w-xl text-tremor-default leading-6 text-tremor-content dark:text-dark-tremor-content sm:text-base">
+            Select a request from the list to view its details
+          </p>
+          <p className="max-w-xl text-tremor-default leading-6 text-tremor-content dark:text-dark-tremor-content sm:text-base">
+            or get started by making a request to{' '}
+            {expose
+              ? ingressEndpoint
+                ? `"${ingressEndpoint}"`
+                : 'the ingress endpoint'
+              : proxyEndpoint
+                ? `"${proxyEndpoint}"`
+                : 'the proxy endpoint'}
+            .
           </p>
 
           <Terminal endpoint={expose ? ingressEndpoint : proxyEndpoint} showCopyButton={true} />
@@ -59,10 +64,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
               className="mt-2 inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-tremor-small border border-tremor-border bg-tremor-background px-3 py-2 text-tremor-default font-medium text-tremor-brand shadow-tremor-input hover:text-tremor-brand-emphasis dark:border-dark-tremor-border dark:bg-dark-tremor-background dark:text-dark-tremor-brand dark:shadow-dark-tremor-input hover:dark:text-dark-tremor-brand-emphasis sm:mt-0 sm:w-fit"
             >
               Visit Website
-              <RiExternalLinkLine
-                className="size-5 shrink-0"
-                aria-hidden={true}
-              />
+              <RiExternalLinkLine className="size-5 shrink-0" aria-hidden={true} />
             </a>
           </div>
         </div>
@@ -78,8 +80,8 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
       <div className="flex space-x-2">
         <button
           className={`px-4 py-2 rounded-t ${
-            currentTab === 'request' 
-              ? 'bg-blue-600 dark:bg-blue-700 text-white' 
+            currentTab === 'request'
+              ? 'bg-blue-600 dark:bg-blue-700 text-white'
               : 'bg-gray-200 dark:bg-dark-tremor-background-subtle text-gray-700 dark:text-dark-tremor-content'
           }`}
           onClick={() => setCurrentTab('request')}
@@ -88,8 +90,8 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
         </button>
         <button
           className={`px-4 py-2 rounded-t ${
-            currentTab === 'response' 
-              ? 'bg-blue-600 dark:bg-blue-700 text-white' 
+            currentTab === 'response'
+              ? 'bg-blue-600 dark:bg-blue-700 text-white'
               : 'bg-gray-200 dark:bg-dark-tremor-background-subtle text-gray-700 dark:text-dark-tremor-content'
           }`}
           onClick={() => setCurrentTab('response')}

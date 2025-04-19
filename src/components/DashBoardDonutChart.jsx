@@ -12,22 +12,22 @@ const data = [
     amount: 2095920,
     share: '84.3%',
     href: '#',
-    borderColor: 'bg-blue-500',
+    borderColor: 'bg-blue-500'
   },
   {
     name: 'Stocks & ETFs',
     amount: 250120,
     share: '10.1%',
     href: '#',
-    borderColor: 'bg-violet-500',
+    borderColor: 'bg-violet-500'
   },
   {
     name: 'Cash & cash equivalent',
     amount: 140110,
     share: '5.6%',
     href: '#',
-    borderColor: 'bg-fuchsia-500',
-  },
+    borderColor: 'bg-fuchsia-500'
+  }
 ];
 
 export default function DashBoardDonutChart({
@@ -35,10 +35,16 @@ export default function DashBoardDonutChart({
   description = '',
   data,
   valueFormatter, // optional custom function
-  colors, // optional array of colors for the chart (e.g. ['blue', 'violet', 'fuchsia'])
+  colors // optional array of colors for the chart (e.g. ['blue', 'violet', 'fuchsia'])
 }) {
   // Default border colors for the legend items
-  const defaultBorderColors = ['bg-blue-500', 'bg-violet-500', 'bg-fuchsia-500', 'bg-emerald-500', 'bg-sky-500'];
+  const defaultBorderColors = [
+    'bg-blue-500',
+    'bg-violet-500',
+    'bg-fuchsia-500',
+    'bg-emerald-500',
+    'bg-sky-500'
+  ];
   // Default colors for the DonutChart (if not provided)
   const donutChartColors = colors || ['blue', 'violet', 'fuchsia', 'emerald', 'sky'];
 
@@ -58,7 +64,7 @@ export default function DashBoardDonutChart({
       name: key,
       amount: value,
       share: total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%',
-      borderColor: defaultBorderColors[index % defaultBorderColors.length],
+      borderColor: defaultBorderColors[index % defaultBorderColors.length]
     }));
   }
 
@@ -89,8 +95,7 @@ export default function DashBoardDonutChart({
                 <span className={classNames(item.borderColor, 'w-1 shrink-0 rounded')} />
                 <div>
                   <p className="text-tremor-default font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    {formatter(item.amount)}{' '}
-                    <span className="font-normal">({item.share})</span>
+                    {formatter(item.amount)} <span className="font-normal">({item.share})</span>
                   </p>
                   <p className="mt-0.5 whitespace-nowrap text-tremor-default text-tremor-content dark:text-dark-tremor-content">
                     {item.name}

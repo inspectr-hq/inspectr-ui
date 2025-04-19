@@ -1,19 +1,19 @@
 // "use client";
 
-import { AreaChart, Card } from "@tremor/react";
+import { AreaChart, Card } from '@tremor/react';
 
 const chartdata = [
   {
-    date: "Jan 23",
-    "Route Requests": 289,
-    "Station Requests": 233,
+    date: 'Jan 23',
+    'Route Requests': 289,
+    'Station Requests': 233
   },
   // ...
   {
-    date: "Oct 23",
-    "Route Requests": 283,
-    "Station Requests": 247,
-  },
+    date: 'Oct 23',
+    'Route Requests': 283,
+    'Station Requests': 247
+  }
 ];
 
 export default function DashBoardChart() {
@@ -29,8 +29,8 @@ export default function DashBoardChart() {
         className="mt-2 h-80"
         data={chartdata}
         index="date"
-        categories={["Route Requests", "Station Requests"]}
-        colors={["indigo", "rose"]}
+        categories={['Route Requests', 'Station Requests']}
+        colors={['indigo', 'rose']}
         yAxisWidth={33}
       />
     </Card>

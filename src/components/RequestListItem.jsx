@@ -4,7 +4,10 @@ import { getStatusClass } from '../utils/getStatusClass.js';
 import { getMethodTextClass } from '../utils/getMethodClass.js';
 import { formatDuration } from '../utils/formatters.js';
 
-const selectedClass = ['bg-blue-100 dark:bg-blue-900/30', 'border-blue-700 dark:border-blue-500'].join(' ');
+const selectedClass = [
+  'bg-blue-100 dark:bg-blue-900/30',
+  'border-blue-700 dark:border-blue-500'
+].join(' ');
 const baseBorderClass = 'border-l-4';
 
 const RequestListItem = ({ operation, opId, onSelect, onRemove, selected }) => {

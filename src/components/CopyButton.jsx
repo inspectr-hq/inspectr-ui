@@ -1,7 +1,13 @@
 // src/components/CopyButton.jsx
 import React, { useState } from 'react';
 
-const CopyButton = ({ textToCopy, copiedTimeout = 2500, showLabel = true, labelText = "Copy", copiedText = "Copied" }) => {
+const CopyButton = ({
+  textToCopy,
+  copiedTimeout = 2500,
+  showLabel = true,
+  labelText = 'Copy',
+  copiedText = 'Copied'
+}) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {

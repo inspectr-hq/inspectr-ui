@@ -136,7 +136,9 @@ const RequestDetail = ({ operation }) => {
   return (
     <div className="mb-4 p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded shadow dark:shadow-dark-tremor-shadow relative">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="font-bold text-2xl text-tremor-content-strong dark:text-dark-tremor-content-strong">Request Details</h2>
+        <h2 className="font-bold text-2xl text-tremor-content-strong dark:text-dark-tremor-content-strong">
+          Request Details
+        </h2>
         <div className="flex space-x-2">
           {/* Copy as cURL Button */}
           <button onClick={handleCopyCurl} className={buttonClasses}>
@@ -197,7 +199,9 @@ const RequestDetail = ({ operation }) => {
           >
             {operation?.response?.status}
           </span>
-          <span className="text-sm dark:text-dark-tremor-content">{operation?.response?.status_text}</span>
+          <span className="text-sm dark:text-dark-tremor-content">
+            {operation?.response?.status_text}
+          </span>
         </div>
         <div className="flex items-center text-gray-600 dark:text-dark-tremor-content">
           <span onClick={handleCopyUrl} className="cursor-pointer">
@@ -208,12 +212,20 @@ const RequestDetail = ({ operation }) => {
         <div className="text-gray-500 dark:text-dark-tremor-content text-xs">
           Received on{' '}
           <span className="font-semibold">{formatTimestamp(operation?.request?.timestamp)}</span> •
-          Took <span className="font-semibold">{formatDuration(operation?.timing?.duration)}</span> to respond •
+          Took <span className="font-semibold">{formatDuration(operation?.timing?.duration)}</span>{' '}
+          to respond •
           <Popover className="relative inline-block">
-            <span className="flex items-center pl-1">size
+            <span className="flex items-center pl-1">
+              size
               <span className="font-semibold pl-1">{formatSize(responseSize.total)}</span>
               <Popover.Button className="cursor-pointer pl-1">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  width="12"
+                  height="12"
+                >
                   <path d="M20 22H4C3.44772 22 3 21.5523 3 21V3C3 2.44772 3.44772 2 4 2H20C20.5523 2 21 2.44772 21 3V21C21 21.5523 20.5523 22 20 22ZM19 20V4H5V20H19ZM8 7H16V9H8V7ZM8 11H16V13H8V11ZM8 15H16V17H8V15Z"></path>
                 </svg>
               </Popover.Button>

@@ -1,21 +1,23 @@
 import React from 'react';
 import CopyButton from './CopyButton.jsx';
 
-const Terminal = ({ 
-  endpoint, 
-  command, 
-  prompt = "computer:~$", 
+const Terminal = ({
+  endpoint,
+  command,
+  prompt = 'computer:~$',
   showCopyButton = false,
   showCopyLabel = false,
-  copyLabelText = "Copy",
-  copiedText = "Copied"
+  copyLabelText = 'Copy',
+  copiedText = 'Copied'
 }) => {
-    const displayCommand = command || `curl -X GET ${endpoint || "http://localhost:8080t"}`;
+  const displayCommand = command || `curl -X GET ${endpoint || 'http://localhost:8080t'}`;
 
   return (
     <div className="w-full mt-6 max-w-xl mx-auto">
-      <div className="coding inverse-toggle px-5 pt-4 shadow-lg text-gray-100 text-sm font-mono subpixel-antialiased 
-                          bg-gray-800 pb-6 pt-4 rounded-lg leading-normal overflow-hidden">
+      <div
+        className="coding inverse-toggle px-5 pt-4 shadow-lg text-gray-100 text-sm font-mono subpixel-antialiased 
+                          bg-gray-800 pb-6 pt-4 rounded-lg leading-normal overflow-hidden"
+      >
         <div className="top mb-2 flex justify-between">
           <div className="flex">
             <div className="h-3 w-3 bg-red-500 rounded-full"></div>

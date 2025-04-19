@@ -6,20 +6,19 @@ function valueFormatter(number) {
   const formatter = new Intl.NumberFormat('en-US', {
     maximumFractionDigits: 0,
     notation: 'compact',
-    compactDisplay: 'short',
+    compactDisplay: 'short'
   });
   return formatter.format(number);
 }
 
 export default function DashBoardLineChart({
-                                             title = 'Response Times',
-                                             data,
-                                             metricKey = [],
-                                             metricUnit = '',
-                                             highlightValue= '',
-                                             highlightLabel = '',
-                                           }) {
-
+  title = 'Response Times',
+  data,
+  metricKey = [],
+  metricUnit = '',
+  highlightValue = '',
+  highlightLabel = ''
+}) {
   // Ensure that metricKey is an array
   const categories = Array.isArray(metricKey) ? metricKey : [metricKey];
 

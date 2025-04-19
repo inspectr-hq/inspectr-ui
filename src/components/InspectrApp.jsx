@@ -507,8 +507,10 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-dark-tremor-background"
-         style={{ maxHeight: 'calc(100vh - 64px)' }}>
+    <div
+      className="flex flex-col h-screen bg-white dark:bg-dark-tremor-background"
+      style={{ maxHeight: 'calc(100vh - 64px)' }}
+    >
       <div className="flex flex-grow">
         {/* Left Panel */}
         <div className="w-1/3 border-r border-gray-300 dark:border-dark-tremor-border overflow-y-auto">

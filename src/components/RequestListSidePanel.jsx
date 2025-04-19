@@ -85,7 +85,9 @@ const RequestListSidePanel = ({
       >
         {/* Panel Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-300 dark:border-dark-tremor-border bg-gray-50 dark:bg-dark-tremor-background-subtle">
-          <h2 className="pl-4 text-lg font-semibold text-gray-800 dark:text-dark-tremor-content-strong">Filter & Sort</h2>
+          <h2 className="pl-4 text-lg font-semibold text-gray-800 dark:text-dark-tremor-content-strong">
+            Filter & Sort
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-600 dark:text-dark-tremor-content hover:text-gray-800 dark:hover:text-dark-tremor-content-strong focus:outline-none cursor-pointer"
@@ -159,7 +161,9 @@ const RequestListSidePanel = ({
                     onChange={(e) => setSortDirection(e.target.value)}
                     className="form-radio text-blue-600 dark:text-blue-500"
                   />
-                  <span className="ml-3 text-gray-700 dark:text-dark-tremor-content">Ascending</span>
+                  <span className="ml-3 text-gray-700 dark:text-dark-tremor-content">
+                    Ascending
+                  </span>
                 </label>
                 <label className="flex items-center">
                   <input
@@ -170,7 +174,9 @@ const RequestListSidePanel = ({
                     onChange={(e) => setSortDirection(e.target.value)}
                     className="form-radio text-blue-600 dark:text-blue-500"
                   />
-                  <span className="ml-3 text-gray-700 dark:text-dark-tremor-content">Descending</span>
+                  <span className="ml-3 text-gray-700 dark:text-dark-tremor-content">
+                    Descending
+                  </span>
                 </label>
               </div>
             </div>
@@ -246,7 +252,9 @@ const RequestListSidePanel = ({
 
               {/* Status Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">Status</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
+                  Status
+                </label>
                 <TagsInput
                   options={statusCodeOptions}
                   selected={filters.status || []}
@@ -258,7 +266,9 @@ const RequestListSidePanel = ({
 
               {/* Method Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">Method</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
+                  Method
+                </label>
                 <TagsInput
                   options={methodOptions}
                   selected={filters.method || []}
@@ -270,7 +280,9 @@ const RequestListSidePanel = ({
 
               {/* Path Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">Path</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
+                  Path
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. /api/users"
@@ -309,7 +321,9 @@ const RequestListSidePanel = ({
 
               {/* Host Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">Host</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
+                  Host
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. localhost"

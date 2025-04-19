@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { BarList, Card } from '@tremor/react';
 
-const valueFormatter = (number) =>
-  `${Intl.NumberFormat('us').format(number).toString()}`;
+const valueFormatter = (number) => `${Intl.NumberFormat('us').format(number).toString()}`;
 
 export default function DashBoardBarList({ title, data, toggleable = true }) {
   const [extended, setExtended] = useState(true);
@@ -15,7 +14,7 @@ export default function DashBoardBarList({ title, data, toggleable = true }) {
   const transformedData = data
     ? data.map((item) => ({
         name: item.path,
-        value: item.count,
+        value: item.count
       }))
     : [];
 

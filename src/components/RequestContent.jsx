@@ -152,8 +152,12 @@ const RequestContent = ({ operation }) => {
             <table className="table-fixed w-full border-collapse border border-gray-300 dark:border-dark-tremor-border">
               <thead>
                 <tr className="bg-gray-100 dark:bg-blue-900/30">
-                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 w-1/4 text-left font-semibold text-gray-700 dark:text-white">Key</th>
-                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white">Value</th>
+                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 w-1/4 text-left font-semibold text-gray-700 dark:text-white">
+                    Key
+                  </th>
+                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white">
+                    Value
+                  </th>
                 </tr>
               </thead>
               <tbody>{renderTableRows(operation?.request?.query_params ?? [])}</tbody>
@@ -175,8 +179,12 @@ const RequestContent = ({ operation }) => {
             <table className="table-fixed w-full border-collapse border border-gray-300 dark:border-dark-tremor-border">
               <thead>
                 <tr className="bg-gray-100 dark:bg-blue-900/30">
-                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 w-1/4 text-left font-semibold text-gray-700 dark:text-white">Header</th>
-                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white">Value</th>
+                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 w-1/4 text-left font-semibold text-gray-700 dark:text-white">
+                    Header
+                  </th>
+                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white">
+                    Value
+                  </th>
                 </tr>
               </thead>
               <tbody>{renderTableRows(operation?.request?.headers ?? [])}</tbody>
@@ -188,11 +196,15 @@ const RequestContent = ({ operation }) => {
       {/* Request Body Section */}
       <div>
         <div className="flex justify-between items-center bg-gray-200 dark:bg-dark-tremor-background-subtle">
-          <button className="p-2 text-left font-bold flex-grow dark:text-dark-tremor-content-strong">Request Body</button>
+          <button className="p-2 text-left font-bold flex-grow dark:text-dark-tremor-content-strong">
+            Request Body
+          </button>
           <CopyButton textToCopy={formatPayload(payload)} />
         </div>
         {isEmptyPayload ? (
-          <div className="p-4 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">No payload</div>
+          <div className="p-4 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
+            No payload
+          </div>
         ) : (
           <div className="bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow p-0">
             <Editor
@@ -209,7 +221,10 @@ const RequestContent = ({ operation }) => {
                 const lineHeight = editor.getOption(monaco.editor.EditorOption.lineHeight);
                 const minHeight = 100; // Minimum height in pixels
                 const maxHeight = 440; // Maximum height in pixels
-                const calculatedHeight = Math.max(minHeight, Math.min(lineCount * lineHeight + 20, maxHeight));
+                const calculatedHeight = Math.max(
+                  minHeight,
+                  Math.min(lineCount * lineHeight + 20, maxHeight)
+                );
 
                 // Set the editor's height
                 editor.getDomNode().style.height = `${calculatedHeight}px`;
