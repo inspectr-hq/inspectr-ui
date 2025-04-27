@@ -271,6 +271,7 @@ const RequestDetail = ({ operation }) => {
           message="Failed to copy cURL command!"
           subMessage="Please try again."
           onClose={() => setShowCurlErrorToast(false)}
+          type={'error'}
         />
       )}
       {showUrlToast && (
@@ -285,6 +286,7 @@ const RequestDetail = ({ operation }) => {
           message="Replay failed!"
           subMessage="Failed to replay the request. Please try again."
           onClose={() => setShowReplayToast(false)}
+          type={'error'}
         />
       )}
     </div>
