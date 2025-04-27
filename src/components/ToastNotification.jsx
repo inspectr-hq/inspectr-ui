@@ -10,19 +10,19 @@ const ToastNotification = ({ message, subMessage, onClose, type = 'success' }) =
   useEffect(() => {
     const interval = setInterval(() => {
       if (!paused) {
-        setRemainingTime((prev) => {
-          if (prev <= tickInterval) {
-            clearInterval(interval);
-            onClose();
-            return 0;
-          }
-          return prev - tickInterval;
-        });
+        setRemainingTime(prev => Math.max(0, prev - tickInterval));
       }
     }, tickInterval);
 
     return () => clearInterval(interval);
-  }, [paused, onClose]);
+  }, [paused]);
+
+  // When we hit zero, trigger onClose (in an effect, never during render)
+  useEffect(() => {
+    if (remainingTime === 0) {
+      onClose();
+    }
+  }, [remainingTime, onClose]);
 
   // Calculate progress percentage
   const progressPercent = (remainingTime / totalTime) * 100;
