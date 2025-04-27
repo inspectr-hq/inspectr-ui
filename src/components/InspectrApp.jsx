@@ -283,7 +283,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
     // Retrieve the last_event_id from localStorage
     const lastEventId = localStorage.getItem('lastEventId');
-    let sseUrl = sseEndpoint;
+    let sseUrl = `${sseEndpoint}?token=${token}`;
     if (lastEventId) {
       sseUrl += sseUrl.includes('?')
         ? `&last_event_id=${lastEventId}`
@@ -442,7 +442,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'x-inspectr-client': 'inspectr-app'
+          'inspectr-client': 'inspectr-app'
         }
       });
       if (!response.ok) {
@@ -465,7 +465,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'x-inspectr-client': 'inspectr-app'
+          'inspectr-client': 'inspectr-app'
         }
       });
       if (!response.ok) {
@@ -487,7 +487,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-inspectr-client': 'inspectr-app'
+        'inspectr-client': 'inspectr-app'
       },
       body: JSON.stringify(requestBody)
     });

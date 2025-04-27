@@ -142,7 +142,7 @@ export default function DashBoardBarChart({ title = 'Traffic Volume', data, valu
     { name: '2xx', value: totals['2xx'], color: 'bg-blue-500' },
     { name: '3xx', value: totals['3xx'], color: 'bg-orange-500' },
     { name: '4xx', value: totals['4xx'], color: 'bg-cyan-500' },
-    { name: '5xx', value: totals['5xx'], color: 'bg-indigo-500' }
+    { name: '5xx', value: totals['5xx'], color: 'bg-red-500' }
   ];
 
   return (
@@ -172,7 +172,7 @@ export default function DashBoardBarChart({ title = 'Traffic Volume', data, valu
         data={safeData}
         index="date"
         categories={['2xx', '3xx', '4xx', '5xx']}
-        colors={['blue', 'orange', 'cyan', 'indigo']}
+        colors={['blue', 'orange', 'cyan', 'red']}
         showLegend={false}
         valueFormatter={formatter}
         yAxisWidth={50}
@@ -183,7 +183,7 @@ export default function DashBoardBarChart({ title = 'Traffic Volume', data, valu
         data={safeData}
         index="date"
         categories={['2xx', '3xx', '4xx', '5xx']}
-        colors={['blue', 'orange', 'cyan', 'indigo']}
+        colors={['blue', 'orange', 'cyan', 'red']}
         showLegend={false}
         valueFormatter={formatter}
         showYAxis={false}

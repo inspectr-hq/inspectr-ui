@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 
 const CopyButton = ({
   textToCopy,
+  onCopy = () => {},
   copiedTimeout = 2500,
   showLabel = true,
   labelText = 'Copy',
@@ -15,6 +16,7 @@ const CopyButton = ({
       .writeText(textToCopy)
       .then(() => {
         setCopied(true);
+        onCopy();
         setTimeout(() => setCopied(false), copiedTimeout);
       })
       .catch((err) => {

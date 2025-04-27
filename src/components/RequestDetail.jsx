@@ -8,6 +8,15 @@ import { Popover } from '@headlessui/react';
 import CopyButton from './CopyButton.jsx';
 
 const RequestDetail = ({ operation }) => {
+  // Initialize apiEndpoint from localStorage, or fall back to localhost
+  const [apiEndpoint, setApiEndpoint] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('apiEndpoint');
+      return stored && stored.trim() !== '' ? stored : '/api';
+    }
+    return '/api';
+  });
+
   const [copiedCurl, setCopiedCurl] = useState(false);
   const [showCurlErrorToast, setShowCurlErrorToast] = useState(false);
   const [showUrlToast, setShowUrlToast] = useState(false);
@@ -96,7 +105,7 @@ const RequestDetail = ({ operation }) => {
   // POST the request event to /api/replay endpoint
   const handleReplay = () => {
     const { meta, timing, response, ...opRequest } = operation;
-    fetch('/api/replay', {
+    fetch(`${apiEndpoint}/replay`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(opRequest)
@@ -262,6 +271,7 @@ const RequestDetail = ({ operation }) => {
           message="Failed to copy cURL command!"
           subMessage="Please try again."
           onClose={() => setShowCurlErrorToast(false)}
+          type={'error'}
         />
       )}
       {showUrlToast && (
@@ -276,6 +286,7 @@ const RequestDetail = ({ operation }) => {
           message="Replay failed!"
           subMessage="Failed to replay the request. Please try again."
           onClose={() => setShowReplayToast(false)}
+          type={'error'}
         />
       )}
     </div>

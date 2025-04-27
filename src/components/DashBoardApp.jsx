@@ -111,10 +111,18 @@ function ContentPlaceholder() {
 }
 
 export default function DashBoardApp() {
+  // Initialize apiEndpoint from localStorage, or fall back to localhost
+  const [apiEndpoint, setApiEndpoint] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('apiEndpoint');
+      return stored && stored.trim() !== '' ? stored : '/api';
+    }
+    return '/api';
+  });
+
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [apiEndpoint, setApiEndpoint] = useState('http://localhost:4004/api');
   const [group, setGroup] = useState('hour');
 
   // Default date range: Today
