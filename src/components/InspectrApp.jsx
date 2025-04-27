@@ -283,7 +283,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
     // Retrieve the last_event_id from localStorage
     const lastEventId = localStorage.getItem('lastEventId');
-    let sseUrl = sseEndpoint;
+    let sseUrl = `${sseEndpoint}?token=${token}`;
     if (lastEventId) {
       sseUrl += sseUrl.includes('?')
         ? `&last_event_id=${lastEventId}`
