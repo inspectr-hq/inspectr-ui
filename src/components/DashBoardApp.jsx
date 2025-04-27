@@ -115,9 +115,9 @@ export default function DashBoardApp() {
   const [apiEndpoint, setApiEndpoint] = useState(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('apiEndpoint');
-      return stored && stored.trim() !== '' ? stored : 'http://localhost:4004/api';
+      return stored && stored.trim() !== '' ? stored : '/api';
     }
-    return 'http://localhost:4004/api';
+    return '/api';
   });
 
   const [stats, setStats] = useState(null);
