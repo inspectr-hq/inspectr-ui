@@ -10,7 +10,7 @@ const Terminal = ({
   copyLabelText = 'Copy',
   copiedText = 'Copied'
 }) => {
-  const displayCommand = command || `curl -X GET ${endpoint || 'http://localhost:8080t'}`;
+  const displayCommand = command || `curl -X GET ${endpoint || 'http://localhost:8080'}`;
 
   return (
     <div className="w-full mt-6 max-w-xl mx-auto">

@@ -52,7 +52,7 @@ const RequestList = ({
   // Group operations by date.
   const groupOperationsByDate = (ops) => {
     return ops.reduce((groups, op) => {
-      const groupKey = op.request.timestamp ? formatGroupDate(op.request.timestamp) : 'N/A';
+      const groupKey = op?.request?.timestamp ? formatGroupDate(op.request.timestamp) : 'N/A';
       if (!groups[groupKey]) {
         groups[groupKey] = [];
       }

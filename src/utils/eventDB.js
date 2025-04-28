@@ -13,10 +13,10 @@ class EventDB {
 
   // Helper method to transform a raw SSE event into a flattened record.
   transformEvent(event) {
-    const { id, time, data, operation_id } = event;
+    const { id, data, operation_id } = event;
     return {
       id,
-      time,
+      time: data.request.timestamp,
       operation_id,
       method: data.request.method,
       url: data.request.url,
@@ -158,6 +158,9 @@ class EventDB {
       collection = collection.filter(item => item.server.toLowerCase().includes(filters.host.toLowerCase()));
     }
 
+    // Count result after filtering
+    const totalCount = await collection.count();
+
     // --- Sorting ---
     let sortedCollection;
     if (typeof collection.orderBy === 'function') {
@@ -189,25 +192,25 @@ class EventDB {
 
     // --- Pagination ---
     const offset = (page - 1) * pageSize;
-    let results;
+    let pageItems;
     if (Array.isArray(sortedCollection)) {
-      results = sortedCollection.slice(offset, offset + pageSize);
+      pageItems = sortedCollection.slice(offset, offset + pageSize);
     } else if (typeof sortedCollection.offset === 'function') {
-      results = await sortedCollection.offset(offset).limit(pageSize).toArray();
+      pageItems = await sortedCollection.offset(offset).limit(pageSize).toArray();
     } else {
-      results = [];
+      pageItems = [];
     }
-    // console.log('[EventDB] queryEvents raw returning records:', results);
+    // console.log('[EventDB] queryEvents raw returning records:', pageItems);
 
     // --- Transform Results ---
     // Instead of exposing the full stored record, only return the inner raw.data along with the id.
-    const transformedResults = results.map(record => ({
+    const results = pageItems.map(record => ({
       id: record.id,
       ...record.raw.data
     }));
-    // console.log('[EventDB] Transformed results:', transformedResults);
+    // console.log('[EventDB] Transformed results:', results);
 
-    return transformedResults;
+    return { results, totalCount };
   }
 
   // Clear all stored events.
