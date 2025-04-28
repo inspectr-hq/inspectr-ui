@@ -158,9 +158,6 @@ class EventDB {
       collection = collection.filter(item => item.server.toLowerCase().includes(filters.host.toLowerCase()));
     }
 
-    // Count result after filtering
-    const totalCount = await collection.count();
-
     // --- Sorting ---
     let sortedCollection;
     if (typeof collection.orderBy === 'function') {
@@ -210,7 +207,7 @@ class EventDB {
     }));
     // console.log('[EventDB] Transformed results:', results);
 
-    return { results, totalCount };
+    return results;
   }
 
   // Clear all stored events.
