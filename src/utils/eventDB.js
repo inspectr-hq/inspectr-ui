@@ -13,10 +13,10 @@ class EventDB {
 
   // Helper method to transform a raw SSE event into a flattened record.
   transformEvent(event) {
-    const { id, time, data, operation_id } = event;
+    const { id, data, operation_id } = event;
     return {
       id,
-      time,
+      time: data.request.timestamp,
       operation_id,
       method: data.request.method,
       url: data.request.url,
@@ -158,6 +158,9 @@ class EventDB {
       collection = collection.filter(item => item.server.toLowerCase().includes(filters.host.toLowerCase()));
     }
 
+    // Count result after filtering
+    const totalCount = await collection.count();
+
     // --- Sorting ---
     let sortedCollection;
     if (typeof collection.orderBy === 'function') {
@@ -207,7 +210,7 @@ class EventDB {
     }));
     // console.log('[EventDB] Transformed results:', results);
 
-    return results;
+    return { results, totalCount };
   }
 
   // Clear all stored events.

@@ -48,20 +48,18 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const retryDelay = 5000; // milliseconds
 
   // Live query: get the events for the current page.
-  const operations = useLiveQuery(() => {
-    if (debugMode) {
-      console.log('[Inspectr] filters', filters);
-    }
-    return eventDB.queryEvents({
-      sort: { field: sortField, order: sortDirection },
+  const { results: operations = [], totalCount = 0 } =
+  useLiveQuery(
+    () => eventDB.queryEvents({
       filters,
+      sort: { field: sortField, order: sortDirection },
       page,
       pageSize
-    });
-  }, [page, sortField, sortDirection, filters]);
+    }),
+    [filters, sortField, sortDirection, page]
+  ) || {};
 
-  // Live query to get total count.
-  const totalCount = useLiveQuery(() => eventDB.db.events.count(), []);
+  // Paginate
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
 
   // Load credentials from URL query parameters
