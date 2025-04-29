@@ -79,9 +79,7 @@ const DialogJwt = ({ open, onClose, decoded }) => {
         </div>
         <div className="relative mt-4">
           <div className="absolute top-2 right-2 z-10">
-            <CopyButton
-              textToCopy={jwtText}
-            />
+            <CopyButton textToCopy={jwtText} />
           </div>
           <pre className="bg-gray-100 p-2 rounded text-xs text-gray-700 overflow-x-auto">
             {jwtText}

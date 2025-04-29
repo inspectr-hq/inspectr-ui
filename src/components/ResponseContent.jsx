@@ -80,23 +80,23 @@ const ResponseContent = ({ operation }) => {
           </div>
         ) : (
           // <div className="bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow p-0">
-            <Editor
-              height="100%"
-              className="flex-1"
-              defaultLanguage="json"
-              value={formatPayload(payload)}
-              theme={getMonacoTheme()}
-              beforeMount={defineMonacoThemes}
-              options={{
-                readOnly: true,
-                minimap: { enabled: false },
-                automaticLayout: true,
-                fontFamily:
-                  '"Cascadia Code", "Jetbrains Mono", "Fira Code", "Menlo", "Consolas", monospace',
-                tabSize: 2,
-                scrollBeyondLastLine: false
-              }}
-            />
+          <Editor
+            height="100%"
+            className="flex-1"
+            defaultLanguage="json"
+            value={formatPayload(payload)}
+            theme={getMonacoTheme()}
+            beforeMount={defineMonacoThemes}
+            options={{
+              readOnly: true,
+              minimap: { enabled: false },
+              automaticLayout: true,
+              fontFamily:
+                '"Cascadia Code", "Jetbrains Mono", "Fira Code", "Menlo", "Consolas", monospace',
+              tabSize: 2,
+              scrollBeyondLastLine: false
+            }}
+          />
           // </div>
         )}
       </div>

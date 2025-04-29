@@ -10,7 +10,7 @@ const ToastNotification = ({ message, subMessage, onClose, type = 'success' }) =
   useEffect(() => {
     const interval = setInterval(() => {
       if (!paused) {
-        setRemainingTime(prev => Math.max(0, prev - tickInterval));
+        setRemainingTime((prev) => Math.max(0, prev - tickInterval));
       }
     }, tickInterval);
 

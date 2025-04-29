@@ -49,15 +49,16 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
   // Live query: get the events for the current page.
   const { results: operations = [], totalCount = 0 } =
-  useLiveQuery(
-    () => eventDB.queryEvents({
-      filters,
-      sort: { field: sortField, order: sortDirection },
-      page,
-      pageSize
-    }),
-    [filters, sortField, sortDirection, page]
-  ) || {};
+    useLiveQuery(
+      () =>
+        eventDB.queryEvents({
+          filters,
+          sort: { field: sortField, order: sortDirection },
+          page,
+          pageSize
+        }),
+      [filters, sortField, sortDirection, page]
+    ) || {};
 
   // Paginate
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
