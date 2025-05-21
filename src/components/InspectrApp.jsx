@@ -6,6 +6,7 @@ import RequestDetailsPanel from './RequestDetailsPanel';
 import SettingsPanel from './SettingsPanel';
 import eventDB from '../utils/eventDB';
 import ToastNotification from './ToastNotification.jsx';
+import useInspectrRouter from '../hooks/useInspectrRouter.jsx';
 
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 const debugMode = typeof window !== 'undefined' && localStorage.getItem('debug') === 'true';
@@ -15,8 +16,8 @@ if (debugMode) {
 }
 
 const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
-  const [selectedOperation, setSelectedOperation] = useState(null);
-  const [currentTab, setCurrentTab] = useState('request');
+  // const [selectedOperation, setSelectedOperation] = useState(null);
+  // const [currentTab, setCurrentTab] = useState('request');
   const [apiEndpoint, setApiEndpoint] = useState(initialApiEndpoint);
 
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
@@ -62,6 +63,15 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
   // Paginate
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
+
+  // now hook in deep-linking
+   const {
+     selectedOperation,
+       currentTab,
+       handleSelect,
+     handleTabChange,
+     clearSelection
+   } = useInspectrRouter(operations);
 
   // Load credentials from URL query parameters
   const loadCredentialsFromQueryParams = () => {
@@ -346,13 +356,14 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   // If no operation is selected but there are operations, select the first one.
   useEffect(() => {
     if (!selectedOperation && operations && operations.length > 0) {
-      setSelectedOperation(operations[0]);
+      // setSelectedOperation(operations[0]);
+      handleSelect(operations[0]);
     }
   }, [operations, selectedOperation]);
 
   // Clear all operations.
   const clearOperations = async () => {
-    setSelectedOperation(null);
+    clearSelection();
 
     try {
       // Clear operations locally
@@ -390,7 +401,8 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         selectedOperation &&
         filteredOperations.some((record) => record.id === selectedOperation.id)
       ) {
-        setSelectedOperation(null);
+        clearSelection()
+        // setSelectedOperation(null);
       }
     } catch (error) {
       console.error('Error clearing filtered operations:', error);
@@ -411,7 +423,8 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
       // Reset selection if the deleted operation was selected
       if (isCurrentlySelected) {
-        setSelectedOperation(null);
+        // setSelectedOperation(null);
+        clearSelection()
 
         // Get the updated list of operations to select a new one
         const updatedOperations = await eventDB.queryEvents({
@@ -423,7 +436,8 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
         // Select the first operation if available
         if (updatedOperations && updatedOperations.length > 0) {
-          setSelectedOperation(updatedOperations[0]);
+          // setSelectedOperation(updatedOperations[0]);
+          handleSelect(updatedOperations[0]);
         }
       }
     } catch (err) {
@@ -515,7 +529,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         <div className="w-1/3 border-r border-gray-300 dark:border-dark-tremor-border overflow-y-auto">
           <RequestList
             operations={operations || []}
-            onSelect={setSelectedOperation}
+            onSelect={handleSelect}
             onRemove={removeOperation}
             clearOperations={clearOperations}
             clearFilteredOperations={clearFilteredOperations}
@@ -539,7 +553,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
             <RequestDetailsPanel
               operation={selectedOperation}
               currentTab={currentTab}
-              setCurrentTab={setCurrentTab}
+              setCurrentTab={handleTabChange}
             />
           </div>
         </div>

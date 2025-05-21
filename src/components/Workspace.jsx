@@ -3,14 +3,15 @@
 import React, { useState } from 'react';
 import DashBoardApp from './DashBoardApp.jsx';
 import InspectrApp from './InspectrApp.jsx';
+import useHashRouter from '../hooks/useHashRouter.jsx';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
 const navigation = [
-  { name: 'Request History', component: InspectrApp },
-  { name: 'Statistics', component: DashBoardApp }
+  { name: 'Request History', slug: 'inspectr', component: InspectrApp },
+  { name: 'Statistics', slug: 'statistics', component: DashBoardApp }
   // { name: 'Settings', href: '#', current: false },
 ];
 
@@ -32,7 +33,8 @@ const Logo = (props) => (
 
 export default function Workspace() {
   const [currentTab, setCurrentTab] = useState(navigation[0]);
-  const ActiveComponent = currentTab.component;
+  const { route, currentNav, handleTabClick } = useHashRouter(navigation);
+  const ActiveComponent = currentNav.component;
 
   return (
     <div className="">
@@ -48,19 +50,19 @@ export default function Workspace() {
               </a>
             </div>
             <nav className="-mb-px flex space-x-6" aria-label="Tabs">
-              {navigation.map((item) => (
+              {navigation.map((navItem) => (
                 <button
-                  key={item.name}
-                  onClick={() => setCurrentTab(item)}
+                  key={navItem.slug}
+                  onClick={() => handleTabClick(navItem)}
                   className={classNames(
-                    item.name === currentTab.name
+                    navItem.slug === currentNav.slug
                       ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
                       : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong dark:text-dark-tremor-content-emphasis hover:dark:border-dark-tremor-content-subtle hover:dark:text-dark-tremor-content-strong',
                     'inline-flex items-center whitespace-nowrap border-b-2 px-2 text-tremor-default font-medium'
                   )}
-                  aria-current={item.name === currentTab.name ? 'page' : undefined}
+                  aria-current={navItem.name === currentTab.name ? 'page' : undefined}
                 >
-                  {item.name}
+                  {navItem.name}
                 </button>
               ))}
             </nav>
