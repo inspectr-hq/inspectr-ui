@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import DashBoardApp from './DashBoardApp.jsx';
 import InspectrApp from './InspectrApp.jsx';
+import SettingsApp from './SettingsApp.jsx';
 import useHashRouter from '../hooks/useHashRouter.jsx';
 
 function classNames(...classes) {
@@ -11,8 +12,8 @@ function classNames(...classes) {
 
 const navigation = [
   { name: 'Request History', slug: 'inspectr', component: InspectrApp },
-  { name: 'Statistics', slug: 'statistics', component: DashBoardApp }
-  // { name: 'Settings', href: '#', current: false },
+  { name: 'Statistics', slug: 'statistics', component: DashBoardApp },
+  { name: 'Settings', slug: 'settings', component: SettingsApp }
 ];
 
 const Logo = (props) => (
@@ -72,10 +73,9 @@ export default function Workspace() {
 
       {/* ——— Content Area ——— */}
       <div className="flex-grow overflow-auto">
-        {currentTab.name === 'Statistics' ? (
-          // Dashboard wants padding + background
+        {['statistics', 'settings'].includes(currentNav.slug) ? (
           <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-950">
-            <ActiveComponent key="dashboard" />
+            <ActiveComponent key={currentNav.slug} />
           </div>
         ) : (
           // InspectrApp takes care of its own layout now
