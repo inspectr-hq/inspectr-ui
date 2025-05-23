@@ -10,7 +10,8 @@ const SettingsPanel = ({
   setChannelCode,
   channel,
   setChannel,
-  onRegister
+  onRegister,
+  onReconnect
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [endpointInput, setEndpointInput] = useState(apiEndpoint);
@@ -68,7 +69,7 @@ const SettingsPanel = ({
                 connectionStatus === 'connected'
                   ? 'bg-green-500 text-white'
                   : connectionStatus === 'reconnecting'
-                    ? 'bg-yellow-500 text-black'
+                    ? 'bg-yellow-500 text-black '
                     : 'bg-red-500'
               }`}
           >
@@ -76,14 +77,25 @@ const SettingsPanel = ({
               className={`w-2 h-2 rounded-full mr-1 
                 ${
                   connectionStatus === 'connected'
-                    ? 'bg-green-800'
+                    ? 'bg-green-800 animate-pulse'
                     : connectionStatus === 'reconnecting'
-                      ? 'bg-yellow-800'
+                      ? 'bg-yellow-800 animate-pulse'
                       : 'bg-red-800'
                 }`}
             ></span>
             {connectionStatus.charAt(0).toUpperCase() + connectionStatus.slice(1)}
           </span>
+          {connectionStatus === 'disconnected' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onReconnect();
+              }}
+              className="ml-2 text-sm font-medium text-blue-600 hover:underline"
+            >
+              Reconnect
+            </button>
+          )}
         </div>
 
         {/* Inspectr Logo & Name */}

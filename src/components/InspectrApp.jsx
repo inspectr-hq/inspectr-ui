@@ -16,8 +16,6 @@ if (debugMode) {
 }
 
 const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
-  // const [selectedOperation, setSelectedOperation] = useState(null);
-  // const [currentTab, setCurrentTab] = useState('request');
   const [apiEndpoint, setApiEndpoint] = useState(initialApiEndpoint);
 
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
@@ -65,13 +63,8 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
 
   // now hook in deep-linking
-   const {
-     selectedOperation,
-       currentTab,
-       handleSelect,
-     handleTabChange,
-     clearSelection
-   } = useInspectrRouter(operations);
+  const { selectedOperation, currentTab, handleSelect, handleTabChange, clearSelection } =
+    useInspectrRouter(operations);
 
   // Load credentials from URL query parameters
   const loadCredentialsFromQueryParams = () => {
@@ -248,6 +241,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   };
 
   const attemptReRegistration = () => {
+    setConnectionStatus('reconnecting');
     if (registrationRetryCountRef.current < maxRegistrationRetries) {
       registrationRetryCountRef.current += 1;
       console.log(
@@ -356,7 +350,6 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   // If no operation is selected but there are operations, select the first one.
   useEffect(() => {
     if (!selectedOperation && operations && operations.length > 0) {
-      // setSelectedOperation(operations[0]);
       handleSelect(operations[0]);
     }
   }, [operations, selectedOperation]);
@@ -401,8 +394,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         selectedOperation &&
         filteredOperations.some((record) => record.id === selectedOperation.id)
       ) {
-        clearSelection()
-        // setSelectedOperation(null);
+        clearSelection();
       }
     } catch (error) {
       console.error('Error clearing filtered operations:', error);
@@ -423,8 +415,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
       // Reset selection if the deleted operation was selected
       if (isCurrentlySelected) {
-        // setSelectedOperation(null);
-        clearSelection()
+        clearSelection();
 
         // Get the updated list of operations to select a new one
         const updatedOperations = await eventDB.queryEvents({
@@ -436,7 +427,6 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
 
         // Select the first operation if available
         if (updatedOperations && updatedOperations.length > 0) {
-          // setSelectedOperation(updatedOperations[0]);
           handleSelect(updatedOperations[0]);
         }
       }
@@ -568,6 +558,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
         channel={channel}
         setChannel={setChannel}
         onRegister={handleRegister}
+        onReconnect={attemptReRegistration}
       />
       {toast && (
         <ToastNotification

@@ -3,7 +3,7 @@ import { parseHash } from './useHashRouter';
 
 export default function useInspectrRouter(operations, defaultTab = 'request') {
   const [selectedOperation, setSelectedOperation] = useState(null);
-  const [currentTab, setCurrentTab]           = useState(defaultTab);
+  const [currentTab, setCurrentTab] = useState(defaultTab);
 
   // grab { slug, operationId, subTab, params } when hash changes
   useEffect(() => {
@@ -13,7 +13,7 @@ export default function useInspectrRouter(operations, defaultTab = 'request') {
 
       // select by ID
       if (operationId && operations.length) {
-        const match = operations.find(o => String(o.id) === operationId);
+        const match = operations.find((o) => String(o.id) === operationId);
         if (match) setSelectedOperation(match);
       }
 
@@ -32,11 +32,7 @@ export default function useInspectrRouter(operations, defaultTab = 'request') {
   const handleSelect = (op) => {
     setSelectedOperation(op);
     // "#inspectr/{id}/{currentTab}"
-    window.history.pushState(
-      null,
-      '',
-      `#inspectr/${op.id}/${currentTab}`
-    );
+    window.history.pushState(null, '', `#inspectr/${op.id}/${currentTab}`);
   };
 
   // if you let them switch tabs inside InspectrApp:
@@ -44,11 +40,7 @@ export default function useInspectrRouter(operations, defaultTab = 'request') {
     setCurrentTab(tab);
     // preserve selectedOperation in URL if present
     const base = selectedOperation ? `#inspectr/${selectedOperation.id}` : '#inspectr';
-    window.history.replaceState(
-      null,
-      '',
-      `${base}/${tab}`
-    );
+    window.history.replaceState(null, '', `${base}/${tab}`);
   };
 
   const clearSelection = () => {
