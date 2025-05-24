@@ -2,18 +2,22 @@
 import React, { useState, useEffect } from 'react';
 import logo from '../assets/inspectr_logo_small.png';
 import ConnectionStatusIndicator from './ConnectionStatusIndicator.jsx';
+import { useInspectr } from '../context/InspectrContext';
 
-const SettingsPanel = ({
-  apiEndpoint,
-  setApiEndpoint,
-  connectionStatus, // "connected" | "reconnecting" | "disconnected"
-  channelCode,
-  setChannelCode,
-  channel,
-  setChannel,
-  onRegister,
-  onReconnect
-}) => {
+const SettingsPanel = () => {
+  const {
+    apiEndpoint,
+    setApiEndpoint,
+    connectionStatus,
+    channelCode,
+    setChannelCode,
+    channel,
+    setChannel,
+    userInitiatedRegistrationRef,
+    handleRegister: onRegister,
+    attemptReRegistration: onReconnect
+  } = useInspectr();
+
   const [isOpen, setIsOpen] = useState(false);
   const [endpointInput, setEndpointInput] = useState(apiEndpoint);
   const [channelCodeInput, setChannelCodeInput] = useState(channelCode);
@@ -26,22 +30,17 @@ const SettingsPanel = ({
     setChannelInput(channel);
   }, [apiEndpoint, channelCode, channel]);
 
-  // Load stored values on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedApiEndpoint = localStorage.getItem('apiEndpoint');
-      const defaultEndpoint = storedApiEndpoint || window.location.origin + '/api';
-      setEndpointInput(defaultEndpoint);
-      setApiEndpoint(defaultEndpoint);
-    }
-  }, [setApiEndpoint]);
+  // This is now handled by the InspectrContext
 
   // Save API Endpoint configuration.
   const handleSaveEndpoint = () => {
+    // Normalize the endpoint by removing trailing slashes
+    const normalizedEndpoint = endpointInput.replace(/\/+$/, '');
+
     if (typeof window !== 'undefined') {
-      localStorage.setItem('apiEndpoint', endpointInput);
+      localStorage.setItem('apiEndpoint', normalizedEndpoint);
     }
-    setApiEndpoint(endpointInput);
+    setApiEndpoint(normalizedEndpoint);
   };
 
   // Trigger registration
@@ -50,6 +49,11 @@ const SettingsPanel = ({
       localStorage.setItem('channelCode', channelCodeInput);
       localStorage.setItem('channel', channelInput);
     }
+
+    // Set the flag to indicate this is a user-initiated registration
+    // This prevents the auto-registration useEffect from running
+    userInitiatedRegistrationRef.current = true;
+
     setChannelCode(channelCodeInput);
     setChannel(channelInput);
     onRegister(channelCodeInput, channelInput, '', true);
