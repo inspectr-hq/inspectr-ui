@@ -8,12 +8,6 @@ import eventDB from '../utils/eventDB';
 import useInspectrRouter from '../hooks/useInspectrRouter.jsx';
 import { useInspectr } from '../context/InspectrContext';
 
-const debugMode = typeof window !== 'undefined' && localStorage.getItem('debug') === 'true';
-
-if (debugMode) {
-  console.log('[Inspectr] Debug Mode enabled');
-}
-
 const InspectrApp = () => {
   // Get all the shared state from context
   const {
@@ -130,7 +124,7 @@ const InspectrApp = () => {
       eventSource.close();
       setConnectionStatus('disconnected');
     };
-  }, [sseEndpoint, token]); // Only reconnect when sseEndpoint or token change
+  }, [token]); // Only reconnect when sseEndpoint or token change
 
   // If no operation is selected but there are operations, select the first one.
   useEffect(() => {

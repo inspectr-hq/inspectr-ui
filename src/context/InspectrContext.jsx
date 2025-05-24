@@ -1,3 +1,4 @@
+// src/context/InspectrContext.jsx
 import React, { createContext, useState, useContext, useRef, useEffect } from 'react';
 import InspectrClient from '../utils/inspectrSdk';
 
@@ -68,9 +69,11 @@ export const InspectrProvider = ({ children }) => {
   const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
   const debugMode = typeof window !== 'undefined' && localStorage.getItem('debug') === 'true';
 
-  if (debugMode) {
-    console.log('[Inspectr] Debug Mode enabled');
-  }
+  useEffect(() => {
+    if (debugMode) {
+      console.log('[Inspectr] Debug Mode enabled');
+    }
+  }, []);
 
   // Load credentials from URL query parameters
   const loadCredentialsFromQueryParams = () => {
