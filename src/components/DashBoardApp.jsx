@@ -1,7 +1,7 @@
 // src/components/DashBoardApp.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Select, SelectItem, Button } from '@tremor/react';
-import InspectrClient from '../utils/inspectrSdk';
+import { useInspectr } from '../context/InspectrContext';
 
 import DashBoardKpi from './DashBoardKpi.jsx';
 import DashBoardBarChart from './DashBoardBarChart.jsx';
@@ -69,15 +69,15 @@ function DateRangeButtons({ selectedRange, onSelect }) {
 
   return (
     <div className="inline-flex items-center rounded shadow">
-      {options.map((item, index) => (
+      {options.map((item, idx) => (
         <button
-          key={index}
+          key={idx}
           onClick={() => onSelect(item)}
           title={item.tooltip}
           className={joinClassNames(
-            index === 0
+            idx === 0
               ? 'rounded-l'
-              : index === options.length - 1
+              : idx === options.length - 1
                 ? '-ml-px rounded-r'
                 : '-ml-px',
             'px-3 py-1 border focus:outline-none',
@@ -112,29 +112,15 @@ function ContentPlaceholder() {
 }
 
 export default function DashBoardApp() {
-  // Initialize apiEndpoint from localStorage, or fall back to localhost
-  const [apiEndpoint, setApiEndpoint] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('apiEndpoint');
-      return stored && stored.trim() !== '' ? stored : '/api';
-    }
-    return '/api';
-  });
+  const { client } = useInspectr();
 
+  // Stats payload
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [group, setGroup] = useState('hour');
 
-  // Create an InspectrClient instance
-  const [client, setClient] = useState(() => new InspectrClient({ apiEndpoint }));
-
-  // Update the client when apiEndpoint changes
-  useEffect(() => {
-    client.configure({ apiEndpoint });
-  }, [apiEndpoint]);
-
-  // Default date range: Today
+  // Date range
   const today = new Date();
   // Set defaultStart to the start of Today and defaultEnd to the end of Today.
   const defaultStart = getStartOfDayUTC(today);
@@ -143,10 +129,9 @@ export default function DashBoardApp() {
   const [start, setStart] = useState(defaultStart);
   const [end, setEnd] = useState(defaultEnd);
 
-  // Fetch statistics using the SDK
-  const fetchStats = async () => {
-    return await client.stats.getOperations({ group, start, end });
-  };
+  // Fetch statistics
+  const fetchStats = () =>
+    client.stats.getOperations({ group, start, end });
 
   // Handler for refresh button
   const handleLoadStats = async () => {
@@ -206,6 +191,7 @@ export default function DashBoardApp() {
           {error && <p className="mt-2 text-red-600 dark:text-red-400">Error: {error}</p>}
         </div>
       </header>
+
       <main>
         <div className="mt-6">
           <DashBoardKpi overall={stats?.overall} />
@@ -221,6 +207,7 @@ export default function DashBoardApp() {
             highlightLabel="Average Response Time"
           />
         </div>
+
         <div className="mt-6 grid grid-cols-3 gap-4 items-stretch">
           <div className="col-span-2">
             <DashBoardLineChart
