@@ -75,8 +75,9 @@ export const InspectrProvider = ({ children }) => {
     const queryChannelCode = urlParams.get('channelCode');
     const queryChannel = urlParams.get('channel');
     const queryToken = urlParams.get('token');
+    const querySseEndpoint = urlParams.get('sseEndpoint');
 
-    if (queryChannelCode || queryChannel || queryToken) {
+    if (queryChannelCode || queryChannel || queryToken || querySseEndpoint) {
       console.log('🔍 Found credentials in query params');
       if (queryChannelCode) {
         setChannelCode(queryChannelCode);
@@ -89,6 +90,10 @@ export const InspectrProvider = ({ children }) => {
       if (queryToken) {
         setToken(queryToken);
         localStorage.setItem('token', queryToken);
+      }
+      if (querySseEndpoint) {
+        setSseEndpoint(querySseEndpoint);
+        localStorage.setItem('sseEndpoint', querySseEndpoint);
       }
       // Update the URL without reloading the page.
       window.history.replaceState(
@@ -106,12 +111,16 @@ export const InspectrProvider = ({ children }) => {
     const storedChannelCode = localStorage.getItem('channelCode');
     const storedChannel = localStorage.getItem('channel');
     const storedToken = localStorage.getItem('token');
+    const storedSseEndpoint = localStorage.getItem('sseEndpoint');
 
     if (storedChannelCode && storedChannel && storedToken) {
       console.log('✅ Using stored credentials from localStorage');
       setChannelCode(storedChannelCode);
       setChannel(storedChannel);
       setToken(storedToken);
+      if (storedSseEndpoint) {
+        setSseEndpoint(storedSseEndpoint);
+      }
       return true;
     }
     return false;
@@ -271,6 +280,19 @@ export const InspectrProvider = ({ children }) => {
       return;
     }
 
+    // Skip if we already have a token and sseEndpoint (already registered)
+    if (token && sseEndpoint) {
+      console.log('🔄 Already have a token and sseEndpoint, skipping auto-registration');
+      return;
+    }
+
+    // If we have a token but no sseEndpoint, we need to re-register
+    if (token && !sseEndpoint) {
+      console.log('🔄 Have token but missing sseEndpoint, re-registering');
+      handleRegister('', '', token);
+      return;
+    }
+
     console.log('🔄 Auto-registering with stored credentials:', channel, channelCode);
 
     if (channel && channelCode) {
@@ -278,7 +300,7 @@ export const InspectrProvider = ({ children }) => {
     } else {
       console.log('⚠️ Missing credentials for auto-registration, skipping.');
     }
-  }, [isInitialized, channel, channelCode]);
+  }, [isInitialized, channel, channelCode, token, sseEndpoint]);
 
   // Context value
   const contextValue = {

@@ -23,12 +23,15 @@ const SettingsPanel = () => {
   const [channelCodeInput, setChannelCodeInput] = useState(channelCode);
   const [channelInput, setChannelInput] = useState(channel);
 
-  // Sync input fields with props when they change
+  // Sync input fields with props when they change, but only if the panel is closed
+  // This prevents loops when the user is actively editing the fields
   useEffect(() => {
-    setEndpointInput(apiEndpoint);
-    setChannelCodeInput(channelCode);
-    setChannelInput(channel);
-  }, [apiEndpoint, channelCode, channel]);
+    if (!isOpen) {
+      setEndpointInput(apiEndpoint);
+      setChannelCodeInput(channelCode);
+      setChannelInput(channel);
+    }
+  }, [apiEndpoint, channelCode, channel, isOpen]);
 
   // This is now handled by the InspectrContext
 
