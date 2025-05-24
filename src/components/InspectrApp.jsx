@@ -26,6 +26,7 @@ const InspectrApp = () => {
     attemptReRegistration,
     toast,
     setToast,
+    debugMode,
     client
   } = useInspectr();
 

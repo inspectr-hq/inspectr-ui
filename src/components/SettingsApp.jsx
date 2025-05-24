@@ -91,11 +91,7 @@ export default function SettingsApp() {
                 : ''
             }`}
           />
-          {error && (
-            <p className="mt-2 text-sm text-red-600">
-              Cannot connect to {localEndpoint}
-            </p>
-          )}
+          {error && <p className="mt-2 text-sm text-red-600">Cannot connect to {localEndpoint}</p>}
           <div className="flex items-center justify-end space-x-4 pt-4">
             {/*<button*/}
             {/*  type="button"*/}
@@ -230,7 +226,6 @@ export default function SettingsApp() {
       </div>
 
       <Divider className="my-10" />
-
     </div>
   );
 }

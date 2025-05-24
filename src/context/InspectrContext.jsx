@@ -1,5 +1,12 @@
 // src/context/InspectrContext.jsx
-import React, { createContext, useState, useContext, useRef, useEffect } from 'react';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useRef,
+  useEffect,
+  useLayoutEffect
+} from 'react';
 import InspectrClient from '../utils/inspectrSdk';
 
 // Create the context with default values
@@ -227,6 +234,7 @@ export const InspectrProvider = ({ children }) => {
           subMessage: 'Please check your channel and access code.',
           type: 'error'
         });
+        setConnectionStatus('disconnected');
         throw new Error('Registration failed');
       }
     } catch (error) {
@@ -236,11 +244,14 @@ export const InspectrProvider = ({ children }) => {
         subMessage: 'An error occurred during registration.',
         type: 'error'
       });
+      setConnectionStatus('disconnected');
       throw error;
     }
   };
 
   const attemptReRegistration = () => {
+    if (reRegistrationFailedRef.current) return;
+
     setConnectionStatus('reconnecting');
     if (registrationRetryCountRef.current < maxRegistrationRetries) {
       registrationRetryCountRef.current += 1;
@@ -308,7 +319,7 @@ export const InspectrProvider = ({ children }) => {
     }
 
     // If we have a token but no sseEndpoint, we need to re-register
-    if (token && !sseEndpoint) {
+    if (token && !sseEndpoint && !reRegistrationFailedRef.current) {
       console.log('🔄 Have token but missing sseEndpoint, re-registering');
       handleRegister('', '', token);
       return;

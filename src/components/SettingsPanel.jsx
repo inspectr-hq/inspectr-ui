@@ -13,6 +13,7 @@ const SettingsPanel = () => {
     setChannelCode,
     channel,
     setChannel,
+    client,
     userInitiatedRegistrationRef,
     handleRegister: onRegister,
     attemptReRegistration: onReconnect
@@ -33,17 +34,14 @@ const SettingsPanel = () => {
     }
   }, [apiEndpoint, channelCode, channel, isOpen]);
 
-  // This is now handled by the InspectrContext
-
   // Save API Endpoint configuration.
   const handleSaveEndpoint = () => {
     // Normalize the endpoint by removing trailing slashes
-    const normalizedEndpoint = endpointInput.replace(/\/+$/, '');
-
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('apiEndpoint', normalizedEndpoint);
-    }
-    setApiEndpoint(normalizedEndpoint);
+    const newEndpoint = endpointInput.replace(/\/+$/, '');
+    setApiEndpoint(newEndpoint);
+    client.configure({ apiEndpoint: newEndpoint });
+    userInitiatedRegistrationRef.current = false;
+    onRegister(channelCode, channel, '', true);
   };
 
   // Trigger registration
@@ -52,8 +50,6 @@ const SettingsPanel = () => {
       localStorage.setItem('channelCode', channelCodeInput);
       localStorage.setItem('channel', channelInput);
     }
-
-    // Set the flag to indicate this is a user-initiated registration
     // This prevents the auto-registration useEffect from running
     userInitiatedRegistrationRef.current = true;
 
