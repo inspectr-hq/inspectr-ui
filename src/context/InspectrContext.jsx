@@ -132,6 +132,13 @@ export const InspectrProvider = ({ children }) => {
     return false;
   };
 
+  // Persist the endpoint any time it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('apiEndpoint', apiEndpoint);
+    }
+  }, [apiEndpoint]);
+
   // Create an InspectrClient instance
   const [inspectrClient, setInspectrClient] = useState(() => new InspectrClient({ apiEndpoint }));
 
