@@ -57,7 +57,7 @@ export default function SettingsApp() {
   }, [apiEndpoint]);
 
   useEffect(() => {
-      fetchMockInfo();
+    fetchMockInfo();
   }, [statusInfo]);
 
   // ——— Handlers ———
@@ -166,7 +166,6 @@ export default function SettingsApp() {
             )}
           </div>
         </div>
-
 
         <Divider className="my-14" />
 

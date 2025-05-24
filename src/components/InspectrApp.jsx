@@ -39,7 +39,7 @@ const InspectrApp = ({ apiEndpoint: initialApiEndpoint = '/api' }) => {
   const [sortDirection, setSortDirection] = useState('desc');
   const [filters, setFilters] = useState({});
 
-  // Reconnection handling
+  // SSE connection reference
   const wasConnectedRef = useRef(false);
   const registrationRetryCountRef = useRef(0);
   const reRegistrationFailedRef = useRef(false);
