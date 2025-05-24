@@ -1,6 +1,7 @@
 // src/components/SettingsApp.jsx
 import React, { useState, useEffect } from 'react';
 import { Divider, List, ListItem, TextInput } from '@tremor/react';
+import InspectrClient from '../utils/inspectrSdk';
 
 export default function SettingsApp() {
   // ——— State ———
@@ -14,17 +15,19 @@ export default function SettingsApp() {
   const [mockInfo, setMockInfo] = useState(null);
   const [error, setError] = useState(null);
 
+  // Create an InspectrClient instance
+  const [client, setClient] = useState(() => new InspectrClient({ apiEndpoint }));
+
+  // Update the client when apiEndpoint changes
+  useEffect(() => {
+    client.configure({ apiEndpoint });
+  }, [apiEndpoint]);
+
   // ——— Fetchers ———
   async function fetchHealthInfo() {
     try {
       setError(null);
-      const res = await fetch(`${apiEndpoint}/health`, {
-        headers: { Accept: 'application/json' }
-      });
-      if (!res.ok) {
-        throw new Error(`Failed to fetch health: ${res.status}`);
-      }
-      const data = await res.json();
+      const data = await client.service.getHealth();
       setStatusInfo(data);
     } catch (err) {
       console.error(err);
@@ -35,13 +38,7 @@ export default function SettingsApp() {
 
   async function fetchMockInfo() {
     try {
-      const res = await fetch(`${apiEndpoint}/mock`, {
-        headers: { Accept: 'application/json' }
-      });
-      if (!res.ok) {
-        throw new Error(`Failed to fetch mock: ${res.status}`);
-      }
-      const data = await res.json();
+      const data = await client.service.getMock();
       setMockInfo(data);
     } catch (err) {
       console.error(err);

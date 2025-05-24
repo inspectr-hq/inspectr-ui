@@ -1,41 +1,237 @@
 // src/utils/inspectrSdk.js
-export async function registerApi(apiEndpoint, body) {
-  // Normalize the endpoint by removing trailing slashes
-  const normalizedEndpoint = apiEndpoint.replace(/\/+$/, '');
-  const res = await fetch(`${normalizedEndpoint}/register`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+/**
+ * Inspectr SDK - A JavaScript SDK for interacting with the Inspectr API
+ * 
+ * This SDK provides a comprehensive set of methods for interacting with the Inspectr API.
+ * It handles common tasks like error handling, endpoint normalization, and request formatting.
+ * 
+ * @example
+ * // Create a new client instance
+ * const client = new InspectrClient({ apiEndpoint: 'https://api.example.com' });
+ * 
+ * // Use the client to interact with the API
+ * const healthInfo = await client.service.getHealth();
+ */
+
+/**
+ * Helper function to normalize API endpoints by removing trailing slashes
+ * @private
+ */
+const normalizeEndpoint = (endpoint) => endpoint.replace(/\/+$/, '');
+
+/**
+ * InspectrClient - The main class for interacting with the Inspectr API
+ */
+class InspectrClient {
+  /**
+   * Create a new InspectrClient instance
+   * @param {Object} options - Configuration options
+   * @param {string} [options.apiEndpoint='/api'] - The base API endpoint
+   * @param {Object} [options.headers={}] - Additional headers to include in all requests
+   */
+  constructor(options = {}) {
+    this.apiEndpoint = normalizeEndpoint(options.apiEndpoint || '/api');
+    
+    // Default headers for all requests
+    this.defaultHeaders = {
       "inspectr-client": "inspectr-app",
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`Registration failed (${res.status})`);
-  return await res.json();
+      ...options.headers
+    };
+    
+    // Default content type for JSON requests
+    this.jsonHeaders = {
+      ...this.defaultHeaders,
+      "Content-Type": "application/json",
+    };
+
+    // Initialize sub-clients
+    this.auth = new AuthClient(this);
+    this.operations = new OperationsClient(this);
+    this.service = new ServiceClient(this);
+    this.stats = new StatsClient(this);
+  }
+
+  /**
+   * Update the client configuration
+   * @param {Object} options - New configuration options
+   * @param {string} [options.apiEndpoint] - New API endpoint
+   * @param {Object} [options.headers] - New headers to include in all requests
+   */
+  configure(options = {}) {
+    if (options.apiEndpoint) {
+      this.apiEndpoint = normalizeEndpoint(options.apiEndpoint);
+    }
+    
+    if (options.headers) {
+      this.defaultHeaders = {
+        ...this.defaultHeaders,
+        ...options.headers
+      };
+      
+      this.jsonHeaders = {
+        ...this.defaultHeaders,
+        "Content-Type": "application/json",
+      };
+    }
+  }
 }
 
-export async function getConfigApi() {
-  const res = await fetch("/app/config");
-  if (!res.ok) throw new Error(`Config load failed (${res.status})`);
-  return await res.json();
+/**
+ * AuthClient - Handles authentication and registration
+ * @private
+ */
+class AuthClient {
+  constructor(client) {
+    this.client = client;
+  }
+
+  /**
+   * Register with the Inspectr API
+   * @param {Object} body - Registration data (channel, channel_code, or token)
+   * @returns {Promise<Object>} - Registration response with token and endpoints
+   */
+  async register(body) {
+    const res = await fetch(`${this.client.apiEndpoint}/register`, {
+      method: "POST",
+      headers: this.client.jsonHeaders,
+      body: JSON.stringify(body),
+    });
+    
+    if (!res.ok) throw new Error(`Registration failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Get configuration from the app server
+   * @returns {Promise<Object>} - Configuration data
+   */
+  async getConfig() {
+    const res = await fetch("/app/config");
+    if (!res.ok) throw new Error(`Config load failed (${res.status})`);
+    return await res.json();
+  }
 }
 
-export async function deleteAllOperationsApi(apiEndpoint) {
-  // Normalize the endpoint by removing trailing slashes
-  const normalizedEndpoint = apiEndpoint.replace(/\/+$/, '');
-  const res = await fetch(`${normalizedEndpoint}/operations`, {
-    method: "DELETE",
-    headers: { "inspectr-client": "inspectr-app" },
-  });
-  if (!res.ok) throw new Error(`Delete all failed (${res.status})`);
+/**
+ * OperationsClient - Handles operations management
+ * @private
+ */
+class OperationsClient {
+  constructor(client) {
+    this.client = client;
+  }
+
+  /**
+   * Delete all operations
+   * @returns {Promise<void>}
+   */
+  async deleteAll() {
+    const res = await fetch(`${this.client.apiEndpoint}/operations`, {
+      method: "DELETE",
+      headers: this.client.defaultHeaders,
+    });
+    
+    if (!res.ok) throw new Error(`Delete all failed (${res.status})`);
+  }
+
+  /**
+   * Delete a specific operation by ID
+   * @param {string} id - Operation ID to delete
+   * @returns {Promise<void>}
+   */
+  async delete(id) {
+    const res = await fetch(`${this.client.apiEndpoint}/operations/${id}`, {
+      method: "DELETE",
+      headers: this.client.defaultHeaders,
+    });
+    
+    if (!res.ok) throw new Error(`Delete ${id} failed (${res.status})`);
+  }
+
+  /**
+   * Replay an operation
+   * @param {Object} operation - Operation data to replay
+   * @returns {Promise<Object>} - Replay response
+   */
+  async replay(operation) {
+    // Remove response, meta, and timing from the operation before sending
+    const { meta, timing, response, ...opRequest } = operation;
+
+    const res = await fetch(`${this.client.apiEndpoint}/replay`, {
+      method: "POST",
+      headers: this.client.jsonHeaders,
+      body: JSON.stringify(opRequest),
+    });
+
+    if (!res.ok) throw new Error(`Replay failed (${res.status})`);
+    return await res.json();
+  }
 }
 
-export async function deleteOperationApi(apiEndpoint, id) {
-  // Normalize the endpoint by removing trailing slashes
-  const normalizedEndpoint = apiEndpoint.replace(/\/+$/, '');
-  const res = await fetch(`${normalizedEndpoint}/operations/${id}`, {
-    method: "DELETE",
-    headers: { "inspectr-client": "inspectr-app" },
-  });
-  if (!res.ok) throw new Error(`Delete ${id} failed (${res.status})`);
+/**
+ * ServiceClient - Handles service information
+ * @private
+ */
+class ServiceClient {
+  constructor(client) {
+    this.client = client;
+  }
+
+  /**
+   * Get health information from the API
+   * @returns {Promise<Object>} - Health information
+   */
+  async getHealth() {
+    const res = await fetch(`${this.client.apiEndpoint}/health`, {
+      headers: { ...this.client.defaultHeaders, Accept: "application/json" },
+    });
+
+    if (!res.ok) throw new Error(`Health check failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Get mock configuration information
+   * @returns {Promise<Object>} - Mock configuration
+   */
+  async getMock() {
+    const res = await fetch(`${this.client.apiEndpoint}/mock`, {
+      headers: { ...this.client.defaultHeaders, Accept: "application/json" },
+    });
+
+    if (!res.ok) throw new Error(`Mock info failed (${res.status})`);
+    return await res.json();
+  }
 }
+
+/**
+ * StatsClient - Handles statistics and analytics
+ * @private
+ */
+class StatsClient {
+  constructor(client) {
+    this.client = client;
+  }
+
+  /**
+   * Get operation statistics
+   * @param {Object} options - Query options
+   * @param {string} options.group - Grouping interval (hour, day, week, month)
+   * @param {string} options.start - Start date (ISO string)
+   * @param {string} options.end - End date (ISO string)
+   * @returns {Promise<Object>} - Statistics data
+   */
+  async getOperations({ group, start, end }) {
+    const url = `${this.client.apiEndpoint}/stats/operations?group=${group}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
+
+    const res = await fetch(url, {
+      headers: this.client.defaultHeaders,
+    });
+
+    if (!res.ok) throw new Error(`Stats operations failed (${res.status})`);
+    return await res.json();
+  }
+}
+
+// Export the client class as the default export
+export default InspectrClient;

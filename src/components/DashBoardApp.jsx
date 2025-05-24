@@ -1,6 +1,7 @@
 // src/components/DashBoardApp.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Select, SelectItem, Button } from '@tremor/react';
+import InspectrClient from '../utils/inspectrSdk';
 
 import DashBoardKpi from './DashBoardKpi.jsx';
 import DashBoardBarChart from './DashBoardBarChart.jsx';
@@ -125,6 +126,14 @@ export default function DashBoardApp() {
   const [error, setError] = useState(null);
   const [group, setGroup] = useState('hour');
 
+  // Create an InspectrClient instance
+  const [client, setClient] = useState(() => new InspectrClient({ apiEndpoint }));
+
+  // Update the client when apiEndpoint changes
+  useEffect(() => {
+    client.configure({ apiEndpoint });
+  }, [apiEndpoint]);
+
   // Default date range: Today
   const today = new Date();
   // Set defaultStart to the start of Today and defaultEnd to the end of Today.
@@ -134,14 +143,9 @@ export default function DashBoardApp() {
   const [start, setStart] = useState(defaultStart);
   const [end, setEnd] = useState(defaultEnd);
 
-  // Get operation statistics via REST API
-  const getStatsOperationsApi = async () => {
-    const url = `${apiEndpoint}/stats/operations?group=${group}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch stats operations: ${response.status}`);
-    }
-    return await response.json();
+  // Fetch statistics using the SDK
+  const fetchStats = async () => {
+    return await client.stats.getOperations({ group, start, end });
   };
 
   // Handler for refresh button
@@ -149,7 +153,7 @@ export default function DashBoardApp() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getStatsOperationsApi();
+      const data = await fetchStats();
       setStats(data);
     } catch (err) {
       setError(err.message);

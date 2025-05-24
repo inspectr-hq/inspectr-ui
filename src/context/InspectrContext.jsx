@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useRef, useEffect } from 'react';
-import { registerApi, getConfigApi } from '../utils/inspectrSdk';
+import InspectrClient from '../utils/inspectrSdk';
 
 // Create the context with default values
 const InspectrContext = createContext({
@@ -30,6 +30,9 @@ const InspectrContext = createContext({
   // Toast notifications
   toast: null,
   setToast: () => {},
+
+  // SDK client
+  client: null,
 });
 
 // Custom hook to use the context
@@ -126,11 +129,19 @@ export const InspectrProvider = ({ children }) => {
     return false;
   };
 
+  // Create an InspectrClient instance
+  const [inspectrClient, setInspectrClient] = useState(() => new InspectrClient({ apiEndpoint }));
+
+  // Update the client when apiEndpoint changes
+  useEffect(() => {
+    inspectrClient.configure({ apiEndpoint });
+  }, [apiEndpoint]);
+
   // Load credentials from REST API
   const loadCredentialsFromApi = async () => {
     console.log('🔄 Fetching /app/config (Localhost, No credentials found)');
     try {
-      const result = await getConfigApi();
+      const result = await inspectrClient.auth.getConfig();
       if (result?.token && result?.sse_endpoint && result?.channel_code) {
         console.log('✅ Loaded from /app/config:', result);
         setChannelCode(result.channel_code);
@@ -169,7 +180,7 @@ export const InspectrProvider = ({ children }) => {
       console.log('📤 Registering with:', requestBody);
 
       // Register App with Inspectr
-      const result = await registerApi(apiEndpoint, requestBody);
+      const result = await inspectrClient.auth.register(requestBody);
 
       if (result?.token && result?.sse_endpoint && result?.channel_code) {
         console.log('✅ Registration successful');
@@ -320,6 +331,7 @@ export const InspectrProvider = ({ children }) => {
     attemptReRegistration,
     toast,
     setToast,
+    client: inspectrClient,
   };
 
   return (

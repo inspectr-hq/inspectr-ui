@@ -6,16 +6,11 @@ import { getMethodTextClass } from '../utils/getMethodClass.js';
 import { formatTimestamp, formatDuration, formatSize } from '../utils/formatters.js';
 import { Popover } from '@headlessui/react';
 import CopyButton from './CopyButton.jsx';
+import { useInspectr } from '../context/InspectrContext';
 
 const RequestDetail = ({ operation }) => {
-  // Initialize apiEndpoint from localStorage, or fall back to localhost
-  const [apiEndpoint, setApiEndpoint] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('apiEndpoint');
-      return stored && stored.trim() !== '' ? stored : '/api';
-    }
-    return '/api';
-  });
+  // Get the client from context
+  const { client } = useInspectr();
 
   const [copiedCurl, setCopiedCurl] = useState(false);
   const [showCurlErrorToast, setShowCurlErrorToast] = useState(false);
@@ -102,20 +97,9 @@ const RequestDetail = ({ operation }) => {
       });
   };
 
-  // POST the request event to /api/replay endpoint
+  // Replay the request using the SDK
   const handleReplay = () => {
-    const { meta, timing, response, ...opRequest } = operation;
-    fetch(`${apiEndpoint}/replay`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(opRequest)
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Replay failed');
-        }
-        return response.json();
-      })
+    client.operations.replay(operation)
       .then(() => {
         setReplayed(true);
         setTimeout(() => setReplayed(false), 2500);

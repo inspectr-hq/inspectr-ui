@@ -7,7 +7,6 @@ import SettingsPanel from './SettingsPanel';
 import eventDB from '../utils/eventDB';
 import useInspectrRouter from '../hooks/useInspectrRouter.jsx';
 import { useInspectr } from '../context/InspectrContext';
-import { deleteAllOperationsApi as deleteAllOperationsApiUtil, deleteOperationApi as deleteOperationApiUtil } from '../utils/inspectrSdk';
 
 const debugMode = typeof window !== 'undefined' && localStorage.getItem('debug') === 'true';
 
@@ -32,7 +31,8 @@ const InspectrApp = () => {
     handleRegister,
     attemptReRegistration,
     toast,
-    setToast
+    setToast,
+    client
   } = useInspectr();
 
   const pageSize = 100;
@@ -227,7 +227,7 @@ const InspectrApp = () => {
   // Delete all operations via REST API
   const deleteAllOperationsApi = async () => {
     try {
-      await deleteAllOperationsApiUtil(apiEndpoint);
+      await client.operations.deleteAll();
     } catch (error) {
       console.error('Error deleting all operations:', error);
       setToast({
@@ -241,7 +241,7 @@ const InspectrApp = () => {
   // Delete a single operation via REST API
   const deleteOperationApi = async (id) => {
     try {
-      await deleteOperationApiUtil(apiEndpoint, id);
+      await client.operations.delete(id);
     } catch (error) {
       console.error(`Error deleting operation ${id}:`, error);
       setToast({
