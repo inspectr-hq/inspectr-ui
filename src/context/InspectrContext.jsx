@@ -32,7 +32,7 @@ const InspectrContext = createContext({
   setToast: () => {},
 
   // SDK client
-  client: null,
+  client: null
 });
 
 // Custom hook to use the context
@@ -331,14 +331,10 @@ export const InspectrProvider = ({ children }) => {
     attemptReRegistration,
     toast,
     setToast,
-    client: inspectrClient,
+    client: inspectrClient
   };
 
-  return (
-    <InspectrContext.Provider value={contextValue}>
-      {children}
-    </InspectrContext.Provider>
-  );
+  return <InspectrContext.Provider value={contextValue}>{children}</InspectrContext.Provider>;
 };
 
 export default InspectrContext;

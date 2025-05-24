@@ -99,7 +99,8 @@ const RequestDetail = ({ operation }) => {
 
   // Replay the request using the SDK
   const handleReplay = () => {
-    client.operations.replay(operation)
+    client.operations
+      .replay(operation)
       .then(() => {
         setReplayed(true);
         setTimeout(() => setReplayed(false), 2500);

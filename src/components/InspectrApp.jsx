@@ -16,7 +16,7 @@ if (debugMode) {
 
 const InspectrApp = () => {
   // Get all the shared state from context
-  const { 
+  const {
     apiEndpoint,
     setApiEndpoint,
     connectionStatus,
@@ -64,7 +64,6 @@ const InspectrApp = () => {
   // now hook in deep-linking
   const { selectedOperation, currentTab, handleSelect, handleTabChange, clearSelection } =
     useInspectrRouter(operations);
-
 
   // Connect to SSE when the component mounts.
   useEffect(() => {
@@ -251,7 +250,6 @@ const InspectrApp = () => {
       });
     }
   };
-
 
   return (
     <div

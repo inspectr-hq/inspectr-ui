@@ -91,7 +91,7 @@ export default function Workspace() {
       </div>
     </InspectrProvider>
   );
-};
+}
 
 // Component to display toast notifications from context
 const ToastNotificationFromContext = () => {
@@ -107,4 +107,4 @@ const ToastNotificationFromContext = () => {
       onClose={() => setToast(null)}
     />
   );
-}
+};

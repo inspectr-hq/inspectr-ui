@@ -75,11 +75,7 @@ function DateRangeButtons({ selectedRange, onSelect }) {
           onClick={() => onSelect(item)}
           title={item.tooltip}
           className={joinClassNames(
-            idx === 0
-              ? 'rounded-l'
-              : idx === options.length - 1
-                ? '-ml-px rounded-r'
-                : '-ml-px',
+            idx === 0 ? 'rounded-l' : idx === options.length - 1 ? '-ml-px rounded-r' : '-ml-px',
             'px-3 py-1 border focus:outline-none',
             selectedRange === item.label
               ? 'bg-tremor-brand dark:bg-dark-tremor-brand text-tremor-brand-inverted dark:text-dark-tremor-brand-inverted'
@@ -130,8 +126,7 @@ export default function DashBoardApp() {
   const [end, setEnd] = useState(defaultEnd);
 
   // Fetch statistics
-  const fetchStats = () =>
-    client.stats.getOperations({ group, start, end });
+  const fetchStats = () => client.stats.getOperations({ group, start, end });
 
   // Handler for refresh button
   const handleLoadStats = async () => {
