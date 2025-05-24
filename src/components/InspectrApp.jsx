@@ -24,6 +24,7 @@ const InspectrApp = () => {
     reRegistrationFailedRef,
     handleRegister,
     attemptReRegistration,
+    resetReRegistration,
     toast,
     setToast,
     debugMode,
@@ -62,7 +63,9 @@ const InspectrApp = () => {
 
   // Connect to SSE when the component mounts.
   useEffect(() => {
-    if (!sseEndpoint || !token) return;
+    resetReRegistration();
+
+    if (!sseEndpoint) return;
 
     // Retrieve the last_event_id from localStorage
     const lastEventId = localStorage.getItem('lastEventId');
@@ -125,7 +128,7 @@ const InspectrApp = () => {
       eventSource.close();
       setConnectionStatus('disconnected');
     };
-  }, [token]); // Only reconnect when sseEndpoint or token change
+  }, [sseEndpoint]); // Run only once on mount
 
   // If no operation is selected but there are operations, select the first one.
   useEffect(() => {
