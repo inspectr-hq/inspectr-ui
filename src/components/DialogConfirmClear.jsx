@@ -1,3 +1,5 @@
+// src/components/DialogConfirmClear.jsx
+
 import React from 'react';
 
 const DialogConfirmClear = ({ open, onClose, onConfirmAll, onConfirmFiltered, hasFilters }) => {

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Divider, List, ListItem, TextInput } from '@tremor/react';
 import { useInspectr } from '../context/InspectrContext';
+import DialogMockConfig from './DialogMockConfig.jsx';
 
 export default function SettingsApp() {
   const { apiEndpoint, setApiEndpoint, client } = useInspectr();
@@ -11,6 +12,8 @@ export default function SettingsApp() {
   const [statusInfo, setStatusInfo] = useState(null);
   const [mockInfo, setMockInfo] = useState(null);
   const [error, setError] = useState(null);
+
+  const [mockDialogOpen, setMockDialogOpen] = useState(false);
 
   // Fetch health only on mount or after saving
   const fetchHealthInfo = async () => {
@@ -25,15 +28,29 @@ export default function SettingsApp() {
     }
   };
 
-  // Fetch mock only once we have valid health data
+  // Fetch mock configuration
   const fetchMockInfo = async () => {
     if (!statusInfo) return;
     try {
-      const data = await client.service.getMock();
+      const data = await client.mock.getConfig();
       setMockInfo(data);
     } catch (err) {
       console.error('Mock error', err);
       setMockInfo(null);
+    }
+  };
+
+  // Handler for launching mock with new OpenAPI URL
+  const handleLaunchMock = async (openApiUrl) => {
+    try {
+      const result = await client.mock.launch(openApiUrl);
+      // optionally show a toast or setMockInfo…
+      console.log('Mock launched:', result);
+      // re-fetch mock info
+      fetchMockInfo();
+    } catch (err) {
+      console.error('Mock launch error', err);
+      throw err;
     }
   };
 
@@ -188,6 +205,14 @@ export default function SettingsApp() {
           <p className="mt-1 text-tremor-default leading-6 text-tremor-content dark:text-dark-tremor-content">
             Information about your mock configuration.
           </p>
+          <div className="mt-4">
+            <button
+              onClick={() => setMockDialogOpen(true)}
+              className="whitespace-nowrap rounded-tremor-default bg-tremor-brand px-4 py-2.5 text-tremor-default font-medium text-tremor-brand-inverted shadow-tremor-input hover:bg-tremor-brand-emphasis dark:bg-dark-tremor-brand dark:text-dark-tremor-brand-inverted dark:shadow-dark-tremor-input dark:hover:bg-dark-tremor-brand-emphasis"
+            >
+              Set OpenAPI
+            </button>
+          </div>
         </div>
         <div className="sm:max-w-3xl md:col-span-2">
           {!mockInfo && <p className="mt-2 text-tremor-default">Loading mock info…</p>}
@@ -224,6 +249,14 @@ export default function SettingsApp() {
           )}
         </div>
       </div>
+
+      {/* Dialog for entering OpenAPI URL */}
+      <DialogMockConfig
+        open={mockDialogOpen}
+        onClose={() => setMockDialogOpen(false)}
+        initialUrl={mockInfo?.openapi}
+        onSubmit={handleLaunchMock}
+      />
 
       <Divider className="my-10" />
     </div>

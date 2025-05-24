@@ -49,6 +49,7 @@ class InspectrClient {
     this.operations = new OperationsClient(this);
     this.service = new ServiceClient(this);
     this.stats = new StatsClient(this);
+    this.mock = new MockClient(this);
   }
 
   /**
@@ -190,18 +191,6 @@ class ServiceClient {
     return await res.json();
   }
 
-  /**
-   * Get mock configuration information
-   * @returns {Promise<Object>} - Mock configuration
-   */
-  async getMock() {
-    const res = await fetch(`${this.client.apiEndpoint}/mock`, {
-      headers: { ...this.client.defaultHeaders, Accept: "application/json" },
-    });
-
-    if (!res.ok) throw new Error(`Mock info failed (${res.status})`);
-    return await res.json();
-  }
 }
 
 /**
@@ -229,6 +218,52 @@ class StatsClient {
     });
 
     if (!res.ok) throw new Error(`Stats operations failed (${res.status})`);
+    return await res.json();
+  }
+}
+
+/**
+ * MockClient - Handles mock service operations
+ * @private
+ */
+class MockClient {
+  constructor(client) {
+    this.client = client;
+  }
+
+  /**
+   * Get mock configuration information
+   * @returns {Promise<Object>} - Mock configuration
+   */
+  async getConfig() {
+    const res = await fetch(`${this.client.apiEndpoint}/mock`, {
+      headers: { ...this.client.defaultHeaders, Accept: "application/json" },
+    });
+
+    if (!res.ok) throw new Error(`Mock info failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Launch or restart the mock service with a given OpenAPI URL
+   * @param {string} openapiUrl - OpenAPI spec URL
+   * @returns {Promise<Object>} - { message: string }
+   */
+  async launch(openapiUrl) {
+    const url =
+      `${this.client.apiEndpoint}/mock/launch?openapi=` +
+      encodeURIComponent(openapiUrl);
+    const res = await fetch(url, {
+      method: "GET",
+      headers: this.client.defaultHeaders,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(
+        body.error ||
+        `Mock launch failed (${res.status})`
+      );
+    }
     return await res.json();
   }
 }
