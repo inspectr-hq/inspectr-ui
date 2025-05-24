@@ -1,67 +1,64 @@
 // src/components/SettingsApp.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Divider, List, ListItem, TextInput } from '@tremor/react';
-import InspectrClient from '../utils/inspectrSdk';
+import { useInspectr } from '../context/InspectrContext';
 
 export default function SettingsApp() {
-  // ——— State ———
-  const [apiEndpoint, setApiEndpoint] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('apiEndpoint') || `${window.location.origin}/api`;
-    }
-    return '';
-  });
+  const { apiEndpoint, setApiEndpoint, client } = useInspectr();
+
+  // Local input state so typing doesn't immediately ping the API
+  const [localEndpoint, setLocalEndpoint] = useState(apiEndpoint);
   const [statusInfo, setStatusInfo] = useState(null);
   const [mockInfo, setMockInfo] = useState(null);
   const [error, setError] = useState(null);
 
-  // Create an InspectrClient instance
-  const [client, setClient] = useState(() => new InspectrClient({ apiEndpoint }));
+  // Ref to prevent double-fetch in StrictMode
+  const didInitFetch = useRef(false);
 
-  // Update the client when apiEndpoint changes
-  useEffect(() => {
-    client.configure({ apiEndpoint });
-  }, [apiEndpoint]);
-
-  // ——— Fetchers ———
-  async function fetchHealthInfo() {
+  // Fetch health only on mount or after saving
+  const fetchHealthInfo = async () => {
     try {
       setError(null);
+      setStatusInfo(null);
       const data = await client.service.getHealth();
       setStatusInfo(data);
     } catch (err) {
-      console.error(err);
+      console.error('Health error', err);
       setError(err.message);
-      setStatusInfo(null);
     }
-  }
+  };
 
-  async function fetchMockInfo() {
+  // Fetch mock only once we have valid health data
+  const fetchMockInfo = async () => {
+    if (!statusInfo) return;
     try {
       const data = await client.service.getMock();
       setMockInfo(data);
     } catch (err) {
-      console.error(err);
+      console.error('Mock error', err);
       setMockInfo(null);
     }
-  }
+  };
 
   // ——— Effects ———
   useEffect(() => {
-    if (apiEndpoint) {
-      fetchHealthInfo();
-    }
-  }, [apiEndpoint]);
+    if (didInitFetch.current) return;
+    didInitFetch.current = true;
+    fetchHealthInfo();
+  }, []);
 
   useEffect(() => {
-    fetchMockInfo();
+    if (statusInfo) fetchMockInfo();
   }, [statusInfo]);
 
-  // ——— Handlers ———
-  function handleSaveEndpoint() {
-    localStorage.setItem('apiEndpoint', apiEndpoint);
+  // Handler for the “Save settings” button
+  const handleSaveEndpoint = (e) => {
+    e.preventDefault();
+    const cleaned = localEndpoint.replace(/\/+$/, '');
+    setApiEndpoint(cleaned);
+    // The context provider’s effect will call client.configure({ apiEndpoint: cleaned })
     fetchHealthInfo();
-  }
+  };
 
   // ——— Render ———
   return (
@@ -87,8 +84,8 @@ export default function SettingsApp() {
               id="api-endpoint"
               name="api-endpoint"
               placeholder="https://…/api"
-              value={apiEndpoint}
-              onChange={(e) => setApiEndpoint(e.target.value)}
+              value={localEndpoint}
+              onChange={(e) => setLocalEndpoint(e.target.value)}
               className="mt-2"
             />
           </div>
