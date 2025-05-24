@@ -16,7 +16,8 @@ const SettingsPanel = () => {
     client,
     userInitiatedRegistrationRef,
     handleRegister: onRegister,
-    attemptReRegistration: onReconnect
+    attemptReRegistration: onReconnect,
+    resetReRegistration
   } = useInspectr();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -70,6 +71,7 @@ const SettingsPanel = () => {
           status={connectionStatus}
           onReconnect={(e) => {
             e.stopPropagation();
+            resetReRegistration();
             onReconnect();
           }}
         />

@@ -278,6 +278,11 @@ export const InspectrProvider = ({ children }) => {
     }
   };
 
+  const resetReRegistration = () => {
+    registrationRetryCountRef.current = 0;
+    reRegistrationFailedRef.current = false;
+  };
+
   /**
    * 🏁 Step 1: Load credentials from localStorage on mount
    */
@@ -350,6 +355,7 @@ export const InspectrProvider = ({ children }) => {
     userInitiatedRegistrationRef,
     handleRegister,
     attemptReRegistration,
+    resetReRegistration,
     toast,
     setToast,
     client: inspectrClient
