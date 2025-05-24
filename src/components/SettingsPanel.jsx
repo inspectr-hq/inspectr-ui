@@ -1,11 +1,12 @@
 // src/components/SettingsPanel.jsx
 import React, { useState, useEffect } from 'react';
 import logo from '../assets/inspectr_logo_small.png';
+import ConnectionStatusIndicator from './ConnectionStatusIndicator.jsx';
 
 const SettingsPanel = ({
   apiEndpoint,
   setApiEndpoint,
-  connectionStatus, // now a string: "connected", "reconnecting", or "disconnected"
+  connectionStatus, // "connected" | "reconnecting" | "disconnected"
   channelCode,
   setChannelCode,
   channel,
@@ -43,7 +44,7 @@ const SettingsPanel = ({
     setApiEndpoint(endpointInput);
   };
 
-  // Save registration details and trigger the registration process.
+  // Trigger registration
   const handleRegister = () => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('channelCode', channelCodeInput);
@@ -62,41 +63,13 @@ const SettingsPanel = ({
         onClick={() => setIsOpen((prev) => !prev)}
       >
         {/* Connection Status Indicator */}
-        <div className="flex items-center gap-4">
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center 
-              ${
-                connectionStatus === 'connected'
-                  ? 'bg-green-500 text-white'
-                  : connectionStatus === 'reconnecting'
-                    ? 'bg-yellow-500 text-black '
-                    : 'bg-red-500'
-              }`}
-          >
-            <span
-              className={`w-2 h-2 rounded-full mr-1 
-                ${
-                  connectionStatus === 'connected'
-                    ? 'bg-green-800 animate-pulse'
-                    : connectionStatus === 'reconnecting'
-                      ? 'bg-yellow-800 animate-pulse'
-                      : 'bg-red-800'
-                }`}
-            ></span>
-            {connectionStatus.charAt(0).toUpperCase() + connectionStatus.slice(1)}
-          </span>
-          {connectionStatus === 'disconnected' && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onReconnect();
-              }}
-              className="ml-2 text-sm font-medium text-blue-600 hover:underline"
-            >
-              Reconnect
-            </button>
-          )}
-        </div>
+        <ConnectionStatusIndicator
+          status={connectionStatus}
+          onReconnect={(e) => {
+            e.stopPropagation();
+            onReconnect();
+          }}
+        />
 
         {/* Inspectr Logo & Name */}
         <a
