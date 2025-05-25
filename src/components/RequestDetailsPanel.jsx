@@ -6,10 +6,24 @@ import ResponseContent from './ResponseContent';
 import Terminal from './Terminal';
 import { RiExternalLinkLine } from '@remixicon/react';
 
+// CSS for fade-in effect
+const fadeInStyle = {
+  opacity: 1,
+  visibility: 'visible',
+  transition: 'opacity 0.3s ease-in-out, visibility 0.3s ease-in-out'
+};
+
+const hiddenStyle = {
+  opacity: 0,
+  visibility: 'hidden',
+  transition: 'opacity 0.3s ease-in-out, visibility 0.3s ease-in-out'
+};
+
 const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   const [ingressEndpoint, setIngressEndpoint] = useState('');
   const [proxyEndpoint, setProxyEndpoint] = useState('');
   const [expose, setExpose] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     // Get the endpoints and expose setting from localStorage
@@ -26,10 +40,22 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
     if (exposeValue) {
       setExpose(exposeValue === 'true');
     }
+
+    // Set isLoaded to true after a short delay to ensure CSS transitions work properly
+    const timer = setTimeout(() => {
+      setIsLoaded(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
+
+  // Apply CSS-based solution to prevent flashing
   if (!operation) {
     return (
-      <div className="h-96 min-h-full mb-20 flex flex-1 flex-col justify-center rounded-tremor-default border border-tremor-border bg-tremor-background-muted px-6 py-10 dark:border-dark-tremor-border dark:bg-dark-tremor-background-muted">
+      <div 
+        className="h-96 min-h-full mb-20 flex flex-1 flex-col justify-center rounded-tremor-default border border-tremor-border bg-tremor-background-muted px-6 py-10 dark:border-dark-tremor-border dark:bg-dark-tremor-background-muted"
+        style={isLoaded ? fadeInStyle : hiddenStyle}
+      >
         <div className="mx-auto text-center">
           <h4 className="text-tremor-metric font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong font-[Inter] font-sans">
             Request Inspectr
@@ -52,12 +78,13 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
           <Terminal endpoint={expose ? ingressEndpoint : proxyEndpoint} showCopyButton={true} />
 
           <div className="mt-8 sm:flex sm:items-center sm:justify-center sm:gap-x-3">
-            {/*<button*/}
-            {/*  type="button"*/}
-            {/*  className="w-full whitespace-nowrap rounded-tremor-small bg-tremor-brand px-4 py-2 text-tremor-default font-medium text-tremor-brand-inverted shadow-tremor-input hover:bg-tremor-brand-emphasis dark:bg-dark-tremor-brand dark:text-dark-tremor-brand-inverted dark:shadow-dark-tremor-input dark:hover:bg-dark-tremor-brand-emphasis sm:w-fit"*/}
-            {/*>*/}
-            {/*  View Documentation*/}
-            {/*</button>*/}
+            <a
+              href="https://inspectr.dev/docs"
+              target="_blank"
+              className="w-full whitespace-nowrap rounded-tremor-small bg-tremor-brand px-4 py-2 text-tremor-default font-medium text-tremor-brand-inverted shadow-tremor-input hover:bg-tremor-brand-emphasis dark:bg-dark-tremor-brand dark:text-dark-tremor-brand-inverted dark:shadow-dark-tremor-input dark:hover:bg-dark-tremor-brand-emphasis sm:w-fit"
+            >
+              View Documentation
+            </a>
             <a
               href="https://inspectr.dev"
               target="_blank"
@@ -73,7 +100,10 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div 
+      className="flex flex-col h-full"
+      style={isLoaded ? fadeInStyle : hiddenStyle}
+    >
       <RequestDetail operation={operation} />
 
       {/* Tabs for Request and Response */}
@@ -103,7 +133,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
       {/* Tab Content */}
       <div
         className="p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded-b shadow dark:shadow-dark-tremor-shadow flex-grow overflow-y-auto"
-        style={{ maxHeight: 'calc(100vh - 270px - 64px)' }}
+        style={{ ...isLoaded ? fadeInStyle : hiddenStyle, maxHeight: 'calc(100vh - 270px - 64px)' }}
       >
         {currentTab === 'request' ? (
           <RequestContent operation={operation} />
