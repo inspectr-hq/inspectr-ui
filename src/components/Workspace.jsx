@@ -6,6 +6,7 @@ import InspectrApp from './InspectrApp.jsx';
 import SettingsApp from './SettingsApp.jsx';
 import useHashRouter from '../hooks/useHashRouter.jsx';
 import ToastNotification from './ToastNotification.jsx';
+import DialogMockLaunch   from './DialogMockLaunch.jsx'
 import { InspectrProvider, useInspectr } from '../context/InspectrContext';
 
 function classNames(...classes) {
@@ -41,6 +42,8 @@ export default function Workspace() {
 
   return (
     <InspectrProvider>
+      <DialogMockLaunch/>
+
       <div className="">
         <div className="border-b border-tremor-border dark:border-dark-tremor-border relative h-full overflow-hidden bg-gray-50 dark:bg-dark-tremor-background-subtle">
           <div className="px-4 sm:px-6 lg:px-8">

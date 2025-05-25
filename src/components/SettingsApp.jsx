@@ -18,7 +18,7 @@ export default function SettingsApp() {
   const [mockDialogOpen, setMockDialogOpen] = useState(false);
 
   // Fetch health only on mount or after saving
-  const fetchHealthInfo = async () => {
+  const fetchServiceInfo = async () => {
     try {
       setError(null);
       setStatusInfo(null);
@@ -56,7 +56,7 @@ export default function SettingsApp() {
 
   // ——— Effects ———
   useEffect(() => {
-    fetchHealthInfo();
+    fetchServiceInfo();
   }, [apiEndpoint]);
 
   useEffect(() => {
@@ -69,7 +69,7 @@ export default function SettingsApp() {
     const cleaned = localEndpoint.replace(/\/+$/, '');
     setApiEndpoint(cleaned);
     client.configure({ apiEndpoint: cleaned });
-    fetchHealthInfo();
+    fetchServiceInfo();
   };
 
   // ——— Render ———
@@ -158,13 +158,15 @@ export default function SettingsApp() {
                   </span>
                   {proxyEndpoint ? (
                     <div className="flex items-center space-x-2">
-                  <span className="text-tremor-content dark:text-dark-tremor-content break-all">
-                    {proxyEndpoint}
-                  </span>
+                      <span className="text-tremor-content dark:text-dark-tremor-content break-all">
+                        {proxyEndpoint}
+                      </span>
                       <CopyButton textToCopy={proxyEndpoint} showLabel={false} />
                     </div>
                   ) : (
-                    <span className="text-tremor-default dark:text-dark-tremor-content">Not set</span>
+                    <span className="text-tremor-default dark:text-dark-tremor-content">
+                      Not set
+                    </span>
                   )}
                 </ListItem>
                 <ListItem className="py-3 flex justify-between">
