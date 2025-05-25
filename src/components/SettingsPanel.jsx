@@ -1,6 +1,6 @@
 // src/components/SettingsPanel.jsx
 import React, { useState, useEffect } from 'react';
-import logo from '../assets/inspectr_logo_small.png';
+import logo from '../assets/brand_logo_app.svg';
 import ConnectionStatusIndicator from './ConnectionStatusIndicator.jsx';
 import { useInspectr } from '../context/InspectrContext';
 
