@@ -16,7 +16,7 @@ const InspectrContext = createContext({
   setApiEndpoint: () => {},
 
   // Connection status
-  connectionStatus: 'disconnected', // 'connected' | 'reconnecting' | 'disconnected'
+  connectionStatus: 'reconnecting', // 'connected' | 'reconnecting' | 'disconnected'
   setConnectionStatus: () => {},
 
   // Registration details
@@ -145,6 +145,21 @@ export const InspectrProvider = ({ children }) => {
       localStorage.setItem('apiEndpoint', apiEndpoint);
     }
   }, [apiEndpoint]);
+
+  // Proxy URL state (persisted)
+  const [proxyEndpoint, setProxyEndpoint] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('proxyEndpoint') || '';
+    }
+    return '';
+  });
+
+  // Whenever it changes, keep localStorage in sync
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('proxyEndpoint', proxyEndpoint);
+    }
+  }, [proxyEndpoint]);
 
   // Create an InspectrClient instance
   const [inspectrClient, setInspectrClient] = useState(() => new InspectrClient({ apiEndpoint }));
@@ -346,6 +361,8 @@ export const InspectrProvider = ({ children }) => {
     connectionStatus,
     setConnectionStatus,
     sseEndpoint,
+    proxyEndpoint,
+    setProxyEndpoint,
     channelCode,
     setChannelCode,
     channel,

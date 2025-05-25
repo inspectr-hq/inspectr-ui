@@ -3,9 +3,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Divider, List, ListItem, TextInput } from '@tremor/react';
 import { useInspectr } from '../context/InspectrContext';
 import DialogMockConfig from './DialogMockConfig.jsx';
+import BadgeIndicator from './BadgeIndicator.jsx';
+import CopyButton from './CopyButton.jsx';
 
 export default function SettingsApp() {
-  const { apiEndpoint, setApiEndpoint, client } = useInspectr();
+  const { apiEndpoint, setApiEndpoint, proxyEndpoint, client } = useInspectr();
 
   // Local input state so typing doesn't immediately ping the API
   const [localEndpoint, setLocalEndpoint] = useState(apiEndpoint);
@@ -44,9 +46,7 @@ export default function SettingsApp() {
   const handleLaunchMock = async (openApiUrl) => {
     try {
       const result = await client.mock.launch(openApiUrl);
-      // optionally show a toast or setMockInfo…
       console.log('Mock launched:', result);
-      // re-fetch mock info
       fetchMockInfo();
     } catch (err) {
       console.error('Mock launch error', err);
@@ -71,13 +71,6 @@ export default function SettingsApp() {
     client.configure({ apiEndpoint: cleaned });
     fetchHealthInfo();
   };
-
-  const badgeClasses = (active) =>
-    `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-      active ? 'border-green-500 text-green-500' : 'border-red-500 text-red-500'
-    }`;
-
-  const neutralBadge = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-gray-300 text-gray-800 dark:border-gray-600 dark:text-gray-200`;
 
   // ——— Render ———
   return (
@@ -146,7 +139,8 @@ export default function SettingsApp() {
               <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
                 Status
               </span>
-              <span className={badgeClasses(!!statusInfo)}>{statusInfo?.message ?? 'NOK'}</span>
+              {/*<span className={badgeClasses(!!statusInfo)}>{statusInfo?.message ?? 'NOK'}</span>*/}
+              <BadgeIndicator filled="true">{statusInfo?.message ?? 'NOK'}</BadgeIndicator>
             </ListItem>
             <ListItem className="py-3 flex justify-between">
               <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
@@ -160,6 +154,21 @@ export default function SettingsApp() {
               <>
                 <ListItem className="py-3 flex justify-between">
                   <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                    Proxy URL
+                  </span>
+                  {proxyEndpoint ? (
+                    <div className="flex items-center space-x-2">
+                  <span className="text-tremor-content dark:text-dark-tremor-content break-all">
+                    {proxyEndpoint}
+                  </span>
+                      <CopyButton textToCopy={proxyEndpoint} showLabel={false} />
+                    </div>
+                  ) : (
+                    <span className="text-tremor-default dark:text-dark-tremor-content">Not set</span>
+                  )}
+                </ListItem>
+                <ListItem className="py-3 flex justify-between">
+                  <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
                     Running since
                   </span>
                   <span className="text-tremor-content dark:text-dark-tremor-content">
@@ -170,23 +179,19 @@ export default function SettingsApp() {
                   <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
                     Mode
                   </span>
-                  <span className={neutralBadge}>{statusInfo.mode}</span>
+                  <BadgeIndicator variant="neutral">{statusInfo.mode}</BadgeIndicator>
                 </ListItem>
                 <ListItem className="py-3 flex justify-between">
                   <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
                     Expose
                   </span>
-                  <span className={badgeClasses(statusInfo.expose)}>
-                    {statusInfo.expose ? 'Yes' : 'No'}
-                  </span>
+                  <BadgeIndicator>{statusInfo?.expose ? 'Yes' : 'No'}</BadgeIndicator>
                 </ListItem>
                 <ListItem className="py-3 flex justify-between">
                   <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
                     App
                   </span>
-                  <span className={badgeClasses(statusInfo.app)}>
-                    {statusInfo.app ? 'Yes' : 'No'}
-                  </span>
+                  <BadgeIndicator>{statusInfo?.app ? 'Yes' : 'No'}</BadgeIndicator>
                 </ListItem>
               </>
             )}
@@ -222,9 +227,9 @@ export default function SettingsApp() {
                 <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
                   Status
                 </span>
-                <span className={badgeClasses(mockInfo.status)}>
-                  {mockInfo.status ? 'Active' : 'Inactive'}
-                </span>
+                <BadgeIndicator filled="true">
+                  {mockInfo?.status ? 'Active' : 'Inactive'}
+                </BadgeIndicator>
               </ListItem>
               <ListItem className="py-3 flex justify-between">
                 <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
@@ -243,7 +248,7 @@ export default function SettingsApp() {
                 <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
                   Examples
                 </span>
-                <span className={neutralBadge}>{mockInfo.examples}</span>
+                <BadgeIndicator variant="neutral">{mockInfo?.examples}</BadgeIndicator>
               </ListItem>
             </List>
           )}

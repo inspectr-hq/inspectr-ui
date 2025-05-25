@@ -5,14 +5,14 @@ import React, { useState, useEffect } from 'react';
 export default function DialogMockConfig({ open, onClose, initialUrl = '', onSubmit }) {
   const [url, setUrl] = useState(initialUrl);
   const [error, setError] = useState(null);
- const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // reset input whenever the dialog is opened
   useEffect(() => {
     if (open) {
       setUrl(initialUrl);
       setError(null);
-+     setLoading(false);
+      +setLoading(false);
     }
   }, [open, initialUrl]);
 
@@ -84,9 +84,7 @@ export default function DialogMockConfig({ open, onClose, initialUrl = '', onSub
           <button
             onClick={handleSubmit}
             className={`px-4 py-2 text-white rounded ${
-              loading
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700'
+              loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
             }`}
             disabled={loading}
           >
