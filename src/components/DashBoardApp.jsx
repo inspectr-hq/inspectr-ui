@@ -1,5 +1,5 @@
 // src/components/DashBoardApp.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, Select, SelectItem, Button } from '@tremor/react';
 import { useInspectr } from '../context/InspectrContext';
 
@@ -27,11 +27,24 @@ function getEndOfDayUTC(date) {
   ).toISOString();
 }
 
-// Helper: Format date for display
+// Helper: Format date for range display
 function formatDateForDisplay(dateString) {
   const date = new Date(dateString);
   return date.toLocaleString('en-US', {
     year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'UTC'
+  });
+}
+
+// Helper: Format date for chart display
+function formatDateForChart(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -185,6 +198,16 @@ export default function DashBoardApp() {
     handleLoadStats();
   }, [group, start, end]);
 
+  // Format dates in by_interval data for chart display
+  const formattedIntervalData = useMemo(() => {
+    if (!stats?.by_interval) return [];
+
+    return stats.by_interval.map(item => ({
+      ...item,
+      date: formatDateForChart(item.date)
+    }));
+  }, [stats?.by_interval]);
+
   // Update start and end when a date range button is clicked.
   const handleDateRangeSelect = (item) => {
     setSelectedRange(item.label);
@@ -252,7 +275,7 @@ export default function DashBoardApp() {
 
             {/* Custom Date Range Picker - Absolutely positioned */}
             {showCustomDatePicker && (
-              <div className="absolute top-full left-0 mt-2 z-10 flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded shadow">
+              <div className="absolute top-full right-0 mt-2 z-10 flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded shadow">
                 <div className="flex flex-col">
                   <label className="text-xs text-gray-500 dark:text-gray-400">Start Date</label>
                   <input
@@ -306,10 +329,10 @@ export default function DashBoardApp() {
           <DashBoardKpi overall={stats?.overall} />
         </div>
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-2">
-          <DashBoardBarChart title="Traffic Volume" data={stats?.by_interval} />
+          <DashBoardBarChart title="Traffic Volume" data={formattedIntervalData} />
           <DashBoardLineChart
             title="Average Response Times"
-            data={stats?.by_interval}
+            data={formattedIntervalData}
             metricKey={['min_response_time', 'average_response_time', 'max_response_time']}
             metricUnit="ms"
             highlightValue={stats?.overall?.average_response_time}
@@ -321,7 +344,7 @@ export default function DashBoardApp() {
           <div className="col-span-2">
             <DashBoardLineChart
               title="Success / Error Rate"
-              data={stats?.by_interval}
+              data={formattedIntervalData}
               metricKey={['success', 'errors']}
               metricUnit=""
               highlightValue={stats?.overall?.average_errors}
