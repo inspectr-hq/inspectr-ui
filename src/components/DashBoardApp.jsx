@@ -30,21 +30,20 @@ function getEndOfDayUTC(date) {
 // Helper: Format date for range display
 function formatDateForDisplay(dateString) {
   const date = new Date(dateString);
-  return date.toLocaleString('en-US', {
+  return date.toLocaleString('en-GB', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-    timeZone: 'UTC'
   });
 }
 
 // Helper: Format date for chart display
 function formatDateForChart(dateString) {
   const date = new Date(dateString);
-  return date.toLocaleString('en-US', {
+  return date.toLocaleString('en-GB', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -226,11 +225,13 @@ export default function DashBoardApp() {
 
   // Apply custom date range
   const handleApplyCustomDate = () => {
-    const customStart = new Date(`${customStartDate}T${customStartTime}:00Z`);
-    const customEnd = new Date(`${customEndDate}T${customEndTime}:00Z`);
+    // Create Date objects from local time inputs (without Z suffix)
+    const customStartLocal = new Date(`${customStartDate}T${customStartTime}:00`);
+    const customEndLocal = new Date(`${customEndDate}T${customEndTime}:00`);
 
-    setStart(customStart.toISOString());
-    setEnd(customEnd.toISOString());
+    // Convert to UTC ISO strings
+    setStart(customStartLocal.toISOString());
+    setEnd(customEndLocal.toISOString());
     setSelectedRange('Custom');
   };
 
@@ -241,13 +242,12 @@ export default function DashBoardApp() {
           <h3 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
             Inspectr Statistics
           </h3>
+          {/* Date Range Display */}
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            <span className="font-medium">Range:</span> {formatDateForDisplay(start)} - {formatDateForDisplay(end)}
+          </div>
           <div className="mt-4 sm:mt-0 relative">
             <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-              {/* Date Range Display */}
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                <span className="font-medium">Range:</span> {formatDateForDisplay(start)} - {formatDateForDisplay(end)}
-              </div>
-
               {/* Date Range Buttons */}
               <DateRangeButtons 
                 selectedRange={selectedRange} 
