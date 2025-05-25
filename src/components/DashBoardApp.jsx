@@ -27,8 +27,21 @@ function getEndOfDayUTC(date) {
   ).toISOString();
 }
 
+// Helper: Format date for display
+function formatDateForDisplay(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+}
+
 // Component for rendering date-range buttons with tooltips.
-function DateRangeButtons({ selectedRange, onSelect }) {
+function DateRangeButtons({ selectedRange, onSelect, onCustomClick }) {
   const today = new Date();
   const options = [
     {
@@ -85,6 +98,19 @@ function DateRangeButtons({ selectedRange, onSelect }) {
           {item.label}
         </button>
       ))}
+      <button
+        onClick={onCustomClick}
+        title="Set custom date range"
+        className={joinClassNames(
+          '-ml-px rounded-r',
+          'px-3 py-1 border focus:outline-none',
+          selectedRange === 'Custom'
+            ? 'bg-tremor-brand dark:bg-dark-tremor-brand text-tremor-brand-inverted dark:text-dark-tremor-brand-inverted'
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+        )}
+      >
+        Custom
+      </button>
     </div>
   );
 }
@@ -125,6 +151,17 @@ export default function DashBoardApp() {
   const [start, setStart] = useState(defaultStart);
   const [end, setEnd] = useState(defaultEnd);
 
+  // Custom date range
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState(
+    new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  );
+  const [customStartTime, setCustomStartTime] = useState('00:00');
+  const [customEndDate, setCustomEndDate] = useState(
+    today.toISOString().split('T')[0]
+  );
+  const [customEndTime, setCustomEndTime] = useState('23:59');
+
   // Fetch statistics
   const fetchStats = () => client.stats.getOperations({ group, start, end });
 
@@ -153,6 +190,25 @@ export default function DashBoardApp() {
     setSelectedRange(item.label);
     setStart(item.start);
     setEnd(item.end);
+    setShowCustomDatePicker(false);
+  };
+
+  // Toggle custom date picker visibility
+  const handleCustomDateClick = () => {
+    setShowCustomDatePicker(!showCustomDatePicker);
+    if (!showCustomDatePicker) {
+      setSelectedRange('Custom');
+    }
+  };
+
+  // Apply custom date range
+  const handleApplyCustomDate = () => {
+    const customStart = new Date(`${customStartDate}T${customStartTime}:00Z`);
+    const customEnd = new Date(`${customEndDate}T${customEndTime}:00Z`);
+
+    setStart(customStart.toISOString());
+    setEnd(customEnd.toISOString());
+    setSelectedRange('Custom');
   };
 
   return (
@@ -162,26 +218,84 @@ export default function DashBoardApp() {
           <h3 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
             Inspectr Statistics
           </h3>
-          <div className="mt-4 flex items-center space-x-2 sm:mt-0">
-            {/* Date Range Buttons on the left */}
-            <DateRangeButtons selectedRange={selectedRange} onSelect={handleDateRangeSelect} />
-            {/* Grouping Select */}
-            <Select
-              className="w-full sm:w-fit [&>button]:rounded-tremor-small"
-              enableClear={false}
-              value={group}
-              onValueChange={(value) => setGroup(value)}
-            >
-              <SelectItem value="hour">Hourly</SelectItem>
-              <SelectItem value="day">Daily</SelectItem>
-              <SelectItem value="week">Weekly</SelectItem>
-              <SelectItem value="month">Monthly</SelectItem>
-            </Select>
+          <div className="mt-4 sm:mt-0 relative">
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+              {/* Date Range Display */}
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="font-medium">Range:</span> {formatDateForDisplay(start)} - {formatDateForDisplay(end)}
+              </div>
 
-            {/* Refresh Button */}
-            <Button onClick={handleLoadStats} className="mt-2 sm:mt-0">
-              {loading ? 'Loading' : 'Refresh'}
-            </Button>
+              {/* Date Range Buttons */}
+              <DateRangeButtons 
+                selectedRange={selectedRange} 
+                onSelect={handleDateRangeSelect} 
+                onCustomClick={handleCustomDateClick}
+              />
+              {/* Grouping Selectn */}
+              <Select
+                className="w-full sm:w-fit [&>button]:rounded-tremor-small"
+                enableClear={false}
+                value={group}
+                onValueChange={(value) => setGroup(value)}
+              >
+                <SelectItem value="hour">Hourly</SelectItem>
+                <SelectItem value="day">Daily</SelectItem>
+                <SelectItem value="week">Weekly</SelectItem>
+                <SelectItem value="month">Monthly</SelectItem>
+              </Select>
+
+              {/* Refresh Button */}
+              <Button onClick={handleLoadStats} className="mt-2 sm:mt-0">
+                {loading ? 'Loading' : 'Refresh'}
+              </Button>
+            </div>
+
+            {/* Custom Date Range Picker - Absolutely positioned */}
+            {showCustomDatePicker && (
+              <div className="absolute top-full left-0 mt-2 z-10 flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded shadow">
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-500 dark:text-gray-400">Start Date</label>
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-tremor-brand dark:bg-gray-700 dark:border-gray-600"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-500 dark:text-gray-400">Start Time</label>
+                  <input
+                    type="time"
+                    value={customStartTime}
+                    onChange={(e) => setCustomStartTime(e.target.value)}
+                    className="px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-tremor-brand dark:bg-gray-700 dark:border-gray-600"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-500 dark:text-gray-400">End Date</label>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-tremor-brand dark:bg-gray-700 dark:border-gray-600"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-500 dark:text-gray-400">End Time</label>
+                  <input
+                    type="time"
+                    value={customEndTime}
+                    onChange={(e) => setCustomEndTime(e.target.value)}
+                    className="px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-tremor-brand dark:bg-gray-700 dark:border-gray-600"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={handleApplyCustomDate} className="ml-2">
+                    Apply
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           {error && <p className="mt-2 text-red-600 dark:text-red-400">Error: {error}</p>}
         </div>
