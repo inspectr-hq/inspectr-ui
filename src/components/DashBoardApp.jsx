@@ -8,6 +8,7 @@ import DashBoardBarChart from './DashBoardBarChart.jsx';
 import DashBoardLineChart from './DashBoardLineChart.jsx';
 import DashBoardBarList from './DashBoardBarList.jsx';
 import DashBoardDonutChart from './DashBoardDonutChart.jsx';
+import DialogConfirmClearAll from './DialogConfirmClearAll.jsx';
 
 function joinClassNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -172,6 +173,8 @@ export default function DashBoardApp() {
   const [customEndDate, setCustomEndDate] = useState(today.toISOString().split('T')[0]);
   const [customEndTime, setCustomEndTime] = useState('23:59');
 
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   // Fetch statistics
   const fetchStats = () => client.stats.getOperations({ group, start, end });
 
@@ -187,6 +190,17 @@ export default function DashBoardApp() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Clear all operation stats.
+  const clearStats = async () => {
+    try {
+      // Clear operations from Inspectr
+      await client.stats.deleteOperations();
+      await handleLoadStats();
+    } catch (err) {
+      console.error('Error clearing all operation stats:', err);
     }
   };
 
@@ -271,6 +285,26 @@ export default function DashBoardApp() {
               <Button onClick={handleLoadStats} className="mt-2 sm:mt-0">
                 {loading ? 'Loading' : 'Refresh'}
               </Button>
+
+              <button
+                className="px-2 py-2 bg-red-500 text-white rounded text-xs cursor-pointer"
+                onClick={() => setIsDialogOpen(true)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                  className="w-4 h-4 text-white"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                  />
+                </svg>
+              </button>
             </div>
 
             {/* Custom Date Range Picker - Absolutely positioned */}
@@ -391,6 +425,17 @@ export default function DashBoardApp() {
         {/*  </Card>*/}
         {/*</div>*/}
       </main>
+
+      {/* Clear All Dialog */}
+      <DialogConfirmClearAll
+        open={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        title={'Clear All Operation Stats?'}
+        message={
+          'Are you sure you want to clear all operation stats? This action cannot be undone.'
+        }
+        onConfirm={clearStats}
+      />
     </>
   );
 }

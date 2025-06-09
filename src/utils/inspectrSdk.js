@@ -220,6 +220,25 @@ class StatsClient {
     if (!res.ok) throw new Error(`Stats operations failed (${res.status})`);
     return await res.json();
   }
+
+  /**
+   * Delete All operation statistics
+   * @returns {Promise<void>}
+   */
+  async deleteOperations() {
+    const res = await fetch(
+      `${this.client.apiEndpoint}/stats/operations`,
+      {
+        method: "DELETE",
+        headers: this.client.defaultHeaders,
+      }
+    );
+
+    if (res.status === 204) {
+      return;
+    }
+    throw new Error(`Delete stats operations failed (${res.status})`);
+  }
 }
 
 /**
