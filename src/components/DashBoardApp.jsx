@@ -36,7 +36,7 @@ function formatDateForDisplay(dateString) {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false,
+    hour12: false
   });
 }
 
@@ -169,9 +169,7 @@ export default function DashBoardApp() {
     new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
   const [customStartTime, setCustomStartTime] = useState('00:00');
-  const [customEndDate, setCustomEndDate] = useState(
-    today.toISOString().split('T')[0]
-  );
+  const [customEndDate, setCustomEndDate] = useState(today.toISOString().split('T')[0]);
   const [customEndTime, setCustomEndTime] = useState('23:59');
 
   // Fetch statistics
@@ -201,7 +199,7 @@ export default function DashBoardApp() {
   const formattedIntervalData = useMemo(() => {
     if (!stats?.by_interval) return [];
 
-    return stats.by_interval.map(item => ({
+    return stats.by_interval.map((item) => ({
       ...item,
       date: formatDateForChart(item.date)
     }));
@@ -244,14 +242,15 @@ export default function DashBoardApp() {
           </h3>
           {/* Date Range Display */}
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            <span className="font-medium">Range:</span> {formatDateForDisplay(start)} - {formatDateForDisplay(end)}
+            <span className="font-medium">Range:</span> {formatDateForDisplay(start)} -{' '}
+            {formatDateForDisplay(end)}
           </div>
           <div className="mt-4 sm:mt-0 relative">
             <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
               {/* Date Range Buttons */}
-              <DateRangeButtons 
-                selectedRange={selectedRange} 
-                onSelect={handleDateRangeSelect} 
+              <DateRangeButtons
+                selectedRange={selectedRange}
+                onSelect={handleDateRangeSelect}
                 onCustomClick={handleCustomDateClick}
               />
               {/* Grouping Selectn */}
