@@ -7,7 +7,7 @@ import BadgeIndicator from './BadgeIndicator.jsx';
 import CopyButton from './CopyButton.jsx';
 
 export default function SettingsApp() {
-  const { apiEndpoint, setApiEndpoint, proxyEndpoint, client } = useInspectr();
+  const { apiEndpoint, setApiEndpoint, proxyEndpoint, ingressEndpoint, client } = useInspectr();
 
   // Local input state so typing doesn't immediately ping the API
   const [localEndpoint, setLocalEndpoint] = useState(apiEndpoint);
@@ -189,6 +189,20 @@ export default function SettingsApp() {
                   </span>
                   <BadgeIndicator>{statusInfo?.expose ? 'Yes' : 'No'}</BadgeIndicator>
                 </ListItem>
+                {statusInfo.expose && ingressEndpoint && (
+                <ListItem className="py-3 flex justify-between">
+                  <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                    Expose URL
+                  </span>
+
+                    <div className="flex items-center space-x-2">
+                      <span className="text-tremor-content dark:text-dark-tremor-content break-all">
+                        {ingressEndpoint}
+                      </span>
+                      <CopyButton textToCopy={ingressEndpoint} showLabel={false} />
+                    </div>
+                </ListItem>
+                )}
                 <ListItem className="py-3 flex justify-between">
                   <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
                     App

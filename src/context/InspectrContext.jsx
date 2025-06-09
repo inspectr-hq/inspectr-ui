@@ -21,6 +21,7 @@ const InspectrContext = createContext({
 
   // Registration details
   sseEndpoint: '',
+  ingressEndpoint: '',
   channelCode: '',
   setChannelCode: () => {},
   channel: '',
@@ -60,6 +61,12 @@ export const InspectrProvider = ({ children }) => {
   });
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [sseEndpoint, setSseEndpoint] = useState('');
+  const [ingressEndpoint, setIngressEndpoint] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('ingressEndpoint') || '';
+    }
+    return '';
+  });
   const [channelCode, setChannelCode] = useState('');
   const [channel, setChannel] = useState('');
   const [token, setToken] = useState('');
@@ -184,6 +191,7 @@ export const InspectrProvider = ({ children }) => {
         localStorage.setItem('token', result.token);
         setSseEndpoint(result.sse_endpoint);
         localStorage.setItem('sseEndpoint', result.sse_endpoint);
+        setIngressEndpoint(result.ingress_endpoint);
         localStorage.setItem('ingressEndpoint', result.ingress_endpoint);
         localStorage.setItem('proxyEndpoint', result.proxy_endpoint);
         localStorage.setItem('expose', result.expose ? 'true' : 'false');
@@ -229,6 +237,7 @@ export const InspectrProvider = ({ children }) => {
         localStorage.setItem('expires', result.expires);
         setSseEndpoint(result.sse_endpoint);
         localStorage.setItem('sseEndpoint', result.sse_endpoint);
+        setIngressEndpoint(result.ingress_endpoint);
         localStorage.setItem('ingressEndpoint', result.ingress_endpoint);
         localStorage.setItem('proxyEndpoint', result.proxy_endpoint);
         localStorage.setItem('expose', result.expose ? 'true' : 'false');
@@ -361,6 +370,7 @@ export const InspectrProvider = ({ children }) => {
     connectionStatus,
     setConnectionStatus,
     sseEndpoint,
+    ingressEndpoint,
     proxyEndpoint,
     setProxyEndpoint,
     channelCode,
