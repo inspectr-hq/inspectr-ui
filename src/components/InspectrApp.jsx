@@ -128,7 +128,7 @@ const InspectrApp = () => {
       eventSource.close();
       setConnectionStatus('disconnected');
     };
-  }, [sseEndpoint]); // Run only once on mount
+  }, [sseEndpoint, token]); // Run only once on mount
 
   // If no operation is selected but there are operations, select the first one.
   useEffect(() => {
