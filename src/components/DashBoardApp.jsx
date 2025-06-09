@@ -14,16 +14,16 @@ function joinClassNames(...classes) {
 }
 
 // Helper: Get the start of a day (UTC) as an ISO string.
-function getStartOfDayUTC(date) {
+function getStartOfDay(date) {
   return new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+    date.getFullYear(), date.getMonth(), date.getDate()
   ).toISOString();
 }
 
 // Helper: Get the end of a day (UTC) as an ISO string.
-function getEndOfDayUTC(date) {
+function getEndOfDay(date) {
   return new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999)
+    date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999
   ).toISOString();
 }
 
@@ -58,37 +58,37 @@ function DateRangeButtons({ selectedRange, onSelect, onCustomClick }) {
   const options = [
     {
       label: 'Today',
-      start: getStartOfDayUTC(today),
-      end: getEndOfDayUTC(today),
-      tooltip: `${getStartOfDayUTC(today)} – ${getEndOfDayUTC(today)}`
+      start: getStartOfDay(today),
+      end: getEndOfDay(today),
+      tooltip: `${getStartOfDay(today)} – ${getEndOfDay(today)}`
     },
     {
       label: '7D',
-      start: getStartOfDayUTC(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)),
-      end: getEndOfDayUTC(today),
-      tooltip: `${getStartOfDayUTC(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000))} – ${getEndOfDayUTC(today)}`
+      start: getStartOfDay(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)),
+      end: getEndOfDay(today),
+      tooltip: `${getStartOfDay(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000))} – ${getEndOfDay(today)}`
     },
     {
       label: '30D',
-      start: getStartOfDayUTC(new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)),
-      end: getEndOfDayUTC(today),
-      tooltip: `${getStartOfDayUTC(new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000))} – ${getEndOfDayUTC(today)}`
+      start: getStartOfDay(new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)),
+      end: getEndOfDay(today),
+      tooltip: `${getStartOfDay(new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000))} – ${getEndOfDay(today)}`
     },
     {
       label: '3M',
-      start: getStartOfDayUTC(
+      start: getStartOfDay(
         new Date(today.getUTCFullYear(), today.getUTCMonth() - 3, today.getUTCDate())
       ),
-      end: getEndOfDayUTC(today),
-      tooltip: `${getStartOfDayUTC(new Date(today.getUTCFullYear(), today.getUTCMonth() - 3, today.getUTCDate()))} – ${getEndOfDayUTC(today)}`
+      end: getEndOfDay(today),
+      tooltip: `${getStartOfDay(new Date(today.getUTCFullYear(), today.getUTCMonth() - 3, today.getUTCDate()))} – ${getEndOfDay(today)}`
     },
     {
       label: '6M',
-      start: getStartOfDayUTC(
+      start: getStartOfDay(
         new Date(today.getUTCFullYear(), today.getUTCMonth() - 6, today.getUTCDate())
       ),
-      end: getEndOfDayUTC(today),
-      tooltip: `${getStartOfDayUTC(new Date(today.getUTCFullYear(), today.getUTCMonth() - 6, today.getUTCDate()))} – ${getEndOfDayUTC(today)}`
+      end: getEndOfDay(today),
+      tooltip: `${getStartOfDay(new Date(today.getUTCFullYear(), today.getUTCMonth() - 6, today.getUTCDate()))} – ${getEndOfDay(today)}`
     }
   ];
 
@@ -157,8 +157,8 @@ export default function DashBoardApp() {
   // Date range
   const today = new Date();
   // Set defaultStart to the start of Today and defaultEnd to the end of Today.
-  const defaultStart = getStartOfDayUTC(today);
-  const defaultEnd = getEndOfDayUTC(today);
+  const defaultStart = getStartOfDay(today);
+  const defaultEnd = getEndOfDay(today);
   const [selectedRange, setSelectedRange] = useState('Today');
   const [start, setStart] = useState(defaultStart);
   const [end, setEnd] = useState(defaultEnd);
