@@ -52,7 +52,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   // Apply CSS-based solution to prevent flashing
   if (!operation) {
     return (
-      <div 
+      <div
         className="h-96 min-h-full mb-20 flex flex-1 flex-col justify-center rounded-tremor-default border border-tremor-border bg-tremor-background-muted px-6 py-10 dark:border-dark-tremor-border dark:bg-dark-tremor-background-muted"
         style={isLoaded ? fadeInStyle : hiddenStyle}
       >
@@ -100,10 +100,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   }
 
   return (
-    <div 
-      className="flex flex-col h-full"
-      style={isLoaded ? fadeInStyle : hiddenStyle}
-    >
+    <div className="flex flex-col h-full" style={isLoaded ? fadeInStyle : hiddenStyle}>
       <RequestDetail operation={operation} />
 
       {/* Tabs for Request and Response */}
@@ -133,7 +130,10 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
       {/* Tab Content */}
       <div
         className="p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded-b shadow dark:shadow-dark-tremor-shadow flex-grow overflow-y-auto"
-        style={{ ...isLoaded ? fadeInStyle : hiddenStyle, maxHeight: 'calc(100vh - 270px - 64px)' }}
+        style={{
+          ...(isLoaded ? fadeInStyle : hiddenStyle),
+          maxHeight: 'calc(100vh - 270px - 64px)'
+        }}
       >
         {currentTab === 'request' ? (
           <RequestContent operation={operation} />

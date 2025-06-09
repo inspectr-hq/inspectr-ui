@@ -333,10 +333,10 @@ export const InspectrProvider = ({ children }) => {
     }
 
     // Skip if we already have a token and sseEndpoint (already registered)
-    if (token && sseEndpoint) {
-      console.log('🔄 Already have a token and sseEndpoint, skipping auto-registration');
-      return;
-    }
+    // if (token && sseEndpoint) {
+    //   console.log('🔄 Already have a token and sseEndpoint, skipping auto-registration');
+    //   return;
+    // }
 
     // If we have a token but no sseEndpoint, we need to re-register
     if (token && !sseEndpoint && !reRegistrationFailedRef.current) {
