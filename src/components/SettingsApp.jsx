@@ -190,10 +190,10 @@ export default function SettingsApp() {
                   <BadgeIndicator>{statusInfo?.expose ? 'Yes' : 'No'}</BadgeIndicator>
                 </ListItem>
                 {statusInfo.expose && ingressEndpoint && (
-                <ListItem className="py-3 flex justify-between">
-                  <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    Expose URL
-                  </span>
+                  <ListItem className="py-3 flex justify-between">
+                    <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                      Expose URL
+                    </span>
 
                     <div className="flex items-center space-x-2">
                       <span className="text-tremor-content dark:text-dark-tremor-content break-all">
@@ -201,7 +201,7 @@ export default function SettingsApp() {
                       </span>
                       <CopyButton textToCopy={ingressEndpoint} showLabel={false} />
                     </div>
-                </ListItem>
+                  </ListItem>
                 )}
                 <ListItem className="py-3 flex justify-between">
                   <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
