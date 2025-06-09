@@ -231,6 +231,7 @@ export default function DashBoardApp() {
     setStart(customStartLocal.toISOString());
     setEnd(customEndLocal.toISOString());
     setSelectedRange('Custom');
+    setShowCustomDatePicker(false);
   };
 
   return (
