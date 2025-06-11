@@ -19,3 +19,14 @@ Default.args = {
     }
   }
 };
+
+export const EmptyBody = Template.bind({});
+EmptyBody.args = {
+  operation: {
+    request: {
+      query_params: [],
+      headers: [],
+      body: ''
+    }
+  }
+};

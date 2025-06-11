@@ -17,3 +17,14 @@ export const DefaultResponse = () => (
     }}
   />
 );
+
+export const EmptyResponse = () => (
+  <ResponseContent
+    operation={{
+      response: {
+        body: '',
+        headers: []
+      }
+    }}
+  />
+);

@@ -29,3 +29,11 @@ WithoutSubMessage.args = {
   subMessage: '',
   onClose: action('Toast closed')
 };
+
+export const ErrorToast = Template.bind({});
+ErrorToast.args = {
+  message: 'Something went wrong',
+  subMessage: 'Please try again later.',
+  type: 'error',
+  onClose: action('Toast closed')
+};
