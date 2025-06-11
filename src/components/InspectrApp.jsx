@@ -32,14 +32,16 @@ const InspectrApp = () => {
   } = useInspectr();
 
   const pageSize = 100;
+  const SYNC_LAST_EVENT_ID = 'sync';
   const [page, setPage] = useState(1);
 
   const [sortField, setSortField] = useState('time');
   const [sortDirection, setSortDirection] = useState('desc');
   const [filters, setFilters] = useState({});
 
-  // SSE connection reference
+  // SSE connection references
   const wasConnectedRef = useRef(false);
+  const eventSourceRef = useRef(null);
 
   // Live query: get the events for the current page.
   const { results: operations = [], totalCount = 0 } =
@@ -61,14 +63,15 @@ const InspectrApp = () => {
   const { selectedOperation, currentTab, handleSelect, handleTabChange, clearSelection } =
     useInspectrRouter(operations);
 
-  // Connect to SSE when the component mounts.
-  useEffect(() => {
-    resetReRegistration();
+  const connectSSE = (overrideLastEventId) => {
+    if (eventSourceRef.current) {
+      console.log('Closing SSE EventSource connection');
+      eventSourceRef.current.close();
+    }
 
     if (!sseEndpoint) return;
 
-    // Retrieve the last_event_id from localStorage
-    const lastEventId = localStorage.getItem('lastEventId');
+    const lastEventId = overrideLastEventId || localStorage.getItem('lastEventId');
     let sseUrl = `${sseEndpoint}?token=${token}`;
     if (lastEventId) {
       sseUrl += sseUrl.includes('?')
@@ -76,8 +79,9 @@ const InspectrApp = () => {
         : `?last_event_id=${lastEventId}`;
     }
 
-    const generateId = () => `req-${Math.random().toString(36).substr(2, 9)}`;
+    const generateId = (opId) => opId || `req-${Math.random().toString(36).substr(2, 9)}`;
     const eventSource = new EventSource(sseUrl);
+    eventSourceRef.current = eventSource;
     console.log(`🔄 SSE connecting with ${sseUrl}`);
 
     eventSource.onopen = () => {
@@ -92,11 +96,14 @@ const InspectrApp = () => {
         if (debugMode) {
           console.log('[Inspectr] Received event:', event);
         }
-        // Update the list and, if it's the first event, select it.
-        if (!event.id) event.id = generateId();
-        if (event.operation_id) localStorage.setItem('lastEventId', event.operation_id);
+        // Update the list and, if it's the first event, select it
+        if (!event.id) event.id = generateId(event.operation_id);
+        if (event.operation_id) {
+          event.id = event.operation_id;
+          localStorage.setItem('lastEventId', event.operation_id);
+        }
 
-        // Save the incoming event to the DB.
+        // Save the incoming event to the DB
         eventDB.upsertEvent(event).catch((err) => console.error('Error saving event to DB:', err));
       } catch (error) {
         console.error('Error parsing SSE Inspectr data:', error);
@@ -115,18 +122,31 @@ const InspectrApp = () => {
         return;
       }
 
-      // Start the re-registration retry loop if not already in progress.
+      // Start the re-registration retry loop if not already in progress
       if (!reRegistrationFailedRef.current) {
         console.log('🔄 Starting re-registration retry loop due to SSE error.');
         attemptReRegistration();
       }
-      // The EventSource will try to reconnect automatically.
+      // The EventSource will try to reconnect automatically
     };
+  };
+
+  const syncOperations = () => {
+    localStorage.setItem('lastEventId', SYNC_LAST_EVENT_ID);
+    connectSSE(SYNC_LAST_EVENT_ID);
+  };
+
+  // Connect to SSE when the component mounts or credentials change.
+  useEffect(() => {
+    resetReRegistration();
+    connectSSE();
 
     return () => {
-      console.log('Closing SSE EventSource connection');
-      eventSource.close();
-      setConnectionStatus('disconnected');
+      if (eventSourceRef.current) {
+        console.log('Closing SSE EventSource connection');
+        eventSourceRef.current.close();
+        setConnectionStatus('disconnected');
+      }
     };
   }, [sseEndpoint, token]); // Run only once on mount
 
@@ -274,6 +294,7 @@ const InspectrApp = () => {
             setSortField={setSortField}
             setSortDirection={setSortDirection}
             setFilters={setFilters}
+            syncOperations={syncOperations}
           />
         </div>
 
