@@ -16,15 +16,19 @@ function joinClassNames(...classes) {
 
 // Helper: Get the start of a day (UTC) as an ISO string.
 function getStartOfDay(date) {
-  return new Date(
-    date.getFullYear(), date.getMonth(), date.getDate()
-  ).toISOString();
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString();
 }
 
 // Helper: Get the end of a day (UTC) as an ISO string.
 function getEndOfDay(date) {
   return new Date(
-    date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    23,
+    59,
+    59,
+    999
   ).toISOString();
 }
 
