@@ -12,7 +12,7 @@ export const DefaultResponse = () => (
     operation={{
       response: {
         body: JSON.stringify({ key: 'value' }, null, '\t'),
-        headers: [{ 'key': 'X-Test', 'value': 'Header' }]
+        headers: [{ key: 'X-Test', value: 'Header' }]
       }
     }}
   />

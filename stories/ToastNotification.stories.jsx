@@ -9,7 +9,8 @@ export default {
   argTypes: {
     message: { control: 'text' },
     subMessage: { control: 'text' },
-    onClose: { action: 'closed' }
+    onClose: { action: 'closed' },
+    type: { control: { type: 'select' }, options: ['success', 'error'] }
   }
 };
 
