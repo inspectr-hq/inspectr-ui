@@ -145,8 +145,8 @@ class OperationsClient {
       method: "DELETE",
       headers: this.client.defaultHeaders,
     });
-    
-    if (!res.ok) throw new Error(`Delete ${id} failed (${res.status})`);
+
+    if (!(res.ok || res.status === 404)) throw new Error(`Delete ${id} failed (${res.status})`);
   }
 
   /**
