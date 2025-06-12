@@ -143,7 +143,7 @@ const InspectrApp = () => {
 
     return () => {
       if (eventSourceRef.current) {
-        console.log('Closing SSE EventSource connection');
+        console.log('📡️ Closing SSE connection');
         eventSourceRef.current.close();
         setConnectionStatus('disconnected');
       }
