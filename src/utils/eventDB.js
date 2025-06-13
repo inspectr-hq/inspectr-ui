@@ -63,6 +63,40 @@ class EventDB {
       pageSize = 20
     } = options;
 
+    // Detect whether any filters are active
+    const hasFilters = Boolean(
+      filters.timestampRange ||
+      (filters.status && filters.status.length) ||
+      (filters.method && filters.method.length) ||
+      filters.path ||
+      filters.durationMin ||
+      filters.durationMax ||
+      filters.host
+    );
+
+    // --- Fast path: no filters → direct index count & page fetch ---
+    if (!hasFilters) {
+      const table = this.db.events;
+      // Fire count and page-fetch in parallel
+      const totalCountPromise = table.count();
+      let collection = table.orderBy(sort.field);
+      if (sort.order === 'desc') {
+        collection = collection.reverse();
+      }
+      const pagePromise = collection
+        .offset((page - 1) * pageSize)
+        .limit(pageSize)
+        .toArray();
+
+      const [rawRecords, totalCount] = await Promise.all([pagePromise, totalCountPromise]);
+      const results = rawRecords.map(record => ({
+        id: record.id,
+        ...record.raw.data
+      }));
+      return { results, totalCount };
+    }
+
+    // --- Fallback path: filters are present, run full filtering logic ---
     // Log total record count.
     // const totalCount = await this.db.events.count();
     // console.log('[EventDB] Total records in DB:', totalCount);

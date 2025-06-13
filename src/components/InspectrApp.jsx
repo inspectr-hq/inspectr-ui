@@ -33,6 +33,13 @@ const InspectrApp = () => {
 
   const pageSize = 100;
   const SYNC_LAST_EVENT_ID = 'sync';
+
+  const burstStartRef = useRef(0);
+  const burstCountRef = useRef(0);
+  const burstBufferRef = useRef([]);
+  const BURST_WINDOW_MS = 50; // milliseconds
+  const BURST_THRESHOLD = 50; // switch to bulk once >100 ops
+
   const [page, setPage] = useState(1);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -54,7 +61,9 @@ const InspectrApp = () => {
           page,
           pageSize
         }),
-      [filters, sortField, sortDirection, page]
+      [filters, sortField, sortDirection, page],
+      { results: [], totalCount: 0 },
+      { throttle: 100 }
     ) || {};
 
   // Paginate
@@ -93,10 +102,21 @@ const InspectrApp = () => {
 
     eventSource.onmessage = (e) => {
       try {
+        const now = performance.now();
+        if (now - burstStartRef.current > BURST_WINDOW_MS) {
+          // window expired → reset
+          burstStartRef.current = now;
+          burstCountRef.current = 0;
+        }
+        burstCountRef.current++;
+
+        // Parse data as event
         const event = JSON.parse(e.data);
+
         if (debugMode) {
           console.log('[Inspectr] Received event:', event);
         }
+
         // Update the list and, if it's the first event, select it
         if (!event.id) event.id = generateId(event.operation_id);
         if (event.operation_id) {
@@ -104,8 +124,30 @@ const InspectrApp = () => {
           localStorage.setItem('lastEventId', event.operation_id);
         }
 
-        // Save the incoming event to the DB
-        eventDB.upsertEvent(event).catch((err) => console.error('Error saving event to DB:', err));
+        if (burstCountRef.current < BURST_THRESHOLD) {
+          // Save the incoming event to the DB
+          eventDB
+            .upsertEvent(event)
+            .catch((err) => console.error('Error saving event to DB:', err));
+        } else {
+          // burst detected → buffer & flush as bulk
+          burstBufferRef.current.push(event);
+
+          if (burstCountRef.current === BURST_THRESHOLD) {
+            setTimeout(async () => {
+              try {
+                await eventDB.bulkUpsertEvents(burstBufferRef.current);
+              } catch (err) {
+                console.error('bulk save failed', err);
+              } finally {
+                // reset for the next burst
+                burstBufferRef.current = [];
+                burstCountRef.current  = 0;
+                burstStartRef.current  = performance.now();
+              }
+            }, BURST_WINDOW_MS);
+          }
+        }
       } catch (error) {
         console.error('Error parsing SSE Inspectr data:', error);
       }
@@ -136,6 +178,10 @@ const InspectrApp = () => {
     setIsSyncing(true);
     localStorage.setItem('lastEventId', SYNC_LAST_EVENT_ID);
     connectSSE(SYNC_LAST_EVENT_ID);
+
+    if (debugMode) {
+      console.log('[Inspectr] Syncing all operations...');
+    }
 
     // Set a timeout to normalize the syncing state
     setTimeout(() => {
