@@ -36,6 +36,14 @@ class EventDB {
     return await this.db.events.put(record);
   }
 
+  // Store or update multiple events in a single transaction.
+  async bulkUpsertEvents(events) {
+    const records = events.map((e) => this.transformEvent(e));
+    return await this.db.transaction('rw', this.db.events, () =>
+      this.db.events.bulkPut(records)
+    );
+  }
+
   // Delete an event by its id.
   async deleteEvent(id) {
     return await this.db.events.delete(id);
