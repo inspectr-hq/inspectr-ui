@@ -142,8 +142,8 @@ const InspectrApp = () => {
               } finally {
                 // reset for the next burst
                 burstBufferRef.current = [];
-                burstCountRef.current  = 0;
-                burstStartRef.current  = performance.now();
+                burstCountRef.current = 0;
+                burstStartRef.current = performance.now();
               }
             }, BURST_WINDOW_MS);
           }
