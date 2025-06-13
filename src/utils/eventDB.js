@@ -36,6 +36,14 @@ class EventDB {
     return await this.db.events.put(record);
   }
 
+  // Store or update multiple events in a single transaction.
+  async bulkUpsertEvents(events) {
+    const records = events.map((e) => this.transformEvent(e));
+    return await this.db.transaction('rw', this.db.events, () =>
+      this.db.events.bulkPut(records)
+    );
+  }
+
   // Delete an event by its id.
   async deleteEvent(id) {
     return await this.db.events.delete(id);
@@ -55,6 +63,40 @@ class EventDB {
       pageSize = 20
     } = options;
 
+    // Detect whether any filters are active
+    const hasFilters = Boolean(
+      filters.timestampRange ||
+      (filters.status && filters.status.length) ||
+      (filters.method && filters.method.length) ||
+      filters.path ||
+      filters.durationMin ||
+      filters.durationMax ||
+      filters.host
+    );
+
+    // --- Fast path: no filters → direct index count & page fetch ---
+    if (!hasFilters) {
+      const table = this.db.events;
+      // Fire count and page-fetch in parallel
+      const totalCountPromise = table.count();
+      let collection = table.orderBy(sort.field);
+      if (sort.order === 'desc') {
+        collection = collection.reverse();
+      }
+      const pagePromise = collection
+        .offset((page - 1) * pageSize)
+        .limit(pageSize)
+        .toArray();
+
+      const [rawRecords, totalCount] = await Promise.all([pagePromise, totalCountPromise]);
+      const results = rawRecords.map(record => ({
+        id: record.id,
+        ...record.raw.data
+      }));
+      return { results, totalCount };
+    }
+
+    // --- Fallback path: filters are present, run full filtering logic ---
     // Log total record count.
     // const totalCount = await this.db.events.count();
     // console.log('[EventDB] Total records in DB:', totalCount);
@@ -130,9 +172,13 @@ class EventDB {
 
     // --- Filter on Status Code ---
     if (filters.status && Array.isArray(filters.status) && filters.status.length > 0) {
-      collection = collection.filter(item =>
-        filters.status.includes(String(item.status_code))
-      );
+      collection = collection.filter(item => {
+        // Handle null or undefined status_code
+        if (item.status_code === null || item.status_code === undefined) {
+          return false;
+        }
+        return filters.status.includes(String(item.status_code));
+      });
     }
     // --- Filter on HTTP Method ---
     if (filters.method && Array.isArray(filters.method) && filters.method.length > 0) {

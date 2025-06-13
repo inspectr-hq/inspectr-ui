@@ -34,7 +34,7 @@ export default function DashBoardBarList({ title, data, toggleable = true }) {
       {toggleable && (
         <div
           className={`flex justify-center ${
-            actualExtended
+            extended
               ? 'px-6 pb-6'
               : 'absolute inset-x-0 bottom-0 rounded-b-tremor-default bg-gradient-to-t from-tremor-background to-transparent py-7 dark:from-dark-tremor-background'
           }`}

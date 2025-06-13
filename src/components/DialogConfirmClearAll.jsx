@@ -1,8 +1,15 @@
-// src/components/DialogConfirmClear.jsx
+// src/components/DialogConfirmClearAll.jsx
 
 import React from 'react';
 
-const DialogConfirmClear = ({ open, onClose, onConfirmAll, onConfirmFiltered, hasFilters }) => {
+const DialogConfirmClearAll = ({
+  open,
+  onClose,
+  onConfirm,
+  title = 'Clear All',
+  message = 'Are you sure you want to clear all? This action cannot be undone.',
+  confirmButtonText = 'Clear All'
+}) => {
   if (!open) return null;
 
   return (
@@ -31,14 +38,8 @@ const DialogConfirmClear = ({ open, onClose, onConfirmAll, onConfirmFiltered, ha
             </svg>
           </div>
           <div className="ml-4">
-            <h3 className="text-lg font-medium text-gray-900">
-              {hasFilters ? 'Clear Requests' : 'Clear All Requests'}
-            </h3>
-            <p className="mt-2 text-sm text-gray-500">
-              {hasFilters
-                ? 'You have active filters. Would you like to clear only the filtered requests or all requests?'
-                : 'Are you sure you want to clear all requests? This action cannot be undone.'}
-            </p>
+            <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+            <p className="mt-2 text-sm text-gray-500">{message}</p>
           </div>
         </div>
         <div className="mt-6 flex justify-end space-x-3">
@@ -48,25 +49,14 @@ const DialogConfirmClear = ({ open, onClose, onConfirmAll, onConfirmFiltered, ha
           >
             Cancel
           </button>
-          {hasFilters && (
-            <button
-              onClick={() => {
-                onConfirmFiltered();
-                onClose();
-              }}
-              className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
-            >
-              Clear Filtered
-            </button>
-          )}
           <button
             onClick={() => {
-              onConfirmAll();
+              onConfirm();
               onClose();
             }}
             className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
           >
-            Clear All
+            {confirmButtonText}
           </button>
         </div>
       </div>
@@ -74,4 +64,4 @@ const DialogConfirmClear = ({ open, onClose, onConfirmAll, onConfirmFiltered, ha
   );
 };
 
-export default DialogConfirmClear;
+export default DialogConfirmClearAll;

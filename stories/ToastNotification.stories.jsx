@@ -9,7 +9,8 @@ export default {
   argTypes: {
     message: { control: 'text' },
     subMessage: { control: 'text' },
-    onClose: { action: 'closed' }
+    onClose: { action: 'closed' },
+    type: { control: { type: 'select' }, options: ['success', 'error'] }
   }
 };
 
@@ -26,5 +27,13 @@ export const WithoutSubMessage = Template.bind({});
 WithoutSubMessage.args = {
   message: 'Success!',
   subMessage: '',
+  onClose: action('Toast closed')
+};
+
+export const ErrorToast = Template.bind({});
+ErrorToast.args = {
+  message: 'Something went wrong',
+  subMessage: 'Please try again later.',
+  type: 'error',
   onClose: action('Toast closed')
 };

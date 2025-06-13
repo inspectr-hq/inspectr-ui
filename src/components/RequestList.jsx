@@ -12,6 +12,7 @@ const RequestList = ({
   onRemove,
   clearOperations,
   clearFilteredRequests,
+  syncOperations,
   selectedOperation,
   currentPage,
   totalPages,
@@ -22,7 +23,8 @@ const RequestList = ({
   filters,
   setSortField,
   setSortDirection,
-  setFilters
+  setFilters,
+  isSyncing
 }) => {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -94,6 +96,26 @@ const RequestList = ({
                 {activeFiltersCount}
               </span>
             )}
+          </button>
+          <button
+            className={`px-3 py-1 bg-teal-500 text-white rounded text-xs ${isSyncing ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'}`}
+            onClick={syncOperations}
+            disabled={isSyncing}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="1.5"
+              stroke="currentColor"
+              className={`w-4 h-4 text-white ${isSyncing ? 'animate-spin' : ''}`}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M16.0228 9.34841H21.0154M21.0154 9.34841V4.3558M21.0154 9.34841L17.8342 6.1655C16.8437 5.17312 15.5866 4.4202 14.1349 4.03121C9.73377 2.85194 5.21 5.46374 4.03073 9.86484M7.97677 14.6517H2.98413M2.98413 14.6517V19.6444M2.98413 14.6517L6.16502 17.8347C7.15555 18.8271 8.41261 19.589 9.86436 19.969C14.2654 21.1483 18.7892 18.5364 19.9685 14.1353"
+              />
+            </svg>
           </button>
           <button
             className="px-3 py-1 bg-red-500 text-white rounded text-xs cursor-pointer"

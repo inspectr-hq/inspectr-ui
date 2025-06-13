@@ -26,7 +26,7 @@
     "dev": "vite",
     "build": "vite build",
     "watch": "vite build --watch",
-    "storybook": "storybook dev -p 6006",
+    "storybook": "storybook dev --ci -p 6006",
     "build-storybook": "storybook build",
     "format": "npx prettier --write src//**/*.{jsx,css} --config ./.prettierrc",
     "test": "echo 'test completed'",
@@ -34,9 +34,9 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.1",
+    "@monaco-editor/react": "^4.7.0",
     "@remixicon/react": "^4.6.0",
     "@tremor/react": "^3.18.7",
-    "@monaco-editor/react": "^4.7.0",
     "dexie": "^4.0.11",
     "dexie-react-hooks": "^1.1.7",
     "tailwindcss": "^3.4.17"
@@ -48,12 +48,17 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@storybook/addon-essentials": "^8.6.14",
+    "@storybook/addon-interactions": "^8.6.14",
+    "@storybook/addon-onboarding": "^8.6.14",
+    "@storybook/react-vite": "^8.6.14",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/vite": "^4.0.5",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.6",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.21",
+    "storybook": "^8.6.14",
     "vite": "^6.2.0"
   },
   "publishConfig": {

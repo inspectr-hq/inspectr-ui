@@ -8,8 +8,8 @@ export default {
 };
 
 export const DefaultRequestDetail = () => (
-  <RequestDetail operation={
-     {
+  <RequestDetail
+    operation={{
       request: {
         method: 'GET',
         path: '/api/test',
@@ -20,6 +20,6 @@ export const DefaultRequestDetail = () => (
       timing: {
         duration: 150
       }
-
-  }} />
+    }}
+  />
 );

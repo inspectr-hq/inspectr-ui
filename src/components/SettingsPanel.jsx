@@ -1,53 +1,59 @@
 // src/components/SettingsPanel.jsx
 import React, { useState, useEffect } from 'react';
-import logo from '../assets/inspectr_logo_small.png';
+import logo from '../assets/brand_logo_app.svg';
+import ConnectionStatusIndicator from './ConnectionStatusIndicator.jsx';
+import { useInspectr } from '../context/InspectrContext';
 
-const SettingsPanel = ({
-  apiEndpoint,
-  setApiEndpoint,
-  connectionStatus, // now a string: "connected", "reconnecting", or "disconnected"
-  channelCode,
-  setChannelCode,
-  channel,
-  setChannel,
-  onRegister
-}) => {
+const SettingsPanel = () => {
+  const {
+    apiEndpoint,
+    setApiEndpoint,
+    connectionStatus,
+    channelCode,
+    setChannelCode,
+    channel,
+    setChannel,
+    client,
+    userInitiatedRegistrationRef,
+    handleRegister: onRegister,
+    attemptReRegistration: onReconnect,
+    resetReRegistration
+  } = useInspectr();
+
   const [isOpen, setIsOpen] = useState(false);
   const [endpointInput, setEndpointInput] = useState(apiEndpoint);
   const [channelCodeInput, setChannelCodeInput] = useState(channelCode);
   const [channelInput, setChannelInput] = useState(channel);
 
-  // Sync input fields with props when they change
+  // Sync input fields with props when they change, but only if the panel is closed
+  // This prevents loops when the user is actively editing the fields
   useEffect(() => {
-    setEndpointInput(apiEndpoint);
-    setChannelCodeInput(channelCode);
-    setChannelInput(channel);
-  }, [apiEndpoint, channelCode, channel]);
-
-  // Load stored values on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedApiEndpoint = localStorage.getItem('apiEndpoint');
-      const defaultEndpoint = storedApiEndpoint || window.location.origin + '/api';
-      setEndpointInput(defaultEndpoint);
-      setApiEndpoint(defaultEndpoint);
+    if (!isOpen) {
+      setEndpointInput(apiEndpoint);
+      setChannelCodeInput(channelCode);
+      setChannelInput(channel);
     }
-  }, [setApiEndpoint]);
+  }, [apiEndpoint, channelCode, channel, isOpen]);
 
   // Save API Endpoint configuration.
   const handleSaveEndpoint = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('apiEndpoint', endpointInput);
-    }
-    setApiEndpoint(endpointInput);
+    // Normalize the endpoint by removing trailing slashes
+    const newEndpoint = endpointInput.replace(/\/+$/, '');
+    setApiEndpoint(newEndpoint);
+    client.configure({ apiEndpoint: newEndpoint });
+    userInitiatedRegistrationRef.current = false;
+    onRegister(channelCode, channel, '', true);
   };
 
-  // Save registration details and trigger the registration process.
+  // Trigger registration
   const handleRegister = () => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('channelCode', channelCodeInput);
       localStorage.setItem('channel', channelInput);
     }
+    // This prevents the auto-registration useEffect from running
+    userInitiatedRegistrationRef.current = true;
+
     setChannelCode(channelCodeInput);
     setChannel(channelInput);
     onRegister(channelCodeInput, channelInput, '', true);
@@ -61,30 +67,14 @@ const SettingsPanel = ({
         onClick={() => setIsOpen((prev) => !prev)}
       >
         {/* Connection Status Indicator */}
-        <div className="flex items-center gap-4">
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center 
-              ${
-                connectionStatus === 'connected'
-                  ? 'bg-green-500 text-white'
-                  : connectionStatus === 'reconnecting'
-                    ? 'bg-yellow-500 text-black'
-                    : 'bg-red-500'
-              }`}
-          >
-            <span
-              className={`w-2 h-2 rounded-full mr-1 
-                ${
-                  connectionStatus === 'connected'
-                    ? 'bg-green-800'
-                    : connectionStatus === 'reconnecting'
-                      ? 'bg-yellow-800'
-                      : 'bg-red-800'
-                }`}
-            ></span>
-            {connectionStatus.charAt(0).toUpperCase() + connectionStatus.slice(1)}
-          </span>
-        </div>
+        <ConnectionStatusIndicator
+          status={connectionStatus}
+          onReconnect={(e) => {
+            e.stopPropagation();
+            resetReRegistration();
+            onReconnect();
+          }}
+        />
 
         {/* Inspectr Logo & Name */}
         <a

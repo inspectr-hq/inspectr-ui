@@ -38,3 +38,19 @@ export const StatusCodesTagsInput = () => {
     </div>
   );
 };
+
+export const PreselectedTags = () => {
+  const [selected, setSelected] = useState(['GET', 'POST']);
+  const options = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'];
+
+  return (
+    <div className="p-4">
+      <TagsInput
+        options={options}
+        selected={selected}
+        onChange={setSelected}
+        placeholder="Add HTTP method..."
+      />
+    </div>
+  );
+};

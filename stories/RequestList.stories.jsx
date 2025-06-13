@@ -74,3 +74,30 @@ export const DefaultList = () => {
     />
   );
 };
+
+export const EmptyList = () => {
+  const [sortField, setSortField] = useState('time');
+  const [sortDirection, setSortDirection] = useState('asc');
+  const [filters, setFilters] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+
+  return (
+    <RequestList
+      operations={[]}
+      onSelect={() => {}}
+      onRemove={() => {}}
+      clearOperations={() => {}}
+      selectedOperation={null}
+      currentPage={currentPage}
+      totalPages={1}
+      totalCount={0}
+      onPageChange={(page) => setCurrentPage(page)}
+      sortField={sortField}
+      sortDirection={sortDirection}
+      filters={filters}
+      setSortField={setSortField}
+      setSortDirection={setSortDirection}
+      setFilters={setFilters}
+    />
+  );
+};

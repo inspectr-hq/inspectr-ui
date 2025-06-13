@@ -16,13 +16,7 @@ const Template = (args) => {
     setCurrentPage(page);
   };
 
-  return (
-    <RequestListPagination
-      {...args}
-      currentPage={currentPage}
-      onPageChange={onPageChange}
-    />
-  );
+  return <RequestListPagination {...args} currentPage={currentPage} onPageChange={onPageChange} />;
 };
 
 export const Default = Template.bind({});
