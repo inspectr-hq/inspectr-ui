@@ -40,6 +40,9 @@ const InspectrContext = createContext({
   toast: null,
   setToast: () => {},
 
+  // Debug mode
+  debugMode: false,
+
   // SDK client
   client: null
 });
@@ -385,6 +388,7 @@ export const InspectrProvider = ({ children }) => {
     resetReRegistration,
     toast,
     setToast,
+    debugMode,
     client: inspectrClient
   };
 

@@ -34,6 +34,7 @@ const InspectrApp = () => {
   const pageSize = 100;
   const SYNC_LAST_EVENT_ID = 'sync';
   const [page, setPage] = useState(1);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const [sortField, setSortField] = useState('time');
   const [sortDirection, setSortDirection] = useState('desc');
@@ -132,8 +133,14 @@ const InspectrApp = () => {
   };
 
   const syncOperations = () => {
+    setIsSyncing(true);
     localStorage.setItem('lastEventId', SYNC_LAST_EVENT_ID);
     connectSSE(SYNC_LAST_EVENT_ID);
+
+    // Set a timeout to normalize the syncing state
+    setTimeout(() => {
+      setIsSyncing(false);
+    }, 2500);
   };
 
   // Connect to SSE when the component mounts or credentials change.
@@ -143,9 +150,9 @@ const InspectrApp = () => {
 
     return () => {
       if (eventSourceRef.current) {
-        console.log('📡️ Closing SSE connection');
         eventSourceRef.current.close();
         setConnectionStatus('disconnected');
+        console.log('📡️ SSE connection closed.');
       }
     };
   }, [sseEndpoint, token]); // Run only once on mount
@@ -295,6 +302,7 @@ const InspectrApp = () => {
             setSortDirection={setSortDirection}
             setFilters={setFilters}
             syncOperations={syncOperations}
+            isSyncing={isSyncing}
           />
         </div>
 

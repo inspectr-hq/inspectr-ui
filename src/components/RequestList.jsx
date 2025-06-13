@@ -23,7 +23,8 @@ const RequestList = ({
   filters,
   setSortField,
   setSortDirection,
-  setFilters
+  setFilters,
+  isSyncing
 }) => {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -97,8 +98,9 @@ const RequestList = ({
             )}
           </button>
           <button
-            className="px-3 py-1 bg-teal-500 text-white rounded text-xs cursor-pointer"
+            className={`px-3 py-1 bg-teal-500 text-white rounded text-xs ${isSyncing ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'}`}
             onClick={syncOperations}
+            disabled={isSyncing}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -106,7 +108,7 @@ const RequestList = ({
               viewBox="0 0 24 24"
               strokeWidth="1.5"
               stroke="currentColor"
-              className="w-4 h-4 text-white"
+              className={`w-4 h-4 text-white ${isSyncing ? 'animate-spin' : ''}`}
             >
               <path
                 strokeLinecap="round"
