@@ -128,8 +128,8 @@ const RequestListSidePanel = ({
                 <input
                   type="radio"
                   name="sortField"
-                  value="statusCode"
-                  checked={sortField === 'statusCode'}
+                  value="status_code"
+                  checked={sortField === 'status_code'}
                   onChange={(e) => setSortField(e.target.value)}
                   className="form-radio text-blue-600 dark:text-blue-500"
                 />

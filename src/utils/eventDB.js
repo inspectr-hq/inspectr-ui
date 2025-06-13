@@ -172,9 +172,13 @@ class EventDB {
 
     // --- Filter on Status Code ---
     if (filters.status && Array.isArray(filters.status) && filters.status.length > 0) {
-      collection = collection.filter(item =>
-        filters.status.includes(String(item.status_code))
-      );
+      collection = collection.filter(item => {
+        // Handle null or undefined status_code
+        if (item.status_code === null || item.status_code === undefined) {
+          return false;
+        }
+        return filters.status.includes(String(item.status_code));
+      });
     }
     // --- Filter on HTTP Method ---
     if (filters.method && Array.isArray(filters.method) && filters.method.length > 0) {
