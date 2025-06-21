@@ -42,3 +42,26 @@ export const HtmlResponse = () => (
     }}
   />
 );
+
+export const XmlResponse = () => (
+  <ResponseContent
+    operation={{
+      response: {
+        body: '<note><to>User</to><from>Server</from><message>Hello</message></note>',
+        headers: [{ name: 'Content-Type', value: 'application/xml' }]
+      }
+    }}
+  />
+);
+
+export const ImageResponse = () => (
+  <ResponseContent
+    operation={{
+      response: {
+        // 1x1 red PNG
+        body: 'R0lGODdhAQABAPAAAP8AAAAAACwAAAAAAQABAAACAkQBADs=',
+        headers: [{ name: 'Content-Type', value: 'image/png' }],
+      },
+    }}
+  />
+);

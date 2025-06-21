@@ -40,7 +40,8 @@
     "@tremor/react": "^3.18.7",
     "dexie": "^4.0.11",
     "dexie-react-hooks": "^1.1.7",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "xml-formatter": "^3.6.6"
   },
   "peerDependencies": {
     "@tailwindcss/postcss": "^4.0.6",
