@@ -58,14 +58,10 @@ const ResponseContent = ({ operation }) => {
   const contentType = getContentType();
 
   // Check if content is HTML
-  const isHTMLContent =
-    typeof contentType === 'string' &&
-    contentType.includes('text/html');
+  const isHTMLContent = typeof contentType === 'string' && contentType.includes('text/html');
 
   // Check if content is XML
-  const isXMLContent =
-    typeof contentType === 'string' &&
-    contentType.includes('xml');
+  const isXMLContent = typeof contentType === 'string' && contentType.includes('xml');
 
   // Check if content is Image
   const isImageContent = typeof contentType === 'string' && contentType.startsWith('image/');
