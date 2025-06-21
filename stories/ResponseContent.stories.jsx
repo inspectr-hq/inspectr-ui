@@ -12,7 +12,10 @@ export const DefaultResponse = () => (
     operation={{
       response: {
         body: JSON.stringify({ key: 'value' }, null, '\t'),
-        headers: [{ key: 'X-Test', value: 'Header' }]
+        headers: [
+          { name: 'Content-Type', value: 'application/json' },
+          { key: 'X-Test', value: 'Header' }
+        ]
       }
     }}
   />
@@ -24,6 +27,17 @@ export const EmptyResponse = () => (
       response: {
         body: '',
         headers: []
+      }
+    }}
+  />
+);
+
+export const HtmlResponse = () => (
+  <ResponseContent
+    operation={{
+      response: {
+        body: '<!DOCTYPE html><html><body><h1>Hello</h1></body></html>',
+        headers: [{ name: 'Content-Type', value: 'text/html' }]
       }
     }}
   />

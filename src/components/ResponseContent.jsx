@@ -6,6 +6,7 @@ import { defineMonacoThemes, getMonacoTheme } from '../utils/monacoTheme.js';
 
 const ResponseContent = ({ operation }) => {
   const [showResponseHeaders, setShowResponseHeaders] = useState(false);
+  const [viewMode, setViewMode] = useState('source');
 
   const renderTableRows = (data) =>
     data.map((row) => (
@@ -36,6 +37,21 @@ const ResponseContent = ({ operation }) => {
       return payload;
     }
   };
+
+  // Determine the content type from headers to properly display HTML or JSON
+  const getContentType = () => {
+    return (operation?.response?.headers ?? []).find(
+      (h) => h.name?.toLowerCase() === 'content-type' || h.key?.toLowerCase() === 'content-type'
+    )?.value;
+  };
+
+  const contentType = getContentType();
+  const isHTMLContent =
+    (typeof contentType === 'string' && contentType.includes('text/html')) ||
+    (typeof payload === 'string' && payload.trim().startsWith('<'));
+
+  console.log(contentType);
+  console.log(isHTMLContent);
 
   return (
     <div className="flex flex-col h-full">
@@ -72,19 +88,41 @@ const ResponseContent = ({ operation }) => {
           <button className="p-2 text-left font-bold flex-grow dark:text-dark-tremor-content-strong">
             Response Body
           </button>
-          <CopyButton textToCopy={formatPayload(payload)} />
+          {isHTMLContent && (
+            <div className="flex space-x-1 mr-2">
+              <button
+                onClick={() => setViewMode('source')}
+                className={`px-2 py-1 text-xs rounded ${viewMode === 'source' ? 'bg-blue-600 dark:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+              >
+                Source
+              </button>
+              <button
+                onClick={() => setViewMode('preview')}
+                className={`px-2 py-1 text-xs rounded ${viewMode === 'preview' ? 'bg-blue-600 dark:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+              >
+                Preview
+              </button>
+            </div>
+          )}
+          <CopyButton textToCopy={isHTMLContent ? payload : formatPayload(payload)} />
         </div>
         {isEmptyPayload ? (
           <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
             No payload
           </div>
+        ) : viewMode === 'preview' && isHTMLContent ? (
+          <iframe
+            title="HTML Preview"
+            srcDoc={payload}
+            className="flex-1 w-full h-full border-none"
+          />
         ) : (
-          // <div className="bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow p-0">
           <Editor
             height="100%"
             className="flex-1"
-            defaultLanguage="json"
-            value={formatPayload(payload)}
+            // defaultLanguage="json"
+            language={isHTMLContent ? 'html' : 'json'}
+            value={isHTMLContent ? payload : formatPayload(payload)}
             theme={getMonacoTheme()}
             beforeMount={defineMonacoThemes}
             options={{
@@ -97,7 +135,6 @@ const ResponseContent = ({ operation }) => {
               scrollBeyondLastLine: false
             }}
           />
-          // </div>
         )}
       </div>
     </div>
