@@ -24,6 +24,8 @@ export default defineConfig({
             fileName: (format) => `inspectr-ui.${format}.js`,
             // Formats to output (ES module and UMD are common)
             formats: ['es', 'umd'],
+            // minify: false,
+            // sourcemap: true,
         },
         rollupOptions: {
             // Externalize peer dependencies to prevent bundling them in your library.
