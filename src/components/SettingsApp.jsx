@@ -5,6 +5,7 @@ import { useInspectr } from '../context/InspectrContext';
 import DialogMockConfig from './DialogMockConfig.jsx';
 import BadgeIndicator from './BadgeIndicator.jsx';
 import CopyButton from './CopyButton.jsx';
+import ServiceStatus from './ServiceStatus.jsx';
 
 export default function SettingsApp() {
   const { apiEndpoint, setApiEndpoint, proxyEndpoint, ingressEndpoint, client } = useInspectr();
@@ -154,6 +155,20 @@ export default function SettingsApp() {
               <>
                 <ListItem className="py-3 flex justify-between">
                   <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                    Running since
+                  </span>
+                  <span className="text-tremor-content dark:text-dark-tremor-content">
+                    {new Date(statusInfo.start_time).toLocaleString()}
+                  </span>
+                </ListItem>
+                <ListItem className="py-3 flex justify-between">
+                  <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                    Mode
+                  </span>
+                  <BadgeIndicator variant="neutral">{statusInfo.mode}</BadgeIndicator>
+                </ListItem>
+                <ListItem className="py-3 flex justify-between">
+                  <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
                     Proxy URL
                   </span>
                   {proxyEndpoint ? (
@@ -169,20 +184,48 @@ export default function SettingsApp() {
                     </span>
                   )}
                 </ListItem>
-                <ListItem className="py-3 flex justify-between">
-                  <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    Running since
-                  </span>
-                  <span className="text-tremor-content dark:text-dark-tremor-content">
-                    {new Date(statusInfo.start_time).toLocaleString()}
-                  </span>
-                </ListItem>
-                <ListItem className="py-3 flex justify-between">
-                  <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    Mode
-                  </span>
-                  <BadgeIndicator variant="neutral">{statusInfo.mode}</BadgeIndicator>
-                </ListItem>
+                {statusInfo?.backend && (
+                  <ListItem className="py-3 flex justify-between">
+                    <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                      Backend URL
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      <ServiceStatus component="backend" />
+                      <span className="text-tremor-content dark:text-dark-tremor-content break-all">
+                        {statusInfo.backend}
+                      </span>
+                      <CopyButton textToCopy={statusInfo.backend} showLabel={false} />
+                    </div>
+                  </ListItem>
+                )}
+                {statusInfo?.mode === 'mock' && (
+                  <ListItem className="py-3 flex justify-between">
+                    <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                      Mock URL
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      <ServiceStatus component="mock" />
+                      <span className="text-tremor-content dark:text-dark-tremor-content break-all">
+                        {proxyEndpoint}
+                      </span>
+                      <CopyButton textToCopy={proxyEndpoint} showLabel={false} />
+                    </div>
+                  </ListItem>
+                )}
+                {statusInfo?.mode === 'catch' && (
+                  <ListItem className="py-3 flex justify-between">
+                    <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                      Catch URL
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      <ServiceStatus component="catch" />
+                      <span className="text-tremor-content dark:text-dark-tremor-content break-all">
+                        {proxyEndpoint}
+                      </span>
+                      <CopyButton textToCopy={proxyEndpoint} showLabel={false} />
+                    </div>
+                  </ListItem>
+                )}
                 <ListItem className="py-3 flex justify-between">
                   <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
                     Expose

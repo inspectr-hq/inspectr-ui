@@ -24,3 +24,4 @@ export { default as TagsInput } from './TagsInput.jsx';
 export { default as Terminal } from './Terminal.jsx';
 export { default as ToastNotification } from './ToastNotification.jsx';
 export { default as Workspace } from './Workspace.jsx';
+export { default as ServiceStatus } from './ServiceStatus.jsx';
