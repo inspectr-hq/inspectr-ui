@@ -162,7 +162,7 @@ const ResponseContent = ({ operation }) => {
           />
         ) : (
           <Editor
-            height="100vh"
+            height="100%"
             className="flex-1"
             // defaultLanguage="json"
             language={editorLanguage}
