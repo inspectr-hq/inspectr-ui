@@ -203,10 +203,20 @@ const InspectrApp = () => {
     };
   }, [sseEndpoint, token]); // Run only once on mount
 
-  // If no operation is selected but there are operations, select the first one.
+  // Ensure selection stays in sync with the available operations
   useEffect(() => {
-    if (!selectedOperation && operations && operations.length > 0) {
-      handleSelect(operations[0]);
+    if (!operations) return;
+
+    const currentExists =
+      selectedOperation &&
+      operations.some((op) => op.id === selectedOperation.id);
+
+    if (!currentExists) {
+      if (operations.length > 0) {
+        handleSelect(operations[0]);
+      } else {
+        clearSelection();
+      }
     }
   }, [operations, selectedOperation]);
 
