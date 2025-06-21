@@ -19,7 +19,8 @@ export const DefaultRequestDetail = () => (
       response: { status: 200, status_text: 'OK' },
       timing: {
         duration: 150
-      }
+      },
+      meta: { proxy: { instance: 'inspectr-1234' } }
     }}
   />
 );
