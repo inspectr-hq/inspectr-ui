@@ -154,6 +154,20 @@ export default function SettingsApp() {
               <>
                 <ListItem className="py-3 flex justify-between">
                   <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                    Running since
+                  </span>
+                  <span className="text-tremor-content dark:text-dark-tremor-content">
+                    {new Date(statusInfo.start_time).toLocaleString()}
+                  </span>
+                </ListItem>
+                <ListItem className="py-3 flex justify-between">
+                  <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                    Mode
+                  </span>
+                  <BadgeIndicator variant="neutral">{statusInfo.mode}</BadgeIndicator>
+                </ListItem>
+                <ListItem className="py-3 flex justify-between">
+                  <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
                     Proxy URL
                   </span>
                   {proxyEndpoint ? (
@@ -169,20 +183,19 @@ export default function SettingsApp() {
                     </span>
                   )}
                 </ListItem>
-                <ListItem className="py-3 flex justify-between">
-                  <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    Running since
-                  </span>
-                  <span className="text-tremor-content dark:text-dark-tremor-content">
-                    {new Date(statusInfo.start_time).toLocaleString()}
-                  </span>
-                </ListItem>
-                <ListItem className="py-3 flex justify-between">
-                  <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    Mode
-                  </span>
-                  <BadgeIndicator variant="neutral">{statusInfo.mode}</BadgeIndicator>
-                </ListItem>
+                {statusInfo?.backend && (
+                  <ListItem className="py-3 flex justify-between">
+                    <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                      Backend URL
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-tremor-content dark:text-dark-tremor-content break-all">
+                        {statusInfo.backend}
+                      </span>
+                      <CopyButton textToCopy={statusInfo.backend} showLabel={false} />
+                    </div>
+                  </ListItem>
+                )}
                 <ListItem className="py-3 flex justify-between">
                   <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
                     Expose
