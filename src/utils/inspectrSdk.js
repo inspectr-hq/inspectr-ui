@@ -191,6 +191,26 @@ class ServiceClient {
     return await res.json();
   }
 
+  /**
+   * Ping a specific service component
+   * @param {string} component - backend | mock | catch
+   * @returns {Promise<Object>} - Ping result
+   */
+  async ping(component) {
+    const res = await fetch(`${this.client.apiEndpoint}/ping/${component}`, {
+      headers: { ...this.client.defaultHeaders, Accept: "application/json" },
+    });
+
+    if (!res.ok) {
+      const errorBody = await res.json();
+      throw new Error(
+        `${errorBody?.error || res.status}`
+      );
+    }
+
+    return await res.json();
+  }
+
 }
 
 /**
