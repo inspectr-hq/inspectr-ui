@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Editor from '@monaco-editor/react';
 import CopyButton from './CopyButton.jsx';
 import { defineMonacoThemes, getMonacoTheme } from '../utils/monacoTheme.js';
+import { formatXML } from '../utils/formatXml.js';
 
 const ResponseContent = ({ operation }) => {
   const [showResponseHeaders, setShowResponseHeaders] = useState(false);
@@ -22,36 +23,73 @@ const ResponseContent = ({ operation }) => {
       </tr>
     ));
 
-  // Check if the response body has content.
+  // Check if the response body has content
   const payload = operation.response.body;
   const isEmptyPayload =
     !payload ||
     (typeof payload === 'object' && Object.keys(payload).length === 0) ||
     (typeof payload === 'string' && (payload.trim() === '' || payload.trim() === '{}'));
 
-  const formatPayload = (payload) => {
-    try {
-      const parsed = JSON.parse(payload);
-      return JSON.stringify(parsed, null, 2);
-    } catch (e) {
-      return payload;
+  const formatPayload = (payload, type) => {
+    if (typeof payload !== 'string') return payload;
+    if (type && type.includes('json')) {
+      try {
+        const parsed = JSON.parse(payload);
+        return JSON.stringify(parsed, null, 2);
+      } catch {
+        return payload;
+      }
     }
+    if (type && type.includes('xml')) {
+      return formatXML(payload);
+    }
+    return payload;
   };
 
-  // Determine the content type from headers to properly display HTML or JSON
+  // Method to detect the content type from headers
   const getContentType = () => {
-    return (operation?.response?.headers ?? []).find(
+    const raw = (operation?.response?.headers ?? []).find(
       (h) => h.name?.toLowerCase() === 'content-type' || h.key?.toLowerCase() === 'content-type'
     )?.value;
+    return typeof raw === 'string' ? raw.split(';')[0].trim() : undefined;
   };
 
+  // Detect content type
   const contentType = getContentType();
-  const isHTMLContent =
-    (typeof contentType === 'string' && contentType.includes('text/html')) ||
-    (typeof payload === 'string' && payload.trim().startsWith('<'));
 
-  console.log(contentType);
-  console.log(isHTMLContent);
+  // Check if content is HTML
+  const isHTMLContent =
+    typeof contentType === 'string' &&
+    contentType.includes('text/html');
+
+  // Check if content is XML
+  const isXMLContent =
+    typeof contentType === 'string' &&
+    contentType.includes('xml');
+
+  // Check if content is Image
+  const isImageContent = typeof contentType === 'string' && contentType.startsWith('image/');
+
+  // Method to map the editor language
+  const getEditorLanguage = (type) => {
+    if (!type) return 'json';
+    const ct = type.toLowerCase();
+    if (ct.includes('json')) return 'json';
+    if (ct.includes('html')) return 'html';
+    if (ct.includes('xml')) return 'xml';
+    if (ct.includes('javascript')) return 'javascript';
+    if (ct.includes('css')) return 'css';
+    if (ct.includes('yaml') || ct.includes('yml')) return 'yaml';
+    if (ct.includes('sql')) return 'sql';
+    if (ct.startsWith('text/')) return 'plaintext';
+    return 'plaintext';
+  };
+
+  // Get Monaco language from type
+  const editorLanguage = getEditorLanguage(contentType);
+
+  // Check if can be previewed
+  const supportsPreview = isHTMLContent || isImageContent;
 
   return (
     <div className="flex flex-col h-full">
@@ -88,7 +126,7 @@ const ResponseContent = ({ operation }) => {
           <button className="p-2 text-left font-bold flex-grow dark:text-dark-tremor-content-strong">
             Response Body
           </button>
-          {isHTMLContent && (
+          {supportsPreview && (
             <div className="flex space-x-1 mr-2">
               <button
                 onClick={() => setViewMode('source')}
@@ -104,7 +142,11 @@ const ResponseContent = ({ operation }) => {
               </button>
             </div>
           )}
-          <CopyButton textToCopy={isHTMLContent ? payload : formatPayload(payload)} />
+          <CopyButton
+            textToCopy={
+              isHTMLContent || isImageContent ? payload : formatPayload(payload, contentType)
+            }
+          />
         </div>
         {isEmptyPayload ? (
           <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
@@ -116,13 +158,19 @@ const ResponseContent = ({ operation }) => {
             srcDoc={payload}
             className="flex-1 w-full h-full border-none"
           />
+        ) : viewMode === 'preview' && isImageContent ? (
+          <img
+            alt="Response Preview"
+            src={payload.startsWith('data:') ? payload : `data:${contentType};base64,${payload}`}
+            className="flex-1 w-full h-full object-contain"
+          />
         ) : (
           <Editor
-            height="100%"
+            height="100vh"
             className="flex-1"
             // defaultLanguage="json"
-            language={isHTMLContent ? 'html' : 'json'}
-            value={isHTMLContent ? payload : formatPayload(payload)}
+            language={editorLanguage}
+            value={formatPayload(payload, contentType)}
             theme={getMonacoTheme()}
             beforeMount={defineMonacoThemes}
             options={{
