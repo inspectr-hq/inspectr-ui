@@ -208,8 +208,7 @@ const InspectrApp = () => {
     if (!operations) return;
 
     const currentExists =
-      selectedOperation &&
-      operations.some((op) => op.id === selectedOperation.id);
+      selectedOperation && operations.some((op) => op.id === selectedOperation.id);
 
     if (!currentExists) {
       if (operations.length > 0) {
