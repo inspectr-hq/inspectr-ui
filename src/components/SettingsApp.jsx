@@ -1,5 +1,5 @@
 // src/components/SettingsApp.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Divider, List, ListItem, TextInput } from '@tremor/react';
 import { useInspectr } from '../context/InspectrContext';
 import DialogMockConfig from './DialogMockConfig.jsx';
@@ -15,6 +15,13 @@ export default function SettingsApp() {
   const [statusInfo, setStatusInfo] = useState(null);
   const [mockInfo, setMockInfo] = useState(null);
   const [error, setError] = useState(null);
+
+  // Authentication state
+  const [authInfo, setAuthInfo] = useState(null);
+  const [authSecretInput, setAuthSecretInput] = useState('');
+  const [authTtlInput, setAuthTtlInput] = useState('');
+  const [authEnabled, setAuthEnabled] = useState(false);
+  const [authError, setAuthError] = useState(null);
 
   const [mockDialogOpen, setMockDialogOpen] = useState(false);
 
@@ -43,6 +50,21 @@ export default function SettingsApp() {
     }
   };
 
+  // Fetch security configuration
+  const fetchAuthInfo = async () => {
+    try {
+      setAuthError(null);
+      const data = await client.auth.getAuthenticationSettings();
+      setAuthInfo(data);
+      setAuthSecretInput(data.secret || '');
+      setAuthTtlInput(String(data.ttl || ''));
+      setAuthEnabled(Boolean(data.enabled));
+    } catch (err) {
+      console.error('Authentication info error', err);
+      setAuthError(err.message);
+    }
+  };
+
   // Handler for launching mock with new OpenAPI URL
   const handleLaunchMock = async (openApiUrl) => {
     try {
@@ -64,13 +86,35 @@ export default function SettingsApp() {
     if (statusInfo) fetchMockInfo();
   }, [statusInfo]);
 
-  // Handler for the “Save settings” button
+  useEffect(() => {
+    fetchAuthInfo();
+  }, [apiEndpoint]);
+
+  // Handler to save the endpoint
   const handleSaveEndpoint = (e) => {
     e.preventDefault();
     const cleaned = localEndpoint.replace(/\/+$/, '');
     setApiEndpoint(cleaned);
     client.configure({ apiEndpoint: cleaned });
     fetchServiceInfo();
+  };
+
+  // Handler for saving authentication settings
+  const handleSaveAuthentication = async (e) => {
+    e.preventDefault();
+    try {
+      const body = {
+        enabled: authEnabled,
+        secret: authSecretInput,
+        ttl: authTtlInput ? parseInt(authTtlInput, 10) : undefined
+      };
+      const data = await client.auth.updateAuthenticationSettings(body);
+      setAuthInfo(data);
+      setAuthError(null);
+    } catch (err) {
+      console.error('Security save error', err);
+      setAuthError(err.message);
+    }
   };
 
   // ——— Render ———
@@ -321,6 +365,90 @@ export default function SettingsApp() {
         initialUrl={mockInfo?.openapi}
         onSubmit={handleLaunchMock}
       />
+
+      <Divider className="my-10" />
+
+      {/* Authentication Guard */}
+      <form
+        onSubmit={handleSaveAuthentication}
+        className="grid grid-cols-1 gap-10 md:grid-cols-3 items-end"
+      >
+        <div className="self-start">
+          <h2 className="font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+            Authentication Guard
+          </h2>
+          <p className="mt-1 text-tremor-default leading-6 text-tremor-content dark:text-dark-tremor-content">
+            Configure API secret, token TTL, and enable or disable guard.
+          </p>
+        </div>
+        <div className="sm:max-w-3xl md:col-span-2 space-y-4">
+          {/* Toggle for enabling/disabling authentication */}
+          <div className="flex items-center space-x-3">
+            <input
+              id="auth-enabled"
+              type="checkbox"
+              checked={authEnabled}
+              onChange={(e) => setAuthEnabled(e.target.checked)}
+              className="h-5 w-5 rounded border-gray-300 text-tremor-brand focus:ring-tremor-brand"
+            />
+            <label
+              htmlFor="auth-enabled"
+              className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong"
+            >
+              Authentication Guard Enabled
+            </label>
+          </div>
+
+          {/* Secret input */}
+          <TextInput
+            placeholder="Secret"
+            value={authSecretInput}
+            onValueChange={(v) => setAuthSecretInput(v)}
+            disabled={!authEnabled}
+          />
+
+          {/* TTL input (optional) */}
+          <TextInput
+            placeholder="TTL (seconds, optional)"
+            value={authTtlInput}
+            onValueChange={(v) => setAuthTtlInput(v)}
+            disabled={!authEnabled}
+          />
+          <p className="text-sm text-tremor-default">Leave blank for default (24h)</p>
+
+          {authError && <p className="text-sm text-red-600">{authError}</p>}
+
+          <div className="flex items-center justify-end">
+            <button
+              type="submit"
+              className="whitespace-nowrap rounded-tremor-default bg-tremor-brand px-4 py-2.5 text-tremor-default font-medium text-tremor-brand-inverted shadow-tremor-input hover:bg-tremor-brand-emphasis dark:bg-dark-tremor-brand dark:text-dark-tremor-brand-inverted dark:shadow-dark-tremor-input dark:hover:bg-dark-tremor-brand-emphasis"
+            >
+              Save Security
+            </button>
+          </div>
+
+          {authInfo && (
+            <List className="mt-4 divide-y divide-tremor-border dark:divide-dark-tremor-border">
+              <ListItem className="py-3 flex justify-between">
+                <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  API Key Header
+                </span>
+                <span className="text-tremor-content dark:text-dark-tremor-content break-all">
+                  {authInfo.api_key_header}
+                </span>
+              </ListItem>
+              <ListItem className="py-3 flex justify-between">
+                <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  JWT Header
+                </span>
+                <span className="text-tremor-content dark:text-dark-tremor-content break-all">
+                  {authInfo.token_header}
+                </span>
+              </ListItem>
+            </List>
+          )}
+        </div>
+      </form>
 
       <Divider className="my-10" />
     </div>

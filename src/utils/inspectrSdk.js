@@ -1,14 +1,14 @@
 // src/utils/inspectrSdk.js
 /**
  * Inspectr SDK - A JavaScript SDK for interacting with the Inspectr API
- * 
+ *
  * This SDK provides a comprehensive set of methods for interacting with the Inspectr API.
  * It handles common tasks like error handling, endpoint normalization, and request formatting.
- * 
+ *
  * @example
  * // Create a new client instance
  * const client = new InspectrClient({ apiEndpoint: 'https://api.example.com' });
- * 
+ *
  * // Use the client to interact with the API
  * const healthInfo = await client.service.getHealth();
  */
@@ -31,21 +31,22 @@ class InspectrClient {
    */
   constructor(options = {}) {
     this.apiEndpoint = normalizeEndpoint(options.apiEndpoint || '/api');
-    
+
     // Default headers for all requests
     this.defaultHeaders = {
-      "inspectr-client": "inspectr-app",
+      'inspectr-client': 'inspectr-app',
       ...options.headers
     };
-    
+
     // Default content type for JSON requests
     this.jsonHeaders = {
       ...this.defaultHeaders,
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json'
     };
 
     // Initialize sub-clients
-    this.auth = new AuthClient(this);
+    this.registration = new registrationClient(this);
+    this.auth = new authClient(this);
     this.operations = new OperationsClient(this);
     this.service = new ServiceClient(this);
     this.stats = new StatsClient(this);
@@ -62,26 +63,26 @@ class InspectrClient {
     if (options.apiEndpoint) {
       this.apiEndpoint = normalizeEndpoint(options.apiEndpoint);
     }
-    
+
     if (options.headers) {
       this.defaultHeaders = {
         ...this.defaultHeaders,
         ...options.headers
       };
-      
+
       this.jsonHeaders = {
         ...this.defaultHeaders,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json'
       };
     }
   }
 }
 
 /**
- * AuthClient - Handles authentication and registration
+ * registrationClient - Handles channel registration
  * @private
  */
-class AuthClient {
+class registrationClient {
   constructor(client) {
     this.client = client;
   }
@@ -93,11 +94,11 @@ class AuthClient {
    */
   async register(body) {
     const res = await fetch(`${this.client.apiEndpoint}/register`, {
-      method: "POST",
+      method: 'POST',
       headers: this.client.jsonHeaders,
-      body: JSON.stringify(body),
+      body: JSON.stringify(body)
     });
-    
+
     if (!res.ok) throw new Error(`Registration failed (${res.status})`);
     return await res.json();
   }
@@ -107,8 +108,44 @@ class AuthClient {
    * @returns {Promise<Object>} - Configuration data
    */
   async getConfig() {
-    const res = await fetch("/app/config");
+    const res = await fetch('/app/config');
     if (!res.ok) throw new Error(`Config load failed (${res.status})`);
+    return await res.json();
+  }
+}
+
+/**
+ * authClient - Handles backend authentication and guarding
+ * @private
+ */
+class authClient {
+  constructor(client) {
+    this.client = client;
+  }
+  /**
+   * Get Authentication settings
+   * @returns {Promise<Object>} - Authentication settings
+   */
+  async getAuthenticationSettings() {
+    const res = await fetch(`${this.client.apiEndpoint}/auth/settings`, {
+      headers: this.client.defaultHeaders
+    });
+    if (!res.ok) throw new Error(`Authentication settings failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Update Authentication settings
+   * @param {Object} body - { secret: string, ttl: number }
+   * @returns {Promise<Object>} - Updated settings
+   */
+  async updateAuthenticationSettings(body) {
+    const res = await fetch(`${this.client.apiEndpoint}/auth/settings`, {
+      method: 'POST',
+      headers: this.client.jsonHeaders,
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(`Update authentication settings failed (${res.status})`);
     return await res.json();
   }
 }
@@ -128,10 +165,10 @@ class OperationsClient {
    */
   async deleteAll() {
     const res = await fetch(`${this.client.apiEndpoint}/operations`, {
-      method: "DELETE",
-      headers: this.client.defaultHeaders,
+      method: 'DELETE',
+      headers: this.client.defaultHeaders
     });
-    
+
     if (!res.ok) throw new Error(`Delete all failed (${res.status})`);
   }
 
@@ -142,8 +179,8 @@ class OperationsClient {
    */
   async delete(id) {
     const res = await fetch(`${this.client.apiEndpoint}/operations/${id}`, {
-      method: "DELETE",
-      headers: this.client.defaultHeaders,
+      method: 'DELETE',
+      headers: this.client.defaultHeaders
     });
 
     if (!(res.ok || res.status === 404)) throw new Error(`Delete ${id} failed (${res.status})`);
@@ -159,9 +196,9 @@ class OperationsClient {
     const { meta, timing, response, ...opRequest } = operation;
 
     const res = await fetch(`${this.client.apiEndpoint}/replay`, {
-      method: "POST",
+      method: 'POST',
       headers: this.client.jsonHeaders,
-      body: JSON.stringify(opRequest),
+      body: JSON.stringify(opRequest)
     });
 
     if (!res.ok) throw new Error(`Replay failed (${res.status})`);
@@ -184,7 +221,7 @@ class ServiceClient {
    */
   async getHealth() {
     const res = await fetch(`${this.client.apiEndpoint}/health`, {
-      headers: { ...this.client.defaultHeaders, Accept: "application/json" },
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
     });
 
     if (!res.ok) throw new Error(`Health check failed (${res.status})`);
@@ -210,7 +247,6 @@ class ServiceClient {
 
     return await res.json();
   }
-
 }
 
 /**
@@ -234,7 +270,7 @@ class StatsClient {
     const url = `${this.client.apiEndpoint}/stats/operations?group=${group}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
 
     const res = await fetch(url, {
-      headers: this.client.defaultHeaders,
+      headers: this.client.defaultHeaders
     });
 
     if (!res.ok) throw new Error(`Stats operations failed (${res.status})`);
@@ -246,13 +282,10 @@ class StatsClient {
    * @returns {Promise<void>}
    */
   async deleteOperations() {
-    const res = await fetch(
-      `${this.client.apiEndpoint}/stats/operations`,
-      {
-        method: "DELETE",
-        headers: this.client.defaultHeaders,
-      }
-    );
+    const res = await fetch(`${this.client.apiEndpoint}/stats/operations`, {
+      method: 'DELETE',
+      headers: this.client.defaultHeaders
+    });
 
     if (res.status === 204) {
       return;
@@ -276,7 +309,7 @@ class MockClient {
    */
   async getConfig() {
     const res = await fetch(`${this.client.apiEndpoint}/mock`, {
-      headers: { ...this.client.defaultHeaders, Accept: "application/json" },
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
     });
 
     if (!res.ok) throw new Error(`Mock info failed (${res.status})`);
@@ -289,19 +322,14 @@ class MockClient {
    * @returns {Promise<Object>} - { message: string }
    */
   async launch(openapiUrl) {
-    const url =
-      `${this.client.apiEndpoint}/mock/launch?openapi=` +
-      encodeURIComponent(openapiUrl);
+    const url = `${this.client.apiEndpoint}/mock/launch?openapi=` + encodeURIComponent(openapiUrl);
     const res = await fetch(url, {
-      method: "GET",
-      headers: this.client.defaultHeaders,
+      method: 'GET',
+      headers: this.client.defaultHeaders
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      throw new Error(
-        body.error ||
-        `Mock launch failed (${res.status})`
-      );
+      throw new Error(body.error || `Mock launch failed (${res.status})`);
     }
     return await res.json();
   }
