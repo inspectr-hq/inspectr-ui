@@ -104,14 +104,14 @@ export default function SettingsApp() {
   // Handler for saving authentication settings
   const handleSaveAuthentication = async (
     secret = authSecretInput,
-    ttl = authTtlInput,
+    token_ttl = authTtlInput,
     enabled = authEnabled
   ) => {
     try {
       const body = {
         enabled,
         secret,
-        ttl: ttl ? parseInt(ttl, 10) : undefined
+        token_ttl: token_ttl ? parseInt(token_ttl, 10) : undefined
       };
       const data = await client.auth.updateAuthenticationSettings(body);
       setAuthInfo(data);
@@ -480,10 +480,10 @@ export default function SettingsApp() {
         onClose={() => setAuthDialogOpen(false)}
         initialSecret={authSecretInput}
         initialTtl={authTtlInput}
-        onSubmit={async (secret, ttl) => {
+        onSubmit={async (secret, token_ttl) => {
           setAuthSecretInput(secret);
-          setAuthTtlInput(ttl);
-          await handleSaveAuthentication(secret, ttl, authEnabled);
+          setAuthTtlInput(token_ttl);
+          await handleSaveAuthentication(secret, token_ttl, authEnabled);
         }}
       />
 
