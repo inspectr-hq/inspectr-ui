@@ -39,9 +39,7 @@ class EventDB {
   // Store or update multiple events in a single transaction.
   async bulkUpsertEvents(events) {
     const records = events.map((e) => this.transformEvent(e));
-    return await this.db.transaction('rw', this.db.events, () =>
-      this.db.events.bulkPut(records)
-    );
+    return await this.db.transaction('rw', this.db.events, () => this.db.events.bulkPut(records));
   }
 
   // Delete an event by its id.
@@ -66,12 +64,12 @@ class EventDB {
     // Detect whether any filters are active
     const hasFilters = Boolean(
       filters.timestampRange ||
-      (filters.status && filters.status.length) ||
-      (filters.method && filters.method.length) ||
-      filters.path ||
-      filters.durationMin ||
-      filters.durationMax ||
-      filters.host
+        (filters.status && filters.status.length) ||
+        (filters.method && filters.method.length) ||
+        filters.path ||
+        filters.durationMin ||
+        filters.durationMax ||
+        filters.host
     );
 
     // --- Fast path: no filters → direct index count & page fetch ---
@@ -89,7 +87,7 @@ class EventDB {
         .toArray();
 
       const [rawRecords, totalCount] = await Promise.all([pagePromise, totalCountPromise]);
-      const results = rawRecords.map(record => ({
+      const results = rawRecords.map((record) => ({
         id: record.id,
         ...record.raw.data
       }));
@@ -149,30 +147,29 @@ class EventDB {
             break;
         }
         // Filter items with time >= computed startTime.
-        collection = collection.filter(item => new Date(item.time) >= startTime);
+        collection = collection.filter((item) => new Date(item.time) >= startTime);
       } else if (typeof filters.timestampRange === 'object') {
         // Specific range: support "from" (start), "to" (end), or both.
         if (filters.timestampRange.start && filters.timestampRange.end) {
-
           const start = new Date(filters.timestampRange.start);
           const end = new Date(filters.timestampRange.end);
-          collection = collection.filter(item => {
+          collection = collection.filter((item) => {
             const itemTime = new Date(item.time);
             return itemTime >= start && itemTime <= end;
           });
         } else if (filters.timestampRange.start) {
           const start = new Date(filters.timestampRange.start);
-          collection = collection.filter(item => new Date(item.time) >= start);
+          collection = collection.filter((item) => new Date(item.time) >= start);
         } else if (filters.timestampRange.end) {
           const end = new Date(filters.timestampRange.end);
-          collection = collection.filter(item => new Date(item.time) <= end);
+          collection = collection.filter((item) => new Date(item.time) <= end);
         }
       }
     }
 
     // --- Filter on Status Code ---
     if (filters.status && Array.isArray(filters.status) && filters.status.length > 0) {
-      collection = collection.filter(item => {
+      collection = collection.filter((item) => {
         // Handle null or undefined status_code
         if (item.status_code === null || item.status_code === undefined) {
           return false;
@@ -182,26 +179,30 @@ class EventDB {
     }
     // --- Filter on HTTP Method ---
     if (filters.method && Array.isArray(filters.method) && filters.method.length > 0) {
-      const selectedMethods = filters.method.map(method => method.toLowerCase());
-      collection = collection.filter(item =>
-        selectedMethods.includes(item.method.toLowerCase())
-      );
+      const selectedMethods = filters.method.map((method) => method.toLowerCase());
+      collection = collection.filter((item) => selectedMethods.includes(item.method.toLowerCase()));
     }
     // --- Filter on Path ---
     if (filters.path) {
       // Partial match search on path.
-      collection = collection.filter(item => item.path.includes(filters.path));
+      collection = collection.filter((item) => item.path.includes(filters.path));
     }
     // --- Filter on Duration ---
     if (filters.durationMin) {
-      collection = collection.filter(item => Number(item.duration) >= Number(filters.durationMin));
+      collection = collection.filter(
+        (item) => Number(item.duration) >= Number(filters.durationMin)
+      );
     }
     if (filters.durationMax) {
-      collection = collection.filter(item => Number(item.duration) <= Number(filters.durationMax));
+      collection = collection.filter(
+        (item) => Number(item.duration) <= Number(filters.durationMax)
+      );
     }
     // --- Filter on Host ---
     if (filters.host) {
-      collection = collection.filter(item => item.server.toLowerCase().includes(filters.host.toLowerCase()));
+      collection = collection.filter((item) =>
+        item.server.toLowerCase().includes(filters.host.toLowerCase())
+      );
     }
 
     // Count result after filtering
@@ -250,7 +251,7 @@ class EventDB {
 
     // --- Transform Results ---
     // Instead of exposing the full stored record, only return the inner raw.data along with the id.
-    const results = pageItems.map(record => ({
+    const results = pageItems.map((record) => ({
       id: record.id,
       ...record.raw.data
     }));

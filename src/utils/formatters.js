@@ -1,4 +1,3 @@
-
 // Format a timestamp to a human-readable format
 const formatTimestamp = (isoString) => {
   if (!isoString) return 'N/A';

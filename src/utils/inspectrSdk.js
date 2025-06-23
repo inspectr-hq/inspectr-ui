@@ -141,7 +141,7 @@ class authClient {
    */
   async updateAuthenticationSettings(body) {
     const res = await fetch(`${this.client.apiEndpoint}/auth/settings`, {
-      method: 'POST',
+      method: 'PUT',
       headers: this.client.jsonHeaders,
       body: JSON.stringify(body)
     });
@@ -235,14 +235,12 @@ class ServiceClient {
    */
   async ping(component) {
     const res = await fetch(`${this.client.apiEndpoint}/ping/${component}`, {
-      headers: { ...this.client.defaultHeaders, Accept: "application/json" },
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
     });
 
     if (!res.ok) {
       const errorBody = await res.json();
-      throw new Error(
-        `${errorBody?.error || res.status}`
-      );
+      throw new Error(`${errorBody?.error || res.status}`);
     }
 
     return await res.json();
