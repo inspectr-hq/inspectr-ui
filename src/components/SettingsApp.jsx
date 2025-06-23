@@ -460,7 +460,7 @@ export default function SettingsApp() {
 
               <ListItem className="py-3 flex justify-between">
                 <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                  Expiration
+                  inspectr-auth-token Expiration
                 </span>
                 <span className="text-tremor-content dark:text-dark-tremor-content">
                   {authInfo.auth_token_expiration

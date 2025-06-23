@@ -141,7 +141,7 @@ class authClient {
    */
   async updateAuthenticationSettings(body) {
     const res = await fetch(`${this.client.apiEndpoint}/auth/settings`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: this.client.jsonHeaders,
       body: JSON.stringify(body)
     });
