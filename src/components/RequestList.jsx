@@ -11,7 +11,7 @@ const RequestList = ({
   onSelect,
   onRemove,
   clearOperations,
-  clearFilteredRequests,
+  clearFilteredOperations,
   syncOperations,
   selectedOperation,
   currentPage,
@@ -208,7 +208,7 @@ const RequestList = ({
         open={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         onConfirmAll={clearOperations}
-        onConfirmFiltered={clearFilteredRequests}
+        onConfirmFiltered={clearFilteredOperations}
         hasFilters={activeFiltersCount > 0}
       />
     </div>
