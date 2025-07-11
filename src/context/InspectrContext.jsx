@@ -183,7 +183,7 @@ export const InspectrProvider = ({ children }) => {
   const loadCredentialsFromApi = async () => {
     console.log('🔄 Fetching /app/config (Localhost, No credentials found)');
     try {
-      const result = await inspectrClient.auth.getConfig();
+      const result = await inspectrClient.registration.getConfig();
       if (result?.token && result?.sse_endpoint && result?.channel_code) {
         console.log('✅ Loaded from /app/config:', result);
         setChannelCode(result.channel_code);
@@ -223,7 +223,7 @@ export const InspectrProvider = ({ children }) => {
       console.log('📤 Registering with:', requestBody);
 
       // Register App with Inspectr
-      const result = await inspectrClient.auth.register(requestBody);
+      const result = await inspectrClient.registration.register(requestBody);
 
       if (result?.token && result?.sse_endpoint && result?.channel_code) {
         console.log('✅ Registration successful');

@@ -6,17 +6,17 @@
  * @returns {string} Tailwind CSS classes for text color.
  */
 export const getMethodTextClass = (method) => {
-  if(!method) return ''; // TO REVIEW
+  if (!method) return ''; // TO REVIEW
 
   switch (method.toUpperCase()) {
     case 'GET':
-      return 'text-[rgb(0,107,230)]';//'text-green-700'; //text-[rgb(0,107,230)];
+      return 'text-[rgb(0,107,230)]'; //'text-green-700'; //text-[rgb(0,107,230)];
     case 'POST':
-      return 'text-[rgb(23,131,135)]';//'text-sky-700'; // text-[rgb(23,131,135)];
+      return 'text-[rgb(23,131,135)]'; //'text-sky-700'; // text-[rgb(23,131,135)];
     // case 'PUT':
     //   return 'text-fuchsia-700';
     case 'PATCH':
-      return  'text-[rgb(204,75,0)]';//'text-purple-700'; // text-[rgb(204,75,0)];
+      return 'text-[rgb(204,75,0)]'; //'text-purple-700'; // text-[rgb(204,75,0)];
     case 'DELETE':
       return 'text-red-700';
     // case 'OPTIONS':
@@ -34,7 +34,8 @@ export const getMethodTextClass = (method) => {
  * @returns {string} Tailwind CSS classes for text and border colors.
  */
 export const getMethodTagClass = (method) => {
-  if(!method) return 'text-gray-700 dark:text-gray-200 border border-gray-700 dark:border-gray-200';
+  if (!method)
+    return 'text-gray-700 dark:text-gray-200 border border-gray-700 dark:border-gray-200';
 
   switch (method.toUpperCase()) {
     case 'GET':

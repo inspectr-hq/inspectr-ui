@@ -7,9 +7,9 @@ import xmlFormatter from 'xml-formatter';
 export function formatXML(xml) {
   try {
     return xmlFormatter(xml, {
-      indentation: '    ',    // four spaces
-      collapseContent: true,  // ensure children are always on new lines
-      lineSeparator: '\n',    // use LF
+      indentation: '    ', // four spaces
+      collapseContent: true, // ensure children are always on new lines
+      lineSeparator: '\n' // use LF
     });
   } catch {
     return xml;
