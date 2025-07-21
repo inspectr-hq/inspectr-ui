@@ -22,7 +22,7 @@ export default function DialogExportRecords({
     setExporting(true);
     try {
       const blob = await client.operations.export({
-        start: startTime,
+        since: startTime,
         format
       });
       const now = new Date();

@@ -125,10 +125,11 @@ export default function Workspace() {
                     className={`px-2 py-1 rounded text-xs flex items-center ${isRecordExportOpen ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 text-white'}`}
                     onClick={() => {
                       if (isRecording) {
-                        setIsRecording(false);
                         if (recordCount > 0) {
                           setIsRecordExportOpen(true);
                         } else {
+                          setIsRecording(false);
+                          setRecordStart(null);
                           setToast({ message: 'No operations recorded' });
                         }
                       } else {
