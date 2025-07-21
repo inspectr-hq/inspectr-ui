@@ -204,6 +204,46 @@ class OperationsClient {
     if (!res.ok) throw new Error(`Replay failed (${res.status})`);
     return await res.json();
   }
+
+  /**
+   * Export operations
+   * @param {Object} options
+   * @param {string} [options.path] - Filter operations by path
+   * @param {number} [options.start] - Export operations after this timestamp
+   * @param {string} [options.format='json'] - Export format
+   * @returns {Promise<Blob>} - Exported data blob
+   */
+  async export({ path, start, format = 'json' } = {}) {
+    const params = new URLSearchParams();
+    if (path) params.append('path', path);
+    if (start) params.append('start', start);
+    if (format) params.append('format', format);
+
+    const res = await fetch(`${this.client.apiEndpoint}/operations/export?${params.toString()}`, {
+      headers: this.client.defaultHeaders
+    });
+
+    if (!res.ok) throw new Error(`Export failed (${res.status})`);
+    return await res.blob();
+  }
+
+  /**
+   * Import operations from a file
+   * @param {File|Blob} file - File containing operations
+   * @returns {Promise<void>}
+   */
+  async import(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(`${this.client.apiEndpoint}/operations/import`, {
+      method: 'POST',
+      headers: this.client.defaultHeaders,
+      body: formData
+    });
+
+    if (!res.ok) throw new Error(`Import failed (${res.status})`);
+  }
 }
 
 /**

@@ -26,3 +26,6 @@ export { default as ToastNotification } from './ToastNotification.jsx';
 export { default as Workspace } from './Workspace.jsx';
 export { default as ServiceStatus } from './ServiceStatus.jsx';
 export { default as DialogAuthConfig } from './DialogAuthConfig.jsx';
+export { default as DialogExportOperations } from './DialogExportOperations.jsx';
+export { default as DialogRecordExport } from './DialogRecordExport.jsx';
+export { default as DialogImportOperations } from './DialogImportOperations.jsx';

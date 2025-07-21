@@ -7,7 +7,12 @@ import SettingsApp from './SettingsApp.jsx';
 import useHashRouter from '../hooks/useHashRouter.jsx';
 import ToastNotification from './ToastNotification.jsx';
 import DialogMockLaunch from './DialogMockLaunch.jsx';
+import DialogExportOperations from './DialogExportOperations.jsx';
+import DialogRecordExport from './DialogRecordExport.jsx';
+import DialogImportOperations from './DialogImportOperations.jsx';
 import { InspectrProvider, useInspectr } from '../context/InspectrContext';
+import { useLiveQuery } from 'dexie-react-hooks';
+import eventDB from '../utils/eventDB.js';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -39,6 +44,15 @@ export default function Workspace() {
   const [currentTab, setCurrentTab] = useState(navigation[0]);
   const { route, currentNav, handleTabClick } = useHashRouter(navigation);
   const ActiveComponent = currentNav.component;
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordStart, setRecordStart] = useState(null);
+  const [isRecordExportOpen, setIsRecordExportOpen] = useState(false);
+  const recordCount = useLiveQuery(async () => {
+    if (!isRecording || !recordStart) return 0;
+    return await eventDB.db.events.where('time').above(recordStart).count();
+  }, [isRecording, recordStart]);
 
   return (
     <InspectrProvider>
@@ -47,7 +61,7 @@ export default function Workspace() {
       <div className="">
         <div className="border-b border-tremor-border dark:border-dark-tremor-border relative h-full overflow-hidden bg-gray-50 dark:bg-dark-tremor-background-subtle">
           <div className="px-4 sm:px-6 lg:px-8">
-            <div className="overflow flex h-16 sm:space-x-7">
+            <div className="overflow flex h-16 sm:space-x-7 items-center">
               <div className="hidden shrink-0 sm:flex sm:items-center">
                 <a href="/" className="p-1.5">
                   <Logo
@@ -56,7 +70,7 @@ export default function Workspace() {
                   />
                 </a>
               </div>
-              <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+              <nav className="flex-1 -mb-px flex space-x-6" aria-label="Tabs">
                 {navigation.map((navItem) => (
                   <button
                     key={navItem.slug}
@@ -73,6 +87,38 @@ export default function Workspace() {
                   </button>
                 ))}
               </nav>
+              <div className="ml-auto flex items-center space-x-2">
+                <button
+                  className="px-2 py-1 bg-blue-500 text-white rounded text-xs"
+                  onClick={() => setIsExportOpen(true)}
+                >
+                  Export
+                </button>
+                <button
+                  className="px-2 py-1 bg-blue-500 text-white rounded text-xs"
+                  onClick={() => setIsImportOpen(true)}
+                >
+                  Import
+                </button>
+                <span>{recordCount} requests</span>
+                <button
+                  className="px-2 py-1 bg-green-500 text-white rounded text-xs flex items-center"
+                  onClick={() => {
+                    if (isRecording) {
+                      setIsRecording(false);
+                      setIsRecordExportOpen(true);
+                    } else {
+                      setRecordStart(Date.now());
+                      setIsRecording(true);
+                    }
+                  }}
+                >
+                  <span
+                    className={`mr-1 block w-2 h-2 rounded-full bg-red-600 ${isRecording ? 'animate-pulse' : ''}`}
+                  ></span>
+                  {isRecording ? `Stop Recording` : 'Start Recording'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -91,6 +137,15 @@ export default function Workspace() {
 
         {/* Toast Notification from context */}
         <ToastNotificationFromContext />
+
+        {/* Export/Import/Record dialogs */}
+        <DialogExportOperations open={isExportOpen} onClose={() => setIsExportOpen(false)} />
+        <DialogImportOperations open={isImportOpen} onClose={() => setIsImportOpen(false)} />
+        <DialogRecordExport
+          open={isRecordExportOpen}
+          onClose={() => setIsRecordExportOpen(false)}
+          startTime={recordStart}
+        />
       </div>
     </InspectrProvider>
   );
