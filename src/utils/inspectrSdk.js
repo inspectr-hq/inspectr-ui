@@ -240,6 +240,9 @@ class OperationsClient {
     const formData = new FormData();
     formData.append('file', file);
 
+    const headers = { ...this.client.defaultHeaders };
+    delete headers['Content-Type'];
+
     const res = await fetch(`${this.client.apiEndpoint}/operations/import`, {
       method: 'POST',
       headers: this.client.defaultHeaders,

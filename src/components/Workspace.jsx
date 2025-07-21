@@ -62,7 +62,6 @@ export default function Workspace() {
     }
   }, [recordStart]);
 
-  const { setToast } = useInspectr();
   const [isRecordExportOpen, setIsRecordExportOpen] = useState(false);
   const recordCount = useLiveQuery(async () => {
     if (!isRecording || !recordStart) return 0;
@@ -130,12 +129,10 @@ export default function Workspace() {
                         } else {
                           setIsRecording(false);
                           setRecordStart(null);
-                          setToast({ message: 'No operations recorded' });
                         }
                       } else {
                         setRecordStart(new Date().toISOString());
                         setIsRecording(true);
-                        setToast({ message: 'Recording started' });
                       }
                     }}
                   >
