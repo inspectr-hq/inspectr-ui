@@ -67,7 +67,7 @@ export const NoOperation = () => (
   <RequestDetailsPanel operation={null} currentTab="request" setCurrentTab={() => {}} />
 );
 
-export const InspectrTab = () => (
+export const InfoTab = () => (
   <RequestDetailsPanel
     operation={{
       request: {
