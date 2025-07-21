@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import RequestDetail from './RequestDetail';
 import RequestContent from './RequestContent';
 import ResponseContent from './ResponseContent';
+import MetaContent from './MetaContent.jsx';
 import Terminal from './Terminal';
 import { RiExternalLinkLine } from '@remixicon/react';
 
@@ -103,7 +104,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
     <div className="flex flex-col h-full" style={isLoaded ? fadeInStyle : hiddenStyle}>
       <RequestDetail operation={operation} />
 
-      {/* Tabs for Request and Response */}
+      {/* Tabs for Request, Response */}
       <div className="flex space-x-2">
         <button
           className={`px-4 py-2 rounded-t ${
@@ -125,6 +126,16 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
         >
           Response
         </button>
+        <button
+          className={`px-4 py-2 rounded-t ${
+            currentTab === 'meta'
+              ? 'bg-teal-600 dark:bg-teal-700 text-white'
+              : 'bg-gray-200 dark:bg-dark-tremor-background-subtle text-gray-700 dark:text-dark-tremor-content'
+          }`}
+          onClick={() => setCurrentTab('meta')}
+        >
+          Extra
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -137,8 +148,10 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
       >
         {currentTab === 'request' ? (
           <RequestContent operation={operation} />
-        ) : (
+        ) : currentTab === 'response' ? (
           <ResponseContent operation={operation} />
+        ) : (
+          <MetaContent operation={operation} />
         )}
       </div>
     </div>

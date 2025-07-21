@@ -19,6 +19,7 @@ export { default as RequestListItem } from './RequestListItem.jsx';
 export { default as RequestListPagination } from './RequestListPagination.jsx';
 export { default as RequestListSidePanel } from './RequestListSidePanel.jsx';
 export { default as ResponseContent } from './ResponseContent.jsx';
+export { default as MetaContent } from './MetaContent.jsx';
 export { default as SettingsPanel } from './SettingsPanel.jsx';
 export { default as TagsInput } from './TagsInput.jsx';
 export { default as Terminal } from './Terminal.jsx';
