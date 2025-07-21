@@ -1,6 +1,6 @@
 // src/components/Workspace.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashBoardApp from './DashBoardApp.jsx';
 import InspectrApp from './InspectrApp.jsx';
 import SettingsApp from './SettingsApp.jsx';
@@ -8,11 +8,12 @@ import useHashRouter from '../hooks/useHashRouter.jsx';
 import ToastNotification from './ToastNotification.jsx';
 import DialogMockLaunch from './DialogMockLaunch.jsx';
 import DialogExportOperations from './DialogExportOperations.jsx';
-import DialogRecordExport from './DialogRecordExport.jsx';
+import DialogExportRecords from './DialogExportRecords.jsx';
 import DialogImportOperations from './DialogImportOperations.jsx';
 import { InspectrProvider, useInspectr } from '../context/InspectrContext';
 import { useLiveQuery } from 'dexie-react-hooks';
 import eventDB from '../utils/eventDB.js';
+import NotificationBadge from './NotificationBadge.jsx';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -46,13 +47,31 @@ export default function Workspace() {
   const ActiveComponent = currentNav.component;
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordStart, setRecordStart] = useState(null);
+  const [isRecording, setIsRecording] = useState(
+    () => typeof window !== 'undefined' && !!localStorage.getItem('recordStart')
+  );
+  const [recordStart, setRecordStart] = useState(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('recordStart') : null
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (recordStart) {
+      localStorage.setItem('recordStart', recordStart);
+    } else {
+      localStorage.removeItem('recordStart');
+    }
+  }, [recordStart]);
+
+  const { setToast } = useInspectr();
   const [isRecordExportOpen, setIsRecordExportOpen] = useState(false);
   const recordCount = useLiveQuery(async () => {
     if (!isRecording || !recordStart) return 0;
     return await eventDB.db.events.where('time').above(recordStart).count();
   }, [isRecording, recordStart]);
+
+  useEffect(() => {
+    setIsRecording(!!recordStart);
+  }, [recordStart]);
 
   return (
     <InspectrProvider>
@@ -100,24 +119,36 @@ export default function Workspace() {
                 >
                   Import
                 </button>
-                <span>{recordCount} requests</span>
-                <button
-                  className="px-2 py-1 bg-green-500 text-white rounded text-xs flex items-center"
-                  onClick={() => {
-                    if (isRecording) {
-                      setIsRecording(false);
-                      setIsRecordExportOpen(true);
-                    } else {
-                      setRecordStart(Date.now());
-                      setIsRecording(true);
-                    }
-                  }}
-                >
-                  <span
-                    className={`mr-1 block w-2 h-2 rounded-full bg-red-600 ${isRecording ? 'animate-pulse' : ''}`}
-                  ></span>
-                  {isRecording ? `Stop Recording` : 'Start Recording'}
-                </button>
+                <div className="relative">
+                  <button
+                    disabled={isRecordExportOpen}
+                    className={`px-2 py-1 rounded text-xs flex items-center ${isRecordExportOpen ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 text-white'}`}
+                    onClick={() => {
+                      if (isRecording) {
+                        setIsRecording(false);
+                        if (recordCount > 0) {
+                          setIsRecordExportOpen(true);
+                        } else {
+                          setToast({ message: 'No operations recorded' });
+                        }
+                      } else {
+                        setRecordStart(new Date().toISOString());
+                        setIsRecording(true);
+                        setToast({ message: 'Recording started' });
+                      }
+                    }}
+                  >
+                    <span
+                      className={`mr-1 block w-2 h-2 rounded-full bg-red-600 ${isRecording ? 'animate-pulse' : ''}`}
+                    ></span>
+                    {isRecording ? `Stop Recording` : 'Start Recording'}
+                  </button>
+                  {isRecording && recordCount > 0 && (
+                    <span className="absolute -top-3 -right-2">
+                      <NotificationBadge count={recordCount} />
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -141,8 +172,19 @@ export default function Workspace() {
         {/* Export/Import/Record dialogs */}
         <DialogExportOperations open={isExportOpen} onClose={() => setIsExportOpen(false)} />
         <DialogImportOperations open={isImportOpen} onClose={() => setIsImportOpen(false)} />
-        <DialogRecordExport
+
+        <DialogExportRecords
           open={isRecordExportOpen}
+          onContinue={() => {
+            // Simply close and keep recording
+            setIsRecordExportOpen(false);
+          }}
+          onCancelRecording={() => {
+            // Stop recording and clear start time
+            setIsRecordExportOpen(false);
+            setIsRecording(false);
+            setRecordStart(null);
+          }}
           onClose={() => setIsRecordExportOpen(false)}
           startTime={recordStart}
         />

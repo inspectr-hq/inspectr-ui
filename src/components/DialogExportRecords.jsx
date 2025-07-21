@@ -3,7 +3,13 @@ import { useInspectr } from '../context/InspectrContext';
 import { useLiveQuery } from 'dexie-react-hooks';
 import eventDB from '../utils/eventDB.js';
 
-export default function DialogRecordExport({ open, onClose, startTime }) {
+export default function DialogExportRecords({
+  open,
+  onClose,
+  onContinue,
+  onCancelRecording,
+  startTime
+}) {
   const { client, setToast } = useInspectr();
   const [format, setFormat] = useState('json');
   const [exporting, setExporting] = useState(false);
@@ -19,10 +25,13 @@ export default function DialogRecordExport({ open, onClose, startTime }) {
         start: startTime,
         format
       });
+      const now = new Date();
+      const pad = (num) => num.toString().padStart(2, '0');
+      const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `record.${format}`;
+      a.download = `inspectr_operations_${timestamp}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
       if (onClose) onClose();
@@ -68,10 +77,16 @@ export default function DialogRecordExport({ open, onClose, startTime }) {
         </div>
         <div className="flex justify-end space-x-3">
           <button
-            onClick={onClose}
+            onClick={onContinue}
             className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
           >
-            Cancel
+            Continue Recording
+          </button>
+          <button
+            onClick={onCancelRecording}
+            className="px-4 py-2 bg-orange-200 text-gray-700 rounded hover:bg-orange-300"
+          >
+            Cancel Recording
           </button>
           <button
             onClick={handleExport}

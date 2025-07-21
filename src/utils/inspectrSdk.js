@@ -209,14 +209,18 @@ class OperationsClient {
    * Export operations
    * @param {Object} options
    * @param {string} [options.path] - Filter operations by path
-   * @param {number} [options.start] - Export operations after this timestamp
+   * @param {string} [options.preset] - Preset filter
+   * @param {string} [options.since] - Export operations after this timestamp
+   * @param {string} [options.until] - Export operations before this timestamp
    * @param {string} [options.format='json'] - Export format
    * @returns {Promise<Blob>} - Exported data blob
    */
-  async export({ path, start, format = 'json' } = {}) {
+  async export({ path, preset, since, until, format = 'json' } = {}) {
     const params = new URLSearchParams();
     if (path) params.append('path', path);
-    if (start) params.append('start', start);
+    if (preset) params.append('preset', preset);
+    if (since) params.append('since', since);
+    if (until) params.append('until', until);
     if (format) params.append('format', format);
 
     const res = await fetch(`${this.client.apiEndpoint}/operations/export?${params.toString()}`, {

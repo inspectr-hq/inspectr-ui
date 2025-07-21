@@ -3,21 +3,31 @@ import { useInspectr } from '../context/InspectrContext';
 
 export default function DialogExportOperations({ open, onClose }) {
   const { client, setToast } = useInspectr();
-  const [pathFilter, setPathFilter] = useState('');
   const [format, setFormat] = useState('json');
   const [exporting, setExporting] = useState(false);
+  const [timeOption, setTimeOption] = useState('preset');
+  const [preset, setPreset] = useState('');
+  const [since, setSince] = useState('');
+  const [until, setUntil] = useState('');
 
   const handleExport = async () => {
     setExporting(true);
     try {
-      const blob = await client.operations.export({
-        path: pathFilter,
-        format
-      });
+      const params = { format };
+      if (timeOption === 'preset') {
+        if (preset) params.preset = preset;
+      } else {
+        if (since) params.since = new Date(since).toISOString();
+        if (until) params.until = new Date(until).toISOString();
+      }
+      const blob = await client.operations.export(params);
+      const now = new Date();
+      const pad = (num) => num.toString().padStart(2, '0');
+      const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `operations.${format}`;
+      a.download = `inspectr_operations_${timestamp}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
       if (onClose) onClose();
@@ -46,6 +56,70 @@ export default function DialogExportOperations({ open, onClose }) {
           </button>
         </div>
         <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">Time Range</label>
+          <div className="mt-1 flex items-center space-x-4">
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                name="timeOption"
+                value="preset"
+                checked={timeOption === 'preset'}
+                onChange={() => setTimeOption('preset')}
+                className="form-radio"
+              />
+              <span className="ml-2">Preset</span>
+            </label>
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                name="timeOption"
+                value="custom"
+                checked={timeOption === 'custom'}
+                onChange={() => setTimeOption('custom')}
+                className="form-radio"
+              />
+              <span className="ml-2">Custom</span>
+            </label>
+          </div>
+          {timeOption === 'preset' && (
+            <select
+              value={preset}
+              onChange={(e) => setPreset(e.target.value)}
+              className="mt-2 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"
+            >
+              <option value="">-- Select preset --</option>
+              <option value="1h">Last hour</option>
+              <option value="24h">Last 24 hours</option>
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="start">Since start Inspectr</option>
+              <option value="first">Since first operation</option>
+            </select>
+          )}
+          {timeOption === 'custom' && (
+            <div className="mt-2 space-y-2">
+              <div>
+                <label className="block text-sm">Since</label>
+                <input
+                  type="datetime-local"
+                  value={since}
+                  onChange={(e) => setSince(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm">Until (optional)</label>
+                <input
+                  type="datetime-local"
+                  value={until}
+                  onChange={(e) => setUntil(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700">Format</label>
           <select
             value={format}
@@ -53,8 +127,8 @@ export default function DialogExportOperations({ open, onClose }) {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           >
             <option value="json">JSON</option>
-            <option value="openapi">OpenAPI (early-access)</option>
-            <option value="postman">Postman (early-access)</option>
+            {/*<option value="openapi">OpenAPI (early-access)</option>*/}
+            {/*<option value="postman">Postman (early-access)</option>*/}
             {/*<option value="phar">Phar</option>*/}
           </select>
         </div>
