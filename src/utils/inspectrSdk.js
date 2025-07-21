@@ -290,6 +290,19 @@ class StatsClient {
     }
     throw new Error(`Delete stats operations failed (${res.status})`);
   }
+
+  /**
+   * Get overall usage metrics
+   * @returns {Promise<Object>} - Usage metrics data
+   */
+  async getMetrics() {
+    const res = await fetch(`${this.client.apiEndpoint}/metrics`, {
+      headers: this.client.defaultHeaders
+    });
+
+    if (!res.ok) throw new Error(`Stats usage failed (${res.status})`);
+    return await res.json();
+  }
 }
 
 /**
