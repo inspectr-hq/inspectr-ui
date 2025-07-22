@@ -216,14 +216,22 @@ class OperationsClient {
    * @returns {Promise<Blob>} - Exported data blob
    */
   async export({ path, preset, since, until, format = 'json' } = {}) {
+    let url;
+    // Set export format
+    if (['postman', 'openapi', 'phar'].includes(format)) {
+      url = `${this.client.apiEndpoint}/operations/export/${format}`;
+    } else {
+      url = `${this.client.apiEndpoint}/operations/export`;
+    }
+
+    // Append filters
     const params = new URLSearchParams();
     if (path) params.append('path', path);
     if (preset) params.append('preset', preset);
     if (since) params.append('since', since);
     if (until) params.append('until', until);
-    if (format) params.append('format', format);
 
-    const res = await fetch(`${this.client.apiEndpoint}/operations/export?${params.toString()}`, {
+    const res = await fetch(`${url}?${params}`, {
       headers: this.client.defaultHeaders
     });
 
