@@ -48,7 +48,7 @@ export default function DialogExportRecords({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black opacity-50" onClick={onClose}></div>
-      <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 z-10">
+      <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 p-6 z-10">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-medium text-gray-900">Export Recording</h3>
           <button
@@ -69,10 +69,10 @@ export default function DialogExportRecords({
             onChange={(e) => setFormat(e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           >
-            <option value="openapi">OpenAPI</option>
-            <option value="phar">PHAR</option>
-            <option value="postman">Postman</option>
             <option value="json">JSON</option>
+            {/*<option value="openapi">OpenAPI (early-access)</option>*/}
+            {/*<option value="postman">Postman (early-access)</option>*/}
+            {/*<option value="phar">Phar</option>*/}
           </select>
         </div>
         <div className="flex justify-end space-x-3">
