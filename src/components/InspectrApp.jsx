@@ -6,6 +6,7 @@ import RequestDetailsPanel from './RequestDetailsPanel';
 import SettingsPanel from './SettingsPanel';
 import eventDB from '../utils/eventDB';
 import useInspectrRouter from '../hooks/useInspectrRouter.jsx';
+import useLocalStorage from '../hooks/useLocalStorage.jsx';
 import { useInspectr } from '../context/InspectrContext';
 
 const InspectrApp = () => {
@@ -47,6 +48,8 @@ const InspectrApp = () => {
   const [sortDirection, setSortDirection] = useState('desc');
   const [filters, setFilters] = useState({});
 
+  const [lastEventId, setLastEventId] = useLocalStorage('lastEventId', '');
+
   // SSE connection references
   const wasConnectedRef = useRef(false);
   const eventSourceRef = useRef(null);
@@ -81,12 +84,12 @@ const InspectrApp = () => {
 
     if (!sseEndpoint) return;
 
-    const lastEventId = overrideLastEventId || localStorage.getItem('lastEventId');
+    const storedLastEventId = overrideLastEventId || lastEventId;
     let sseUrl = `${sseEndpoint}?token=${token}`;
-    if (lastEventId) {
+    if (storedLastEventId) {
       sseUrl += sseUrl.includes('?')
-        ? `&last_event_id=${lastEventId}`
-        : `?last_event_id=${lastEventId}`;
+        ? `&last_event_id=${storedLastEventId}`
+        : `?last_event_id=${storedLastEventId}`;
     }
 
     const generateId = (opId) => opId || `req-${Math.random().toString(36).substr(2, 9)}`;
@@ -121,7 +124,7 @@ const InspectrApp = () => {
         if (!event.id) event.id = generateId(event.operation_id);
         if (event.operation_id) {
           event.id = event.operation_id;
-          localStorage.setItem('lastEventId', event.operation_id);
+          setLastEventId(event.operation_id);
         }
 
         if (burstCountRef.current < BURST_THRESHOLD) {
@@ -176,7 +179,7 @@ const InspectrApp = () => {
 
   const syncOperations = () => {
     setIsSyncing(true);
-    localStorage.setItem('lastEventId', SYNC_LAST_EVENT_ID);
+    setLastEventId(SYNC_LAST_EVENT_ID);
     connectSSE(SYNC_LAST_EVENT_ID);
 
     if (debugMode) {

@@ -47,10 +47,6 @@ const SettingsPanel = () => {
 
   // Trigger registration
   const handleRegister = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('channelCode', channelCodeInput);
-      localStorage.setItem('channel', channelInput);
-    }
     // This prevents the auto-registration useEffect from running
     userInitiatedRegistrationRef.current = true;
 
