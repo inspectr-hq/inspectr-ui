@@ -5,6 +5,7 @@ import RequestContent from './RequestContent';
 import ResponseContent from './ResponseContent';
 import Terminal from './Terminal';
 import { RiExternalLinkLine } from '@remixicon/react';
+import useLocalStorage from '../hooks/useLocalStorage.jsx';
 
 // CSS for fade-in effect
 const fadeInStyle = {
@@ -20,27 +21,13 @@ const hiddenStyle = {
 };
 
 const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
-  const [ingressEndpoint, setIngressEndpoint] = useState('');
-  const [proxyEndpoint, setProxyEndpoint] = useState('');
-  const [expose, setExpose] = useState(false);
+  const [ingressEndpoint, setIngressEndpoint] = useLocalStorage('ingressEndpoint', '');
+  const [proxyEndpoint, setProxyEndpoint] = useLocalStorage('proxyEndpoint', '');
+  const [exposeValue] = useLocalStorage('expose', 'false');
+  const expose = exposeValue === 'true';
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // Get the endpoints and expose setting from localStorage
-    const ingressEndpointValue = localStorage.getItem('ingressEndpoint');
-    const proxyEndpointValue = localStorage.getItem('proxyEndpoint');
-    const exposeValue = localStorage.getItem('expose');
-
-    if (ingressEndpointValue) {
-      setIngressEndpoint(ingressEndpointValue);
-    }
-    if (proxyEndpointValue) {
-      setProxyEndpoint(proxyEndpointValue);
-    }
-    if (exposeValue) {
-      setExpose(exposeValue === 'true');
-    }
-
     // Set isLoaded to true after a short delay to ensure CSS transitions work properly
     const timer = setTimeout(() => {
       setIsLoaded(true);
