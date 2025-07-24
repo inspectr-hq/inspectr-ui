@@ -204,6 +204,61 @@ class OperationsClient {
     if (!res.ok) throw new Error(`Replay failed (${res.status})`);
     return await res.json();
   }
+
+  /**
+   * Export operations
+   * @param {Object} options
+   * @param {string} [options.path] - Filter operations by path
+   * @param {string} [options.preset] - Preset filter
+   * @param {string} [options.since] - Export operations after this timestamp
+   * @param {string} [options.until] - Export operations before this timestamp
+   * @param {string} [options.format='json'] - Export format
+   * @returns {Promise<Blob>} - Exported data blob
+   */
+  async export({ path, preset, since, until, format = 'json' } = {}) {
+    let url;
+    // Set export format
+    if (['postman', 'openapi', 'phar'].includes(format)) {
+      url = `${this.client.apiEndpoint}/operations/export/${format}`;
+    } else {
+      url = `${this.client.apiEndpoint}/operations/export`;
+    }
+
+    // Append filters
+    const params = new URLSearchParams();
+    if (path) params.append('path', path);
+    if (preset) params.append('preset', preset);
+    if (since) params.append('since', since);
+    if (until) params.append('until', until);
+
+    const res = await fetch(`${url}?${params}`, {
+      headers: this.client.defaultHeaders
+    });
+
+    if (!res.ok) throw new Error(`Export failed (${res.status})`);
+    return await res.blob();
+  }
+
+  /**
+   * Import operations from a file
+   * @param {File|Blob} file - File containing operations
+   * @returns {Promise<void>}
+   */
+  async import(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const headers = { ...this.client.defaultHeaders };
+    delete headers['Content-Type'];
+
+    const res = await fetch(`${this.client.apiEndpoint}/operations/import`, {
+      method: 'POST',
+      headers: this.client.defaultHeaders,
+      body: formData
+    });
+
+    if (!res.ok) throw new Error(`Import failed (${res.status})`);
+  }
 }
 
 /**

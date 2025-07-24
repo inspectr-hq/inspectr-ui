@@ -1,13 +1,20 @@
 // src/components/Workspace.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashBoardApp from './DashBoardApp.jsx';
 import InspectrApp from './InspectrApp.jsx';
 import SettingsApp from './SettingsApp.jsx';
 import useHashRouter from '../hooks/useHashRouter.jsx';
 import ToastNotification from './ToastNotification.jsx';
 import DialogMockLaunch from './DialogMockLaunch.jsx';
+import DialogExportOperations from './DialogExportOperations.jsx';
+import DialogExportRecords from './DialogExportRecords.jsx';
+import DialogImportOperations from './DialogImportOperations.jsx';
 import { InspectrProvider, useInspectr } from '../context/InspectrContext';
+import { useLiveQuery } from 'dexie-react-hooks';
+import eventDB from '../utils/eventDB.js';
+import NotificationBadge from './NotificationBadge.jsx';
+import useLocalStorage from '../hooks/useLocalStorage.jsx';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -39,6 +46,19 @@ export default function Workspace() {
   const [currentTab, setCurrentTab] = useState(navigation[0]);
   const { route, currentNav, handleTabClick } = useHashRouter(navigation);
   const ActiveComponent = currentNav.component;
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [recordStart, setRecordStart] = useLocalStorage('recordStart', null);
+  const [isRecording, setIsRecording] = useState(() => !!recordStart);
+  useEffect(() => {
+    setIsRecording(!!recordStart);
+  }, [recordStart]);
+
+  const [isRecordExportOpen, setIsRecordExportOpen] = useState(false);
+  const recordCount = useLiveQuery(async () => {
+    if (!isRecording || !recordStart) return 0;
+    return await eventDB.db.events.where('time').above(recordStart).count();
+  }, [isRecording, recordStart]);
 
   return (
     <InspectrProvider>
@@ -47,7 +67,7 @@ export default function Workspace() {
       <div className="">
         <div className="border-b border-tremor-border dark:border-dark-tremor-border relative h-full overflow-hidden bg-gray-50 dark:bg-dark-tremor-background-subtle">
           <div className="px-4 sm:px-6 lg:px-8">
-            <div className="overflow flex h-16 sm:space-x-7">
+            <div className="overflow flex h-16 sm:space-x-7 items-center">
               <div className="hidden shrink-0 sm:flex sm:items-center">
                 <a href="/" className="p-1.5">
                   <Logo
@@ -56,7 +76,7 @@ export default function Workspace() {
                   />
                 </a>
               </div>
-              <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+              <nav className="flex-1 -mb-px flex space-x-6" aria-label="Tabs">
                 {navigation.map((navItem) => (
                   <button
                     key={navItem.slug}
@@ -73,6 +93,49 @@ export default function Workspace() {
                   </button>
                 ))}
               </nav>
+              <div className="ml-auto flex items-center space-x-2">
+                <button
+                  className="px-2 py-1 text-cyan-500 hover:text-white border border-cyan-500 hover:bg-cyan-500 rounded text-xs"
+                  onClick={() => setIsExportOpen(true)}
+                >
+                  Export
+                </button>
+                <button
+                  className="px-2 py-1 text-cyan-500 hover:text-white border border-cyan-500 hover:bg-cyan-500 rounded text-xs"
+                  onClick={() => setIsImportOpen(true)}
+                >
+                  Import
+                </button>
+                <div className="relative">
+                  <button
+                    disabled={isRecordExportOpen}
+                    className={`px-2 py-1 rounded text-xs flex items-center border border-green-500 ${isRecording ? 'text-white bg-green-500' : 'text-green-500 hover:text-white  hover:bg-green-500'} `}
+                    onClick={() => {
+                      if (isRecording) {
+                        if (recordCount > 0) {
+                          setIsRecordExportOpen(true);
+                        } else {
+                          setIsRecording(false);
+                          setRecordStart(null);
+                        }
+                      } else {
+                        setRecordStart(new Date().toISOString());
+                        setIsRecording(true);
+                      }
+                    }}
+                  >
+                    <span
+                      className={`mr-1 block w-2 h-2 ${isRecording ? 'bg-red-600 animate-pulse' : 'bg-red-600 rounded-full'}`}
+                    ></span>
+                    {isRecording ? `Stop Recording` : 'Start Recording'}
+                  </button>
+                  {isRecording && recordCount > 0 && (
+                    <span className="absolute -top-3 -right-2">
+                      <NotificationBadge count={recordCount} />
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -91,6 +154,26 @@ export default function Workspace() {
 
         {/* Toast Notification from context */}
         <ToastNotificationFromContext />
+
+        {/* Export/Import/Record dialogs */}
+        <DialogExportOperations open={isExportOpen} onClose={() => setIsExportOpen(false)} />
+        <DialogImportOperations open={isImportOpen} onClose={() => setIsImportOpen(false)} />
+
+        <DialogExportRecords
+          open={isRecordExportOpen}
+          onContinue={() => {
+            // Simply close and keep recording
+            setIsRecordExportOpen(false);
+          }}
+          onCancelRecording={() => {
+            // Stop recording and clear start time
+            setIsRecordExportOpen(false);
+            setIsRecording(false);
+            setRecordStart(null);
+          }}
+          onClose={() => setIsRecordExportOpen(false)}
+          startTime={recordStart}
+        />
       </div>
     </InspectrProvider>
   );
