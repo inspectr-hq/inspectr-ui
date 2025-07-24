@@ -3,8 +3,10 @@ import React, { useState, useEffect } from 'react';
 import RequestDetail from './RequestDetail';
 import RequestContent from './RequestContent';
 import ResponseContent from './ResponseContent';
+import MetaContent from './MetaContent.jsx';
 import Terminal from './Terminal';
 import { RiExternalLinkLine } from '@remixicon/react';
+import useLocalStorage from '../hooks/useLocalStorage.jsx';
 
 // CSS for fade-in effect
 const fadeInStyle = {
@@ -20,27 +22,29 @@ const hiddenStyle = {
 };
 
 const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
-  const [ingressEndpoint, setIngressEndpoint] = useState('');
-  const [proxyEndpoint, setProxyEndpoint] = useState('');
-  const [expose, setExpose] = useState(false);
+  const [ingressEndpoint, setIngressEndpoint] = useLocalStorage('ingressEndpoint', '');
+  const [proxyEndpoint, setProxyEndpoint] = useLocalStorage('proxyEndpoint', '');
+  const [exposeValue] = useLocalStorage('expose', 'false');
+  const expose = exposeValue === 'true';
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const extractHeaders = (input) => {
+    if (!input) return [];
+    if (Array.isArray(input)) return input;
+    return Object.entries(input).map(([name, value]) => ({ name, value }));
+  };
+
+  const guardHeaders = extractHeaders(operation?.meta?.inspectr?.guard);
+  const directiveHeaders = extractHeaders(operation?.meta?.inspectr?.directives);
+  const hasInfo = guardHeaders.length > 0 || directiveHeaders.length > 0;
+
   useEffect(() => {
-    // Get the endpoints and expose setting from localStorage
-    const ingressEndpointValue = localStorage.getItem('ingressEndpoint');
-    const proxyEndpointValue = localStorage.getItem('proxyEndpoint');
-    const exposeValue = localStorage.getItem('expose');
+    if (!hasInfo && currentTab === 'meta') {
+      setCurrentTab('request');
+    }
+  }, [hasInfo, currentTab, setCurrentTab]);
 
-    if (ingressEndpointValue) {
-      setIngressEndpoint(ingressEndpointValue);
-    }
-    if (proxyEndpointValue) {
-      setProxyEndpoint(proxyEndpointValue);
-    }
-    if (exposeValue) {
-      setExpose(exposeValue === 'true');
-    }
-
+  useEffect(() => {
     // Set isLoaded to true after a short delay to ensure CSS transitions work properly
     const timer = setTimeout(() => {
       setIsLoaded(true);
@@ -103,7 +107,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
     <div className="flex flex-col h-full" style={isLoaded ? fadeInStyle : hiddenStyle}>
       <RequestDetail operation={operation} />
 
-      {/* Tabs for Request and Response */}
+      {/* Tabs for Request, Response */}
       <div className="flex space-x-2">
         <button
           className={`px-4 py-2 rounded-t ${
@@ -125,6 +129,18 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
         >
           Response
         </button>
+        {hasInfo && (
+          <button
+            className={`px-4 py-2 rounded-t ${
+              currentTab === 'meta'
+                ? 'bg-teal-600 dark:bg-teal-700 text-white'
+                : 'bg-gray-200 dark:bg-dark-tremor-background-subtle text-gray-700 dark:text-dark-tremor-content'
+            }`}
+            onClick={() => setCurrentTab('meta')}
+          >
+            Info
+          </button>
+        )}
       </div>
 
       {/* Tab Content */}
@@ -137,9 +153,11 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
       >
         {currentTab === 'request' ? (
           <RequestContent operation={operation} />
-        ) : (
+        ) : currentTab === 'response' ? (
           <ResponseContent operation={operation} />
-        )}
+        ) : hasInfo ? (
+          <MetaContent operation={operation} />
+        ) : null}
       </div>
     </div>
   );

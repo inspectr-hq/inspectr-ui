@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useLayoutEffect
 } from 'react';
+import useLocalStorage from '../hooks/useLocalStorage.jsx';
 import InspectrClient from '../utils/inspectrSdk';
 
 // Create the context with default values
@@ -53,27 +54,19 @@ export const useInspectr = () => useContext(InspectrContext);
 // Provider component
 export const InspectrProvider = ({ children }) => {
   // Settings state
-  const [apiEndpoint, setApiEndpoint] = useState(() => {
-    // Initialize from localStorage if available, otherwise use default
-    if (typeof window !== 'undefined') {
-      const storedApiEndpoint = localStorage.getItem('apiEndpoint');
-      // Normalize the endpoint by removing trailing slashes
-      return storedApiEndpoint ? storedApiEndpoint.replace(/\/+$/, '') : '/api';
-    }
-    return '/api';
-  });
+  const [rawApiEndpoint, setRawApiEndpoint] = useLocalStorage('apiEndpoint', '/api');
+  const apiEndpoint = rawApiEndpoint ? rawApiEndpoint.replace(/\/+$/, '') : '/api';
+  const setApiEndpoint = (value) => {
+    setRawApiEndpoint(value ? value.replace(/\/+$/, '') : value);
+  };
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
-  const [sseEndpoint, setSseEndpoint] = useState('');
-  const [ingressEndpoint, setIngressEndpoint] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('ingressEndpoint') || '';
-    }
-    return '';
-  });
-  const [channelCode, setChannelCode] = useState('');
-  const [channel, setChannel] = useState('');
-  const [token, setToken] = useState('');
-  const [expires, setExpires] = useState('');
+  const [sseEndpoint, setSseEndpoint] = useLocalStorage('sseEndpoint', '');
+  const [ingressEndpoint, setIngressEndpoint] = useLocalStorage('ingressEndpoint', '');
+  const [channelCode, setChannelCode] = useLocalStorage('channelCode', '');
+  const [channel, setChannel] = useLocalStorage('channel', '');
+  const [token, setToken] = useLocalStorage('token', '');
+  const [expires, setExpires] = useLocalStorage('expires', '');
+  const [, setExposeLocalStorage] = useLocalStorage('expose', 'false');
   const [isInitialized, setIsInitialized] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -104,19 +97,15 @@ export const InspectrProvider = ({ children }) => {
       console.log('🔍 Found credentials in query params');
       if (queryChannelCode) {
         setChannelCode(queryChannelCode);
-        localStorage.setItem('channelCode', queryChannelCode);
       }
       if (queryChannel) {
         setChannel(queryChannel);
-        localStorage.setItem('channel', queryChannel);
       }
       if (queryToken) {
         setToken(queryToken);
-        localStorage.setItem('token', queryToken);
       }
       if (querySseEndpoint) {
         setSseEndpoint(querySseEndpoint);
-        localStorage.setItem('sseEndpoint', querySseEndpoint);
       }
       // Update the URL without reloading the page.
       window.history.replaceState(
@@ -131,45 +120,15 @@ export const InspectrProvider = ({ children }) => {
 
   // Load credentials from local storage
   const loadCredentialsFromLocalStorage = () => {
-    const storedChannelCode = localStorage.getItem('channelCode');
-    const storedChannel = localStorage.getItem('channel');
-    const storedToken = localStorage.getItem('token');
-    const storedSseEndpoint = localStorage.getItem('sseEndpoint');
-
-    if (storedChannelCode && storedChannel && storedToken) {
+    if (channelCode && channel && token) {
       console.log('✅ Using stored credentials from localStorage');
-      setChannelCode(storedChannelCode);
-      setChannel(storedChannel);
-      setToken(storedToken);
-      if (storedSseEndpoint) {
-        setSseEndpoint(storedSseEndpoint);
-      }
       return true;
     }
     return false;
   };
 
-  // Persist the endpoint any time it changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('apiEndpoint', apiEndpoint);
-    }
-  }, [apiEndpoint]);
-
   // Proxy URL state (persisted)
-  const [proxyEndpoint, setProxyEndpoint] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('proxyEndpoint') || '';
-    }
-    return '';
-  });
-
-  // Whenever it changes, keep localStorage in sync
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('proxyEndpoint', proxyEndpoint);
-    }
-  }, [proxyEndpoint]);
+  const [proxyEndpoint, setProxyEndpoint] = useLocalStorage('proxyEndpoint', '');
 
   // Create an InspectrClient instance
   const [inspectrClient, setInspectrClient] = useState(() => new InspectrClient({ apiEndpoint }));
@@ -187,17 +146,12 @@ export const InspectrProvider = ({ children }) => {
       if (result?.token && result?.sse_endpoint && result?.channel_code) {
         console.log('✅ Loaded from /app/config:', result);
         setChannelCode(result.channel_code);
-        localStorage.setItem('channelCode', result.channel_code);
         setChannel(result.channel);
-        localStorage.setItem('channel', result.channel);
         setToken(result.token);
-        localStorage.setItem('token', result.token);
         setSseEndpoint(result.sse_endpoint);
-        localStorage.setItem('sseEndpoint', result.sse_endpoint);
         setIngressEndpoint(result.ingress_endpoint);
-        localStorage.setItem('ingressEndpoint', result.ingress_endpoint);
-        localStorage.setItem('proxyEndpoint', result.proxy_endpoint);
-        localStorage.setItem('expose', result.expose ? 'true' : 'false');
+        setProxyEndpoint(result.proxy_endpoint);
+        setExposeLocalStorage(result.expose ? 'true' : 'false');
       }
     } catch (err) {
       console.error('❌ Failed to load /app/config:', err);
@@ -231,19 +185,13 @@ export const InspectrProvider = ({ children }) => {
         reRegistrationFailedRef.current = false;
 
         setChannelCode(result.channel_code);
-        localStorage.setItem('channelCode', result.channel_code);
         setChannel(result.channel);
-        localStorage.setItem('channel', result.channel);
         setToken(result.token);
-        localStorage.setItem('token', result.token);
         setExpires(result.expires);
-        localStorage.setItem('expires', result.expires);
         setSseEndpoint(result.sse_endpoint);
-        localStorage.setItem('sseEndpoint', result.sse_endpoint);
         setIngressEndpoint(result.ingress_endpoint);
-        localStorage.setItem('ingressEndpoint', result.ingress_endpoint);
-        localStorage.setItem('proxyEndpoint', result.proxy_endpoint);
-        localStorage.setItem('expose', result.expose ? 'true' : 'false');
+        setProxyEndpoint(result.proxy_endpoint);
+        setExposeLocalStorage(result.expose ? 'true' : 'false');
 
         if (showNotification) {
           setToast({
