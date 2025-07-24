@@ -95,13 +95,13 @@ export default function Workspace() {
               </nav>
               <div className="ml-auto flex items-center space-x-2">
                 <button
-                  className="px-2 py-1 bg-blue-500 text-white rounded text-xs"
+                  className="px-2 py-1 text-cyan-500 hover:text-white border border-cyan-500 hover:bg-cyan-500 rounded text-xs"
                   onClick={() => setIsExportOpen(true)}
                 >
                   Export
                 </button>
                 <button
-                  className="px-2 py-1 bg-blue-500 text-white rounded text-xs"
+                  className="px-2 py-1 text-cyan-500 hover:text-white border border-cyan-500 hover:bg-cyan-500 rounded text-xs"
                   onClick={() => setIsImportOpen(true)}
                 >
                   Import
@@ -109,7 +109,7 @@ export default function Workspace() {
                 <div className="relative">
                   <button
                     disabled={isRecordExportOpen}
-                    className={`px-2 py-1 rounded text-xs flex items-center ${isRecordExportOpen ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 text-white'}`}
+                    className={`px-2 py-1 rounded text-xs flex items-center border border-green-500 ${isRecording ? 'text-white bg-green-500' : 'text-green-500 hover:text-white  hover:bg-green-500'} `}
                     onClick={() => {
                       if (isRecording) {
                         if (recordCount > 0) {
@@ -125,7 +125,7 @@ export default function Workspace() {
                     }}
                   >
                     <span
-                      className={`mr-1 block w-2 h-2 rounded-full bg-red-600 ${isRecording ? 'animate-pulse' : ''}`}
+                      className={`mr-1 block w-2 h-2 ${isRecording ? 'bg-red-600 animate-pulse' : 'bg-red-600 rounded-full'}`}
                     ></span>
                     {isRecording ? `Stop Recording` : 'Start Recording'}
                   </button>
