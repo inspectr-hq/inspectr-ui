@@ -14,6 +14,7 @@ import { InspectrProvider, useInspectr } from '../context/InspectrContext';
 import { useLiveQuery } from 'dexie-react-hooks';
 import eventDB from '../utils/eventDB.js';
 import NotificationBadge from './NotificationBadge.jsx';
+import useLocalStorage from '../hooks/useLocalStorage.jsx';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -47,19 +48,10 @@ export default function Workspace() {
   const ActiveComponent = currentNav.component;
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isRecording, setIsRecording] = useState(
-    () => typeof window !== 'undefined' && !!localStorage.getItem('recordStart')
-  );
-  const [recordStart, setRecordStart] = useState(() =>
-    typeof window !== 'undefined' ? localStorage.getItem('recordStart') : null
-  );
+  const [recordStart, setRecordStart] = useLocalStorage('recordStart', null);
+  const [isRecording, setIsRecording] = useState(() => !!recordStart);
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (recordStart) {
-      localStorage.setItem('recordStart', recordStart);
-    } else {
-      localStorage.removeItem('recordStart');
-    }
+    setIsRecording(!!recordStart);
   }, [recordStart]);
 
   const [isRecordExportOpen, setIsRecordExportOpen] = useState(false);
@@ -67,10 +59,6 @@ export default function Workspace() {
     if (!isRecording || !recordStart) return 0;
     return await eventDB.db.events.where('time').above(recordStart).count();
   }, [isRecording, recordStart]);
-
-  useEffect(() => {
-    setIsRecording(!!recordStart);
-  }, [recordStart]);
 
   return (
     <InspectrProvider>
