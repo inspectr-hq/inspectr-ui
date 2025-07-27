@@ -5,12 +5,14 @@ import SettingsApiEndpoint from './SettingsApiEndpoint.jsx';
 import SettingsInspectr from './SettingsInspectr.jsx';
 import SettingsMock from './SettingsMock.jsx';
 import SettingsGuard from './SettingsGuard.jsx';
+import SettingsFeaturePreviews from './SettingsFeaturePreviews.jsx';
 import { parseHash } from '../hooks/useHashRouter.jsx';
 
 const navItems = [
   { slug: 'general', label: 'General' },
   { slug: 'mock', label: 'Mock' },
-  { slug: 'guard', label: 'Guard' }
+  { slug: 'guard', label: 'Authentication Guard' },
+  { slug: 'previews', label: 'Feature Previews' }
 ];
 
 const getCurrent = () => {
@@ -56,6 +58,7 @@ export default function SettingsApp() {
         )}
         {current === 'mock' && <SettingsMock />}
         {current === 'guard' && <SettingsGuard />}
+        {current === 'previews' && <SettingsFeaturePreviews />}
       </div>
     </div>
   );
