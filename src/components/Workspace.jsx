@@ -64,7 +64,7 @@ export default function Workspace() {
     <InspectrProvider>
       <DialogMockLaunch />
 
-      <div className="">
+      <div className="flex flex-col min-h-screen">
         <div className="border-b border-tremor-border dark:border-dark-tremor-border relative h-full overflow-hidden bg-gray-50 dark:bg-dark-tremor-background-subtle">
           <div className="px-4 sm:px-6 lg:px-8">
             <div className="overflow flex h-16 sm:space-x-7 items-center">

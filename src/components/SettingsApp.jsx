@@ -33,8 +33,8 @@ export default function SettingsApp() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row bg-white dark:bg-gray-950">
-      <aside className="md:w-56 border-b md:border-b-0 md:border-r border-tremor-border dark:border-dark-tremor-border">
+    <div className="flex flex-col md:flex-row min-h-[calc(100vh-120px)] bg-white dark:bg-gray-950">
+      <aside className="md:w-56 border-b md:border-b-0 md:border-r border-tremor-border dark:border-dark-tremor-border md:min-h-full">
         <nav className="flex md:flex-col">
           {navItems.map((item) => (
             <button
@@ -47,7 +47,7 @@ export default function SettingsApp() {
           ))}
         </nav>
       </aside>
-      <div className="flex-1 p-4 sm:px-6 sm:pb-10 sm:pt-10 lg:px-10 lg:pt-7 max-w-5xl">
+      <div className="flex-1 h-full overflow-y-auto p-4 sm:px-6 sm:pb-10 sm:pt-10 lg:px-10 lg:pt-7 max-w-5xl mx-auto">
         {current === 'general' && (
           <>
             <SettingsApiEndpoint />
