@@ -31,3 +31,8 @@ export { default as DialogAuthConfig } from './DialogAuthConfig.jsx';
 export { default as DialogExportOperations } from './DialogExportOperations.jsx';
 export { default as DialogRecordExport } from './DialogExportRecords.jsx';
 export { default as DialogImportOperations } from './DialogImportOperations.jsx';
+export { default as SettingsApiEndpoint } from './SettingsApiEndpoint.jsx';
+export { default as SettingsInspectr } from './SettingsInspectr.jsx';
+export { default as SettingsMock } from './SettingsMock.jsx';
+export { default as SettingsGuard } from './SettingsGuard.jsx';
+export { default as SettingsFeaturePreviews } from './SettingsFeaturePreviews.jsx';
