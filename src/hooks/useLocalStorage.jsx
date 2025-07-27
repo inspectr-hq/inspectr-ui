@@ -9,11 +9,29 @@ export default function useLocalStorage(key, defaultValue) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    const handleStorage = (e) => {
+      if (e.key && e.key !== key) return;
+      const newValue = localStorage.getItem(key);
+      setValue(newValue !== null ? newValue : defaultValue);
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('local-storage', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('local-storage', handleStorage);
+    };
+  }, [key, defaultValue]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
     if (value === undefined || value === null) {
       localStorage.removeItem(key);
     } else {
       localStorage.setItem(key, value);
     }
+    window.dispatchEvent(new CustomEvent('local-storage', { detail: { key, value } }));
   }, [key, value]);
 
   return [value, setValue];
