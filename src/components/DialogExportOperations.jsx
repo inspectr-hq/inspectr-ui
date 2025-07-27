@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useInspectr } from '../context/InspectrContext';
+import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 
 export default function DialogExportOperations({ open, onClose }) {
   const { client, setToast } = useInspectr();
@@ -9,6 +10,8 @@ export default function DialogExportOperations({ open, onClose }) {
   const [preset, setPreset] = useState('');
   const [since, setSince] = useState('');
   const [until, setUntil] = useState('');
+  const [openapiEnabled] = useFeaturePreview('feat_export_openapi');
+  const [postmanEnabled] = useFeaturePreview('feat_export_postman');
 
   const handleExport = async () => {
     setExporting(true);
@@ -127,9 +130,8 @@ export default function DialogExportOperations({ open, onClose }) {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           >
             <option value="json">JSON</option>
-            {/*<option value="openapi">OpenAPI (early-access)</option>*/}
-            {/*<option value="postman">Postman (early-access)</option>*/}
-            {/*<option value="phar">Phar</option>*/}
+            {openapiEnabled && <option value="openapi">OpenAPI (preview)</option>}
+            {postmanEnabled && <option value="postman">Postman (preview)</option>}
           </select>
         </div>
         <div className="flex justify-end space-x-3">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useInspectr } from '../context/InspectrContext';
 import { useLiveQuery } from 'dexie-react-hooks';
 import eventDB from '../utils/eventDB.js';
+import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 
 export default function DialogExportRecords({
   open,
@@ -13,6 +14,8 @@ export default function DialogExportRecords({
   const { client, setToast } = useInspectr();
   const [format, setFormat] = useState('json');
   const [exporting, setExporting] = useState(false);
+  const [openapiEnabled] = useFeaturePreview('feat_export_openapi');
+  const [postmanEnabled] = useFeaturePreview('feat_export_postman');
   const recordCount = useLiveQuery(async () => {
     if (!startTime) return 0;
     return await eventDB.db.events.where('time').above(startTime).count();
@@ -70,9 +73,8 @@ export default function DialogExportRecords({
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           >
             <option value="json">JSON</option>
-            {/*<option value="openapi">OpenAPI (early-access)</option>*/}
-            {/*<option value="postman">Postman (early-access)</option>*/}
-            {/*<option value="phar">Phar</option>*/}
+            {openapiEnabled && <option value="openapi">OpenAPI (preview)</option>}
+            {postmanEnabled && <option value="postman">Postman (preview)</option>}
           </select>
         </div>
         <div className="flex justify-end space-x-3">

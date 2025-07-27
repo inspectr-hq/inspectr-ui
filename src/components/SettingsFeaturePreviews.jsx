@@ -1,7 +1,7 @@
 import React from 'react';
 import { Divider } from '@tremor/react';
-import useLocalStorage from '../hooks/useLocalStorage.jsx';
 import BadgeIndicator from './BadgeIndicator.jsx';
+import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 
 const PREVIEWS = [
   {
@@ -12,23 +12,13 @@ const PREVIEWS = [
     image: 'https://inspectr.dev/preview/export-openapi.png'
   },
   {
-    slug: 'feat_export_openapi',
+    slug: 'feat_export_postman',
     title: 'Export as Postman Collection',
     description:
       'Export your API operations as a Postman collection. The Postman collection contains all requests based on the Inspectr Operations history.',
     image: 'https://inspectr.dev/preview/export-postman.png'
   }
 ];
-
-function useFeaturePreview(slug, defaultEnabled = false) {
-  const [value, setValue] = useLocalStorage(
-    `feature_preview_${slug}`,
-    defaultEnabled ? 'true' : 'false'
-  );
-  const enabled = value === 'true';
-  const setEnabled = (v) => setValue(v ? 'true' : 'false');
-  return [enabled, setEnabled];
-}
 
 export default function SettingsFeaturePreviews() {
   const features = PREVIEWS.map((f) => {
