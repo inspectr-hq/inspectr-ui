@@ -113,6 +113,12 @@ const InspectrApp = () => {
         }
         burstCountRef.current++;
 
+        // Check if data is empty or whitespace only
+        if (!e.data || e.data.trim() === '') {
+          console.warn('Received empty SSE data, skipping');
+          return;
+        }
+
         // Parse data as event
         const event = JSON.parse(e.data);
 
