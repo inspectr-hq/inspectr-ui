@@ -5,7 +5,7 @@
  * which are converted into frames with `event: "comment"`.
  *
  * @param {string} raw Raw SSE stream
- * @returns {Array<{id?:string,event?:string,data?:string}>}
+ * @returns {Array<{id?:string,event?:string,data?:string,timestamp?:number|string}>}
  */
 export function parseSseStream(raw) {
   if (!raw) return [];
@@ -15,14 +15,14 @@ export function parseSseStream(raw) {
   for (const line of lines) {
     if (line === '') {
       if (frame) {
-        frames.push(frame);
+        frames.push({ ...frame, timestamp: frame.timestamp ?? Date.now() });
         frame = null;
       }
       continue;
     }
     if (line.startsWith(':')) {
       const comment = line.slice(1).trimStart();
-      frames.push({ event: 'comment', data: comment });
+      frames.push({ event: 'comment', data: comment, timestamp: Date.now() });
       continue;
     }
     const idx = line.indexOf(':');
@@ -32,10 +32,13 @@ export function parseSseStream(raw) {
     const value = line.slice(idx + 1).trimStart();
     if (field === 'data') {
       frame.data = frame.data ? frame.data + '\n' + value : value;
+    } else if (field === 'timestamp' || field === 'time') {
+      const num = Number(value);
+      frame.timestamp = Number.isNaN(num) ? value : num;
     } else {
       frame[field] = value;
     }
   }
-  if (frame) frames.push(frame);
+  if (frame) frames.push({ ...frame, timestamp: frame.timestamp ?? Date.now() });
   return frames;
 }

@@ -11,6 +11,12 @@ const SseFramesViewer = ({ frames, raw }) => {
   if (!items.length) {
     return <div className="p-4">No event frames</div>;
   }
+
+  const renderTimestamp = (frame) => {
+    const ts = frame.timestamp ?? frame.time;
+    if (!ts) return '';
+    return typeof ts === 'number' ? new Date(ts).toISOString() : ts;
+  };
   return (
     <div className="overflow-auto h-full">
       <table className="w-full border-collapse border border-slate-200 dark:border-dark-tremor-border">
@@ -43,11 +49,7 @@ const SseFramesViewer = ({ frames, raw }) => {
                 {f.data || ''}
               </td>
               <td className="border px-2 py-1 font-mono text-xs text-slate-500 dark:text-dark-tremor-content">
-                {f.timestamp
-                  ? typeof f.timestamp === 'number'
-                    ? new Date(f.timestamp).toISOString()
-                    : f.timestamp
-                  : ''}
+                {renderTimestamp(f)}
               </td>
             </tr>
           ))}
