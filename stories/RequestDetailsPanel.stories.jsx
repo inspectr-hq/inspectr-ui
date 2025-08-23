@@ -77,7 +77,7 @@ export const SseResponse = () => (
         status: 200,
         status_text: 'OK',
         headers: [{ name: 'Content-Type', value: 'text/event-stream' }],
-        sse_frames: [
+        event_frames: [
           { event: 'message', data: 'hello' },
           { event: 'update', data: '{"count":1}' }
         ],
@@ -110,7 +110,7 @@ export const SseResponse = () => (
         status: 200,
         status_text: 'OK',
         headers: [{ name: 'Content-Type', value: 'text/event-stream' }],
-        sse_frames: [
+        event_frames: [
           {
             event: 'comment',
             data: 'connected 2025-08-18T20:16:22.116Z',

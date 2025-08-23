@@ -70,6 +70,9 @@ const ResponseContent = ({ operation }) => {
   // Check if content is SSE stream
   const isSseContent = typeof contentType === 'string' && contentType.includes('text/event-stream');
 
+  // New SSE frames field from backend
+  const availableSseFrames = operation?.response?.event_frames || [];
+
   // Method to map the editor language
   const getEditorLanguage = (type) => {
     if (!type) return 'json';
@@ -150,13 +153,13 @@ const ResponseContent = ({ operation }) => {
             }
           />
         </div>
-        {isEmptyPayload ? (
-          <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
-            No payload
-          </div>
-        ) : isSseContent ? (
+        {isSseContent ? (
           viewMode === 'preview' ? (
-            <SseFramesViewer frames={operation.response.sse_frames} raw={payload} />
+            <SseFramesViewer frames={availableSseFrames} raw={payload} />
+          ) : isEmptyPayload ? (
+            <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
+              No payload
+            </div>
           ) : (
             <Editor
               height="100%"
@@ -176,6 +179,10 @@ const ResponseContent = ({ operation }) => {
               }}
             />
           )
+        ) : isEmptyPayload ? (
+          <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
+            No payload
+          </div>
         ) : viewMode === 'preview' && isHTMLContent ? (
           <iframe
             title="HTML Preview"
