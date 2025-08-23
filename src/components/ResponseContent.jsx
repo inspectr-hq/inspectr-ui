@@ -4,6 +4,7 @@ import Editor from '@monaco-editor/react';
 import CopyButton from './CopyButton.jsx';
 import { defineMonacoThemes, getMonacoTheme } from '../utils/monacoTheme.js';
 import { formatXML } from '../utils/formatXml.js';
+import SseFramesViewer from './SseFramesViewer.jsx';
 
 const ResponseContent = ({ operation }) => {
   const [showResponseHeaders, setShowResponseHeaders] = useState(false);
@@ -66,6 +67,9 @@ const ResponseContent = ({ operation }) => {
   // Check if content is Image
   const isImageContent = typeof contentType === 'string' && contentType.startsWith('image/');
 
+  // Check if content is SSE stream
+  const isSseContent = typeof contentType === 'string' && contentType.includes('text/event-stream');
+
   // Method to map the editor language
   const getEditorLanguage = (type) => {
     if (!type) return 'json';
@@ -85,7 +89,7 @@ const ResponseContent = ({ operation }) => {
   const editorLanguage = getEditorLanguage(contentType);
 
   // Check if can be previewed
-  const supportsPreview = isHTMLContent || isImageContent;
+  const supportsPreview = isHTMLContent || isImageContent || isSseContent;
 
   return (
     <div className="flex flex-col h-full">
@@ -140,7 +144,9 @@ const ResponseContent = ({ operation }) => {
           )}
           <CopyButton
             textToCopy={
-              isHTMLContent || isImageContent ? payload : formatPayload(payload, contentType)
+              isHTMLContent || isImageContent || isSseContent
+                ? payload
+                : formatPayload(payload, contentType)
             }
           />
         </div>
@@ -148,6 +154,28 @@ const ResponseContent = ({ operation }) => {
           <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
             No payload
           </div>
+        ) : isSseContent ? (
+          viewMode === 'preview' ? (
+            <SseFramesViewer frames={operation.response.sse_frames} raw={payload} />
+          ) : (
+            <Editor
+              height="100%"
+              className="flex-1"
+              language="plaintext"
+              value={payload}
+              theme={getMonacoTheme()}
+              beforeMount={defineMonacoThemes}
+              options={{
+                readOnly: true,
+                minimap: { enabled: false },
+                automaticLayout: true,
+                fontFamily:
+                  '"Cascadia Code", "Jetbrains Mono", "Fira Code", "Menlo", "Consolas", monospace',
+                tabSize: 2,
+                scrollBeyondLastLine: false
+              }}
+            />
+          )
         ) : viewMode === 'preview' && isHTMLContent ? (
           <iframe
             title="HTML Preview"
