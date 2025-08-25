@@ -72,6 +72,8 @@ const ResponseContent = ({ operation }) => {
 
   // New SSE frames field from backend
   const availableSseFrames = operation?.response?.event_frames || [];
+  const hasEvents =
+    (Array.isArray(availableSseFrames) && availableSseFrames.length > 0) || isSseContent;
 
   // Method to map the editor language
   const getEditorLanguage = (type) => {
@@ -92,7 +94,7 @@ const ResponseContent = ({ operation }) => {
   const editorLanguage = getEditorLanguage(contentType);
 
   // Check if can be previewed
-  const supportsPreview = isHTMLContent || isImageContent || isSseContent;
+  const supportsPreview = isHTMLContent || isImageContent || hasEvents;
 
   return (
     <div className="flex flex-col h-full">
@@ -137,12 +139,21 @@ const ResponseContent = ({ operation }) => {
               >
                 Source
               </button>
-              <button
-                onClick={() => setViewMode('preview')}
-                className={`px-2 py-1 text-xs rounded ${viewMode === 'preview' ? 'bg-blue-600 dark:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
-              >
-                Preview
-              </button>
+              {hasEvents ? (
+                <button
+                  onClick={() => setViewMode('events')}
+                  className={`px-2 py-1 text-xs rounded ${viewMode === 'events' ? 'bg-blue-600 dark:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+                >
+                  Events
+                </button>
+              ) : (
+                <button
+                  onClick={() => setViewMode('preview')}
+                  className={`px-2 py-1 text-xs rounded ${viewMode === 'preview' ? 'bg-blue-600 dark:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+                >
+                  Preview
+                </button>
+              )}
             </div>
           )}
           <CopyButton
@@ -153,8 +164,10 @@ const ResponseContent = ({ operation }) => {
             }
           />
         </div>
-        {isSseContent ? (
-          viewMode === 'preview' ? (
+        {hasEvents && viewMode === 'events' ? (
+          <SseFramesViewer frames={availableSseFrames} raw={payload} />
+        ) : isSseContent ? (
+          viewMode === 'events' ? (
             <SseFramesViewer frames={availableSseFrames} raw={payload} />
           ) : isEmptyPayload ? (
             <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">

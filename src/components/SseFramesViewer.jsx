@@ -15,6 +15,49 @@ const SseFramesViewer = ({ frames, raw }) => {
   );
 
   const [showJson, setShowJson] = React.useState({});
+  const [sortKey, setSortKey] = React.useState(null); // 'id' | 'type' | 'data' | 'time'
+  const [sortDir, setSortDir] = React.useState('asc'); // 'asc' | 'desc'
+
+  const getTs = (frame) => {
+    const ts = frame.timestamp ?? frame.time;
+    if (ts == null) return 0;
+    if (typeof ts === 'number') return ts;
+    const n = Number(ts);
+    if (!Number.isNaN(n)) return n;
+    const d = new Date(ts).getTime();
+    return Number.isNaN(d) ? 0 : d;
+  };
+
+  const compareStr = (a, b) => String(a || '').localeCompare(String(b || ''));
+
+  const sortedItems = React.useMemo(() => {
+    if (!sortKey) return items;
+    const dir = sortDir === 'asc' ? 1 : -1;
+    return [...items].sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === 'id') cmp = compareStr(a.id, b.id);
+      else if (sortKey === 'type') cmp = compareStr(a.event, b.event);
+      else if (sortKey === 'data') cmp = compareStr(a.data, b.data);
+      else if (sortKey === 'time') cmp = getTs(a) - getTs(b);
+      return cmp * dir;
+    });
+  }, [items, sortKey, sortDir]);
+
+  const handleSort = (key) => {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir('asc');
+    } else if (sortDir === 'asc') {
+      setSortDir('desc');
+    } else if (sortDir === 'desc') {
+      // third click resets sorting
+      setSortKey(null);
+      setSortDir('asc');
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
   if (!items || !items.length) {
     return <div className="p-4">No event frames</div>;
   }
@@ -69,23 +112,55 @@ const SseFramesViewer = ({ frames, raw }) => {
 
         <thead>
           <tr className="bg-gray-100 dark:bg-dark-tremor-background-subtle">
-            <th className="border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white">
-              ID
+            <th
+              className="sticky top-0 z-10 border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white bg-gray-100 dark:bg-dark-tremor-background-subtle cursor-pointer select-none"
+              onClick={() => handleSort('id')}
+              aria-sort={
+                sortKey === 'id' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'
+              }
+            >
+              <span className="inline-flex items-center gap-1">
+                ID {sortKey === 'id' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+              </span>
             </th>
-            <th className="border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white">
-              Type
+            <th
+              className="sticky top-0 z-10 border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white bg-gray-100 dark:bg-dark-tremor-background-subtle cursor-pointer select-none"
+              onClick={() => handleSort('type')}
+              aria-sort={
+                sortKey === 'type' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'
+              }
+            >
+              <span className="inline-flex items-center gap-1">
+                Type {sortKey === 'type' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+              </span>
             </th>
-            <th className="border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white">
-              Data
+            <th
+              className="sticky top-0 z-10 border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white bg-gray-100 dark:bg-dark-tremor-background-subtle cursor-pointer select-none"
+              onClick={() => handleSort('data')}
+              aria-sort={
+                sortKey === 'data' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'
+              }
+            >
+              <span className="inline-flex items-center gap-1">
+                Data {sortKey === 'data' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+              </span>
             </th>
-            <th className="border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white whitespace-nowrap">
-              Time
+            <th
+              className="sticky top-0 z-10 border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white bg-gray-100 dark:bg-dark-tremor-background-subtle whitespace-nowrap cursor-pointer select-none"
+              onClick={() => handleSort('time')}
+              aria-sort={
+                sortKey === 'time' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'
+              }
+            >
+              <span className="inline-flex items-center gap-1">
+                Time {sortKey === 'time' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+              </span>
             </th>
           </tr>
         </thead>
 
         <tbody>
-          {items.map((f, i) => {
+          {sortedItems.map((f, i) => {
             const key = f.id ?? i; // stable key for toggle state
             const json = parseJson(f.data);
             const isOpen = !!showJson[key];
