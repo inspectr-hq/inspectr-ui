@@ -1,8 +1,10 @@
 // src/components/RequestList.jsx
 import React, { useState } from 'react';
+import useLocalStorage from '../hooks/useLocalStorage.jsx';
 import RequestListItem from './RequestListItem';
 import RequestListSidePanel from './RequestListSidePanel';
 import RequestListPagination from './RequestListPagination';
+import { RiExpandWidthFill } from '@remixicon/react';
 import DialogConfirmClear from './DialogConfirmClear.jsx';
 import DividerText from './DividerText.jsx';
 
@@ -28,6 +30,12 @@ const RequestList = ({
 }) => {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const [showQueryParamsValue, setShowQueryParamsValue] = useLocalStorage(
+    'showQueryParams',
+    'false'
+  );
+  const showQueryParams = showQueryParamsValue === 'true';
 
   // Calculate the number of active filters.
   const activeFiltersCount = Object.entries(filters || {}).reduce((count, [key, value]) => {
@@ -97,8 +105,11 @@ const RequestList = ({
               </span>
             )}
           </button>
+
           <button
-            className={`px-3 py-1 bg-teal-500 text-white rounded text-xs ${isSyncing ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'}`}
+            className={`px-3 py-1 bg-teal-500 text-white rounded text-xs ${
+              isSyncing ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'
+            }`}
             onClick={syncOperations}
             disabled={isSyncing}
           >
@@ -146,7 +157,26 @@ const RequestList = ({
       >
         <div className="w-16 text-center">Status</div>
         <div className="w-20 text-center">Method</div>
-        <div className="flex-grow text-left">Path</div>
+        <div className="flex-grow text-left flex items-center">
+          <span>Path</span>
+          <button
+            type="button"
+            className={`ml-2 p-1 rounded transition-colors cursor-pointer ${
+              showQueryParams
+                ? 'text-blue-700 bg-blue-100 hover:bg-blue-200 dark:text-blue-400 dark:bg-blue-900/30 dark:hover:bg-blue-900/50'
+                : 'text-gray-500 hover:bg-gray-300 dark:text-gray-400 dark:hover:bg-gray-700'
+            }`}
+            title={`Toggle query params (${showQueryParams ? 'On' : 'Off'})`}
+            aria-label={`Show query params: ${showQueryParams ? 'On' : 'Off'}`}
+            aria-pressed={showQueryParams}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowQueryParamsValue(showQueryParams ? 'false' : 'true');
+            }}
+          >
+            <RiExpandWidthFill className="w-4 h-4" />
+          </button>
+        </div>
         <div className="w-20 text-center">Timestamp</div>
         <div className="w-16 text-right">Duration</div>
         <div className="w-10"></div>
@@ -176,6 +206,7 @@ const RequestList = ({
                     onSelect={onSelect}
                     onRemove={onRemove}
                     selected={selectedOperation && selectedOperation.id === opId}
+                    showQueryParams={showQueryParams}
                   />
                 );
               })}
