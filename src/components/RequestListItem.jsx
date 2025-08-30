@@ -42,9 +42,10 @@ const RequestListItem = ({
   const query = operation?.request?.query_params;
   let fullPath = basePath || operation?.request?.url;
 
-  if (showQueryParams && basePath && Array.isArray(query) && query.length > 0) {
-    const qs = query.map((p) => `${p.name}=${p.value}`).join('&');
-    fullPath = `${basePath}?${qs}`;
+  const hasQuery = showQueryParams && basePath && Array.isArray(query) && query.length > 0;
+  const qs = hasQuery ? `?${query.map((p) => `${p.name}=${p.value}`).join('&')}` : '';
+  if (hasQuery) {
+    fullPath = `${basePath}${qs}`;
   }
 
   return (
@@ -73,7 +74,14 @@ const RequestListItem = ({
           className="flex-grow truncate text-left text-tremor-content-strong dark:text-dark-tremor-content-strong"
           title={fullPath}
         >
-          {fullPath}
+          {basePath ? (
+            <>
+              <span>{basePath}</span>
+              {hasQuery && <span className="text-gray-400 dark:text-gray-400">{qs}</span>}
+            </>
+          ) : (
+            fullPath
+          )}
         </div>
         <div className="w-20 text-gray-900 dark:text-dark-tremor-content text-center text-xs">
           {operation?.request?.timestamp ? formatTime(operation.request.timestamp) : 'N/A'}

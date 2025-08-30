@@ -105,7 +105,7 @@ const RequestList = ({
               </span>
             )}
           </button>
-          
+
           <button
             className={`px-3 py-1 bg-teal-500 text-white rounded text-xs ${
               isSyncing ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'
