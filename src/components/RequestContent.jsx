@@ -1,5 +1,5 @@
 // src/components/RequestContent.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import DialogJwt from './DialogJwt.jsx';
 import CopyButton from './CopyButton.jsx';
@@ -42,8 +42,34 @@ const isJWT = (token) => {
 const RequestContent = ({ operation }) => {
   const [showQueryParams, setShowQueryParams] = useState(false);
   const [showRequestHeaders, setShowRequestHeaders] = useState(false);
+  const headersSectionRef = useRef(null);
+  useEffect(() => {
+    const open = () => {
+      setShowRequestHeaders(true);
+      // Scroll to headers section after it expands
+      setTimeout(() => {
+        headersSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 0);
+    };
+    window.addEventListener('inspectr:openRequestHeaders', open);
+    return () => window.removeEventListener('inspectr:openRequestHeaders', open);
+  }, []);
   const [jwtDialogOpen, setJwtDialogOpen] = useState(false);
   const [jwtDecoded, setJwtDecoded] = useState(null);
+
+  const normalizeHeaders = (headers) => {
+    if (!headers) return [];
+    if (Array.isArray(headers)) {
+      return headers.map((h) => ({ name: h.name ?? h.key ?? '', value: h.value }));
+    }
+    if (typeof headers === 'object') {
+      if ('name' in headers && 'value' in headers) {
+        return [{ name: headers.name, value: headers.value }];
+      }
+      return Object.entries(headers).map(([name, value]) => ({ name, value }));
+    }
+    return [];
+  };
 
   // Opens the JWT dialog by decoding the token.
   const handleDecodeJWT = (token) => {
@@ -56,70 +82,113 @@ const RequestContent = ({ operation }) => {
     }
   };
 
-  // Render table rows for a given data object.
+  // Auth header helpers
+  const getAuthLabelForHeader = (name, value) => {
+    if (!name) return null;
+    const lower = name.toLowerCase();
+    const compact = lower.replace(/[^a-z]/g, '');
+    if (lower === 'authorization') {
+      const v = String(value || '').toLowerCase();
+      if (v.startsWith('basic')) return 'Basic';
+      if (v.startsWith('bearer')) return 'Bearer';
+      return 'Auth';
+    }
+    if (compact.includes('apikey')) return 'API Key';
+    if (compact.includes('inspectrauthkey')) return 'Key';
+    if (compact.includes('inspectrauthtoken')) return 'Token';
+    return null;
+  };
+
+  const AuthBadge = ({ label }) => (
+    <span className="ml-2 py-0.5 px-1.5 inline-flex items-center gap-x-1 text-[10px] font-medium bg-blue-100 text-blue-800 rounded-md dark:bg-blue-500/10 dark:text-blue-500">
+      <svg
+        className="shrink-0 h-3 w-3"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+      {label}
+    </span>
+  );
+
+  // Render table rows for a given data array.
   // For JWT values, display a Decode button next to the value.
-  const renderTableRows = (data) =>
-    data.map((row) => (
-      <tr key={row.name}>
-        <td className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 font-mono text-slate-500 dark:text-dark-tremor-content text-xs">
-          {row.name}
-        </td>
-        <td className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 font-mono text-xs dark:text-dark-tremor-content">
-          <div className="flex flex-wrap items-center">
-            <span className="min-w-0 break-all flex-1">{row.value}</span>
-            {isJWT(row.value) && (
-              <button
-                onClick={() => handleDecodeJWT(row.value)}
-                className="ml-2 p-1 text-blue-500 dark:text-blue-400 text-xs border border-slate-600 dark:border-slate-500 rounded cursor-pointer"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 48 48">
-                  <polygon
-                    fill="#546e7a"
-                    points="21.906,31.772 24.507,29.048 27.107,31.772 27.107,43 21.906,43"
-                  />
-                  <polygon
-                    fill="#f50057"
-                    points="17.737,29.058 21.442,28.383 21.945,32.115 15.345,41.199 11.138,38.141"
-                  />
-                  <polygon
-                    fill="#d500f9"
-                    points="15.962,24.409 19.355,26.041 17.569,29.356 6.89,32.825 5.283,27.879"
-                  />
-                  <polygon
-                    fill="#29b6f6"
-                    points="17.256,19.607 19.042,22.922 15.649,24.554 4.97,21.084 6.577,16.137"
-                  />
-                  <polygon
-                    fill="#00e5ff"
-                    points="21.126,16.482 20.623,20.214 16.918,19.539 10.318,10.455 14.526,7.398"
-                  />
-                  <polygon
-                    fill="#546e7a"
-                    points="26.094,16.228 23.493,18.952 20.893,16.228 20.893,5 26.094,5"
-                  />
-                  <polygon
-                    fill="#f50057"
-                    points="30.262,18.943 26.558,19.618 26.055,15.886 32.654,6.802 36.862,9.859"
-                  />
-                  <polygon
-                    fill="#d500f9"
-                    points="32.039,23.59 28.645,21.958 30.431,18.643 41.11,15.174 42.717,20.12"
-                  />
-                  <polygon
-                    fill="#29b6f6"
-                    points="30.744,28.393 28.958,25.078 32.351,23.447 43.03,26.916 41.423,31.863"
-                  />
-                  <polygon
-                    fill="#00e5ff"
-                    points="26.874,31.518 27.378,27.786 31.082,28.461 37.682,37.545 33.474,40.602"
-                  />
-                </svg>
-              </button>
-            )}
-          </div>
-        </td>
-      </tr>
-    ));
+  // When isHeaders=true, show an auth badge next to any auth-related header name.
+  const renderTableRows = (data, isHeaders = false) =>
+    data.map((row) => {
+      const authLabel = isHeaders ? getAuthLabelForHeader(row.name, row.value) : null;
+      return (
+        <tr key={row.name}>
+          <td className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 font-mono text-slate-500 dark:text-dark-tremor-content text-xs">
+            <div className="flex items-center">
+              <span>{row.name}</span>
+              {authLabel && <AuthBadge label={authLabel} />}
+            </div>
+          </td>
+          <td className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 font-mono text-xs dark:text-dark-tremor-content">
+            <div className="flex flex-wrap items-center">
+              <span className="min-w-0 break-all flex-1">{row.value}</span>
+              {isJWT(row.value) && (
+                <button
+                  onClick={() => handleDecodeJWT(row.value)}
+                  className="ml-2 p-1 text-blue-500 dark:text-blue-400 text-xs border border-slate-600 dark:border-slate-500 rounded cursor-pointer"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 48 48">
+                    <polygon
+                      fill="#546e7a"
+                      points="21.906,31.772 24.507,29.048 27.107,31.772 27.107,43 21.906,43"
+                    />
+                    <polygon
+                      fill="#f50057"
+                      points="17.737,29.058 21.442,28.383 21.945,32.115 15.345,41.199 11.138,38.141"
+                    />
+                    <polygon
+                      fill="#d500f9"
+                      points="15.962,24.409 19.355,26.041 17.569,29.356 6.89,32.825 5.283,27.879"
+                    />
+                    <polygon
+                      fill="#29b6f6"
+                      points="17.256,19.607 19.042,22.922 15.649,24.554 4.97,21.084 6.577,16.137"
+                    />
+                    <polygon
+                      fill="#00e5ff"
+                      points="21.126,16.482 20.623,20.214 16.918,19.539 10.318,10.455 14.526,7.398"
+                    />
+                    <polygon
+                      fill="#546e7a"
+                      points="26.094,16.228 23.493,18.952 20.893,16.228 20.893,5 26.094,5"
+                    />
+                    <polygon
+                      fill="#f50057"
+                      points="30.262,18.943 26.558,19.618 26.055,15.886 32.654,6.802 36.862,9.859"
+                    />
+                    <polygon
+                      fill="#d500f9"
+                      points="32.039,23.59 28.645,21.958 30.431,18.643 41.11,15.174 42.717,20.12"
+                    />
+                    <polygon
+                      fill="#29b6f6"
+                      points="30.744,28.393 28.958,25.078 32.351,23.447 43.03,26.916 41.423,31.863"
+                    />
+                    <polygon
+                      fill="#00e5ff"
+                      points="26.874,31.518 27.378,27.786 31.082,28.461 37.682,37.545 33.474,40.602"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </td>
+        </tr>
+      );
+    });
 
   // Check if the request body has content.
   const payload = operation.request.body;
@@ -160,19 +229,19 @@ const RequestContent = ({ operation }) => {
                   </th>
                 </tr>
               </thead>
-              <tbody>{renderTableRows(operation?.request?.query_params ?? [])}</tbody>
+              <tbody>{renderTableRows(operation?.request?.query_params ?? [], false)}</tbody>
             </table>
           </div>
         )}
       </div>
 
       {/* Request Headers Section */}
-      <div className="mb-4">
+      <div className="mb-4" ref={headersSectionRef}>
         <button
           className="w-full p-2 text-left font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong cursor-pointer"
           onClick={() => setShowRequestHeaders(!showRequestHeaders)}
         >
-          Headers ({(operation?.request?.headers ?? []).length})
+          Headers ({normalizeHeaders(operation?.request?.headers).length})
         </button>
         {showRequestHeaders && (
           <div className="p-0">
@@ -187,7 +256,7 @@ const RequestContent = ({ operation }) => {
                   </th>
                 </tr>
               </thead>
-              <tbody>{renderTableRows(operation?.request?.headers ?? [])}</tbody>
+              <tbody>{renderTableRows(normalizeHeaders(operation?.request?.headers), true)}</tbody>
             </table>
           </div>
         )}

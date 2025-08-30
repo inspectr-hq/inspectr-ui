@@ -105,7 +105,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
 
   return (
     <div className="flex flex-col h-full" style={isLoaded ? fadeInStyle : hiddenStyle}>
-      <RequestDetail operation={operation} />
+      <RequestDetail operation={operation} setCurrentTab={setCurrentTab} />
 
       {/* Tabs for Request, Response */}
       <div className="flex space-x-2">
