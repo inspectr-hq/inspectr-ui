@@ -63,7 +63,7 @@ export const ResponseTab = () => (
   />
 );
 
-export const SseResponse = () => (
+export const SseResponseBasic = () => (
   <RequestDetailsPanel
     operation={{
       request: {
@@ -220,6 +220,177 @@ export const InfoTab = () => (
       }
     }}
     currentTab="meta"
+    setCurrentTab={() => {}}
+  />
+);
+
+// Authentication indicator examples
+export const AuthToken = () => {
+  const [tab, setTab] = React.useState('request');
+  return (
+    <RequestDetailsPanel
+      operation={{
+        request: {
+          method: 'GET',
+          url: 'http://localhost:3000/api/secure',
+          path: '/api/secure',
+          headers: [{ name: 'Content-Type', value: 'application/json' }],
+          timestamp: new Date()
+        },
+        response: { status: 200, status_text: 'OK' },
+        timing: { duration: 42 },
+        meta: { inspectr: { guard: { 'inspectr-auth-token': 'secret-token' } } }
+      }}
+      currentTab={tab}
+      setCurrentTab={setTab}
+    />
+  );
+};
+AuthToken.storyName = 'Guard Token';
+
+export const AuthKey = () => {
+  const [tab, setTab] = React.useState('request');
+  return (
+    <RequestDetailsPanel
+      operation={{
+        request: {
+          method: 'GET',
+          url: 'http://localhost:3000/api/secure',
+          path: '/api/secure',
+          headers: [{ name: 'Content-Type', value: 'application/json' }],
+          timestamp: new Date()
+        },
+        response: { status: 200, status_text: 'OK' },
+        timing: { duration: 42 },
+        meta: { inspectr: { guard: { 'inspectr-auth-key': 'key-123' } } }
+      }}
+      currentTab={tab}
+      setCurrentTab={setTab}
+    />
+  );
+};
+AuthKey.storyName = 'Guard Key';
+
+export const ApiKeyHeader = () => (
+  <RequestDetailsPanel
+    operation={{
+      request: {
+        method: 'GET',
+        url: 'http://localhost:3000/api/secure',
+        path: '/api/secure',
+        headers: [
+          { name: 'Content-Type', value: 'application/json' },
+          { name: 'X-API-Key', value: 'abc123' }
+        ],
+        timestamp: new Date()
+      },
+      response: { status: 200, status_text: 'OK' },
+      timing: { duration: 42 }
+    }}
+    currentTab="request"
+    setCurrentTab={() => {}}
+  />
+);
+
+export const ApiKeyHeaderVariants = () => (
+  <RequestDetailsPanel
+    operation={{
+      request: {
+        method: 'GET',
+        url: 'http://localhost:3000/api/secure',
+        path: '/api/secure',
+        headers: [
+          { name: 'apikey', value: 'abc123' },
+          { name: 'API_Key', value: 'abc123' },
+          { name: 'XApiKey', value: 'abc123' }
+        ],
+        timestamp: new Date()
+      },
+      response: { status: 200, status_text: 'OK' },
+      timing: { duration: 42 }
+    }}
+    currentTab="request"
+    setCurrentTab={() => {}}
+  />
+);
+
+export const BasicAuthHeader = () => (
+  <RequestDetailsPanel
+    operation={{
+      request: {
+        method: 'GET',
+        url: 'http://localhost:3000/api/secure',
+        path: '/api/secure',
+        headers: [
+          { name: 'Content-Type', value: 'application/json' },
+          { name: 'Authorization', value: 'Basic YWxhZGRpbjpvcGVuc2VzYW1l' }
+        ],
+        timestamp: new Date()
+      },
+      response: { status: 200, status_text: 'OK' },
+      timing: { duration: 42 }
+    }}
+    currentTab="request"
+    setCurrentTab={() => {}}
+  />
+);
+
+export const BearerAuthHeader = () => (
+  <RequestDetailsPanel
+    operation={{
+      request: {
+        method: 'GET',
+        url: 'http://localhost:3000/api/secure',
+        path: '/api/secure',
+        headers: [
+          { name: 'Content-Type', value: 'application/json' },
+          { name: 'Authorization', value: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' }
+        ],
+        timestamp: new Date()
+      },
+      response: { status: 200, status_text: 'OK' },
+      timing: { duration: 42 }
+    }}
+    currentTab="request"
+    setCurrentTab={() => {}}
+  />
+);
+
+export const OtherAuthHeader = () => (
+  <RequestDetailsPanel
+    operation={{
+      request: {
+        method: 'GET',
+        url: 'http://localhost:3000/api/secure',
+        path: '/api/secure',
+        headers: [
+          { name: 'Content-Type', value: 'application/json' },
+          { name: 'Authorization', value: 'Digest username="Mufasa", realm="test"' }
+        ],
+        timestamp: new Date()
+      },
+      response: { status: 200, status_text: 'OK' },
+      timing: { duration: 42 }
+    }}
+    currentTab="request"
+    setCurrentTab={() => {}}
+  />
+);
+
+export const NoAuth = () => (
+  <RequestDetailsPanel
+    operation={{
+      request: {
+        method: 'GET',
+        url: 'http://localhost:3000/api/public',
+        path: '/api/public',
+        headers: [{ name: 'Content-Type', value: 'application/json' }],
+        timestamp: new Date()
+      },
+      response: { status: 200, status_text: 'OK' },
+      timing: { duration: 42 }
+    }}
+    currentTab="request"
     setCurrentTab={() => {}}
   />
 );

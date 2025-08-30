@@ -10,6 +10,20 @@ const ResponseContent = ({ operation }) => {
   const [showResponseHeaders, setShowResponseHeaders] = useState(false);
   const [viewMode, setViewMode] = useState('source');
 
+  const normalizeHeaders = (headers) => {
+    if (!headers) return [];
+    if (Array.isArray(headers)) {
+      return headers.map((h) => ({ name: h.name ?? h.key ?? '', value: h.value }));
+    }
+    if (typeof headers === 'object') {
+      if ('name' in headers && 'value' in headers) {
+        return [{ name: headers.name, value: headers.value }];
+      }
+      return Object.entries(headers).map(([name, value]) => ({ name, value }));
+    }
+    return [];
+  };
+
   const renderTableRows = (data) =>
     data.map((row) => (
       <tr key={row.name}>
@@ -49,7 +63,8 @@ const ResponseContent = ({ operation }) => {
 
   // Method to detect the content type from headers
   const getContentType = () => {
-    const raw = (operation?.response?.headers ?? []).find(
+    const hdrs = normalizeHeaders(operation?.response?.headers);
+    const raw = hdrs.find(
       (h) => h.name?.toLowerCase() === 'content-type' || h.key?.toLowerCase() === 'content-type'
     )?.value;
     return typeof raw === 'string' ? raw.split(';')[0].trim() : undefined;
@@ -104,7 +119,7 @@ const ResponseContent = ({ operation }) => {
           className="w-full p-2 text-left font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong cursor-pointer"
           onClick={() => setShowResponseHeaders(!showResponseHeaders)}
         >
-          Headers ({(operation?.response?.headers ?? []).length})
+          Headers ({normalizeHeaders(operation?.response?.headers).length})
         </button>
         {showResponseHeaders && (
           <div className="p-0">
@@ -119,7 +134,7 @@ const ResponseContent = ({ operation }) => {
                   </th>
                 </tr>
               </thead>
-              <tbody>{renderTableRows(operation?.response?.headers ?? [])}</tbody>
+              <tbody>{renderTableRows(normalizeHeaders(operation?.response?.headers))}</tbody>
             </table>
           </div>
         )}

@@ -8,8 +8,9 @@ import { Popover } from '@headlessui/react';
 import CopyButton from './CopyButton.jsx';
 import { useInspectr } from '../context/InspectrContext';
 import { Tooltip } from './ToolTip.jsx';
+import AuthIndicator from './AuthIndicator.jsx';
 
-const RequestDetail = ({ operation }) => {
+const RequestDetail = ({ operation, setCurrentTab }) => {
   // Get the client from context
   const { client } = useInspectr();
 
@@ -146,12 +147,40 @@ const RequestDetail = ({ operation }) => {
     </svg>
   );
 
+  const handleAuthIndicatorClick = () => {
+    const guard = operation?.meta?.inspectr?.guard || {};
+    const guardKey = guard['inspectr-auth-key'];
+    const guardToken = guard['inspectr-auth-token'];
+    if (guardKey || guardToken) {
+      if (typeof setCurrentTab === 'function') setCurrentTab('meta');
+      setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent('inspectr:openMetaGuard', {
+            detail: { name: guardToken ? 'inspectr-auth-token' : 'inspectr-auth-key' }
+          })
+        );
+      }, 150);
+      return;
+    }
+    if (typeof setCurrentTab === 'function') {
+      setCurrentTab('request');
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('inspectr:openRequestHeaders'));
+      }, 50);
+    } else {
+      window.dispatchEvent(new CustomEvent('inspectr:openRequestHeaders'));
+    }
+  };
+
   return (
     <div className="mb-4 p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded shadow dark:shadow-dark-tremor-shadow relative">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="font-bold text-2xl text-tremor-content-strong dark:text-dark-tremor-content-strong">
-          Request Details
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="font-bold text-2xl text-tremor-content-strong dark:text-dark-tremor-content-strong">
+            Request Details
+          </h2>
+          <AuthIndicator operation={operation} onClick={handleAuthIndicatorClick} />
+        </div>
         <div className="flex space-x-2">
           {/* Copy as cURL Button */}
           <button onClick={handleCopyCurl} className={buttonClasses}>
