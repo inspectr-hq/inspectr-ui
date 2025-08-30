@@ -10,7 +10,14 @@ const selectedClass = [
 ].join(' ');
 const baseBorderClass = 'border-l-4';
 
-const RequestListItem = ({ operation, opId, onSelect, onRemove, selected }) => {
+const RequestListItem = ({
+  operation,
+  opId,
+  onSelect,
+  onRemove,
+  selected,
+  showQueryParams = false
+}) => {
   const handleSelect = (operation) => {
     onSelect(operation);
   };
@@ -30,6 +37,15 @@ const RequestListItem = ({ operation, opId, onSelect, onRemove, selected }) => {
     const seconds = String(date.getSeconds()).padStart(2, '0');
     return `${hours}:${minutes}:${seconds}`;
   };
+
+  const basePath = operation?.request?.path;
+  const query = operation?.request?.query_params;
+  let fullPath = basePath || operation?.request?.url;
+
+  if (showQueryParams && basePath && Array.isArray(query) && query.length > 0) {
+    const qs = query.map((p) => `${p.name}=${p.value}`).join('&');
+    fullPath = `${basePath}?${qs}`;
+  }
 
   return (
     <li
@@ -53,8 +69,11 @@ const RequestListItem = ({ operation, opId, onSelect, onRemove, selected }) => {
         >
           {operation?.request?.method || 'GET'}
         </div>
-        <div className="flex-grow truncate text-left text-tremor-content-strong dark:text-dark-tremor-content-strong">
-          {operation?.request.path || operation?.request.url}
+        <div
+          className="flex-grow truncate text-left text-tremor-content-strong dark:text-dark-tremor-content-strong"
+          title={fullPath}
+        >
+          {fullPath}
         </div>
         <div className="w-20 text-gray-900 dark:text-dark-tremor-content text-center text-xs">
           {operation?.request?.timestamp ? formatTime(operation.request.timestamp) : 'N/A'}

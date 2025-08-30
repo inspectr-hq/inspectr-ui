@@ -43,6 +43,9 @@ const InspectrApp = () => {
 
   const [page, setPage] = useState(1);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [leftPanelWidthValue, setLeftPanelWidthValue] = useLocalStorage('leftPanelWidth', '33');
+  const leftPanelWidth = parseFloat(leftPanelWidthValue || '33');
+  const isResizingRef = useRef(false);
 
   const [sortField, setSortField] = useState('time');
   const [sortDirection, setSortDirection] = useState('desc');
@@ -340,6 +343,29 @@ const InspectrApp = () => {
     }
   };
 
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizingRef.current) return;
+      const newWidth = (e.clientX / window.innerWidth) * 100;
+      if (newWidth > 10 && newWidth < 90) {
+        setLeftPanelWidthValue(String(newWidth));
+      }
+    };
+    const stopResizing = () => {
+      isResizingRef.current = false;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', stopResizing);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', stopResizing);
+    };
+  }, [setLeftPanelWidthValue]);
+
+  const startResizing = () => {
+    isResizingRef.current = true;
+  };
+
   return (
     <div
       className="flex flex-col h-screen bg-white dark:bg-dark-tremor-background"
@@ -347,7 +373,10 @@ const InspectrApp = () => {
     >
       <div className="flex flex-grow">
         {/* Left Panel */}
-        <div className="w-1/3 border-r border-gray-300 dark:border-dark-tremor-border overflow-y-auto">
+        <div
+          className="border-r border-gray-300 dark:border-dark-tremor-border overflow-y-auto"
+          style={{ width: `${leftPanelWidth}%` }}
+        >
           <RequestList
             operations={operations || []}
             onSelect={handleSelect}
@@ -369,9 +398,16 @@ const InspectrApp = () => {
             isSyncing={isSyncing}
           />
         </div>
+        <div
+          className="w-1 bg-gray-300 dark:bg-dark-tremor-border cursor-col-resize"
+          onMouseDown={startResizing}
+        ></div>
 
         {/* Right Panel */}
-        <div className="w-2/3 p-4 h-full overflow-y-auto bg-white dark:bg-dark-tremor-background text-tremor-content-strong dark:text-dark-tremor-content-strong">
+        <div
+          className="p-4 h-full overflow-y-auto bg-white dark:bg-dark-tremor-background text-tremor-content-strong dark:text-dark-tremor-content-strong"
+          style={{ width: `${100 - leftPanelWidth}%` }}
+        >
           <div className="flex flex-col h-full">
             <RequestDetailsPanel
               operation={selectedOperation}
