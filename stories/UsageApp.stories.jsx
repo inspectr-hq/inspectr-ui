@@ -51,6 +51,9 @@ const mockMetricsStarting = {
     plan: 'open_source',
     licensed: false,
     limit: 1000
+  },
+  meta: {
+    installed_at: '2025-09-01T18:02:51Z'
   }
 };
 
@@ -98,6 +101,9 @@ const mockMetricsUnlicensed = {
     plan: 'open_source',
     licensed: false,
     limit: 1000
+  },
+  meta: {
+    installed_at: '2025-09-01T18:02:51Z'
   }
 };
 
@@ -144,6 +150,9 @@ const mockMetricsLicensed = {
   mcp: {
     plan: 'pro',
     licensed: true
+  },
+  meta: {
+    installed_at: '2025-09-01T18:02:51Z'
   }
 };
 

@@ -55,6 +55,19 @@ const UsageApp = () => {
       ? 'bg-brand-primary text-gray-900'
       : 'bg-white border border-brand-primary text-brand-primary';
 
+  // Installed at -> "Usage metrics since <date>"
+  const installedSinceText = (() => {
+    const iso = metrics?.meta?.installed_at;
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d)) return null;
+    return d.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  })();
+
   // Keep hooks above early returns to satisfy React's Rules of Hooks
   useEffect(() => {
     // Show upgrade box only when explicitly not licensed; allow temporary dismiss for this session
@@ -116,6 +129,9 @@ const UsageApp = () => {
             </a>
           </p>
         </div>
+        {installedSinceText && (
+          <Text className="-mt-2 text-sm text-gray-500">Usage metrics since {installedSinceText}</Text>
+        )}
         <Card className="p-6">
           <div className="flex items-center gap-2">
             <img
@@ -131,11 +147,11 @@ const UsageApp = () => {
           <Text className="mt-1 text-gray-500">Request, response, and event counts by source.</Text>
           <div className="mt-2 flex items-center gap-4 text-tremor-default text-tremor-content dark:text-dark-tremor-content">
             <span className="inline-flex items-center gap-2">
-              <span className="inline-block h-2 w-2 rounded-sm bg-gray-400 dark:bg-gray-500"></span>
-              local
+              <span className="inline-block h-2 w-2 rounded-sm bg-cyan-500"></span>
+              proxy
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="inline-block h-2 w-2 rounded-sm bg-gray-600 dark:bg-gray-400"></span>
+              <span className="inline-block h-2 w-2 rounded-sm bg-yellow-500"></span>
               ingress
             </span>
           </div>
@@ -146,8 +162,8 @@ const UsageApp = () => {
               <div className="mt-3">
                 <BarList
                   data={[
-                    { name: 'local', value: operations.requests_local ?? 0 },
-                    { name: 'ingress', value: operations.requests_ingress ?? 0 }
+                    { name: 'proxy', value: operations.requests_local ?? 0, color: 'cyan' },
+                    { name: 'ingress', value: operations.requests_ingress ?? 0, color: 'yellow' }
                   ]}
                 />
               </div>
@@ -158,8 +174,8 @@ const UsageApp = () => {
               <div className="mt-3">
                 <BarList
                   data={[
-                    { name: 'local', value: operations.responses_local ?? 0 },
-                    { name: 'ingress', value: operations.responses_ingress ?? 0 }
+                    { name: 'proxy', value: operations.responses_local ?? 0, color: 'cyan' },
+                    { name: 'ingress', value: operations.responses_ingress ?? 0, color: 'yellow' }
                   ]}
                 />
               </div>
@@ -170,8 +186,8 @@ const UsageApp = () => {
               <div className="mt-3">
                 <BarList
                   data={[
-                    { name: 'local', value: operations.event_frames_local ?? 0 },
-                    { name: 'ingress', value: operations.event_frames_ingress ?? 0 }
+                    { name: 'proxy', value: operations.event_frames_local ?? 0, color: 'cyan' },
+                    { name: 'ingress', value: operations.event_frames_ingress ?? 0, color: 'yellow' }
                   ]}
                 />
               </div>
