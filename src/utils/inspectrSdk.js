@@ -300,6 +300,19 @@ class ServiceClient {
 
     return await res.json();
   }
+
+  /**
+   * Get usage metrics
+   * @returns {Promise<Object>} - Metrics data
+   */
+  async getMetrics() {
+    const res = await fetch(`${this.client.apiEndpoint}/metrics`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Metrics failed (${res.status})`);
+    return await res.json();
+  }
 }
 
 /**

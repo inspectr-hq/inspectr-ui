@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import DashBoardApp from './DashBoardApp.jsx';
 import InspectrApp from './InspectrApp.jsx';
 import SettingsApp from './SettingsApp.jsx';
+import UsageApp from './UsageApp.jsx';
 import useHashRouter from '../hooks/useHashRouter.jsx';
 import ToastNotification from './ToastNotification.jsx';
 import DialogMockLaunch from './DialogMockLaunch.jsx';
@@ -23,6 +24,7 @@ function classNames(...classes) {
 const navigation = [
   { name: 'Request History', slug: 'inspectr', component: InspectrApp },
   { name: 'Statistics', slug: 'statistics', component: DashBoardApp },
+  { name: 'Usage', slug: 'usage', component: UsageApp },
   { name: 'Settings', slug: 'settings', component: SettingsApp }
 ];
 
@@ -142,7 +144,7 @@ export default function Workspace() {
 
         {/* ——— Content Area ——— */}
         <div className="flex-grow overflow-auto">
-          {['statistics', 'settings'].includes(currentNav.slug) ? (
+          {['statistics', 'settings', 'usage'].includes(currentNav.slug) ? (
             <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-950">
               <ActiveComponent key={currentNav.slug} />
             </div>

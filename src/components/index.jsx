@@ -1,6 +1,7 @@
 // src/components/index.jsx
 
 export { default as InspectrApp } from './InspectrApp.jsx';
+export { default as UsageApp } from './UsageApp.jsx';
 export { default as CopyButton } from './CopyButton.jsx';
 export { default as DashBoardApp } from './DashBoardApp.jsx';
 export { default as DashBoardKpi } from './DashBoardKpi.jsx';
