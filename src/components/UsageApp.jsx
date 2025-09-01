@@ -61,8 +61,8 @@ const UsageApp = () => {
   const planLabel = planKey === 'pro' ? 'Pro' : 'Open Source';
   const planBadgeClass =
     planKey === 'pro'
-      ? 'bg-brand-primary text-gray-900'
-      : 'bg-white border border-brand-primary text-brand-primary';
+      ? 'bg-brand-primary text-gray-900 '
+      : 'bg-white dark:bg-gray-800/10 border border-brand-primary text-brand-primary';
 
   // Installed at -> "Usage metrics since <date>"
   const installedSinceText = (() => {
