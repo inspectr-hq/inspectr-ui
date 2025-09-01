@@ -6,30 +6,39 @@ import mcpIcon from '../assets/icons/mcp.svg';
 import toolsIcon from '../assets/icons/tools.svg';
 import resourcesIcon from '../assets/icons/resources.svg';
 import promptsIcon from '../assets/icons/prompts.svg';
-import { Card, Title, Text, Metric, ProgressBar, BarList } from '@tremor/react';
+import { Card, Title, Text, Metric, ProgressBar, BarList, Button } from '@tremor/react';
 import { useInspectr } from '../context/InspectrContext';
 
 const UsageApp = () => {
   const { client } = useInspectr();
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [showUpgrade, setShowUpgrade] = useState(false);
 
-  useEffect(() => {
-    const fetchMetrics = async () => {
+  const loadMetrics = React.useCallback(
+    async (isInitial = false) => {
       try {
+        if (isInitial) setLoading(true);
+        else setRefreshing(true);
         const data = await client.service.getMetrics();
         setMetrics(data);
+        setError('');
       } catch (err) {
         console.error('Error fetching metrics:', err);
-        setError(err.message);
+        setError(err.message || 'Failed to load metrics');
       } finally {
-        setLoading(false);
+        if (isInitial) setLoading(false);
+        else setRefreshing(false);
       }
-    };
-    fetchMetrics();
-  }, [client]);
+    },
+    [client]
+  );
+
+  useEffect(() => {
+    loadMetrics(true);
+  }, [loadMetrics]);
 
   // Derived values used by hooks must be declared before any early returns
   const operations = metrics?.operations || {};
@@ -96,6 +105,18 @@ const UsageApp = () => {
   return (
     <div className="p-2 sm:p-4">
       <div className="grid grid-cols-1 gap-4">
+        <header>
+          <div className="sm:flex sm:items-center sm:justify-between">
+            <h3 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+              Usage Overview
+            </h3>
+            <div className="mt-2 sm:mt-0">
+              <Button onClick={() => loadMetrics(false)}>
+                {refreshing ? 'Loading' : 'Refresh'}
+              </Button>
+            </div>
+          </div>
+        </header>
         {/* Current plan banner */}
         <div className="rounded-lg bg-gray-50 p-6 ring-1 ring-inset ring-gray-200 dark:bg-gray-400/10 dark:ring-gray-800">
           <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
@@ -107,14 +128,16 @@ const UsageApp = () => {
             </span>
           </h4>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">
-            Boost your analytics and unlock advanced features with our premium plans.
+            {planKey === 'pro'
+              ? "You're on Pro — enjoy premium features and priority support."
+              : 'Boost your analytics and unlock advanced features with our premium plans.'}
             <a
               href="https://inspectr.dev/pricing"
               target="_blank"
               rel="noreferrer noopener"
               className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-500"
             >
-              Compare plans
+              {planKey === 'pro' ? 'Explore features' : 'Compare plans'}
               <svg
                 viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
@@ -130,7 +153,9 @@ const UsageApp = () => {
           </p>
         </div>
         {installedSinceText && (
-          <Text className="-mt-2 text-sm text-gray-500">Usage metrics since {installedSinceText}</Text>
+          <Text className="-mt-2 text-sm text-gray-500">
+            Usage metrics since {installedSinceText}
+          </Text>
         )}
         <Card className="p-6">
           <div className="flex items-center gap-2">
@@ -158,7 +183,10 @@ const UsageApp = () => {
           <div className="mt-4 grid grid-cols-3 gap-4">
             <div>
               <Text>Total requests</Text>
-              <Metric>{operations.total_requests ?? ((operations.requests_local ?? 0) + (operations.requests_ingress ?? 0))}</Metric>
+              <Metric>
+                {operations.total_requests ??
+                  (operations.requests_local ?? 0) + (operations.requests_ingress ?? 0)}
+              </Metric>
               <div className="mt-3">
                 <BarList
                   data={[
@@ -170,7 +198,10 @@ const UsageApp = () => {
             </div>
             <div>
               <Text>Total responses</Text>
-              <Metric>{operations.total_responses ?? ((operations.responses_local ?? 0) + (operations.responses_ingress ?? 0))}</Metric>
+              <Metric>
+                {operations.total_responses ??
+                  (operations.responses_local ?? 0) + (operations.responses_ingress ?? 0)}
+              </Metric>
               <div className="mt-3">
                 <BarList
                   data={[
@@ -182,12 +213,19 @@ const UsageApp = () => {
             </div>
             <div>
               <Text>Event frames</Text>
-              <Metric>{operations.total_event_frames ?? ((operations.event_frames_local ?? 0) + (operations.event_frames_ingress ?? 0))}</Metric>
+              <Metric>
+                {operations.total_event_frames ??
+                  (operations.event_frames_local ?? 0) + (operations.event_frames_ingress ?? 0)}
+              </Metric>
               <div className="mt-3">
                 <BarList
                   data={[
                     { name: 'proxy', value: operations.event_frames_local ?? 0, color: 'cyan' },
-                    { name: 'ingress', value: operations.event_frames_ingress ?? 0, color: 'yellow' }
+                    {
+                      name: 'ingress',
+                      value: operations.event_frames_ingress ?? 0,
+                      color: 'yellow'
+                    }
                   ]}
                 />
               </div>
@@ -199,20 +237,36 @@ const UsageApp = () => {
           <Text className="mt-1 text-gray-500">Key feature usage totals.</Text>
           <div className="mt-4 grid grid-cols-2 gap-4">
             <div>
-              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">Registrations</p>
-              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">{featuresTotals.registrations ?? featuresRaw.registration_requests ?? 0}</p>
+              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                Registrations
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {featuresTotals.registrations ?? featuresRaw.registration_requests ?? 0}
+              </p>
             </div>
             <div>
-              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">Token refresh</p>
-              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">{featuresTotals.token_refresh ?? featuresRaw.token_refresh_requests ?? 0}</p>
+              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                Token refresh
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {featuresTotals.token_refresh ?? featuresRaw.token_refresh_requests ?? 0}
+              </p>
             </div>
             <div>
-              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">Launches</p>
-              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">{featuresTotals.launches ?? 0}</p>
+              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                Launches
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {featuresTotals.launches ?? 0}
+              </p>
             </div>
             <div>
-              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">Ingress registrations</p>
-              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">{featuresTotals.ingress_registrations ?? 0}</p>
+              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                Ingress registrations
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {featuresTotals.ingress_registrations ?? 0}
+              </p>
             </div>
           </div>
         </Card>
@@ -340,7 +394,9 @@ const UsageApp = () => {
                   />
                   Total tools
                 </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">{mcpTotals.tools ?? 0}</p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {mcpTotals.tools ?? 0}
+                </p>
               </div>
               <div>
                 <p className="flex items-center text-tremor-default text-tremor-content dark:text-dark-tremor-content">
@@ -354,7 +410,9 @@ const UsageApp = () => {
                   />
                   Total resources
                 </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">{mcpTotals.resources ?? 0}</p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {mcpTotals.resources ?? 0}
+                </p>
               </div>
               <div>
                 <p className="flex items-center text-tremor-default text-tremor-content dark:text-dark-tremor-content">
@@ -368,7 +426,9 @@ const UsageApp = () => {
                   />
                   Total prompts
                 </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">{mcpTotals.prompts ?? 0}</p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {mcpTotals.prompts ?? 0}
+                </p>
               </div>
             </div>
 
@@ -381,19 +441,29 @@ const UsageApp = () => {
                 <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
                   Total requests
                 </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">{mcpTotals.requests ?? 0}</p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {mcpTotals.requests ?? 0}
+                </p>
               </div>
               <div>
                 <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
                   Total responses
                 </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">{mcpTotals.responses ?? 0}</p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {mcpTotals.responses ?? 0}
+                </p>
               </div>
               <div>
                 <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
                   Total all
                 </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">{(mcpTotals.requests ?? 0) + (mcpTotals.responses ?? 0) + (mcpTotals.tools ?? 0) + (mcpTotals.resources ?? 0) + (mcpTotals.prompts ?? 0)}</p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {(mcpTotals.requests ?? 0) +
+                    (mcpTotals.responses ?? 0) +
+                    (mcpTotals.tools ?? 0) +
+                    (mcpTotals.resources ?? 0) +
+                    (mcpTotals.prompts ?? 0)}
+                </p>
               </div>
             </div>
           </div>
