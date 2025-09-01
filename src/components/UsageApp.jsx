@@ -222,7 +222,17 @@ const UsageApp = () => {
         </div>
       </Card>
       <Card className="p-6">
-        <Title>Features</Title>
+        <div className="flex items-center gap-2">
+          <img
+            src={opsIcon}
+            width={24}
+            height={24}
+            alt=""
+            aria-hidden="true"
+            className="inline-block"
+          />
+          <Title className="!mb-0">Features</Title>
+        </div>
         <Text className="mt-1 text-gray-500">Usage metrics for core Inspectr features.</Text>
         <div className="mt-4 grid grid-cols-2 gap-4">
           <div>
@@ -273,7 +283,7 @@ const UsageApp = () => {
           <Title className="!mb-0">Inspectr Connections</Title>
         </div>
         <Text className="mt-1 text-gray-500">
-          Overview of lifecycle events that occur when the Inspectr App connects to Inspectr.
+          Overview of metrics related to the Inspectr App SSE connections to Inspectr.
         </Text>
         <div className="mt-4 grid grid-cols-2 gap-4">
           <div>
@@ -281,7 +291,7 @@ const UsageApp = () => {
               Active connections
             </p>
             <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-              {connections.active_connections ?? 0}
+              {connections.active ?? 0}
             </p>
           </div>
           <div>
