@@ -6,6 +6,22 @@
   --font-sans: InterVariable, sans-serif;
 }
 
+/* Brand utility classes */
+:root {
+  /* Consumers can override this via CSS variables at runtime */
+  --color-brand-primary: #00e5ff; /* cyan */
+}
+
+.bg-brand-primary {
+  background-color: var(--color-brand-primary);
+}
+.text-brand-primary {
+  color: var(--color-brand-primary);
+}
+.border-brand-primary {
+  border-color: var(--color-brand-primary);
+}
+
 @theme {
   --animate-hide: hide 150ms cubic-bezier(0.16, 1, 0.3, 1);
   --animate-slide-down-and-fade: slideDownAndFade 150ms cubic-bezier(0.16, 1, 0.3, 1);
