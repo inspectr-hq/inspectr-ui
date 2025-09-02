@@ -7,10 +7,12 @@ import toolsIcon from '../assets/icons/tools.svg';
 import resourcesIcon from '../assets/icons/resources.svg';
 import promptsIcon from '../assets/icons/prompts.svg';
 import { Card, Title, Text, Metric, ProgressBar, BarList, Button } from '@tremor/react';
+import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 import { useInspectr } from '../context/InspectrContext';
 
 const UsageApp = () => {
   const { client } = useInspectr();
+  const [mcpFeatureEnabled] = useFeaturePreview('feat_export_mcp_server');
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -321,153 +323,155 @@ const UsageApp = () => {
         </div>
       </Card>
 
-      <Card className="p-6">
-        <div className="flex items-center gap-2">
-          <img
-            src={mcpIcon}
-            width={24}
-            height={24}
-            alt=""
-            aria-hidden="true"
-            className="inline-block"
-          />
-          <Title className="!mb-0">Inspectr MCP Server</Title>
-        </div>
-        <Text className="mt-1 text-gray-500">
-          Overview of Model Context Protocol (MCP) activity on the Inspectr MCP server, including
-          usage across tools, resources, and prompts.
-        </Text>
-        {!mcpLicensed && showUpgrade && (
-          <div className="mt-4 rounded-md bg-gray-50 p-6 ring-1 ring-inset ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-            <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
-              Want to upgrade?
-            </h4>
-            <p className="mt-2 text-sm/6 text-gray-500 dark:text-gray-500">
-              Elevate your workspace and boost productivity with premium features. See our pro plans
-              and upgrade today.
-            </p>
-            <div className="mt-6 flex items-center space-x-2">
-              <a
-                href="https://inspectr.dev/pricing"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-blue-500 dark:outline-blue-500 border-transparent text-white dark:text-white bg-blue-500 dark:bg-blue-500 hover:bg-blue-600 dark:hover:bg-blue-600 disabled:bg-blue-300 disabled:text-white disabled:dark:bg-blue-800 disabled:dark:text-blue-400"
-              >
-                Plans
-              </a>
-              <button
-                type="button"
-                className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-blue-500 dark:outline-blue-500 border-gray-300 dark:border-gray-800 text-gray-900 dark:text-gray-50 bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900/60 disabled:text-gray-400 disabled:dark:text-gray-600"
-                onClick={() => setShowUpgrade(false)}
-              >
-                Dismiss
-              </button>
-            </div>
+      {mcpFeatureEnabled && (
+        <Card className="p-6">
+          <div className="flex items-center gap-2">
+            <img
+              src={mcpIcon}
+              width={24}
+              height={24}
+              alt=""
+              aria-hidden="true"
+              className="inline-block"
+            />
+            <Title className="!mb-0">Inspectr MCP Server</Title>
           </div>
-        )}
+          <Text className="mt-1 text-gray-500">
+            Overview of Model Context Protocol (MCP) activity on the Inspectr MCP server, including
+            usage across tools, resources, and prompts.
+          </Text>
+          {!mcpLicensed && showUpgrade && (
+            <div className="mt-4 rounded-md bg-gray-50 p-6 ring-1 ring-inset ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
+                Want to upgrade?
+              </h4>
+              <p className="mt-2 text-sm/6 text-gray-500 dark:text-gray-500">
+                Elevate your workspace and boost productivity with premium features. See our pro
+                plans and upgrade today.
+              </p>
+              <div className="mt-6 flex items-center space-x-2">
+                <a
+                  href="https://inspectr.dev/pricing"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-blue-500 dark:outline-blue-500 border-transparent text-white dark:text-white bg-blue-500 dark:bg-blue-500 hover:bg-blue-600 dark:hover:bg-blue-600 disabled:bg-blue-300 disabled:text-white disabled:dark:bg-blue-800 disabled:dark:text-blue-400"
+                >
+                  Plans
+                </a>
+                <button
+                  type="button"
+                  className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-blue-500 dark:outline-blue-500 border-gray-300 dark:border-gray-800 text-gray-900 dark:text-gray-50 bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900/60 disabled:text-gray-400 disabled:dark:text-gray-600"
+                  onClick={() => setShowUpgrade(false)}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
 
-        {usageLimit && (
-          <div className="mt-6">
-            <Text className="mb-2">Remaining usage</Text>
-            <ProgressBar value={mcpPercent} color="blue" />
-            <Text className="mt-2">
-              {mcpUsed} of {usageLimit} uses
-            </Text>
-          </div>
-        )}
+          {usageLimit && (
+            <div className="mt-6">
+              <Text className="mb-2">Remaining usage</Text>
+              <ProgressBar value={mcpPercent} color="blue" />
+              <Text className="mt-2">
+                {mcpUsed} of {usageLimit} uses
+              </Text>
+            </div>
+          )}
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Group 1 (left): Artifacts */}
-          <div className="grid grid-cols-1 gap-4">
-            <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-              Usage
-            </h4>
-            <div>
-              <p className="flex items-center text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                <img
-                  src={toolsIcon}
-                  width={16}
-                  height={16}
-                  alt=""
-                  aria-hidden="true"
-                  className="w-4 h-4 mr-2"
-                />
-                Total tools
-              </p>
-              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                {mcpTotals.tools ?? 0}
-              </p>
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Group 1 (left): Artifacts */}
+            <div className="grid grid-cols-1 gap-4">
+              <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                Usage
+              </h4>
+              <div>
+                <p className="flex items-center text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                  <img
+                    src={toolsIcon}
+                    width={16}
+                    height={16}
+                    alt=""
+                    aria-hidden="true"
+                    className="w-4 h-4 mr-2"
+                  />
+                  Total tools
+                </p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {mcpTotals.tools ?? 0}
+                </p>
+              </div>
+              <div>
+                <p className="flex items-center text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                  <img
+                    src={resourcesIcon}
+                    width={16}
+                    height={16}
+                    alt=""
+                    aria-hidden="true"
+                    className="w-4 h-4 mr-2"
+                  />
+                  Total resources
+                </p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {mcpTotals.resources ?? 0}
+                </p>
+              </div>
+              <div>
+                <p className="flex items-center text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                  <img
+                    src={promptsIcon}
+                    width={16}
+                    height={16}
+                    alt=""
+                    aria-hidden="true"
+                    className="w-4 h-4 mr-2"
+                  />
+                  Total prompts
+                </p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {mcpTotals.prompts ?? 0}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="flex items-center text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                <img
-                  src={resourcesIcon}
-                  width={16}
-                  height={16}
-                  alt=""
-                  aria-hidden="true"
-                  className="w-4 h-4 mr-2"
-                />
-                Total resources
-              </p>
-              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                {mcpTotals.resources ?? 0}
-              </p>
-            </div>
-            <div>
-              <p className="flex items-center text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                <img
-                  src={promptsIcon}
-                  width={16}
-                  height={16}
-                  alt=""
-                  aria-hidden="true"
-                  className="w-4 h-4 mr-2"
-                />
-                Total prompts
-              </p>
-              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                {mcpTotals.prompts ?? 0}
-              </p>
-            </div>
-          </div>
 
-          {/* Group 2 (right): Traffic */}
-          <div className="grid grid-cols-1 gap-4">
-            <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-              Traffic
-            </h4>
-            <div>
-              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                Total requests
-              </p>
-              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                {mcpTotals.requests ?? 0}
-              </p>
-            </div>
-            <div>
-              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                Total responses
-              </p>
-              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                {mcpTotals.responses ?? 0}
-              </p>
-            </div>
-            <div>
-              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                Total all
-              </p>
-              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                {(mcpTotals.requests ?? 0) +
-                  (mcpTotals.responses ?? 0) +
-                  (mcpTotals.tools ?? 0) +
-                  (mcpTotals.resources ?? 0) +
-                  (mcpTotals.prompts ?? 0)}
-              </p>
+            {/* Group 2 (right): Traffic */}
+            <div className="grid grid-cols-1 gap-4">
+              <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                Traffic
+              </h4>
+              <div>
+                <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                  Total requests
+                </p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {mcpTotals.requests ?? 0}
+                </p>
+              </div>
+              <div>
+                <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                  Total responses
+                </p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {mcpTotals.responses ?? 0}
+                </p>
+              </div>
+              <div>
+                <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                  Total all
+                </p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {(mcpTotals.requests ?? 0) +
+                    (mcpTotals.responses ?? 0) +
+                    (mcpTotals.tools ?? 0) +
+                    (mcpTotals.resources ?? 0) +
+                    (mcpTotals.prompts ?? 0)}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      )}
     </div>
   );
 };

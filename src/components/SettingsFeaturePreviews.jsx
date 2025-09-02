@@ -17,6 +17,13 @@ const PREVIEWS = [
     description:
       'Export your API operations as a Postman collection. The Postman collection contains all requests based on the Inspectr Operations history.',
     image: 'https://inspectr.dev/preview/export-postman.png'
+  },
+  {
+    slug: 'feat_export_mcp_server',
+    title: 'MCP Server',
+    description:
+      "Enable Inspectr's MCP Server to expose operations and data via the Model Context Protocol for compatible AI Agents like Claude, ChatGPT, and more.",
+    image: undefined
   }
 ];
 
