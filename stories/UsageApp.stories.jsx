@@ -156,13 +156,19 @@ const mockMetricsLicensed = {
   }
 };
 
-const makeMockClient = (data) => ({
+const makeMockClient = (metricsData, licenseData) => ({
   service: {
     getMetrics: async () => {
       // small delay to exercise loading state
       await new Promise((r) => setTimeout(r, 50));
-      return data;
-    }
+      return metricsData;
+    },
+    ...(licenseData !== undefined && {
+      getLicense: async () => {
+        await new Promise((r) => setTimeout(r, 50));
+        return licenseData;
+      }
+    })
   }
 });
 
@@ -184,6 +190,72 @@ export const UsageUnlicensed = () => (
 
 export const UsageLicensed = () => (
   <MockProvider client={makeMockClient(mockMetricsLicensed)}>
+    <UsageApp />
+  </MockProvider>
+);
+
+// License API examples
+const mockLicenseLimited = {
+  features: {
+    mcp: {
+      enabled_default: true,
+      default_limit: 2000,
+      effective_enabled: true,
+      effective_limit: 2000,
+      window: 'monthly',
+      used: 20,
+      remaining: 1980,
+      unlimited: false,
+      period_start: '2025-09-01T00:00:00Z'
+    }
+  },
+  meta: {},
+  overrides: {},
+  usage: {
+    mcp: { used: 20, period_start: '2025-09-01T00:00:00Z' }
+  }
+};
+
+const mockLicenseUnlimited = {
+  features: {
+    mcp: {
+      enabled_default: true,
+      default_limit: 0,
+      effective_enabled: true,
+      window: 'monthly',
+      used: 500,
+      remaining: null,
+      unlimited: true,
+      period_start: '2025-09-01T00:00:00Z'
+    }
+  },
+  meta: {},
+  overrides: {},
+  usage: {
+    mcp: { used: 500, period_start: '2025-09-01T00:00:00Z' }
+  }
+};
+
+// Align metrics' request count with license.used for clearer demo
+const withMcpRequests = (base, used) => ({
+  ...base,
+  generic: {
+    ...base.generic,
+    totals: {
+      ...base.generic.totals,
+      mcp: { ...base.generic.totals.mcp, requests: used }
+    }
+  }
+});
+
+export const WithLicenseLimited = () => (
+  <MockProvider client={makeMockClient(withMcpRequests(mockMetricsUnlicensed, 20), mockLicenseLimited)}>
+    <UsageApp />
+  </MockProvider>
+);
+
+export const WithLicenseUnlimited = () => (
+  <MockProvider client={makeMockClient(withMcpRequests(mockMetricsLicensed, 500), mockLicenseUnlimited)}>
     <UsageApp />
   </MockProvider>
 );

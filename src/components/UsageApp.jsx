@@ -14,6 +14,7 @@ const UsageApp = () => {
   const { client } = useInspectr();
   const [mcpFeatureEnabled] = useFeaturePreview('feat_export_mcp_server');
   const [metrics, setMetrics] = useState(null);
+  const [license, setLicense] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -24,8 +25,19 @@ const UsageApp = () => {
       try {
         if (isInitial) setLoading(true);
         else setRefreshing(true);
-        const data = await client.service.getMetrics();
-        setMetrics(data);
+        // Fetch metrics and license (license is optional, fallbacks apply)
+        let metricsData = null;
+        let licenseData = null;
+        if (client?.service?.getLicense) {
+          [metricsData, licenseData] = await Promise.all([
+            client.service.getMetrics(),
+            client.service.getLicense().catch(() => null) // treat license as optional
+          ]);
+        } else {
+          metricsData = await client.service.getMetrics();
+        }
+        setMetrics(metricsData);
+        if (licenseData) setLicense(licenseData);
         setError('');
       } catch (err) {
         console.error('Error fetching metrics:', err);
@@ -49,9 +61,45 @@ const UsageApp = () => {
   const featuresTotals = metrics?.generic?.totals?.features || {};
   const featuresRaw = metrics?.features || {};
   const mcp = metrics?.mcp || {};
-  const mcpLicensed = mcp?.licensed;
-  const usageLimit = mcpLicensed === false && typeof mcp.limit === 'number' ? mcp.limit : null;
-  const mcpUsed = typeof mcpTotals.requests === 'number' ? mcpTotals.requests : 0;
+  // Licensed status is derived solely from the License API
+  const mcpLicensed = (() => {
+    const lm = license?.features?.mcp;
+    if (!lm) return undefined;
+    if (lm.unlimited === true) return true;
+    if (typeof lm.effective_limit === 'number') return false;
+    if (lm.effective_enabled === true && typeof lm.default_limit !== 'number') return true;
+    return false;
+  })();
+
+  const licenseLimit = (() => {
+    const m = license?.features?.mcp;
+    if (!m) return null;
+    if (m.unlimited === true) return null;
+    if (typeof m.effective_limit === 'number') return m.effective_limit;
+    if (typeof m.default_limit === 'number') return m.default_limit;
+    return null;
+  })();
+  const usageLimit = licenseLimit;
+  const licenseMcp = license?.features?.mcp;
+  const licenseWindowText = (() => {
+    const w = licenseMcp?.window;
+    if (!w) return null;
+    return w.charAt(0).toUpperCase() + w.slice(1);
+  })();
+  const licensePeriodText = (() => {
+    const iso = licenseMcp?.period_start;
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d)) return null;
+    return d.toISOString().slice(0, 10); // yyyy-mm-dd
+  })();
+  // Use license usage when available; fallback to metrics
+  const mcpUsed =
+    typeof license?.usage?.mcp?.used === 'number'
+      ? license.usage.mcp.used
+      : typeof mcpTotals.requests === 'number'
+        ? mcpTotals.requests
+        : 0;
   const mcpPercent = usageLimit ? Math.min(100, (mcpUsed / usageLimit) * 100) : 0;
   const planKey = (() => {
     const plan = (mcp?.plan || '').toString().toLowerCase();
@@ -376,6 +424,12 @@ const UsageApp = () => {
               <Text className="mt-2">
                 {mcpUsed} of {usageLimit} uses
               </Text>
+              {(licenseWindowText || licensePeriodText) && (
+                <Text className="mt-1 text-gray-500">
+                  {licenseWindowText ? `${licenseWindowText} window` : 'Usage window'}
+                  {licensePeriodText ? ` since ${licensePeriodText}` : ''}
+                </Text>
+              )}
             </div>
           )}
 
@@ -454,18 +508,6 @@ const UsageApp = () => {
                 </p>
                 <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
                   {mcpTotals.responses ?? 0}
-                </p>
-              </div>
-              <div>
-                <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                  Total all
-                </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                  {(mcpTotals.requests ?? 0) +
-                    (mcpTotals.responses ?? 0) +
-                    (mcpTotals.tools ?? 0) +
-                    (mcpTotals.resources ?? 0) +
-                    (mcpTotals.prompts ?? 0)}
                 </p>
               </div>
             </div>

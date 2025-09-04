@@ -313,6 +313,18 @@ class ServiceClient {
     if (!res.ok) throw new Error(`Metrics failed (${res.status})`);
     return await res.json();
   }
+
+  /**
+   * Get license information including features and usage
+   * @returns {Promise<Object>} - License info
+   */
+  async getLicense() {
+    const res = await fetch(`${this.client.apiEndpoint}/license`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+    if (!res.ok) throw new Error(`License failed (${res.status})`);
+    return await res.json();
+  }
 }
 
 /**
