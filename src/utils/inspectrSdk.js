@@ -325,6 +325,25 @@ class ServiceClient {
     if (!res.ok) throw new Error(`License failed (${res.status})`);
     return await res.json();
   }
+
+  /**
+   * Update license with raw JSON string
+   * @param {string} raw - The raw license JSON string
+   * @returns {Promise<Object>} - API response (updated license or status)
+   */
+  async putLicense(raw) {
+    const body = JSON.stringify({ raw });
+    const res = await fetch(`${this.client.apiEndpoint}/license`, {
+      method: 'PUT',
+      headers: this.client.jsonHeaders,
+      body
+    });
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => ({}));
+      throw new Error(errorBody?.error || `License update failed (${res.status})`);
+    }
+    return await res.json();
+  }
 }
 
 /**

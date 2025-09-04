@@ -163,6 +163,10 @@ const makeMockClient = (metricsData, licenseData) => ({
       await new Promise((r) => setTimeout(r, 50));
       return metricsData;
     },
+    putLicense: async () => {
+      await new Promise((r) => setTimeout(r, 50));
+      return { status: 'ok' };
+    },
     ...(licenseData !== undefined && {
       getLicense: async () => {
         await new Promise((r) => setTimeout(r, 50));

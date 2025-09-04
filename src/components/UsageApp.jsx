@@ -9,9 +9,10 @@ import promptsIcon from '../assets/icons/prompts.svg';
 import { Card, Title, Text, Metric, ProgressBar, BarList, Button } from '@tremor/react';
 import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 import { useInspectr } from '../context/InspectrContext';
+import DialogLicense from './DialogLicense.jsx';
 
 const UsageApp = () => {
-  const { client } = useInspectr();
+  const { client, setToast } = useInspectr();
   const [mcpFeatureEnabled] = useFeaturePreview('feat_export_mcp_server');
   const [metrics, setMetrics] = useState(null);
   const [license, setLicense] = useState(null);
@@ -19,6 +20,7 @@ const UsageApp = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [showLicenseDialog, setShowLicenseDialog] = useState(false);
 
   const loadMetrics = React.useCallback(
     async (isInitial = false) => {
@@ -53,6 +55,12 @@ const UsageApp = () => {
   useEffect(() => {
     loadMetrics(true);
   }, [loadMetrics]);
+
+  const handleLicenseSubmit = async (rawText) => {
+    await client.service.putLicense(rawText);
+    setToast?.({ message: 'License updated', subMessage: 'License applied successfully.' });
+    await loadMetrics(false);
+  };
 
   // Derived values used by hooks must be declared before any early returns
   const operations = metrics?.operations || {};
@@ -160,7 +168,12 @@ const UsageApp = () => {
             Usage Overview
           </h3>
           <div className="mt-2 sm:mt-0">
-            <Button onClick={() => loadMetrics(false)}>{refreshing ? 'Loading' : 'Refresh'}</Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setShowLicenseDialog(true)}>Update License</Button>
+              <Button onClick={() => loadMetrics(false)}>
+                {refreshing ? 'Loading' : 'Refresh'}
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -204,6 +217,13 @@ const UsageApp = () => {
           Usage metrics since {installedSinceText}
         </Text>
       )}
+
+      {/* License dialog */}
+      <DialogLicense
+        open={showLicenseDialog}
+        onClose={() => setShowLicenseDialog(false)}
+        onSubmit={handleLicenseSubmit}
+      />
       <Card className="p-6">
         <div className="flex items-center gap-2">
           <img
