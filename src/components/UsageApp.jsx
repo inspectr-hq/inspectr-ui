@@ -10,6 +10,7 @@ import { Card, Title, Text, Metric, ProgressBar, BarList, Button } from '@tremor
 import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 import { useInspectr } from '../context/InspectrContext';
 import DialogLicense from './DialogLicense.jsx';
+import DialogLicenseInfo from './DialogLicenseInfo.jsx';
 
 const UsageApp = () => {
   const { client, setToast } = useInspectr();
@@ -21,6 +22,7 @@ const UsageApp = () => {
   const [error, setError] = useState('');
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [showLicenseDialog, setShowLicenseDialog] = useState(false);
+  const [showLicenseInfo, setShowLicenseInfo] = useState(false);
 
   const loadMetrics = React.useCallback(
     async (isInitial = false) => {
@@ -62,6 +64,12 @@ const UsageApp = () => {
     await loadMetrics(false);
   };
 
+  const handleLicenseRefresh = async (key) => {
+    await client.service.putLicense(key);
+    setToast?.({ message: 'License refreshed', subMessage: 'License updated successfully.' });
+    await loadMetrics(false);
+  };
+
   // Derived values used by hooks must be declared before any early returns
   const operations = metrics?.operations || {};
   const connections = metrics?.generic?.totals?.sse || {};
@@ -89,13 +97,14 @@ const UsageApp = () => {
   })();
   const usageLimit = licenseLimit;
   const licenseMcp = license?.features?.mcp;
+  const usageMcp = license?.usage?.features?.mcp;
   const licenseWindowText = (() => {
-    const w = licenseMcp?.window;
+    const w = usageMcp?.window || licenseMcp?.window;
     if (!w) return null;
     return w.charAt(0).toUpperCase() + w.slice(1);
   })();
   const licensePeriodText = (() => {
-    const iso = licenseMcp?.period_start;
+    const iso = usageMcp?.period_start || licenseMcp?.period_start;
     if (!iso) return null;
     const d = new Date(iso);
     if (isNaN(d)) return null;
@@ -103,16 +112,19 @@ const UsageApp = () => {
   })();
   // Use license usage when available; fallback to metrics
   const mcpUsed =
-    typeof license?.usage?.mcp?.used === 'number'
-      ? license.usage.mcp.used
+    typeof usageMcp?.used === 'number'
+      ? usageMcp.used
       : typeof mcpTotals.requests === 'number'
         ? mcpTotals.requests
         : 0;
   const mcpPercent = usageLimit ? Math.min(100, (mcpUsed / usageLimit) * 100) : 0;
   const planKey = (() => {
-    const plan = (mcp?.plan || '').toString().toLowerCase();
-    if (plan === 'pro') return 'pro';
-    if (['open_source', 'open-source', 'opensource', 'oss'].includes(plan)) return 'open_source';
+    const fromLicense = (license?.license?.plan || '').toString().toLowerCase();
+    const fromMetrics = (mcp?.plan || '').toString().toLowerCase();
+    const plan = fromLicense || fromMetrics;
+    if (plan === 'pro' || plan === 'professional' || plan === 'paid') return 'pro';
+    if (['open_source', 'open-source', 'opensource', 'oss', 'open source'].includes(plan))
+      return 'open_source';
     return mcpLicensed ? 'pro' : 'open_source';
   })();
   const planName = planKey === 'pro' ? 'Pro plan' : 'Open Source plan';
@@ -169,6 +181,7 @@ const UsageApp = () => {
           </h3>
           <div className="mt-2 sm:mt-0">
             <div className="flex gap-2">
+              <Button onClick={() => setShowLicenseInfo(true)}>License Details</Button>
               <Button onClick={() => setShowLicenseDialog(true)}>Update License</Button>
               <Button onClick={() => loadMetrics(false)}>
                 {refreshing ? 'Loading' : 'Refresh'}
@@ -223,6 +236,12 @@ const UsageApp = () => {
         open={showLicenseDialog}
         onClose={() => setShowLicenseDialog(false)}
         onSubmit={handleLicenseSubmit}
+      />
+      <DialogLicenseInfo
+        open={showLicenseInfo}
+        onClose={() => setShowLicenseInfo(false)}
+        license={license}
+        onRefresh={handleLicenseRefresh}
       />
       <Card className="p-6">
         <div className="flex items-center gap-2">

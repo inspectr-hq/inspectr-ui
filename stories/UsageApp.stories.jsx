@@ -207,16 +207,22 @@ const mockLicenseLimited = {
       effective_enabled: true,
       effective_limit: 2000,
       window: 'monthly',
-      used: 20,
       remaining: 1980,
       unlimited: false,
       period_start: '2025-09-01T00:00:00Z'
     }
   },
-  meta: {},
-  overrides: {},
+  license: {
+    plan: 'opensource',
+    issuer: 'Inspectr',
+    subject: 'acme-inc',
+    expires_at: '2026-12-31T23:59:59Z',
+    updated_at: '2025-09-04T22:19:41Z'
+  },
   usage: {
-    mcp: { used: 20, period_start: '2025-09-01T00:00:00Z' }
+    features: {
+      mcp: { used: 20, remaining: 1980, window: 'monthly', period_start: '2025-09-01T00:00:00Z' }
+    }
   }
 };
 
@@ -227,16 +233,22 @@ const mockLicenseUnlimited = {
       default_limit: 0,
       effective_enabled: true,
       window: 'monthly',
-      used: 500,
       remaining: null,
       unlimited: true,
       period_start: '2025-09-01T00:00:00Z'
     }
   },
-  meta: {},
-  overrides: {},
+  license: {
+    plan: 'pro',
+    issuer: 'Inspectr',
+    subject: 'acme-inc',
+    expires_at: '2026-12-31T23:59:59Z',
+    updated_at: '2025-09-04T22:19:41Z'
+  },
   usage: {
-    mcp: { used: 500, period_start: '2025-09-01T00:00:00Z' }
+    features: {
+      mcp: { used: 500, remaining: null, window: 'monthly', period_start: '2025-09-01T00:00:00Z' }
+    }
   }
 };
 
