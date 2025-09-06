@@ -24,6 +24,7 @@ const licensePayload = {
   license: {
     expires_at: '2026-12-31T23:59:59Z',
     updated_at: '2025-09-04T22:19:41Z',
+    starts_at: '2025-01-01T00:00:00Z',
     issuer: 'Inspectr',
     subject: 'acme-inc',
     plan: 'opensource'

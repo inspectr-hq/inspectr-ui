@@ -22,6 +22,7 @@ export default function DialogLicenseInfo({ open, onClose, license, onRefresh })
   const usageFeatures = license?.usage?.features || {};
 
   const expiresAt = meta?.expires_at || null;
+  const startsAt = meta?.starts_at || null;
   const updatedAt = meta?.updated_at || null;
   const issuedBy = meta?.issuer || null;
   const subject = meta?.subject || null;
@@ -87,19 +88,23 @@ export default function DialogLicenseInfo({ open, onClose, license, onRefresh })
             <p className="text-sm font-medium text-gray-900 dark:text-gray-50">{subject || '—'}</p>
           </div>
           <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
+            <p className="text-xs uppercase text-gray-500">Last Updated</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-50">
+              {fmtIso(updatedAt) || '—'}
+            </p>
+          </div>
+          <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
+            <p className="text-xs uppercase text-gray-500">Starts</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-50">
+              {fmtIso(startsAt) || '—'}
+            </p>
+          </div>
+          <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
             <p className="text-xs uppercase text-gray-500">Expires</p>
             <p className="text-sm font-medium text-gray-900 dark:text-gray-50">
               {fmtIso(expiresAt) || '—'}
             </p>
           </div>
-          {updatedAt && (
-            <div className="rounded border border-gray-200 dark:border-gray-800 p-3 md:col-span-2">
-              <p className="text-xs uppercase text-gray-500">Last Updated</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-50">
-                {fmtIso(updatedAt)}
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Features */}
