@@ -1,5 +1,6 @@
 // src/components/DialogLicense.jsx
 import React, { useEffect, useState } from 'react';
+import mapLicenseError from '../utils/mapLicenseError.js';
 
 export default function DialogLicense({ open, onClose, onSubmit }) {
   const [text, setText] = useState('');
@@ -30,7 +31,8 @@ export default function DialogLicense({ open, onClose, onSubmit }) {
       await onSubmit(key);
       onClose();
     } catch (err) {
-      setError(err.message || 'Failed to update license');
+      const friendly = mapLicenseError(err);
+      setError(friendly);
       setLoading(false);
     }
   };

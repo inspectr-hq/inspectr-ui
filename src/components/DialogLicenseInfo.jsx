@@ -1,5 +1,6 @@
 // src/components/DialogLicenseInfo.jsx
 import React, { useEffect, useState } from 'react';
+import mapLicenseError from '../utils/mapLicenseError.js';
 
 export default function DialogLicenseInfo({ open, onClose, license, onRefresh }) {
   const [key, setKey] = useState('');
@@ -50,7 +51,7 @@ export default function DialogLicenseInfo({ open, onClose, license, onRefresh })
       await onRefresh(licenseKey);
       setKey('');
     } catch (err) {
-      setError(err.message || 'Failed to refresh license');
+      setError(mapLicenseError(err));
     } finally {
       setLoading(false);
     }

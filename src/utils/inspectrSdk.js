@@ -339,10 +339,15 @@ class ServiceClient {
       body
     });
     if (!res.ok) {
+      const status = res.status;
       const errorBody = await res.json().catch(() => ({}));
-      throw new Error(
-        errorBody?.error || errorBody?.message || `License update failed (${res.status})`
-      );
+      const message = errorBody?.error || errorBody?.message || `License update failed (${status})`;
+      const err = new Error(message);
+      err.status = status;
+      err.code = errorBody?.code;
+      err.reason = errorBody?.reason;
+      err.details = errorBody?.error || errorBody?.message;
+      throw err;
     }
     return await res.json();
   }

@@ -148,11 +148,14 @@ const UsageApp = () => {
   })();
 
   // Keep hooks above early returns to satisfy React's Rules of Hooks
+  const shouldShowMcpUpgrade =
+    planKey === 'open_source' || (typeof usageLimit === 'number' && mcpPercent >= 90);
+
   useEffect(() => {
-    // Show upgrade box only when explicitly not licensed; allow temporary dismiss for this session
+    // Show upgrade box only when on Open Source plan or near MCP limit; allow dismiss for this session
     if (!metrics) return;
-    setShowUpgrade(mcpLicensed === false);
-  }, [mcpLicensed, metrics]);
+    setShowUpgrade(shouldShowMcpUpgrade);
+  }, [shouldShowMcpUpgrade, metrics]);
 
   if (loading) {
     return (
@@ -427,7 +430,7 @@ const UsageApp = () => {
             Overview of Model Context Protocol (MCP) activity on the Inspectr MCP server, including
             usage across tools, resources, and prompts.
           </Text>
-          {!mcpLicensed && showUpgrade && (
+          {showUpgrade && shouldShowMcpUpgrade && (
             <div className="mt-4 rounded-md bg-gray-50 p-6 ring-1 ring-inset ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
               <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
                 Want to upgrade?
