@@ -23,6 +23,7 @@ const licensePayload = {
   },
   license: {
     expires_at: '2026-12-31T23:59:59Z',
+    grace_until: '2027-01-15T23:59:59Z',
     updated_at: '2025-09-04T22:19:41Z',
     starts_at: '2025-01-01T00:00:00Z',
     issuer: 'Inspectr',
@@ -79,6 +80,41 @@ export const OverviewUnlimited = () => (
     open={true}
     onClose={noop}
     license={licensePayloadUnlimited}
+    onRefresh={mockRefresh}
+  />
+);
+
+const licensePayloadInGrace = {
+  ...licensePayload,
+  license: {
+    ...licensePayload.license,
+    expires_at: '2025-09-07T23:59:59Z',
+    grace_until: '2025-09-10T23:59:59Z',
+    in_grace: true,
+    updated_at: '2025-09-08T10:00:00Z'
+  }
+};
+
+export const InGrace = () => (
+  <DialogLicenseInfo open={true} onClose={noop} license={licensePayloadInGrace} onRefresh={mockRefresh} />
+);
+
+const licensePayloadExpired = {
+  ...licensePayload,
+  license: {
+    ...licensePayload.license,
+    expires_at: '2025-01-01T00:00:00Z',
+    grace_until: '2025-01-05T00:00:00Z',
+    in_grace: false,
+    updated_at: '2025-01-06T00:00:00Z'
+  }
+};
+
+export const ExpiredBeyondGrace = () => (
+  <DialogLicenseInfo
+    open={true}
+    onClose={noop}
+    license={licensePayloadExpired}
     onRefresh={mockRefresh}
   />
 );

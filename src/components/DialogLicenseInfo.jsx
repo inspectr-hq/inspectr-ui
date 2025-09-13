@@ -24,6 +24,8 @@ export default function DialogLicenseInfo({ open, onClose, license, onRefresh })
   const expiresAt = meta?.expires_at || null;
   const startsAt = meta?.starts_at || null;
   const updatedAt = meta?.updated_at || null;
+  const graceUntil = meta?.grace_until || null;
+  const inGraceFlag = meta?.in_grace === true;
   const issuedBy = meta?.issuer || null;
   const subject = meta?.subject || null;
 
@@ -54,6 +56,32 @@ export default function DialogLicenseInfo({ open, onClose, license, onRefresh })
     }
   };
 
+  // Derive license status (active / in grace / expired)
+  const now = new Date();
+  const expDate = expiresAt ? new Date(expiresAt) : null;
+  const graceDate = graceUntil ? new Date(graceUntil) : null;
+  const isExpired = expDate ? now > expDate : false;
+  const isBeyondGrace = isExpired && graceDate ? now > graceDate : false;
+  const isInGrace = inGraceFlag || (isExpired && graceDate && now <= graceDate);
+  const isActive = expDate ? now <= expDate : false;
+
+  let statusLabel = 'Unknown';
+  let statusDetail = '';
+  let statusDot = 'bg-gray-400';
+  if (isBeyondGrace) {
+    statusLabel = 'Expired';
+    statusDetail = graceDate ? `(grace ended ${fmtIso(graceUntil)})` : '(grace ended)';
+    statusDot = 'bg-red-600';
+  } else if (isInGrace) {
+    statusLabel = 'In Grace';
+    statusDetail = graceDate ? `(until ${fmtIso(graceUntil)})` : '';
+    statusDot = 'bg-yellow-500';
+  } else if (isActive) {
+    statusLabel = 'Active';
+    statusDetail = expDate ? `(until ${fmtIso(expiresAt)})` : '';
+    statusDot = 'bg-green-600';
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
@@ -76,6 +104,16 @@ export default function DialogLicenseInfo({ open, onClose, license, onRefresh })
         {/* Summary */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
+            <p className="text-xs uppercase text-gray-500">Status</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-50 flex items-center">
+              <span className={`inline-block w-2 h-2 rounded-full mr-2 ${statusDot}`} />
+              {statusLabel}
+              {statusDetail && (
+                <span className="ml-2 text-xs font-normal text-gray-500">{statusDetail}</span>
+              )}
+            </p>
+          </div>
+          <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
             <p className="text-xs uppercase text-gray-500">Plan</p>
             <p className="text-sm font-medium text-gray-900 dark:text-gray-50">{summaryPlan}</p>
           </div>
@@ -84,7 +122,7 @@ export default function DialogLicenseInfo({ open, onClose, license, onRefresh })
             <p className="text-sm font-medium text-gray-900 dark:text-gray-50">{issuedBy || '—'}</p>
           </div>
           <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
-            <p className="text-xs uppercase text-gray-500">Subject</p>
+            <p className="text-xs uppercase text-gray-500">License Key</p>
             <p className="text-sm font-medium text-gray-900 dark:text-gray-50">{subject || '—'}</p>
           </div>
           <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
@@ -105,6 +143,14 @@ export default function DialogLicenseInfo({ open, onClose, license, onRefresh })
               {fmtIso(expiresAt) || '—'}
             </p>
           </div>
+          {graceUntil && (
+            <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
+              <p className="text-xs uppercase text-gray-500">Grace Until</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-50">
+                {fmtIso(graceUntil)}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Features */}
