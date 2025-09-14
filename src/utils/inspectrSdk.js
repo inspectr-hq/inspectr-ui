@@ -315,6 +315,18 @@ class ServiceClient {
   }
 
   /**
+   * Get general service info (API, App, MCP)
+   * @returns {Promise<Object>} - Info payload
+   */
+  async getInfo() {
+    const res = await fetch(`${this.client.apiEndpoint}/info`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+    if (!res.ok) throw new Error(`Info failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
    * Get license information including features and usage
    * @returns {Promise<Object>} - License info
    */

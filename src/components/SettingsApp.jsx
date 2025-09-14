@@ -6,6 +6,7 @@ import SettingsInspectr from './SettingsInspectr.jsx';
 import SettingsMock from './SettingsMock.jsx';
 import SettingsGuard from './SettingsGuard.jsx';
 import SettingsFeaturePreviews from './SettingsFeaturePreviews.jsx';
+import SettingsMcpInfo from './SettingsMcpInfo.jsx';
 import { parseHash } from '../hooks/useHashRouter.jsx';
 
 const navItems = [
@@ -54,6 +55,7 @@ export default function SettingsApp() {
           <>
             <SettingsApiEndpoint />
             <SettingsInspectr />
+            <SettingsMcpInfo />
           </>
         )}
         {current === 'mock' && <SettingsMock />}
