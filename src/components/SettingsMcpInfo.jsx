@@ -69,46 +69,46 @@ export default function SettingsMcpInfo() {
                 {mcp?.protocol || '-'}
               </span>
             </ListItem>
-            <ListItem className="py-3 flex justify-between">
-              <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                Authentication
-              </span>
-              <div className="flex items-center space-x-2">
-                <BadgeIndicator variant={mcpAuth?.required ? 'success' : 'neutral'}>
-                  {mcpAuth?.required ? 'Required' : 'Optional'}
-                </BadgeIndicator>
-                <span className="text-tremor-content dark:text-dark-tremor-content">
-                  {mcpAuth?.scheme ? mcpAuth.scheme.toUpperCase() : '-'}
-                </span>
-                {mcpAuth?.header && (
-                  <span className="text-tremor-content dark:text-dark-tremor-content">
-                    via {mcpAuth.header}
-                  </span>
-                )}
-              </div>
-            </ListItem>
-            <ListItem className="py-3 flex justify-between">
-              <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                Token
-              </span>
-              <div className="flex items-center space-x-2">
-                <span className="text-tremor-content dark:text-dark-tremor-content break-all font-mono">
-                  {showToken ? mcpAuth?.token || '-' : mcpAuth?.token ? '••••••••••' : '-'}
-                </span>
-                {mcpAuth?.token && (
-                  <>
-                    <CopyButton textToCopy={mcpAuth.token} showLabel={false} />
-                    <button
-                      type="button"
-                      onClick={() => setShowToken((s) => !s)}
-                      className="text-xs text-blue-600 hover:underline"
-                    >
-                      {showToken ? 'Hide' : 'Show'}
-                    </button>
-                  </>
-                )}
-              </div>
-            </ListItem>
+            {/*<ListItem className="py-3 flex justify-between">*/}
+            {/*  <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">*/}
+            {/*    Authentication*/}
+            {/*  </span>*/}
+            {/*  <div className="flex items-center space-x-2">*/}
+            {/*    <BadgeIndicator variant={mcpAuth?.required ? 'success' : 'neutral'}>*/}
+            {/*      {mcpAuth?.required ? 'Required' : 'Optional'}*/}
+            {/*    </BadgeIndicator>*/}
+            {/*    <span className="text-tremor-content dark:text-dark-tremor-content">*/}
+            {/*      {mcpAuth?.scheme ? mcpAuth.scheme.toUpperCase() : '-'}*/}
+            {/*    </span>*/}
+            {/*    {mcpAuth?.header && (*/}
+            {/*      <span className="text-tremor-content dark:text-dark-tremor-content">*/}
+            {/*        via {mcpAuth.header}*/}
+            {/*      </span>*/}
+            {/*    )}*/}
+            {/*  </div>*/}
+            {/*</ListItem>*/}
+            {/*<ListItem className="py-3 flex justify-between">*/}
+            {/*  <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">*/}
+            {/*    Token*/}
+            {/*  </span>*/}
+            {/*  <div className="flex items-center space-x-2">*/}
+            {/*    <span className="text-tremor-content dark:text-dark-tremor-content break-all font-mono">*/}
+            {/*      {showToken ? mcpAuth?.token || '-' : mcpAuth?.token ? '••••••••••' : '-'}*/}
+            {/*    </span>*/}
+            {/*    {mcpAuth?.token && (*/}
+            {/*      <>*/}
+            {/*        <CopyButton textToCopy={mcpAuth.token} showLabel={false} />*/}
+            {/*        <button*/}
+            {/*          type="button"*/}
+            {/*          onClick={() => setShowToken((s) => !s)}*/}
+            {/*          className="text-xs text-blue-600 hover:underline"*/}
+            {/*        >*/}
+            {/*          {showToken ? 'Hide' : 'Show'}*/}
+            {/*        </button>*/}
+            {/*      </>*/}
+            {/*    )}*/}
+            {/*  </div>*/}
+            {/*</ListItem>*/}
           </List>
         </div>
       </div>

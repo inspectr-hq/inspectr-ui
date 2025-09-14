@@ -326,7 +326,7 @@ const UsageApp = () => {
           <Title className="!mb-0">Features</Title>
         </div>
         <Text className="mt-1 text-gray-500">Usage metrics for core Inspectr features.</Text>
-        <div className="mt-4 grid grid-cols-2 gap-4">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
               Registrations
@@ -377,7 +377,7 @@ const UsageApp = () => {
         <Text className="mt-1 text-gray-500">
           Overview of metrics related to the Inspectr App SSE connections to Inspectr.
         </Text>
-        <div className="mt-4 grid grid-cols-2 gap-4">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
               Active connections
