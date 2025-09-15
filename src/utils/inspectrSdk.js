@@ -313,6 +313,56 @@ class ServiceClient {
     if (!res.ok) throw new Error(`Metrics failed (${res.status})`);
     return await res.json();
   }
+
+  /**
+   * Get general service info (API, App, MCP)
+   * @returns {Promise<Object>} - Info payload
+   */
+  async getInfo() {
+    const res = await fetch(`${this.client.apiEndpoint}/info`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+    if (!res.ok) throw new Error(`Info failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Get license information including features and usage
+   * @returns {Promise<Object>} - License info
+   */
+  async getLicense() {
+    const res = await fetch(`${this.client.apiEndpoint}/license`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+    if (!res.ok) throw new Error(`License failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Update license using a license key
+   * @param {string} licenseKey - The license key string (e.g., INSPECTR-...)
+   * @returns {Promise<Object>} - API response (updated license or status)
+   */
+  async putLicense(licenseKey) {
+    const body = JSON.stringify({ license_key: licenseKey });
+    const res = await fetch(`${this.client.apiEndpoint}/license`, {
+      method: 'PUT',
+      headers: this.client.jsonHeaders,
+      body
+    });
+    if (!res.ok) {
+      const status = res.status;
+      const errorBody = await res.json().catch(() => ({}));
+      const message = errorBody?.error || errorBody?.message || `License update failed (${status})`;
+      const err = new Error(message);
+      err.status = status;
+      err.code = errorBody?.code;
+      err.reason = errorBody?.reason;
+      err.details = errorBody?.error || errorBody?.message;
+      throw err;
+    }
+    return await res.json();
+  }
 }
 
 /**
