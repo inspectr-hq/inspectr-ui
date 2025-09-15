@@ -110,6 +110,13 @@ const UsageApp = () => {
     if (isNaN(d)) return null;
     return d.toISOString().slice(0, 10); // yyyy-mm-dd
   })();
+  const licensePeriodEndText = (() => {
+    const iso = usageMcp?.period_end || licenseMcp?.period_end;
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d)) return null;
+    return d.toISOString().slice(0, 10); // yyyy-mm-dd
+  })();
   // Use license usage when available; fallback to metrics
   const mcpUsed =
     typeof usageMcp?.used === 'number'
@@ -466,10 +473,11 @@ const UsageApp = () => {
               <Text className="mt-2">
                 {mcpUsed} of {usageLimit} uses
               </Text>
-              {(licenseWindowText || licensePeriodText) && (
+              {(licenseWindowText || licensePeriodText || licensePeriodEndText) && (
                 <Text className="mt-1 text-gray-500">
                   {licenseWindowText ? `${licenseWindowText} window` : 'Usage window'}
                   {licensePeriodText ? ` since ${licensePeriodText}` : ''}
+                  {licensePeriodEndText ? ` — resets on ${licensePeriodEndText}` : ''}
                 </Text>
               )}
             </div>
