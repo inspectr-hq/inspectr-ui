@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useInspectr } from '../context/InspectrContext';
 import { useLiveQuery } from 'dexie-react-hooks';
 import eventDB from '../utils/eventDB.js';
@@ -16,13 +16,19 @@ export default function DialogExportRecords({
   const [exporting, setExporting] = useState(false);
   const [openapiEnabled] = useFeaturePreview('feat_export_openapi');
   const [postmanEnabled] = useFeaturePreview('feat_export_postman');
+  const [errorMessage, setErrorMessage] = useState('');
   const recordCount = useLiveQuery(async () => {
     if (!startTime) return 0;
     return await eventDB.db.events.where('time').above(startTime).count();
   }, [startTime]);
 
+  useEffect(() => {
+    if (!open) setErrorMessage('');
+  }, [open]);
+
   const handleExport = async () => {
     setExporting(true);
+    setErrorMessage('');
     try {
       const blob = await client.operations.export({
         since: startTime,
@@ -34,13 +40,17 @@ export default function DialogExportRecords({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `inspectr_operations_${timestamp}.${format}`;
+      const extension = format === 'phar' ? 'phar' : 'json';
+      const formatSuffix = format === 'json' ? '' : `_${format}`;
+      a.download = `inspectr_operations_${timestamp}${formatSuffix}.${extension}`;
       a.click();
       URL.revokeObjectURL(url);
       if (onClose) onClose();
     } catch (err) {
       console.error('Export failed', err);
-      setToast({ message: 'Export failed', subMessage: err.message, type: 'error' });
+      const message = err?.message || 'Export failed';
+      setErrorMessage(message);
+      setToast({ message: 'Export failed', subMessage: message, type: 'error' });
     } finally {
       setExporting(false);
     }
@@ -77,6 +87,11 @@ export default function DialogExportRecords({
             {postmanEnabled && <option value="postman">Postman (preview)</option>}
           </select>
         </div>
+        {errorMessage && (
+          <p className="-mt-2 mb-4 text-sm text-red-600" role="alert">
+            {errorMessage}
+          </p>
+        )}
         <div className="flex justify-end space-x-3">
           <button
             onClick={onContinue}

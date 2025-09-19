@@ -235,7 +235,30 @@ class OperationsClient {
       headers: this.client.defaultHeaders
     });
 
-    if (!res.ok) throw new Error(`Export failed (${res.status})`);
+    if (!res.ok) {
+      const contentType = res.headers.get('content-type') || '';
+      let errorBody = null;
+      let message = `Export failed (${res.status})`;
+
+      if (contentType.toLowerCase().includes('application/json')) {
+        errorBody = await res.json().catch(() => null);
+        const bodyMessage =
+          errorBody?.error || errorBody?.message || errorBody?.detail || errorBody?.title;
+        if (bodyMessage) message = bodyMessage;
+      } else {
+        const textBody = await res.text().catch(() => '');
+        if (textBody) {
+          errorBody = textBody;
+          message = textBody;
+        }
+      }
+
+      const error = new Error(message);
+      error.status = res.status;
+      if (errorBody !== null) error.body = errorBody;
+      throw error;
+    }
+
     return await res.blob();
   }
 
