@@ -7,7 +7,12 @@ import SettingsPanel from './SettingsPanel';
 import eventDB from '../utils/eventDB';
 import useInspectrRouter from '../hooks/useInspectrRouter.jsx';
 import useLocalStorage from '../hooks/useLocalStorage.jsx';
+import useSessionStorage from '../hooks/useSessionStorage.jsx';
 import { useInspectr } from '../context/InspectrContext';
+
+const FILTER_STORAGE_KEY = 'requestFilters';
+const DEFAULT_FILTERS = Object.freeze({});
+const SESSION_FILTER_OPTIONS = Object.freeze({ resetOnReload: true });
 
 const InspectrApp = () => {
   // Get all the shared state from context
@@ -53,7 +58,11 @@ const InspectrApp = () => {
 
   const [sortField, setSortField] = useState('time');
   const [sortDirection, setSortDirection] = useState('desc');
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useSessionStorage(
+    FILTER_STORAGE_KEY,
+    DEFAULT_FILTERS,
+    SESSION_FILTER_OPTIONS
+  );
 
   const [lastEventId, setLastEventId] = useLocalStorage('lastEventId', '');
 
