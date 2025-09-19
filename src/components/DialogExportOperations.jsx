@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useInspectr } from '../context/InspectrContext';
 import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 
@@ -12,9 +12,15 @@ export default function DialogExportOperations({ open, onClose }) {
   const [until, setUntil] = useState('');
   const [openapiEnabled] = useFeaturePreview('feat_export_openapi');
   const [postmanEnabled] = useFeaturePreview('feat_export_postman');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    if (!open) setErrorMessage('');
+  }, [open]);
 
   const handleExport = async () => {
     setExporting(true);
+    setErrorMessage('');
     try {
       const params = { format };
       if (timeOption === 'preset') {
@@ -30,13 +36,17 @@ export default function DialogExportOperations({ open, onClose }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `inspectr_operations_${timestamp}.${format}`;
+      const extension = format === 'phar' ? 'phar' : 'json';
+      const formatSuffix = format === 'json' ? '' : `_${format}`;
+      a.download = `inspectr_operations_${timestamp}${formatSuffix}.${extension}`;
       a.click();
       URL.revokeObjectURL(url);
       if (onClose) onClose();
     } catch (err) {
       console.error('Export failed', err);
-      setToast({ message: 'Export failed', subMessage: err.message, type: 'error' });
+      const message = err?.message || 'Export failed';
+      setErrorMessage(message);
+      setToast({ message: 'Export failed', subMessage: message, type: 'error' });
     } finally {
       setExporting(false);
     }
@@ -134,6 +144,11 @@ export default function DialogExportOperations({ open, onClose }) {
             {postmanEnabled && <option value="postman">Postman (preview)</option>}
           </select>
         </div>
+        {errorMessage && (
+          <p className="mb-4 text-sm text-red-600" role="alert">
+            {errorMessage}
+          </p>
+        )}
         <div className="flex justify-end space-x-3">
           <button
             onClick={onClose}
