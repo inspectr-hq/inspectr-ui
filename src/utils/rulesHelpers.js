@@ -136,3 +136,16 @@ export const formatUpdateLabel = (iso) => {
   if (diffDays < 30) return `${diffDays}d ago`;
   return date.toLocaleDateString();
 };
+
+export const moveItem = (array, fromIndex, toIndex) => {
+  if (!Array.isArray(array)) return array;
+  const length = array.length;
+  if (length === 0) return array;
+  const start = ((fromIndex % length) + length) % length;
+  const end = ((toIndex % length) + length) % length;
+  if (start === end) return array;
+  const copy = [...array];
+  const [item] = copy.splice(start, 1);
+  copy.splice(end, 0, item);
+  return copy;
+};

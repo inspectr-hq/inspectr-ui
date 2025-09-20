@@ -13,7 +13,10 @@ import {
 const StepIcon = ({ variant }) => {
   if (variant === 'event') {
     return (
-      <span className="relative flex aspect-square h-9 items-center justify-center rounded-lg bg-orange-600 dark:bg-orange-500" aria-hidden="true">
+      <span
+        className="relative flex aspect-square h-9 items-center justify-center rounded-lg bg-orange-600 dark:bg-orange-500"
+        aria-hidden="true"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -37,7 +40,10 @@ const StepIcon = ({ variant }) => {
 
   if (variant === 'condition') {
     return (
-      <span className="relative flex aspect-square h-9 items-center justify-center rounded-lg bg-sky-500 dark:bg-sky-500" aria-hidden="true">
+      <span
+        className="relative flex aspect-square h-9 items-center justify-center rounded-lg bg-sky-500 dark:bg-sky-500"
+        aria-hidden="true"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -60,7 +66,10 @@ const StepIcon = ({ variant }) => {
   }
 
   return (
-    <span className="relative flex aspect-square h-9 items-center justify-center rounded-lg bg-emerald-500 dark:bg-emerald-500" aria-hidden="true">
+    <span
+      className="relative flex aspect-square h-9 items-center justify-center rounded-lg bg-emerald-500 dark:bg-emerald-500"
+      aria-hidden="true"
+    >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
@@ -87,7 +96,9 @@ const buildRuleSteps = (rule, eventMap) => {
   const aggregatorText = aggregatorHints[aggregator];
   const eventMeta = eventMap[rule.event] || {};
   const eventTitle = eventMeta.name || rule.event;
-  const eventDescriptionParts = [rule.description, eventMeta.description, aggregatorText].filter(Boolean);
+  const eventDescriptionParts = [rule.description, eventMeta.description, aggregatorText].filter(
+    Boolean
+  );
 
   const steps = [
     {
@@ -177,7 +188,10 @@ const RulesListPanel = ({
               const updatedLabel = formatUpdateLabel(rule.updated_at || rule.created_at);
 
               return (
-                <div key={rule.id || rule.name} className="overflow-hidden rounded-md border border-gray-200 dark:border-gray-800">
+                <div
+                  key={rule.id || rule.name}
+                  className="overflow-hidden rounded-md border border-gray-200 dark:border-gray-800"
+                >
                   <button
                     type="button"
                     onClick={() => onToggleRule(isOpen ? null : rule.id)}
@@ -185,7 +199,9 @@ const RulesListPanel = ({
                   >
                     <div className="flex w-full items-center justify-between gap-4">
                       <div className="truncate">
-                        <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-50">{rule.name}</p>
+                        <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-50">
+                          {rule.name}
+                        </p>
                         <p className="mt-0.5 truncate text-xs text-gray-600 dark:text-gray-400">
                           {rule.description || 'No description provided'}
                         </p>
@@ -246,7 +262,10 @@ const RulesListPanel = ({
                           {steps.map((step, index) => {
                             const isLast = index === steps.length - 1;
                             return (
-                              <li key={`${rule.id}-step-${index}`} className="relative flex gap-x-4">
+                              <li
+                                key={`${rule.id}-step-${index}`}
+                                className="relative flex gap-x-4"
+                              >
                                 {!isLast && (
                                   <div className="-bottom-6 absolute left-0 top-0 flex w-9 justify-center">
                                     <div className="w-px bg-gray-200 dark:bg-gray-800" />
@@ -258,7 +277,9 @@ const RulesListPanel = ({
                                     {index + 1}. {step.title}
                                   </p>
                                   {step.description && (
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">{step.description}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                      {step.description}
+                                    </p>
                                   )}
                                 </div>
                               </li>
