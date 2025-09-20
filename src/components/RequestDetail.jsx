@@ -51,6 +51,45 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
   const requestSize = calculateRequestSize();
   const responseSize = calculateResponseSize();
 
+  const tags = Array.isArray(operation?.meta?.tags)
+    ? operation.meta.tags
+        .map((tag) => {
+          if (tag == null) return null;
+
+          const raw = typeof tag === 'string' ? tag : String(tag);
+          const trimmed = raw.trim();
+          if (!trimmed) return null;
+
+          const separators = [':', '='];
+          let separatorIndex = -1;
+
+          separators.some((separator) => {
+            const index = trimmed.indexOf(separator);
+            if (index > 0 && index < trimmed.length - 1) {
+              separatorIndex = index;
+              return true;
+            }
+            return false;
+          });
+
+          if (separatorIndex === -1) {
+            return { type: 'simple', label: trimmed };
+          }
+
+          const key = trimmed.slice(0, separatorIndex).trim();
+          const value = trimmed.slice(separatorIndex + 1).trim();
+
+          if (!key || !value) {
+            return { type: 'simple', label: trimmed };
+          }
+
+          return { type: 'kv', key, value };
+        })
+        .filter(Boolean)
+    : [];
+
+  const hasTags = tags.length > 0;
+
   // Generate a cURL command string from the request data
   const generateCurlCommand = () => {
     if (!operation?.request) return;
@@ -307,6 +346,38 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
           )}
         </div>
       </div>
+
+      {hasTags && (
+        <div className="mt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
+            Tags
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {tags.map((tag, index) =>
+              tag.type === 'kv' ? (
+                <span
+                  key={`tag-${index}`}
+                  className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content"
+                >
+                  <span className="font-semibold uppercase tracking-wide text-[10px] text-slate-500 dark:text-dark-tremor-content">
+                    {tag.key}
+                  </span>
+                  <span className="font-mono text-[11px] text-slate-700 dark:text-dark-tremor-content">
+                    {tag.value}
+                  </span>
+                </span>
+              ) : (
+                <span
+                  key={`tag-${index}`}
+                  className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content"
+                >
+                  {tag.label}
+                </span>
+              )
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Toast Notifications */}
       {showCurlErrorToast && (

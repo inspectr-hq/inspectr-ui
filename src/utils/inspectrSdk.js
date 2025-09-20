@@ -51,6 +51,7 @@ class InspectrClient {
     this.service = new ServiceClient(this);
     this.stats = new StatsClient(this);
     this.mock = new MockClient(this);
+    this.rules = new RulesClient(this);
   }
 
   /**
@@ -470,6 +471,112 @@ class MockClient {
       const body = await res.json().catch(() => ({}));
       throw new Error(body.error || `Mock launch failed (${res.status})`);
     }
+    return await res.json();
+  }
+}
+
+/**
+ * RulesClient - Handles automation rule management
+ */
+class RulesClient {
+  constructor(client) {
+    this.client = client;
+  }
+
+  async list() {
+    const res = await fetch(`${this.client.apiEndpoint}/rules`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Rules load failed (${res.status})`);
+    return await res.json();
+  }
+
+  async create(body) {
+    const res = await fetch(`${this.client.apiEndpoint}/rules`, {
+      method: 'POST',
+      headers: this.client.jsonHeaders,
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => ({}));
+      const message =
+        errorBody?.error || errorBody?.message || `Rule create failed (${res.status})`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.body = errorBody;
+      throw err;
+    }
+
+    return await res.json();
+  }
+
+  async get(id) {
+    const res = await fetch(`${this.client.apiEndpoint}/rules/${id}`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Rule load failed (${res.status})`);
+    return await res.json();
+  }
+
+  async replace(id, body) {
+    const res = await fetch(`${this.client.apiEndpoint}/rules/${id}`, {
+      method: 'PUT',
+      headers: this.client.jsonHeaders,
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => ({}));
+      const message =
+        errorBody?.error || errorBody?.message || `Rule update failed (${res.status})`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.body = errorBody;
+      throw err;
+    }
+
+    return await res.json();
+  }
+
+  async delete(id) {
+    const res = await fetch(`${this.client.apiEndpoint}/rules/${id}`, {
+      method: 'DELETE',
+      headers: this.client.defaultHeaders
+    });
+
+    if (!(res.ok || res.status === 204)) {
+      const errorBody = await res.json().catch(() => ({}));
+      const message =
+        errorBody?.error || errorBody?.message || `Rule delete failed (${res.status})`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.body = errorBody;
+      throw err;
+    }
+  }
+
+  async update(id, body) {
+    return this.replace(id, body);
+  }
+
+  async getEvents() {
+    const res = await fetch(`${this.client.apiEndpoint}/rules/events`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Rules events failed (${res.status})`);
+    return await res.json();
+  }
+
+  async getActions() {
+    const res = await fetch(`${this.client.apiEndpoint}/rules/actions`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Rules actions failed (${res.status})`);
     return await res.json();
   }
 }
