@@ -483,6 +483,88 @@ class RulesClient {
     this.client = client;
   }
 
+  /**
+   * Apply a rule to historical operations with optional filters.
+   * Server endpoint: POST /api/rules/{id}/apply
+   *
+   * @param {string} id - Rule ID
+   * @param {Object} [options] - Filtering and execution options
+   * @param {string|Date} [options.since] - RFC3339 timestamp or Date to filter operations starting from this time
+   * @param {string|Date} [options.until] - RFC3339 timestamp or Date to filter operations up to this time
+   * @param {string} [options.method]
+   * @param {string} [options.path]
+   * @param {string} [options.host]
+   * @param {string[]} [options.tagsAll]
+   * @param {string[]} [options.tagsAny]
+   * @param {number[]} [options.statuses]
+   * @param {number} [options.limit]
+   * @param {number} [options.pageSize]
+   * @param {boolean} [options.dryRun=true] - If true, actions are not executed; only a preview/result is returned
+   * @returns {Promise<Object>} Result payload from the server
+   */
+  async applyToHistory(id, options = {}) {
+    if (!id) throw new Error('Rule id is required');
+
+    const qs = new URLSearchParams();
+    const toRFC3339 = (v) => {
+      if (!v) return undefined;
+      if (v instanceof Date) return v.toISOString();
+      // assume already RFC3339 or ISO 8601 string
+      return v;
+    };
+
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '') return;
+      qs.set(k, String(v));
+    };
+
+    add('since', toRFC3339(options.since));
+    add('until', toRFC3339(options.until));
+    add('method', options.method);
+    add('path', options.path);
+    add('host', options.host);
+
+    if (Array.isArray(options.tagsAll) && options.tagsAll.length) {
+      add('tags_all', options.tagsAll.join(','));
+    }
+    if (Array.isArray(options.tagsAny) && options.tagsAny.length) {
+      add('tags_any', options.tagsAny.join(','));
+    }
+    if (Array.isArray(options.statuses) && options.statuses.length) {
+      add('statuses', options.statuses.join(','));
+    }
+
+    if (typeof options.limit === 'number') add('limit', options.limit);
+    if (typeof options.pageSize === 'number') add('page_size', options.pageSize);
+
+    // default dryRun to true unless explicitly false
+    const dryRun = options.dryRun !== false;
+    add('dry_run', dryRun ? '1' : '0');
+
+    const url =
+      `${this.client.apiEndpoint}/rules/${encodeURIComponent(id)}/apply` +
+      (qs.toString() ? `?${qs.toString()}` : '');
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) {
+      let errorBody = {};
+      try {
+        errorBody = await res.json();
+      } catch (e) {}
+      const message = errorBody?.error || errorBody?.message || `Apply rule failed (${res.status})`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.body = errorBody;
+      throw err;
+    }
+
+    return await res.json();
+  }
+
   async list() {
     const res = await fetch(`${this.client.apiEndpoint}/rules`, {
       headers: { ...this.client.defaultHeaders, Accept: 'application/json' }

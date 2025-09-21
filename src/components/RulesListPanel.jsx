@@ -146,6 +146,7 @@ const RulesListPanel = ({
   onDeleteRule,
   onCreateRule,
   onStartFromTemplate,
+  onApplyHistory,
   actionsDisabled
 }) => {
   const eventMap = useMemo(() => {
@@ -336,6 +337,31 @@ const RulesListPanel = ({
                             {updatedLabel ? `Updated ${updatedLabel}` : 'Updated recently'}
                           </time>
                           <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => onApplyHistory && onApplyHistory(rule)}
+                              className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border border-transparent bg-blue-500 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="lucide lucide-rocket -ml-0.5 size-4 shrink-0"
+                                aria-hidden="true"
+                              >
+                                <path d="M7 9c-4 4-2 9-2 9s5 2 9-2c1.1-1.1 1.67-2.67 1.86-4.2a1 1 0 0 0-.66-1.04l-2.33-.78-.78-2.33a1 1 0 0 0-1.04-.66C9.67 7.33 8.1 7.9 7 9Z" />
+                                <path d="M14.5 5.5 19 1l4 4-4.5 4.5" />
+                                <path d="M15 6 9 12" />
+                                <path d="M5 19l-2 2" />
+                              </svg>
+                              Apply to history
+                            </button>
                             <button
                               type="button"
                               onClick={() => onEditRule(rule)}
