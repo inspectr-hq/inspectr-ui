@@ -5,6 +5,7 @@ import RulesListPanel from './RulesListPanel.jsx';
 import RulesBuilderPanel from './RulesBuilderPanel.jsx';
 import RuleDeleteDialog from './RuleDeleteDialog.jsx';
 import RuleBuilderDialog from './RuleBuilderDialog.jsx';
+import RuleTemplateDialog from './RuleTemplateDialog.jsx';
 import RuleApplyHistoryDialog from './RuleApplyHistoryDialog.jsx';
 import {
   buildActionState,
