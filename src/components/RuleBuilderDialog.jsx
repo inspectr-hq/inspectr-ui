@@ -6,7 +6,7 @@ export default function RuleBuilderDialog({ open, title, description, onClose, c
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-4xl overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
+      <div className="w-full max-w-[70%] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
         <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-4 dark:border-gray-800 sm:px-6">
           <div className="space-y-1">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">{title}</h3>

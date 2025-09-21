@@ -553,6 +553,16 @@ export default function RulesApp() {
     setIsBuilderOpen(true);
   };
 
+  const handleDuplicateRule = (copy, original) => {
+    if (!actionsReady) return;
+    // Map the duplicated rule object into the builder form state
+    const formState = mapRuleToForm(copy);
+    setForm(formState);
+    setEditingRuleId(null); // ensure we're creating, not editing
+    setFormErrors([]);
+    setIsBuilderOpen(true);
+  };
+
   const actionsReady = events.length > 0 && actionsCatalog.length > 0 && !loading;
   const selectedEventDescription = eventMap[form.event]?.description;
   const builderTitle = editingRuleId ? 'Edit rule' : 'Create rule';
@@ -669,6 +679,7 @@ export default function RulesApp() {
         onCreateRule={handleCreateRule}
         onStartFromTemplate={handleStartFromTemplate}
         onApplyHistory={handleOpenApplyHistory}
+        onDuplicateRule={handleDuplicateRule}
         actionsDisabled={!actionsReady}
       />
 
