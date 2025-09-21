@@ -9,6 +9,7 @@ import CopyButton from './CopyButton.jsx';
 import { useInspectr } from '../context/InspectrContext';
 import { Tooltip } from './ToolTip.jsx';
 import AuthIndicator from './AuthIndicator.jsx';
+import { normalizeTags } from '../utils/normalizeTags.js';
 
 const RequestDetail = ({ operation, setCurrentTab }) => {
   // Get the client from context
@@ -51,43 +52,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
   const requestSize = calculateRequestSize();
   const responseSize = calculateResponseSize();
 
-  const tags = Array.isArray(operation?.meta?.tags)
-    ? operation.meta.tags
-        .map((tag) => {
-          if (tag == null) return null;
-
-          const raw = typeof tag === 'string' ? tag : String(tag);
-          const trimmed = raw.trim();
-          if (!trimmed) return null;
-
-          const separators = [':', '='];
-          let separatorIndex = -1;
-
-          separators.some((separator) => {
-            const index = trimmed.indexOf(separator);
-            if (index > 0 && index < trimmed.length - 1) {
-              separatorIndex = index;
-              return true;
-            }
-            return false;
-          });
-
-          if (separatorIndex === -1) {
-            return { type: 'simple', label: trimmed };
-          }
-
-          const key = trimmed.slice(0, separatorIndex).trim();
-          const value = trimmed.slice(separatorIndex + 1).trim();
-
-          if (!key || !value) {
-            return { type: 'simple', label: trimmed };
-          }
-
-          return { type: 'kv', key, value };
-        })
-        .filter(Boolean)
-    : [];
-
+  const tags = normalizeTags(operation?.meta?.tags);
   const hasTags = tags.length > 0;
 
   // Generate a cURL command string from the request data
@@ -371,7 +336,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
                   key={`tag-${index}`}
                   className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content"
                 >
-                  {tag.label}
+                  {tag.display}
                 </span>
               )
             )}

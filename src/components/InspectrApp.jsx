@@ -85,6 +85,9 @@ const InspectrApp = () => {
       { throttle: 100 }
     ) || {};
 
+  const tagOptions =
+    useLiveQuery(() => eventDB.getAllTagOptions(), [], [], { throttle: 300 }) || [];
+
   // Paginate
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
 
@@ -406,6 +409,7 @@ const InspectrApp = () => {
             setFilters={setFilters}
             syncOperations={syncOperations}
             isSyncing={isSyncing}
+            tagOptions={tagOptions}
           />
         </div>
         <div

@@ -1,7 +1,13 @@
 // src/components/TagsInput.jsx
 import React, { useState, useRef, useEffect } from 'react';
 
-const TagsInput = ({ options, selected, onChange, placeholder = 'Add option...', colorFn }) => {
+const TagsInput = ({
+  options = [],
+  selected,
+  onChange,
+  placeholder = 'Add option...',
+  colorFn
+}) => {
   const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);

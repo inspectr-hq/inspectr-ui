@@ -3,6 +3,7 @@ import React from 'react';
 import TagsInput from './TagsInput.jsx';
 import { getStatusClass } from '../utils/getStatusClass.js';
 import { getMethodTagClass } from '../utils/getMethodClass.js';
+import { Dialog, DialogPanel } from '@tremor/react';
 
 const RequestListSidePanel = ({
   isOpen,
@@ -12,7 +13,8 @@ const RequestListSidePanel = ({
   filters,
   setSortField,
   setSortDirection,
-  setFilters
+  setFilters,
+  tagOptions = []
 }) => {
   // Reset sort options
   const handleResetSort = () => {
@@ -67,43 +69,30 @@ const RequestListSidePanel = ({
   ];
 
   return (
-    <>
-      {/* Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black opacity-50"
-          style={{ zIndex: 9998 }}
-          onClick={onClose}
-        ></div>
-      )}
+    <Dialog open={isOpen} onClose={onClose} className="z-[9999]">
+      <DialogPanel className="w-full max-w-3xl p-0 overflow-hidden">
+        <div className="flex h-full max-h-[85vh] flex-col">
+          {/* Panel Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-300 dark:border-dark-tremor-border bg-gray-50 dark:bg-dark-tremor-background-subtle">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-dark-tremor-content-strong">
+              Filter & Sort
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-gray-600 dark:text-dark-tremor-content hover:text-gray-800 dark:hover:text-dark-tremor-content-strong focus:outline-none cursor-pointer"
+              aria-label="Close"
+            >
+              &times;
+            </button>
+          </div>
 
-      <div
-        className={`fixed top-0 left-0 h-full w-100 bg-white dark:bg-dark-tremor-background shadow-xl dark:shadow-dark-tremor-shadow transform transition-transform duration-300
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}
-        style={{ zIndex: 9999 }}
-      >
-        {/* Panel Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-300 dark:border-dark-tremor-border bg-gray-50 dark:bg-dark-tremor-background-subtle">
-          <h2 className="pl-4 text-lg font-semibold text-gray-800 dark:text-dark-tremor-content-strong">
-            Filter & Sort
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-600 dark:text-dark-tremor-content hover:text-gray-800 dark:hover:text-dark-tremor-content-strong focus:outline-none cursor-pointer"
-            aria-label="Close"
-          >
-            &times;
-          </button>
-        </div>
-
-        {/* Panel Content */}
-        <div className="p-4 overflow-y-auto h-full">
-          {/* Sort Section */}
-          <section className="mb-6 ml-4 mr-4">
-            <div className="flex items-center justify-between">
-              <h3 className="mb-3 text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
-                Sort By
+          {/* Panel Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {/* Sort Section */}
+            <section className="mb-6">
+              <div className="flex items-center justify-between">
+                <h3 className="mb-3 text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
+                  Sort By
               </h3>
               <button
                 onClick={handleResetSort}
@@ -180,13 +169,13 @@ const RequestListSidePanel = ({
                 </label>
               </div>
             </div>
-          </section>
+            </section>
 
-          {/* Filter Section */}
-          <section className="mb-6 ml-4 mr-4">
-            <div className="flex items-center justify-between">
-              <h3 className="mb-3 text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
-                Filters
+            {/* Filter Section */}
+            <section className="mb-6">
+              <div className="flex items-center justify-between">
+                <h3 className="mb-3 text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
+                  Filters
               </h3>
               <button
                 onClick={handleResetFilters}
@@ -278,6 +267,21 @@ const RequestListSidePanel = ({
                 />
               </div>
 
+              {/* Tags Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
+                  Tags
+                </label>
+                <TagsInput
+                  options={tagOptions}
+                  selected={filters.tags || []}
+                  onChange={(selectedTags) =>
+                    setFilters((prev) => ({ ...prev, tags: selectedTags }))
+                  }
+                  placeholder="Add tag..."
+                />
+              </div>
+
               {/* Path Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
@@ -333,10 +337,11 @@ const RequestListSidePanel = ({
                 />
               </div>
             </div>
-          </section>
+            </section>
+          </div>
         </div>
-      </div>
-    </>
+      </DialogPanel>
+    </Dialog>
   );
 };
 
