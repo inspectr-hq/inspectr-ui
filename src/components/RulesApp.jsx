@@ -244,6 +244,7 @@ export default function RulesApp() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const [templates, setTemplates] = useState([]);
+  const [templateGroups, setTemplateGroups] = useState([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [templatesError, setTemplatesError] = useState('');
 
@@ -260,7 +261,7 @@ export default function RulesApp() {
           client.rules.getActions()
         ]);
         if (cancelled) return;
-        setRules(rulesPayload || []);
+        setRules(rulesPayload?.rules || []);
         setEvents(eventsPayload || []);
         setActionsCatalog(actionsPayload || []);
         setError('');
@@ -314,10 +315,19 @@ export default function RulesApp() {
     try {
       setTemplatesLoading(true);
       setTemplatesError('');
-      const res = await fetch('https://templates.inspectr.dev/api/rules/templates');
-      if (!res.ok) throw new Error(`Template fetch failed (${res.status})`);
-      const data = await res.json();
-      setTemplates(Array.isArray(data) ? data : []);
+      const [templatesRes, groupsRes] = await Promise.all([
+        fetch('https://templates.inspectr.dev/api/rules/templates'),
+        fetch('https://templates.inspectr.dev/api/rules/templates/group-types')
+      ]);
+
+      if (!templatesRes.ok) throw new Error(`Template fetch failed (${templatesRes.status})`);
+      if (!groupsRes.ok) throw new Error(`Group types fetch failed (${groupsRes.status})`);
+
+      const templatesData = await templatesRes.json();
+      const groupsData = await groupsRes.json();
+
+      setTemplates(Array.isArray(templatesData) ? templatesData : []);
+      setTemplateGroups(Array.isArray(groupsData) ? groupsData : []);
     } catch (err) {
       console.error('Failed to load templates', err);
       if (err?.name === 'TypeError' || err?.message?.includes('Failed to fetch')) {
@@ -327,6 +337,8 @@ export default function RulesApp() {
         setEditingRuleId(null);
         setFormErrors([]);
         setIsBuilderOpen(true);
+        setTemplates([]);
+        setTemplateGroups([]);
       } else {
         setTemplatesError(err?.message || 'Failed to load templates');
       }
@@ -723,6 +735,46 @@ export default function RulesApp() {
   const builderDescription = editingRuleId
     ? 'Update the event, conditions, and actions for this automation rule.'
     : 'Define the event trigger, matching conditions, and resulting actions for your new rule.';
+
+  const templateGroupMap = useMemo(() => {
+    return templateGroups.reduce((acc, group) => {
+      acc[group.id] = group;
+      return acc;
+    }, {});
+  }, [templateGroups]);
+
+  const groupedTemplates = useMemo(() => {
+    if (!templates.length) return [];
+
+    const groups = [];
+
+    templateGroups.forEach((group) => {
+      const items = templates.filter((template) => template.group_type === group.id);
+      if (items.length) {
+        groups.push({
+          id: group.id,
+          label: group.label,
+          description: group.description,
+          items
+        });
+      }
+    });
+
+    const uncategorized = templates.filter(
+      (template) => !template.group_type || !templateGroupMap[template.group_type]
+    );
+
+    if (uncategorized.length) {
+      groups.push({
+        id: 'uncategorized',
+        label: 'Other Templates',
+        description: 'General-purpose rules without a defined category.',
+        items: uncategorized
+      });
+    }
+
+    return groups;
+  }, [templates, templateGroups, templateGroupMap]);
 
   return (
     <div className="space-y-6">
