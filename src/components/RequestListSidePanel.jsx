@@ -101,7 +101,7 @@ const RequestListSidePanel = ({
         {/* Panel Content */}
         <div className="p-4 overflow-y-auto h-full">
           {/* Sort Section */}
-          <section className="mb-6 ml-4 mr-4">
+          <section className="mb-6">
             <div className="flex items-center justify-between">
               <h3 className="mb-3 text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
                 Sort By
@@ -113,69 +113,75 @@ const RequestListSidePanel = ({
                 Reset
               </button>
             </div>
-            <div className="space-y-3">
-              <label className="flex items-center">
+            <div className="space-y-2">
+              <label className="flex items-center text-xs">
                 <input
                   type="radio"
                   name="sortField"
                   value="time"
                   checked={sortField === 'time'}
                   onChange={(e) => setSortField(e.target.value)}
-                  className="form-radio text-blue-600 dark:text-blue-500"
+                  className="form-radio text-blue-600 dark:text-blue-500 h-3 w-3"
                 />
-                <span className="ml-3 text-gray-700 dark:text-dark-tremor-content">Timestamp</span>
+                <span className="ml-2 text-xs text-gray-700 dark:text-dark-tremor-content">
+                  Timestamp
+                </span>
               </label>
-              <label className="flex items-center">
+              <label className="flex items-center text-xs">
                 <input
                   type="radio"
                   name="sortField"
                   value="status_code"
                   checked={sortField === 'status_code'}
                   onChange={(e) => setSortField(e.target.value)}
-                  className="form-radio text-blue-600 dark:text-blue-500"
+                  className="form-radio text-blue-600 dark:text-blue-500 h-3 w-3"
                 />
-                <span className="ml-3 text-gray-700 dark:text-dark-tremor-content">Status</span>
+                <span className="ml-2 text-xs text-gray-700 dark:text-dark-tremor-content">
+                  Status
+                </span>
               </label>
-              <label className="flex items-center">
+              <label className="flex items-center text-xs">
                 <input
                   type="radio"
                   name="sortField"
                   value="method"
                   checked={sortField === 'method'}
                   onChange={(e) => setSortField(e.target.value)}
-                  className="form-radio text-blue-600 dark:text-blue-500"
+                  className="form-radio text-blue-600 dark:text-blue-500 h-3 w-3"
                 />
-                <span className="ml-3 text-gray-700 dark:text-dark-tremor-content">Method</span>
+                <span className="ml-2 text-xs text-gray-700 dark:text-dark-tremor-content">
+                  Method
+                </span>
               </label>
             </div>
             <div className="mt-4">
               <h4 className="mb-2 text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
                 Sort Direction
               </h4>
-              <div className="space-y-3">
-                <label className="flex items-center">
+              <div className="space-y-2">
+                <label className="flex items-center text-xs">
                   <input
                     type="radio"
                     name="sortDirection"
                     value="asc"
                     checked={sortDirection === 'asc'}
                     onChange={(e) => setSortDirection(e.target.value)}
-                    className="form-radio text-blue-600 dark:text-blue-500"
+                    className="form-radio text-blue-600 dark:text-blue-500 h-3 w-3"
                   />
-                  <span className="ml-3 text-gray-700 dark:text-dark-tremor-content">
+                  <span className="ml-2 text-xs text-gray-700 dark:text-dark-tremor-content">
                     Ascending
                   </span>
                 </label>
-                <label className="flex items-center">
+                <label className="flex items-center text-xs">
                   <input
                     type="radio"
                     name="sortDirection"
                     value="desc"
                     checked={sortDirection === 'desc'}
                     onChange={(e) => setSortDirection(e.target.value)}
-                    className="form-radio text-blue-600 dark:text-blue-500"
+                    className="form-radio text-blue-600 dark:text-blue-500 h-3 w-3"
                   />
-                  <span className="ml-3 text-gray-700 dark:text-dark-tremor-content">
+                  <span className="ml-2 text-xs text-gray-700 dark:text-dark-tremor-content">
                     Descending
                   </span>
                 </label>
