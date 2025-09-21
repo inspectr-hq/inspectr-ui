@@ -133,6 +133,15 @@ const buildRuleSteps = (rule, eventMap) => {
   return steps;
 };
 
+// Prepare a duplicated rule: drop id, rename, and default to inactive
+const makeCopyForCreate = (rule) => {
+  if (!rule || typeof rule !== 'object') return null;
+  const { id, updated_at, created_at, ...rest } = rule;
+  const baseName = rule.name || 'Untitled rule';
+  const copyName = `Copy of ${baseName}`;
+  return { ...rest, name: copyName, active: false };
+};
+
 const RulesListPanel = ({
   rules,
   events,
@@ -147,7 +156,8 @@ const RulesListPanel = ({
   onCreateRule,
   onStartFromTemplate,
   onApplyHistory,
-  actionsDisabled
+  actionsDisabled,
+  onDuplicateRule
 }) => {
   const eventMap = useMemo(() => {
     return events.reduce((acc, event) => {
@@ -384,6 +394,28 @@ const RulesListPanel = ({
                                 <circle cx="12" cy="12" r="3" />
                               </svg>
                               Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const copy = makeCopyForCreate(rule);
+                                if (!copy) return;
+                                if (onDuplicateRule) {
+                                  onDuplicateRule(copy, rule);
+                                } else if (onCreateRule) {
+                                  // Fallback: open create flow prefilled with the copy
+                                  onCreateRule(copy);
+                                }
+                              }}
+                              className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-900 shadow-sm transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-50 dark:hover:bg-gray-800/30"
+                              title="Duplicate rule"
+                              aria-label="Duplicate rule"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 -ml-0.5 mr-1.5">
+                                <path d="M9 7a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2V7z"></path>
+                                <path d="M5 9a2 2 0 0 1 2-2h1v7a4 4 0 0 0 4 4h7v1a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9z"></path>
+                              </svg>
+                              Duplicate
                             </button>
                             <button
                               type="button"
