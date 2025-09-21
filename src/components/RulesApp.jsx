@@ -74,6 +74,156 @@ const RuleDeleteDialog = ({ open, rule, isDeleting, error, onCancel, onConfirm }
   );
 };
 
+const RuleBuilderDialog = ({ open, title, description, onClose, children }) => {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-4xl overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-4 dark:border-gray-800 sm:px-6">
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">{title}</h3>
+            {description && (
+              <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center rounded-md border border-gray-300 p-2 text-gray-500 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            aria-label="Close builder dialog"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="size-4"
+            >
+              <line x1="18" x2="6" y1="6" y2="18" />
+              <line x1="6" x2="18" y1="6" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div className="max-h-[80vh] overflow-y-auto px-4 py-4 sm:px-6">{children}</div>
+      </div>
+    </div>
+  );
+};
+
+const RuleTemplateDialog = ({ open, templates, loading, error, onClose, onRetry, onSelect }) => {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-5xl overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-4 dark:border-gray-800 sm:px-6">
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
+              Start from a template
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Choose a starter rule and customise it to fit your automation workflow.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center rounded-md border border-gray-300 p-2 text-gray-500 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            aria-label="Close template dialog"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="size-4"
+            >
+              <line x1="18" x2="6" y1="6" y2="18" />
+              <line x1="6" x2="18" y1="6" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div className="max-h-[80vh] overflow-y-auto px-4 py-6 sm:px-6">
+          {loading ? (
+            <p className="text-sm text-gray-600 dark:text-gray-400">Loading templates…</p>
+          ) : error ? (
+            <div className="space-y-3">
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              <button
+                type="button"
+                onClick={onRetry}
+                className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+              >
+                Try again
+              </button>
+            </div>
+          ) : templates.length === 0 ? (
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              No templates available right now.
+            </p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {templates.map((template) => (
+                <div
+                  key={template.id}
+                  className="flex h-full flex-col justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-blue-400 hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
+                >
+                  <div className="space-y-2">
+                    <h4 className="text-base font-semibold text-gray-900 dark:text-gray-50">
+                      {template.name}
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {template.description}
+                    </p>
+                    <div className="mt-3 space-y-1 text-xs text-gray-500 dark:text-gray-500">
+                      <p>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Event:</span>{' '}
+                        {template.event}
+                      </p>
+                      {template.priority != null && (
+                        <p>
+                          <span className="font-medium text-gray-700 dark:text-gray-300">
+                            Priority:
+                          </span>{' '}
+                          {template.priority}
+                        </p>
+                      )}
+                      <p>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                          Actions:
+                        </span>{' '}
+                        {template.actions?.length || 0}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onSelect(template)}
+                    className="mt-4 inline-flex items-center justify-center rounded-md border border-transparent bg-blue-500 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500"
+                  >
+                    Use template
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function RulesApp() {
   const { client, setToast } = useInspectr();
   const [rules, setRules] = useState([]);
@@ -88,9 +238,14 @@ export default function RulesApp() {
   const [saving, setSaving] = useState(false);
   const [editingRuleId, setEditingRuleId] = useState(null);
   const initializedRef = useRef(false);
+  const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [rulePendingDelete, setRulePendingDelete] = useState(null);
   const [deleteError, setDeleteError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templatesError, setTemplatesError] = useState('');
 
   useEffect(() => {
     if (!client?.rules) return;
@@ -155,10 +310,40 @@ export default function RulesApp() {
     }
   };
 
+  const loadTemplates = async () => {
+    try {
+      setTemplatesLoading(true);
+      setTemplatesError('');
+      const res = await fetch('https://templates.inspectr.dev/api/rules/templates');
+      if (!res.ok) throw new Error(`Template fetch failed (${res.status})`);
+      const data = await res.json();
+      setTemplates(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load templates', err);
+      if (err?.name === 'TypeError' || err?.message?.includes('Failed to fetch')) {
+        setTemplatesError('');
+        setIsTemplateDialogOpen(false);
+        resetForm();
+        setEditingRuleId(null);
+        setFormErrors([]);
+        setIsBuilderOpen(true);
+      } else {
+        setTemplatesError(err?.message || 'Failed to load templates');
+      }
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
+
   const resetForm = () => {
     setForm(createInitialForm(events, actionsCatalog));
     setFormErrors([]);
     setEditingRuleId(null);
+  };
+
+  const closeBuilder = () => {
+    setIsBuilderOpen(false);
+    resetForm();
   };
 
   const handleFieldChange = (field, value) => {
@@ -262,6 +447,75 @@ export default function RulesApp() {
     });
   };
 
+  const mapRuleToForm = (rule) => {
+    const expressionType = String(rule?.expression?.op || 'and').toLowerCase();
+    const rawConditions = extractConditions(rule?.expression);
+    const conditions = rawConditions.length
+      ? rawConditions.map((condition) => {
+          const rawRight = condition.right;
+          const valueType = Array.isArray(rawRight) ? 'string' : detectValueType(rawRight);
+          let value;
+          if (Array.isArray(rawRight)) value = rawRight.join(', ');
+          else if (valueType === 'boolean') value = rawRight ? 'true' : 'false';
+          else if (rawRight === undefined || rawRight === null) value = '';
+          else value = String(rawRight);
+          return {
+            path: condition.left?.path || '',
+            operator: condition.op || '==',
+            valueType,
+            value
+          };
+        })
+      : [createCondition()];
+
+    const actions = (() => {
+      if (!rule?.actions?.length) {
+        return actionsCatalog.length ? [buildActionState(actionsCatalog[0])] : [];
+      }
+      return rule.actions.map((action) => {
+        const definition = getActionDefinition(action.type);
+        if (!definition) {
+          const params = Object.entries(action.params || {}).reduce((acc, [key, value]) => {
+            if (Array.isArray(value)) acc[key] = value.join(', ');
+            else if (typeof value === 'boolean') acc[key] = value;
+            else acc[key] = value != null ? String(value) : '';
+            return acc;
+          }, {});
+          return { id: createActionId(), type: action.type || '', params };
+        }
+        const base = buildActionState(definition);
+        const params = { ...base.params };
+        (definition.params || []).forEach((param) => {
+          const raw = action.params?.[param.name];
+          if (param.type === 'boolean') {
+            params[param.name] = raw === undefined ? params[param.name] : parseBoolean(raw);
+          } else if (param.type.startsWith('array')) {
+            if (Array.isArray(raw)) params[param.name] = raw.join(', ');
+            else params[param.name] = raw || '';
+          } else {
+            params[param.name] = raw == null ? '' : String(raw);
+          }
+        });
+        return { ...base, id: createActionId(), type: action.type || '', params };
+      });
+    })();
+
+    const eventType = rule?.event;
+    const fallbackEvent = events[0]?.type || '';
+    const selectedEvent = events.some((evt) => evt.type === eventType) ? eventType : fallbackEvent;
+
+    return {
+      name: rule?.name || '',
+      description: rule?.description || '',
+      event: selectedEvent,
+      priority: rule?.priority ?? 10,
+      active: rule?.active !== false,
+      expressionType,
+      conditions,
+      actions
+    };
+  };
+
   const validateForm = () => {
     const issues = [];
     if (!form.name.trim()) issues.push('Rule name is required.');
@@ -363,8 +617,6 @@ export default function RulesApp() {
         subMessage: `${payload.name} applied successfully.`
       });
 
-      resetForm();
-
       if (result?.id) {
         setRules((prev) => {
           const index = prev.findIndex((rule) => rule.id === result.id);
@@ -378,6 +630,8 @@ export default function RulesApp() {
       } else {
         await refreshRules();
       }
+
+      closeBuilder();
     } catch (err) {
       console.error('Failed to save rule', err);
       setFormErrors([err?.message || 'Failed to save rule']);
@@ -387,68 +641,11 @@ export default function RulesApp() {
   };
 
   const handleEditRule = (rule) => {
-    const expressionType = String(rule.expression?.op || 'and').toLowerCase();
-    const rawConditions = extractConditions(rule.expression);
-    const nextConditions = rawConditions.length
-      ? rawConditions.map((condition) => {
-          const valueType = detectValueType(condition.right);
-          let value;
-          if (valueType === 'boolean') value = condition.right ? 'true' : 'false';
-          else if (condition.right === undefined || condition.right === null) value = '';
-          else value = String(condition.right);
-          return {
-            path: condition.left?.path || '',
-            operator: condition.op || '==',
-            valueType,
-            value
-          };
-        })
-      : [createCondition()];
-
-    const nextActions = (() => {
-      if (!rule.actions?.length) {
-        return actionsCatalog.length ? [buildActionState(actionsCatalog[0])] : [];
-      }
-      return rule.actions.map((action) => {
-        const definition = getActionDefinition(action.type);
-        if (!definition) {
-          const params = Object.entries(action.params || {}).reduce((acc, [key, value]) => {
-            if (Array.isArray(value)) acc[key] = value.join(', ');
-            else if (typeof value === 'boolean') acc[key] = value;
-            else acc[key] = value != null ? String(value) : '';
-            return acc;
-          }, {});
-          return { id: createActionId(), type: action.type || '', params };
-        }
-        const base = buildActionState(definition);
-        const params = { ...base.params };
-        (definition.params || []).forEach((param) => {
-          const raw = action.params?.[param.name];
-          if (param.type === 'boolean') {
-            params[param.name] = raw === undefined ? params[param.name] : parseBoolean(raw);
-          } else if (param.type.startsWith('array')) {
-            if (Array.isArray(raw)) params[param.name] = raw.join(', ');
-            else params[param.name] = raw || '';
-          } else {
-            params[param.name] = raw == null ? '' : String(raw);
-          }
-        });
-        return { ...base, id: createActionId(), type: action.type || '', params };
-      });
-    })();
-
-    setForm({
-      name: rule.name || '',
-      description: rule.description || '',
-      event: rule.event || events[0]?.type || '',
-      priority: rule.priority ?? 10,
-      active: rule.active !== false,
-      expressionType,
-      conditions: nextConditions,
-      actions: nextActions
-    });
+    if (!actionsCatalog.length) return;
+    setForm(mapRuleToForm(rule));
     setEditingRuleId(rule.id || null);
     setFormErrors([]);
+    setIsBuilderOpen(true);
     setOpenRuleId(rule.id || null);
   };
 
@@ -465,7 +662,7 @@ export default function RulesApp() {
       await client.rules.delete(rulePendingDelete.id);
       setRules((prev) => prev.filter((rule) => rule.id !== rulePendingDelete.id));
       if (editingRuleId && rulePendingDelete.id === editingRuleId) {
-        resetForm();
+        closeBuilder();
       }
       if (openRuleId === rulePendingDelete.id) {
         setOpenRuleId(null);
@@ -489,53 +686,62 @@ export default function RulesApp() {
     setDeleteError('');
   };
 
+  const handleBuilderReset = () => {
+    if (editingRuleId) {
+      closeBuilder();
+    } else {
+      resetForm();
+    }
+  };
+
+  const handleCreateRule = () => {
+    if (!actionsReady) return;
+    resetForm();
+    setIsBuilderOpen(true);
+  };
+
+  const handleStartFromTemplate = () => {
+    if (!actionsReady) return;
+    setIsTemplateDialogOpen(true);
+    if (!templatesLoading && templates.length === 0) {
+      loadTemplates();
+    }
+  };
+
+  const handleApplyTemplate = (template) => {
+    if (!actionsCatalog.length) return;
+    setForm(mapRuleToForm(template));
+    setEditingRuleId(null);
+    setFormErrors([]);
+    setIsTemplateDialogOpen(false);
+    setIsBuilderOpen(true);
+  };
+
+  const actionsReady = events.length > 0 && actionsCatalog.length > 0 && !loading;
   const selectedEventDescription = eventMap[form.event]?.description;
-
-  const listPanel = (
-    <RulesListPanel
-      rules={rules}
-      events={events}
-      loading={loading}
-      error={error}
-      isRefreshing={refreshing}
-      openRuleId={openRuleId}
-      onToggleRule={setOpenRuleId}
-      onRefresh={refreshRules}
-      onEditRule={handleEditRule}
-      onDeleteRule={handleRequestDeleteRule}
-    />
-  );
-
-  const builderPanel = (
-    <RulesBuilderPanel
-      form={form}
-      events={events}
-      selectedEventDescription={selectedEventDescription}
-      actionsCatalog={actionsCatalog}
-      isEditing={Boolean(editingRuleId)}
-      saving={saving}
-      formErrors={formErrors}
-      onSubmit={handleSubmit}
-      onReset={resetForm}
-      onFieldChange={handleFieldChange}
-      onConditionChange={handleConditionChange}
-      onAddCondition={handleAddCondition}
-      onRemoveCondition={handleRemoveCondition}
-      onMoveCondition={handleMoveCondition}
-      onActionTypeChange={handleActionTypeChange}
-      onActionParamChange={handleActionParamChange}
-      onAddAction={handleAddAction}
-      onRemoveAction={handleRemoveAction}
-      onMoveAction={handleMoveAction}
-    />
-  );
+  const builderTitle = editingRuleId ? 'Edit rule' : 'Create rule';
+  const builderDescription = editingRuleId
+    ? 'Update the event, conditions, and actions for this automation rule.'
+    : 'Define the event trigger, matching conditions, and resulting actions for your new rule.';
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
-        <div className="w-full lg:basis-1/2 lg:flex-none lg:pr-3">{listPanel}</div>
-        <div className="w-full lg:basis-1/2 lg:flex-none lg:pl-3">{builderPanel}</div>
-      </div>
+      <RulesListPanel
+        rules={rules}
+        events={events}
+        loading={loading}
+        error={error}
+        isRefreshing={refreshing}
+        openRuleId={openRuleId}
+        onToggleRule={setOpenRuleId}
+        onRefresh={refreshRules}
+        onEditRule={handleEditRule}
+        onDeleteRule={handleRequestDeleteRule}
+        onCreateRule={handleCreateRule}
+        onStartFromTemplate={handleStartFromTemplate}
+        actionsDisabled={!actionsReady}
+      />
+
       <RuleDeleteDialog
         open={Boolean(rulePendingDelete)}
         rule={rulePendingDelete}
@@ -543,6 +749,45 @@ export default function RulesApp() {
         error={deleteError}
         onCancel={handleCancelDelete}
         onConfirm={handleConfirmDelete}
+      />
+
+      <RuleBuilderDialog
+        open={isBuilderOpen}
+        title={builderTitle}
+        description={builderDescription}
+        onClose={closeBuilder}
+      >
+        <RulesBuilderPanel
+          form={form}
+          events={events}
+          selectedEventDescription={selectedEventDescription}
+          actionsCatalog={actionsCatalog}
+          isEditing={Boolean(editingRuleId)}
+          saving={saving}
+          formErrors={formErrors}
+          onSubmit={handleSubmit}
+          onReset={handleBuilderReset}
+          onFieldChange={handleFieldChange}
+          onConditionChange={handleConditionChange}
+          onAddCondition={handleAddCondition}
+          onRemoveCondition={handleRemoveCondition}
+          onMoveCondition={handleMoveCondition}
+          onActionTypeChange={handleActionTypeChange}
+          onActionParamChange={handleActionParamChange}
+          onAddAction={handleAddAction}
+          onRemoveAction={handleRemoveAction}
+          onMoveAction={handleMoveAction}
+        />
+      </RuleBuilderDialog>
+
+      <RuleTemplateDialog
+        open={isTemplateDialogOpen}
+        templates={templates}
+        loading={templatesLoading}
+        error={templatesError}
+        onClose={() => setIsTemplateDialogOpen(false)}
+        onRetry={loadTemplates}
+        onSelect={handleApplyTemplate}
       />
     </div>
   );

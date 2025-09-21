@@ -403,12 +403,6 @@ const RulesBuilderPanel = ({
                         )}
                       </div>
                       <div className="flex flex-wrap items-end justify-end gap-2">
-                        <MoveButtons
-                          onMoveUp={() => onMoveCondition(index, index - 1)}
-                          onMoveDown={() => onMoveCondition(index, index + 1)}
-                          disableUp={!canMoveCondition || index === 0}
-                          disableDown={!canMoveCondition || index === form.conditions.length - 1}
-                        />
                         <button
                           type="button"
                           onClick={() => onRemoveCondition(index)}
@@ -451,34 +445,29 @@ const RulesBuilderPanel = ({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h5 className="text-sm font-semibold text-gray-900 dark:text-gray-50">Actions</h5>
-              <div className="flex items-center gap-2">
-                {canMoveAction && (
-                  <span className="text-xs text-gray-500 dark:text-gray-500">Reorder actions</span>
-                )}
-                <button
-                  type="button"
-                  onClick={onAddAction}
-                  className="inline-flex items-center gap-2 rounded-md border border-transparent bg-blue-500 px-3 py-2 text-xs font-medium text-white transition hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-500"
+              <button
+                type="button"
+                onClick={onAddAction}
+                className="inline-flex items-center gap-2 rounded-md border border-transparent bg-blue-500 px-3 py-2 text-xs font-medium text-white transition hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-500"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="size-4"
+                  aria-hidden="true"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="size-4"
-                    aria-hidden="true"
-                  >
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  Add Action
-                </button>
-              </div>
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Add Action
+              </button>
             </div>
 
             {form.actions.map((action, index) => {
@@ -542,12 +531,6 @@ const RulesBuilderPanel = ({
                           </select>
                         </div>
                         <div className="flex items-center gap-2">
-                          <MoveButtons
-                            onMoveUp={() => onMoveAction(action.id, index - 1)}
-                            onMoveDown={() => onMoveAction(action.id, index + 1)}
-                            disableUp={!canMoveAction || index === 0}
-                            disableDown={!canMoveAction || index === form.actions.length - 1}
-                          />
                           <button
                             type="button"
                             onClick={() => onRemoveAction(action.id)}
