@@ -116,7 +116,15 @@ const RuleBuilderDialog = ({ open, title, description, onClose, children }) => {
   );
 };
 
-const RuleTemplateDialog = ({ open, templates, loading, error, onClose, onRetry, onSelect }) => {
+const RuleTemplateDialog = ({
+  open,
+  groupedTemplates,
+  loading,
+  error,
+  onClose,
+  onRetry,
+  onSelect
+}) => {
   if (!open) return null;
 
   return (
@@ -168,53 +176,63 @@ const RuleTemplateDialog = ({ open, templates, loading, error, onClose, onRetry,
                 Try again
               </button>
             </div>
-          ) : templates.length === 0 ? (
+          ) : groupedTemplates.length === 0 ? (
             <p className="text-sm text-gray-600 dark:text-gray-400">
               No templates available right now.
             </p>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {templates.map((template) => (
-                <div
-                  key={template.id}
-                  className="flex h-full flex-col justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-blue-400 hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
-                >
-                  <div className="space-y-2">
-                    <h4 className="text-base font-semibold text-gray-900 dark:text-gray-50">
-                      {template.name}
+            <div className="space-y-6">
+              {groupedTemplates.map((group) => (
+                <section key={group.id} className="space-y-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
+                      {group.label}
                     </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {template.description}
-                    </p>
-                    <div className="mt-3 space-y-1 text-xs text-gray-500 dark:text-gray-500">
-                      <p>
-                        <span className="font-medium text-gray-700 dark:text-gray-300">Event:</span>{' '}
-                        {template.event}
+                    {group.description && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {group.description}
                       </p>
-                      {template.priority != null && (
-                        <p>
-                          <span className="font-medium text-gray-700 dark:text-gray-300">
-                            Priority:
-                          </span>{' '}
-                          {template.priority}
-                        </p>
-                      )}
-                      <p>
-                        <span className="font-medium text-gray-700 dark:text-gray-300">
-                          Actions:
-                        </span>{' '}
-                        {template.actions?.length || 0}
-                      </p>
-                    </div>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onSelect(template)}
-                    className="mt-4 inline-flex items-center justify-center rounded-md border border-transparent bg-blue-500 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500"
-                  >
-                    Use template
-                  </button>
-                </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {group.items.map((template) => (
+                      <div
+                        key={template.id}
+                        className="flex h-full flex-col justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-blue-400 hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
+                      >
+                        <div className="space-y-2">
+                          <h5 className="text-base font-semibold text-gray-900 dark:text-gray-50">
+                            {template.name}
+                          </h5>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {template.description}
+                          </p>
+                          <div className="mt-3 space-y-1 text-xs text-gray-500 dark:text-gray-500">
+                            <p>
+                              <span className="font-medium text-gray-700 dark:text-gray-300">
+                                Event:
+                              </span>{' '}
+                              {template.event}
+                            </p>
+                            <p>
+                              <span className="font-medium text-gray-700 dark:text-gray-300">
+                                Actions:
+                              </span>{' '}
+                              {template.actions?.length || 0}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => onSelect(template)}
+                          className="mt-4 inline-flex items-center justify-center rounded-md border border-transparent bg-blue-500 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500"
+                        >
+                          Use template
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
           )}
@@ -834,7 +852,7 @@ export default function RulesApp() {
 
       <RuleTemplateDialog
         open={isTemplateDialogOpen}
-        templates={templates}
+        groupedTemplates={groupedTemplates}
         loading={templatesLoading}
         error={templatesError}
         onClose={() => setIsTemplateDialogOpen(false)}
