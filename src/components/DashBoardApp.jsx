@@ -9,6 +9,7 @@ import DashBoardLineChart from './DashBoardLineChart.jsx';
 import DashBoardBarList from './DashBoardBarList.jsx';
 import DashBoardDonutChart from './DashBoardDonutChart.jsx';
 import DialogConfirmClearAll from './DialogConfirmClearAll.jsx';
+import DashBoardPercentileChart from './DashBoardPercentileChart.jsx';
 
 function joinClassNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -217,10 +218,18 @@ export default function DashBoardApp() {
   const formattedIntervalData = useMemo(() => {
     if (!stats?.by_interval) return [];
 
-    return stats.by_interval.map((item) => ({
-      ...item,
-      date: formatDateForChart(item.date)
-    }));
+    return stats.by_interval.map((item) => {
+      const mapped = {
+        ...item,
+        date: formatDateForChart(item.date)
+      };
+      // Map backend percentile keys to chart-friendly keys
+      if (item.median_response_time != null) mapped.p50 = item.median_response_time;
+      if (item.p90_response_time != null) mapped.p90 = item.p90_response_time;
+      if (item.p95_response_time != null) mapped.p95 = item.p95_response_time;
+      if (item.p99_response_time != null) mapped.p99 = item.p99_response_time;
+      return mapped;
+    });
   }, [stats?.by_interval]);
 
   // Update start and end when a date range button is clicked.
@@ -375,6 +384,14 @@ export default function DashBoardApp() {
             metricUnit="ms"
             highlightValue={stats?.overall?.average_response_time}
             highlightLabel="Average Response Time"
+          />
+        </div>
+
+        {/* HTTP Request duration percentiles */}
+        <div className="mt-6 grid grid-cols-1">
+          <DashBoardPercentileChart
+            title="HTTP Request duration: p50, p90, p95, p99"
+            data={formattedIntervalData}
           />
         </div>
 
