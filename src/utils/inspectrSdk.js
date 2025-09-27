@@ -728,7 +728,7 @@ class RulesClient {
 
     // default dryRun to true unless explicitly false
     const dryRun = options.dryRun !== false;
-    add('dry_run', dryRun ? '1' : '0');
+    add('dry_run', dryRun);
 
     const url =
       `${this.client.apiEndpoint}/rules/${encodeURIComponent(id)}/apply` +

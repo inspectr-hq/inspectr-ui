@@ -126,13 +126,30 @@ export default function RulesApp() {
     try {
       setRefreshing(true);
       const data = await client.rules.list();
-      setRules(data || []);
+      setRules(data?.rules || []);
       setError('');
     } catch (err) {
       console.error('Failed to refresh rules', err);
       setError(err?.message || 'Failed to refresh rules');
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  const handlePauseRule = async (rule) => {
+    if (!client?.rules || !rule?.id) return;
+    const nextActive = !rule.active;
+    try {
+      await client.rules.update(rule.id, { ...rule, active: nextActive });
+      setToast?.({
+        type: 'success',
+        message: `Rule "${rule.name || 'Untitled'}" ${nextActive ? 'activated' : 'paused'}`
+      });
+      // Refresh rules to reflect the change
+      await refreshRules();
+    } catch (err) {
+      console.error('Toggle rule active failed', err);
+      setToast?.({ type: 'error', message: err?.message || 'Failed to update rule status' });
     }
   };
 
@@ -681,6 +698,7 @@ export default function RulesApp() {
         onStartFromTemplate={handleStartFromTemplate}
         onApplyHistory={handleOpenApplyHistory}
         onDuplicateRule={handleDuplicateRule}
+        onPauseRule={handlePauseRule}
         actionsDisabled={!actionsReady}
       />
 

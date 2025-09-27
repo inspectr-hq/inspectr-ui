@@ -157,7 +157,8 @@ const RulesListPanel = ({
   onStartFromTemplate,
   onApplyHistory,
   actionsDisabled,
-  onDuplicateRule
+  onDuplicateRule,
+  onPauseRule
 }) => {
   const eventMap = useMemo(() => {
     return events.reduce((acc, event) => {
@@ -440,10 +441,48 @@ const RulesListPanel = ({
                             </button>
                             <button
                               type="button"
-                              onClick={() => onToggleRule(null)}
-                              className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/30"
+                              onClick={() => onPauseRule && onPauseRule(rule)}
+                              disabled={actionsDisabled || loading}
+                              className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-900 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-50 dark:hover:bg-gray-800/30"
+                              title={rule.active ? 'Pause rule' : 'Activate rule'}
                             >
-                              Close
+                              {rule.active ? (
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="24"
+                                  height="24"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="lucide lucide-circle-pause -ml-0.5 mr-1.5 size-4 shrink-0"
+                                  aria-hidden="true"
+                                >
+                                  <circle cx="12" cy="12" r="10"></circle>
+                                  <line x1="10" x2="10" y1="15" y2="9"></line>
+                                  <line x1="14" x2="14" y1="15" y2="9"></line>
+                                </svg>
+                              ) : (
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="24"
+                                  height="24"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="lucide lucide-circle-play -ml-0.5 mr-1.5 size-4 shrink-0"
+                                  aria-hidden="true"
+                                >
+                                  <circle cx="12" cy="12" r="10"></circle>
+                                  <polygon points="10 8 16 12 10 16"></polygon>
+                                </svg>
+                              )}
+                              {rule.active ? 'Pause' : 'Play'}
                             </button>
                           </div>
                         </div>
