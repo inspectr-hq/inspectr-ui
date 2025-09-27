@@ -7,6 +7,7 @@ import RuleDeleteDialog from './RuleDeleteDialog.jsx';
 import RuleBuilderDialog from './RuleBuilderDialog.jsx';
 import RuleTemplateDialog from './RuleTemplateDialog.jsx';
 import RuleApplyHistoryDialog from './RuleApplyHistoryDialog.jsx';
+import OperationTagsPanel from './OperationTagsPanel.jsx';
 import {
   buildActionState,
   createActionId,
@@ -682,6 +683,8 @@ export default function RulesApp() {
         onDuplicateRule={handleDuplicateRule}
         actionsDisabled={!actionsReady}
       />
+
+      <OperationTagsPanel />
 
       <RuleDeleteDialog
         open={Boolean(rulePendingDelete)}
