@@ -1,5 +1,5 @@
 // src/components/RequestDetail.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getStatusClass } from '../utils/getStatusClass.js';
 import ToastNotification from './ToastNotification';
 import { getMethodTextClass } from '../utils/getMethodClass.js';
@@ -9,17 +9,29 @@ import CopyButton from './CopyButton.jsx';
 import { useInspectr } from '../context/InspectrContext';
 import { Tooltip } from './ToolTip.jsx';
 import AuthIndicator from './AuthIndicator.jsx';
-import { normalizeTags } from '../utils/normalizeTags.js';
+import { normalizeTags, normalizeTag } from '../utils/normalizeTags.js';
+import RuleDeleteDialog from './RuleDeleteDialog.jsx';
 
 const RequestDetail = ({ operation, setCurrentTab }) => {
   // Get the client from context
-  const { client } = useInspectr();
+  const { client, setToast } = useInspectr();
 
   const [copiedCurl, setCopiedCurl] = useState(false);
   const [showCurlErrorToast, setShowCurlErrorToast] = useState(false);
   const [showUrlToast, setShowUrlToast] = useState(false);
   const [showReplayToast, setShowReplayToast] = useState(false);
   const [replayed, setReplayed] = useState(false);
+
+  // Local tag state for UI updates after delete
+  const [localTagsRaw, setLocalTagsRaw] = useState(() => operation?.meta?.tags || []);
+  useEffect(() => {
+    setLocalTagsRaw(operation?.meta?.tags || []);
+  }, [operation?.id]);
+
+  // Delete tag dialog state
+  const [pendingTag, setPendingTag] = useState(null);
+  const [isDeletingTag, setIsDeletingTag] = useState(false);
+  const [deleteTagError, setDeleteTagError] = useState('');
 
   // Calculate request size details
   const calculateRequestSize = () => {
@@ -52,7 +64,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
   const requestSize = calculateRequestSize();
   const responseSize = calculateResponseSize();
 
-  const tags = normalizeTags(operation?.meta?.tags);
+  const tags = normalizeTags(localTagsRaw);
   const hasTags = tags.length > 0;
 
   // Generate a cURL command string from the request data
@@ -115,6 +127,52 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
         console.error('[Inspectr] Failed to replay request:', err);
         setShowReplayToast(true);
       });
+  };
+
+  // Tag delete handlers
+  const handleRequestDeleteTag = (tag) => {
+    setPendingTag(tag);
+    setDeleteTagError('');
+  };
+
+  const handleCancelDeleteTag = () => {
+    setPendingTag(null);
+    setDeleteTagError('');
+  };
+
+  const handleConfirmDeleteTag = async () => {
+    if (!pendingTag) return;
+    const opId = operation?.id;
+    if (!client?.operations || !opId) {
+      setDeleteTagError('Operation or client not available');
+      return;
+    }
+    try {
+      setIsDeletingTag(true);
+      setDeleteTagError('');
+      await client.operations.deleteOperationTags(opId, { tag: pendingTag.raw });
+      // Remove matching tags locally (case-insensitive, match token)
+      const removeToken = pendingTag.token || normalizeTag(pendingTag.raw)?.token;
+      setLocalTagsRaw((prev) =>
+        Array.isArray(prev)
+          ? prev.filter((t) => {
+              const nt = normalizeTag(t);
+              return !nt || nt.token !== removeToken;
+            })
+          : []
+      );
+      setToast?.({
+        type: 'success',
+        message: `Tag "${pendingTag.display}" removed from this operation`
+      });
+      setPendingTag(null);
+    } catch (err) {
+      console.error('Delete operation tag failed', err);
+      setDeleteTagError(err?.message || 'Failed to delete tag');
+      setToast?.({ type: 'error', message: err?.message || 'Failed to delete tag' });
+    } finally {
+      setIsDeletingTag(false);
+    }
   };
 
   const buttonClasses =
@@ -322,7 +380,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
               tag.type === 'kv' ? (
                 <span
                   key={`tag-${index}`}
-                  className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content"
+                  className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content"
                 >
                   <span className="font-semibold uppercase tracking-wide text-[10px] text-slate-500 dark:text-dark-tremor-content">
                     {tag.key}
@@ -330,19 +388,56 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
                   <span className="font-mono text-[11px] text-slate-700 dark:text-dark-tremor-content">
                     {tag.value}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => handleRequestDeleteTag(tag)}
+                    className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-900/40 dark:text-red-300 dark:hover:bg-red-950"
+                    title={`Remove tag \"${tag.display}\" from this operation`}
+                  >
+                    x
+                  </button>
                 </span>
               ) : (
                 <span
                   key={`tag-${index}`}
-                  className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content"
+                  className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content"
                 >
                   {tag.display}
+                  <button
+                    type="button"
+                    onClick={() => handleRequestDeleteTag(tag)}
+                    className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-900/40 dark:text-red-300 dark:hover:bg-red-950"
+                    title={`Remove tag \"${tag.display}\" from this operation`}
+                  >
+                    x
+                  </button>
                 </span>
               )
             )}
           </div>
         </div>
       )}
+
+      {/* Confirm delete single tag dialog */}
+      <RuleDeleteDialog
+        open={Boolean(pendingTag)}
+        isDeleting={isDeletingTag}
+        error={deleteTagError}
+        onCancel={handleCancelDeleteTag}
+        onConfirm={handleConfirmDeleteTag}
+        title="Remove tag from this operation?"
+        description={
+          pendingTag ? (
+            <>
+              This will remove the tag <span className="font-semibold">{pendingTag.display}</span>{' '}
+              from this operation. This action cannot be undone.
+            </>
+          ) : (
+            ''
+          )
+        }
+        confirmLabel="Remove Tag"
+      />
 
       {/* Toast Notifications */}
       {showCurlErrorToast && (
