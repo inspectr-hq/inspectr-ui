@@ -283,6 +283,195 @@ class OperationsClient {
 
     if (!res.ok) throw new Error(`Import failed (${res.status})`);
   }
+
+  /**
+   * List all tags observed across operations.
+   * Server endpoint: GET /operations/tags
+   * @returns {Promise<{tags: string[]}>}
+   */
+  async listTags() {
+    const res = await fetch(`${this.client.apiEndpoint}/operations/tags`, {
+      headers: this.client.defaultHeaders
+    });
+    if (!res.ok) throw new Error(`List tags failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Delete one or more tags from a specific operation.
+   * Server endpoint: DELETE /operations/{id}/tags
+   * Provide either a single tag via `tag` (string or string[]) and/or `tags` (string|string[])
+   * @param {string} id - Operation ID
+   * @param {Object} [options]
+   * @param {string|string[]} [options.tag] - Repeatable tag parameter; if array, sent multiple times
+   * @param {string|string[]} [options.tags] - Comma-separated list of tags; if array, joined with commas
+   * @returns {Promise<{message: string, removed_count: number, operation: object}>}
+   */
+  async deleteOperationTags(id, options = {}) {
+    if (!id) throw new Error('Operation id is required');
+    const qs = new URLSearchParams();
+
+    const appendRepeatable = (name, value) => {
+      if (Array.isArray(value)) {
+        value.forEach((v) => {
+          if (v !== undefined && v !== null && `${v}` !== '') qs.append(name, String(v));
+        });
+      } else if (value !== undefined && value !== null && `${value}` !== '') {
+        qs.append(name, String(value));
+      }
+    };
+
+    const setCommaSeparated = (name, value) => {
+      if (Array.isArray(value)) {
+        if (value.length) qs.set(name, value.join(','));
+      } else if (value !== undefined && value !== null && `${value}` !== '') {
+        qs.set(name, String(value));
+      }
+    };
+
+    appendRepeatable('tag', options.tag);
+    setCommaSeparated('tags', options.tags);
+
+    if (!qs.has('tag') && !qs.has('tags')) {
+      throw new Error('At least one tag must be provided via options.tag or options.tags');
+    }
+
+    const url = `${this.client.apiEndpoint}/operations/${encodeURIComponent(id)}/tags`;
+    const res = await fetch(`${url}?${qs.toString()}`, {
+      method: 'DELETE',
+      headers: this.client.defaultHeaders
+    });
+
+    if (!res.ok) throw new Error(`Delete operation tags failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Delete a specific tag across operations (persisting changes; no dry-run).
+   * Server endpoint: DELETE /operations/tags/{tag}
+   * Optional filters are supported.
+   * @param {string} tag - The tag to remove
+   * @param {Object} [options]
+   * @param {string|Date} [options.since]
+   * @param {string|Date} [options.until]
+   * @param {string} [options.method]
+   * @param {string} [options.path]
+   * @param {string} [options.host]
+   * @param {string[]} [options.tagsAll]
+   * @param {string[]} [options.tagsAny]
+   * @param {number[]|string[]} [options.statuses]
+   * @param {number} [options.limit]
+   * @param {number} [options.pageSize]
+   * @returns {Promise<Object>} Result payload from the server
+   */
+  async deleteTag(tag, options = {}) {
+    if (!tag) throw new Error('tag is required');
+
+    const qs = new URLSearchParams();
+    const toRFC3339 = (v) => {
+      if (!v) return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return v;
+    };
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0)) return;
+      qs.set(k, Array.isArray(v) ? v.join(',') : String(v));
+    };
+
+    add('since', toRFC3339(options.since));
+    add('until', toRFC3339(options.until));
+    add('method', options.method);
+    add('path', options.path);
+    add('host', options.host);
+
+    if (Array.isArray(options.tagsAll) && options.tagsAll.length) {
+      add('tags_all', options.tagsAll);
+    }
+    if (Array.isArray(options.tagsAny) && options.tagsAny.length) {
+      add('tags_any', options.tagsAny);
+    }
+    if (Array.isArray(options.statuses) && options.statuses.length) {
+      add('statuses', options.statuses);
+    }
+    add('limit', options.limit);
+    add('page_size', options.pageSize);
+
+    const url = `${this.client.apiEndpoint}/operations/tags/${encodeURIComponent(tag)}`;
+    const res = await fetch(`${url}${qs.toString() ? '?' + qs.toString() : ''}`, {
+      method: 'DELETE',
+      headers: this.client.defaultHeaders
+    });
+
+    if (!res.ok) throw new Error(`Delete tag failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Bulk delete a tag from operations with optional dry-run.
+   * Server endpoint: POST /operations/tags/bulk-delete
+   * @param {Object} options
+   * @param {string} options.tag - Tag to remove (required)
+   * @param {string|Date} [options.since]
+   * @param {string|Date} [options.until]
+   * @param {string} [options.method]
+   * @param {string} [options.path]
+   * @param {string} [options.host]
+   * @param {string[]} [options.tagsAll]
+   * @param {string[]} [options.tagsAny]
+   * @param {number[]|string[]} [options.statuses]
+   * @param {number} [options.limit]
+   * @param {number} [options.pageSize]
+   * @param {boolean} [options.dryRun=true] - If true, performs dry-run without persisting changes
+   * @returns {Promise<Object>} Result payload from the server
+   */
+  async bulkDeleteTag(options = {}) {
+    const { tag } = options;
+    if (!tag) throw new Error('options.tag is required');
+
+    const qs = new URLSearchParams();
+    const toRFC3339 = (v) => {
+      if (!v) return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return v;
+    };
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0)) return;
+      qs.set(k, Array.isArray(v) ? v.join(',') : String(v));
+    };
+
+    add('tag', tag);
+    add('since', toRFC3339(options.since));
+    add('until', toRFC3339(options.until));
+    add('method', options.method);
+    add('path', options.path);
+    add('host', options.host);
+
+    if (Array.isArray(options.tagsAll) && options.tagsAll.length) {
+      add('tags_all', options.tagsAll);
+    }
+    if (Array.isArray(options.tagsAny) && options.tagsAny.length) {
+      add('tags_any', options.tagsAny);
+    }
+    if (Array.isArray(options.statuses) && options.statuses.length) {
+      add('statuses', options.statuses);
+    }
+    add('limit', options.limit);
+    add('page_size', options.pageSize);
+
+    // dry_run defaults to true on the server; include only if explicitly provided
+    if (options.dryRun !== undefined && options.dryRun !== null) {
+      add('dry_run', options.dryRun ? 'true' : 'false');
+    }
+
+    const url = `${this.client.apiEndpoint}/operations/tags/bulk-delete`;
+    const res = await fetch(`${url}?${qs.toString()}`, {
+      method: 'POST',
+      headers: this.client.defaultHeaders
+    });
+
+    if (!res.ok) throw new Error(`Bulk delete tag failed (${res.status})`);
+    return await res.json();
+  }
 }
 
 /**
