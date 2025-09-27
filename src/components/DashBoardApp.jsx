@@ -434,6 +434,20 @@ export default function DashBoardApp() {
             toggleable={false}
           />
         </div>
+
+        {/* Fastest and Slowest Endpoints by P95 */}
+        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-2">
+          <DashBoardBarList
+            title="Top Fastest Endpoints (P95)"
+            data={stats?.top_endpoints?.fastest}
+            toggleable={false}
+          />
+          <DashBoardBarList
+            title="Top Slowest Endpoints (P95)"
+            data={stats?.top_endpoints?.slowest}
+            toggleable={false}
+          />
+        </div>
         {/*<div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">*/}
         {/*  <Card className="h-36 rounded-tremor-small p-2">*/}
         {/*    <ContentPlaceholder />*/}

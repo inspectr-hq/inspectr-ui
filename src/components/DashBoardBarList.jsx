@@ -13,7 +13,10 @@ export default function DashBoardBarList({ title, data, toggleable = true }) {
   // Transform data from { path, count } to { name, value }
   const transformedData = data
     ? data.map((item) => ({
-        name: item.path,
+        name:
+          item.p95_response_time != null
+            ? `${item.path} (P95: ${item.p95_response_time} ms)`
+            : item.path,
         value: item.count
       }))
     : [];

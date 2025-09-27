@@ -1,5 +1,5 @@
 // src/components/DashBoardPercentileChart.jsx
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { AreaChart, Card } from '@tremor/react';
 
 function valueFormatter(number) {
@@ -26,7 +26,7 @@ function TogglePill({ active, label, onClick }) {
 }
 
 export default function DashBoardPercentileChart({
-  title = 'HTTP Request duration (percentiles)',
+  title = 'HTTP Request duration: p50, p90, p95, p99',
   data = []
 }) {
   const allKeys = ['p50', 'p90', 'p95', 'p99'];
@@ -43,14 +43,49 @@ export default function DashBoardPercentileChart({
     return allKeys.filter((k) => set.has(k));
   }, [data]);
 
-  // Selection state: null or 'all' means show all available, otherwise only the clicked key
-  const [selectedKey, setSelectedKey] = useState('all');
+  // Selected keys state: default to all available ("all on")
+  const [selectedKeys, setSelectedKeys] = useState(new Set(allKeys));
+
+  // Keep selected keys in sync when availableKeys change (e.g., on new data)
+  useEffect(() => {
+    // Initialize to all available on first load, and drop any keys that are no longer available
+    setSelectedKeys((prev) => {
+      // If prev was empty or different size, ensure at least includes only available keys; default to all available if empty
+      const next = new Set([...prev].filter((k) => availableKeys.includes(k)));
+      if (next.size === 0) {
+        return new Set(availableKeys);
+      }
+      // Also include any newly available keys (to keep default "all on")
+      availableKeys.forEach((k) => next.add(k));
+      return next;
+    });
+  }, [availableKeys]);
+
+  const toggleKey = (k) => {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) {
+        next.delete(k);
+      } else {
+        next.add(k);
+      }
+      return next;
+    });
+  };
+
+  // Build categories and matching colors based on selected keys, preserving fixed order
+  const colorByKey = {
+    p50: 'blue',
+    p90: 'violet',
+    p95: 'cyan',
+    p99: 'rose'
+  };
 
   const categories = useMemo(() => {
-    if (!availableKeys.length) return [];
-    if (!selectedKey || selectedKey === 'all') return availableKeys;
-    return availableKeys.includes(selectedKey) ? [selectedKey] : availableKeys;
-  }, [availableKeys, selectedKey]);
+    return availableKeys.filter((k) => selectedKeys.has(k));
+  }, [availableKeys, selectedKeys]);
+
+  const colors = useMemo(() => categories.map((k) => colorByKey[k]), [categories]);
 
   // If no percentile data present, render a subtle placeholder card
   if (availableKeys.length === 0) {
@@ -73,46 +108,44 @@ export default function DashBoardPercentileChart({
           {title}
         </h3>
         <div className="flex gap-2">
-          <TogglePill
-            label="All"
-            active={selectedKey === 'all'}
-            onClick={() => setSelectedKey('all')}
-          />
           {allKeys.map((k) => (
             <TogglePill
               key={k}
               label={k.toUpperCase()}
-              active={selectedKey === k}
-              onClick={() => setSelectedKey(k)}
+              active={selectedKeys.has(k)}
+              onClick={() => toggleKey(k)}
             />
           ))}
         </div>
       </div>
 
       <div className="p-6">
-        <AreaChart
-          data={data}
-          index="date"
-          categories={categories}
-          colors={[
-            'blue', // p50
-            'violet', // p90
-            'cyan', // p95
-            'rose' // p99
-          ]}
-          showGradient={false}
-          valueFormatter={valueFormatter}
-          className="mt-4 hidden h-80 w-full sm:block"
-        />
-        <AreaChart
-          data={data}
-          index="date"
-          categories={categories}
-          colors={['blue', 'violet', 'cyan', 'rose']}
-          showGradient={false}
-          valueFormatter={valueFormatter}
-          className="mt-4 h-48 w-full sm:hidden"
-        />
+        {categories.length === 0 ? (
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            No percentile selected. Toggle one or more options above.
+          </p>
+        ) : (
+          <>
+            <AreaChart
+              data={data}
+              index="date"
+              categories={categories}
+              colors={colors}
+              showGradient={false}
+              valueFormatter={valueFormatter}
+              className="mt-4 hidden h-80 w-full sm:block"
+            />
+            <AreaChart
+              data={data}
+              index="date"
+              categories={categories}
+              colors={colors}
+              showGradient={false}
+              valueFormatter={valueFormatter}
+              className="mt-4 h-48 w-full sm:hidden"
+            />
+          </>
+        )}
         <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">Values in milliseconds</p>
       </div>
     </Card>
