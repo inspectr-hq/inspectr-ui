@@ -168,10 +168,10 @@ const RulesListPanel = ({
   }, [events]);
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-[#090E1A]">
+    <div className="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 px-4 py-4 dark:border-gray-800">
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-50">Applied Rules</h3>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50">Rules</h2>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
             Overview of automation rules currently available on your workspace.
           </p>
@@ -196,6 +196,7 @@ const RulesListPanel = ({
           <button
             type="button"
             onClick={onRefresh}
+            title="Refresh rules"
             disabled={isRefreshing || loading}
             className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900"
           >

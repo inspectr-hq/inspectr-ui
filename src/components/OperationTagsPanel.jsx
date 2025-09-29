@@ -8,7 +8,7 @@ export default function OperationTagsPanel() {
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
+  const [isRefreshing, setRefreshing] = useState(false);
 
   const [pendingTag, setPendingTag] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -106,8 +106,8 @@ export default function OperationTagsPanel() {
   };
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-      <div className="mb-4 flex items-center justify-between">
+    <section className="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 px-4 py-4 dark:border-gray-800">
         <div>
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50">
             Operation Tags
@@ -120,68 +120,70 @@ export default function OperationTagsPanel() {
           <button
             type="button"
             onClick={refreshTags}
-            disabled={loading || refreshing}
-            className="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:opacity-60 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
             title="Refresh tags"
+            disabled={isRefreshing || loading}
+            className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900"
           >
-            {refreshing ? 'Refreshing…' : 'Refresh'}
+            {isRefreshing ? 'Refreshing…' : 'Refresh'}
           </button>
         </div>
       </div>
 
-      {error && (
-        <div className="mb-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950 dark:text-red-300">
-          {error}
-        </div>
-      )}
+      <div className="px-4 pt-2 pb-4">
+        {error && (
+          <div className="mb-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950 dark:text-red-300">
+            {error}
+          </div>
+        )}
 
-      {loading ? (
-        <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-          Loading tags…
-        </div>
-      ) : tags.length === 0 ? (
-        <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-          No tags found.
-        </div>
-      ) : (
-        <ul className="divide-y divide-gray-200 dark:divide-gray-800">
-          {tags.map((tag) => (
-            <li key={tag} className="flex items-center justify-between gap-3 py-2">
-              <div className="inline-flex items-center gap-2">
-                <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                  {tag}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleRequestDelete(tag)}
-                className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-50 dark:border-red-900/40 dark:text-red-300 dark:hover:bg-red-950"
-                title={`Remove tag \"${tag}\" from operations`}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="-ms-0.5"
+        {loading ? (
+          <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+            Loading tags…
+          </div>
+        ) : tags.length === 0 ? (
+          <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+            No tags found.
+          </div>
+        ) : (
+          <ul className="divide-y divide-gray-200 dark:divide-gray-800">
+            {tags.map((tag) => (
+              <li key={tag} className="flex items-center justify-between gap-3 py-2">
+                <div className="inline-flex items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                    {tag}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRequestDelete(tag)}
+                  className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-50 dark:border-red-900/40 dark:text-red-300 dark:hover:bg-red-950"
+                  title={`Remove tag \"${tag}\" from operations`}
                 >
-                  <path d="M3 6h18" />
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                  <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                  <line x1="10" x2="10" y1="11" y2="17" />
-                  <line x1="14" x2="14" y1="11" y2="17" />
-                </svg>
-                Remove
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="-ms-0.5"
+                  >
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <line x1="10" x2="10" y1="11" y2="17" />
+                    <line x1="14" x2="14" y1="11" y2="17" />
+                  </svg>
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       <RuleDeleteDialog
         open={Boolean(pendingTag)}

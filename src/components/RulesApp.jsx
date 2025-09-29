@@ -682,27 +682,32 @@ export default function RulesApp() {
   };
 
   return (
-    <div className="space-y-6">
-      <RulesListPanel
-        rules={rules}
-        events={events}
-        loading={loading}
-        error={error}
-        isRefreshing={refreshing}
-        openRuleId={openRuleId}
-        onToggleRule={setOpenRuleId}
-        onRefresh={refreshRules}
-        onEditRule={handleEditRule}
-        onDeleteRule={handleRequestDeleteRule}
-        onCreateRule={handleCreateRule}
-        onStartFromTemplate={handleStartFromTemplate}
-        onApplyHistory={handleOpenApplyHistory}
-        onDuplicateRule={handleDuplicateRule}
-        onPauseRule={handlePauseRule}
-        actionsDisabled={!actionsReady}
-      />
-
-      <OperationTagsPanel />
+    <div className="min-h-screen flex flex-col space-y-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 flex-1 min-h-0">
+        <div className="lg:col-span-2 min-h-0 flex flex-col">
+          <RulesListPanel
+            rules={rules}
+            events={events}
+            loading={loading}
+            error={error}
+            isRefreshing={refreshing}
+            openRuleId={openRuleId}
+            onToggleRule={setOpenRuleId}
+            onRefresh={refreshRules}
+            onEditRule={handleEditRule}
+            onDeleteRule={handleRequestDeleteRule}
+            onCreateRule={handleCreateRule}
+            onStartFromTemplate={handleStartFromTemplate}
+            onApplyHistory={handleOpenApplyHistory}
+            onDuplicateRule={handleDuplicateRule}
+            onPauseRule={handlePauseRule}
+            actionsDisabled={!actionsReady}
+          />
+        </div>
+        <div className="lg:col-span-1">
+          <OperationTagsPanel />
+        </div>
+      </div>
 
       <RuleDeleteDialog
         open={Boolean(rulePendingDelete)}
