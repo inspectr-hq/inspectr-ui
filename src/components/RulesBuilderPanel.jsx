@@ -127,7 +127,7 @@ const RulesBuilderPanel = ({
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-2">
           <label
             htmlFor="rule-event"
@@ -144,7 +144,7 @@ const RulesBuilderPanel = ({
             {events.length === 0 && <option value="">No events available</option>}
             {events.map((item) => (
               <option key={item.type} value={item.type}>
-                {item.name || item.type}
+                {item.label || item.name || item.type}
               </option>
             ))}
           </select>
@@ -154,8 +154,23 @@ const RulesBuilderPanel = ({
             </p>
           )}
         </div>
-        <div className="grid gap-2 sm:justify-items-end">
-          <label className="text-sm font-medium text-gray-900 dark:text-gray-50">Activation</label>
+        <div className="space-y-2">
+          <label
+            htmlFor="rule-priority"
+            className="text-sm font-medium text-gray-900 dark:text-gray-50"
+          >
+            Priority
+          </label>
+          <input
+            id="rule-priority"
+            type="number"
+            value={form.priority}
+            onChange={(event) => onFieldChange('priority', event.target.value)}
+            className="block w-full max-w-[7rem] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-800 dark:bg-[#090E1A] dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+          />
+        </div>
+        <div className="space-y-2 sm:justify-self-end">
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-50">Activation</span>
           <div className="flex items-center gap-3">
             <input
               id="rule-active"
@@ -167,21 +182,6 @@ const RulesBuilderPanel = ({
             <label htmlFor="rule-active" className="text-sm text-gray-700 dark:text-gray-200">
               Rule is active
             </label>
-          </div>
-          <div className="space-y-2">
-            <label
-              htmlFor="rule-priority"
-              className="text-sm font-medium text-gray-900 dark:text-gray-50"
-            >
-              Priority
-            </label>
-            <input
-              id="rule-priority"
-              type="number"
-              value={form.priority}
-              onChange={(event) => onFieldChange('priority', event.target.value)}
-              className="block w-24 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-800 dark:bg-[#090E1A] dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-            />
           </div>
         </div>
       </div>
@@ -525,9 +525,11 @@ const RulesBuilderPanel = ({
                               <option value="">No actions available</option>
                             )}
                             {actionsCatalog.map((item) => {
-                              const optionLabel = item.name
-                                ? `${item.name} (${item.type})`
-                                : item.type;
+                              const baseLabel = item.label || item.name;
+                              const optionLabel =
+                                baseLabel && baseLabel !== item.type
+                                  ? `${baseLabel} (${item.type})`
+                                  : item.type;
                               return (
                                 <option key={item.type} value={item.type}>
                                   {optionLabel}
@@ -579,7 +581,7 @@ const RulesBuilderPanel = ({
                               htmlFor={fieldId}
                               className="text-xs font-medium text-gray-500 dark:text-gray-400"
                             >
-                              {param.name}
+                              {param.label || param.name}
                               {param.required && <span className="ml-1 text-red-500">*</span>}
                             </label>
                           );
