@@ -391,7 +391,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
                   <button
                     type="button"
                     onClick={() => handleRequestDeleteTag(tag)}
-                    className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-900/40 dark:text-red-300 dark:hover:bg-red-950"
+                    className="inline-flex items-center justify-center text-xs font-semibold rounded-full text-red-700 transition hover:bg-red-50 dark:border-red-900/40 dark:text-red-300 dark:hover:bg-red-950"
                     title={`Remove tag \"${tag.display}\" from this operation`}
                   >
                     x
@@ -400,13 +400,13 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
               ) : (
                 <span
                   key={`tag-${index}`}
-                  className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content"
+                  className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-mono text-[11px] font-medium text-slate-700 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content"
                 >
                   {tag.display}
                   <button
                     type="button"
                     onClick={() => handleRequestDeleteTag(tag)}
-                    className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-900/40 dark:text-red-300 dark:hover:bg-red-950"
+                    className="ml-1 inline-flex items-center justify-center text-xs font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-900/40 dark:text-red-300 dark:hover:bg-red-950"
                     title={`Remove tag \"${tag.display}\" from this operation`}
                   >
                     x
