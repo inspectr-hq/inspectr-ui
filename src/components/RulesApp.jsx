@@ -446,7 +446,9 @@ export default function RulesApp() {
         } else if (param.type === 'integer' || param.type === 'number') {
           const n = Number(raw);
           if (!param.readonly && param.required && !Number.isFinite(n)) {
-            issues.push(`${param.name} must be a valid ${param.type} for the ${action.type} action.`);
+            issues.push(
+              `${param.name} must be a valid ${param.type} for the ${action.type} action.`
+            );
           }
         } else if (param.type === 'object') {
           if (param.required && !param.readonly) {
@@ -456,7 +458,9 @@ export default function RulesApp() {
               try {
                 const parsed = JSON.parse(raw);
                 if (!parsed || typeof parsed !== 'object') {
-                  issues.push(`${param.name} must be a valid JSON object for the ${action.type} action.`);
+                  issues.push(
+                    `${param.name} must be a valid JSON object for the ${action.type} action.`
+                  );
                 }
               } catch (e) {
                 issues.push(`${param.name} must be valid JSON for the ${action.type} action.`);
