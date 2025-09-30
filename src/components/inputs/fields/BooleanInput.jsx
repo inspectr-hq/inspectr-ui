@@ -5,6 +5,7 @@ export default function BooleanInput({ id, descriptor, value, onChange, readOnly
   if (!descriptor || descriptor.hidden) return null;
   const label = descriptor.label || descriptor.name;
   const isReadOnly = readOnly ?? Boolean(descriptor.readonly);
+  const helpText = descriptor.help || (!descriptor.description ? descriptor.description : '');
 
   return (
     <div className="space-y-1">
@@ -25,8 +26,8 @@ export default function BooleanInput({ id, descriptor, value, onChange, readOnly
           <span className="text-xs text-gray-600 dark:text-gray-400">{descriptor.description}</span>
         )}
       </div>
-      {descriptor.help && (
-        <p className="text-[11px] text-gray-500 dark:text-gray-400">{descriptor.help}</p>
+      {helpText && (
+        <p className="text-xs text-gray-500 dark:text-gray-400">{helpText}</p>
       )}
     </div>
   );
