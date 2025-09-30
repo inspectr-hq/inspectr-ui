@@ -42,9 +42,17 @@ export const parseBoolean = (value) => {
 };
 
 export const getParamDefault = (param) => {
-  if (param.type.startsWith('array')) return '';
-  if (param.type === 'boolean') return parseBoolean(param.default ?? true);
-  if (param.default != null) return param.default;
+  // Prefer explicit defaults
+  if (param?.input === 'single_select' && Array.isArray(param?.choices) && param.choices.length) {
+    // Use provided default if present, otherwise default to first choice value
+    if (param.default != null) return param.default;
+    const first = param.choices[0];
+    return first?.value ?? '';
+  }
+  if (typeof param?.type === 'string' && param.type.startsWith('array')) return '';
+  if (param?.type === 'object') return {};
+  if (param?.type === 'boolean') return parseBoolean(param.default ?? true);
+  if (param?.default != null) return param.default;
   return '';
 };
 

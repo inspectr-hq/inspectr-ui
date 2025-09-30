@@ -282,11 +282,15 @@ export default function RulesApp() {
   const handleActionParamChange = (actionId, paramName, value) => {
     setForm((prev) => ({
       ...prev,
-      actions: prev.actions.map((action) =>
-        action.id === actionId
-          ? { ...action, params: { ...action.params, [paramName]: value } }
-          : action
-      )
+      actions: prev.actions.map((action) => {
+        if (action.id !== actionId) return action;
+        const nextParams = { ...action.params, [paramName]: value };
+        if (paramName === 'provider') {
+          // Reset provider_options when provider changes to avoid stale selections
+          nextParams.provider_options = {};
+        }
+        return { ...action, params: nextParams };
+      })
     }));
   };
 
@@ -343,9 +347,12 @@ export default function RulesApp() {
           const raw = action.params?.[param.name];
           if (param.type === 'boolean') {
             params[param.name] = raw === undefined ? params[param.name] : parseBoolean(raw);
-          } else if (param.type.startsWith('array')) {
+          } else if (typeof param.type === 'string' && param.type.startsWith('array')) {
             if (Array.isArray(raw)) params[param.name] = raw.join(', ');
             else params[param.name] = raw || '';
+          } else if (param.type === 'object') {
+            if (raw && typeof raw === 'object') params[param.name] = raw;
+            else params[param.name] = {};
           } else {
             params[param.name] = raw == null ? '' : String(raw);
           }
@@ -431,11 +438,38 @@ export default function RulesApp() {
       const params = {};
       (definition.params || []).forEach((param) => {
         const rawValue = action.params?.[param.name];
-        if (param.type.startsWith('array')) {
+        if (typeof param.type === 'string' && param.type.startsWith('array')) {
           const values = toArrayParam(rawValue);
           if (param.required || values.length) params[param.name] = values;
         } else if (param.type === 'boolean') {
           if (rawValue !== undefined) params[param.name] = parseBoolean(rawValue);
+        } else if (param.type === 'object') {
+          if (rawValue && typeof rawValue === 'object') {
+            let obj = rawValue;
+            if (param.input === 'multi_select' && Array.isArray(param.choices)) {
+              const result = {};
+              Object.entries(rawValue).forEach(([k, v]) => {
+                const choice = param.choices.find((c) => (c.meta?.key || c.value) === k);
+                const t = choice?.meta?.type;
+                if (t === 'integer' || t === 'number') {
+                  const num = Number(v);
+                  result[k] = Number.isFinite(num) ? num : v;
+                } else if (t === 'boolean') {
+                  result[k] = v === true || v === 'true' || v === '1';
+                } else if (t === 'object') {
+                  try {
+                    result[k] = typeof v === 'string' ? JSON.parse(v) : v;
+                  } catch {
+                    result[k] = v;
+                  }
+                } else {
+                  result[k] = v;
+                }
+              });
+              obj = result;
+            }
+            if (param.required || Object.keys(obj).length) params[param.name] = obj;
+          }
         } else {
           const trimmed = typeof rawValue === 'string' ? rawValue.trim() : rawValue;
           if (param.required || (trimmed != null && trimmed !== '')) params[param.name] = trimmed;
