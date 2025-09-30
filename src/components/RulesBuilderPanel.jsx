@@ -1,6 +1,7 @@
 // src/components/RulesBuilderPanel.jsx
 import React from 'react';
 import { aggregatorOptions, operatorOptions, valueTypeOptions } from '../utils/rulesHelpers.js';
+import ParamInput from './inputs/ParamInput.jsx';
 
 const MoveButtons = ({ onMoveUp, onMoveDown, disableUp, disableDown }) => (
   <div className="flex items-center gap-1">
@@ -630,116 +631,14 @@ const RulesBuilderPanel = ({
                                         });
                                       };
                                       return (
-                                        <div key={sub.name} className="space-y-1">
-                                          <label
-                                            htmlFor={subId}
-                                            className="text-xs font-medium text-gray-500 dark:text-gray-400"
-                                          >
-                                            {sub.label || sub.name}
-                                            {sub.required && (
-                                              <span className="ml-1 text-red-500">*</span>
-                                            )}
-                                          </label>
-                                          {subIsBoolean ? (
-                                            <div className="flex items-center gap-3">
-                                              <input
-                                                id={subId}
-                                                type="checkbox"
-                                                disabled={subReadOnly}
-                                                checked={Boolean(subValue ?? false)}
-                                                onChange={(e) => setSubValue(e.target.checked)}
-                                                className="size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900"
-                                              />
-                                              {sub.description && (
-                                                <span className="text-xs text-gray-600 dark:text-gray-400">
-                                                  {sub.description}
-                                                </span>
-                                              )}
-                                            </div>
-                                          ) : subIsSingleSelect ? (
-                                            <select
-                                              id={subId}
-                                              disabled={subReadOnly}
-                                              value={
-                                                typeof subValue === 'string'
-                                                  ? subValue
-                                                  : (subValue ?? '')
-                                              }
-                                              onChange={(e) => setSubValue(e.target.value)}
-                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-                                            >
-                                              {(sub.choices || []).map((c) => (
-                                                <option
-                                                  key={c.value}
-                                                  value={c.value}
-                                                  title={c.description || ''}
-                                                >
-                                                  {c.label || c.value}
-                                                </option>
-                                              ))}
-                                            </select>
-                                          ) : subIsNumber ? (
-                                            <input
-                                              id={subId}
-                                              type="number"
-                                              step={sub.type === 'integer' ? 1 : 'any'}
-                                              disabled={subReadOnly}
-                                              value={subValue ?? ''}
-                                              onChange={(e) => setSubValue(e.target.value)}
-                                              placeholder={sub.placeholder ?? (sub.help || '')}
-                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-                                            />
-                                          ) : subIsArray ? (
-                                            <input
-                                              id={subId}
-                                              type="text"
-                                              disabled={subReadOnly}
-                                              value={
-                                                Array.isArray(subValue)
-                                                  ? subValue.join(', ')
-                                                  : (subValue ?? '')
-                                              }
-                                              onChange={(e) => setSubValue(e.target.value)}
-                                              placeholder={sub.placeholder ?? (sub.help || '')}
-                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-                                            />
-                                          ) : subIsObject ? (
-                                            <textarea
-                                              id={subId}
-                                              rows={3}
-                                              disabled={subReadOnly}
-                                              value={
-                                                typeof subValue === 'string'
-                                                  ? subValue
-                                                  : subValue
-                                                    ? JSON.stringify(subValue, null, 2)
-                                                    : ''
-                                              }
-                                              onChange={(e) => setSubValue(e.target.value)}
-                                              placeholder={sub.placeholder ?? (sub.help || 'Enter JSON object')}
-                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-                                            />
-                                          ) : (
-                                            <input
-                                              id={subId}
-                                              type={subIsPassword ? 'password' : 'text'}
-                                              disabled={subReadOnly}
-                                              value={
-                                                typeof subValue === 'string'
-                                                  ? subValue
-                                                  : (subValue ?? '')
-                                              }
-                                              onChange={(e) => setSubValue(e.target.value)}
-                                              placeholder={sub.placeholder ?? (sub.help || '')}
-                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-                                            />
-                                          )}
-                                          {sub.help && (
-                                            <p className="text-[11px] text-gray-500 dark:text-gray-500">
-                                              {sub.help}
-                                            </p>
-                                          )}
-                                        </div>
+                                        <ParamInput
+                                          key={sub.name}
+                                          id={subId}
+                                          descriptor={sub}
+                                          provider={action.params?.provider}
+                                          value={subValue}
+                                          onChange={(val) => setSubValue(val)}
+                                        />
                                       );
                                     })}
                                   </div>
@@ -756,250 +655,26 @@ const RulesBuilderPanel = ({
                           // Generic object (e.g., headers JSON)
                           if (isObject) {
                             return (
-                              <div key={param.name} className="space-y-1">
-                                {Label}
-                                <textarea
-                                  id={fieldId}
-                                  rows={4}
-                                  disabled={isReadOnly}
-                                  value={
-                                    typeof currentValue === 'string'
-                                      ? currentValue
-                                      : currentValue
-                                        ? JSON.stringify(currentValue, null, 2)
-                                        : ''
-                                  }
-                                  onChange={(e) =>
-                                    onActionParamChange(action.id, param.name, e.target.value)
-                                  }
-                                  placeholder={
-                                    param.placeholder ?? (param.help || param.description || 'Enter JSON object')
-                                  }
-                                  className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-                                />
-                                {(param.description || param.help) && (
-                                  <p className="text-xs text-gray-500 dark:text-gray-500">
-                                    {param.description || param.help}
-                                  </p>
-                                )}
-                              </div>
+                              <ParamInput
+                                key={param.name}
+                                id={fieldId}
+                                descriptor={param}
+                                provider={action.params?.provider}
+                                value={currentValue}
+                                onChange={(val) => onActionParamChange(action.id, param.name, val)}
+                              />
                             );
                           }
 
                           return (
-                            <div key={param.name} className="space-y-1">
-                              {Label}
-
-                              {isBoolean ? (
-                                <div className="flex items-center gap-3">
-                                  <input
-                                    id={fieldId}
-                                    type="checkbox"
-                                    disabled={isReadOnly}
-                                    checked={Boolean(currentValue)}
-                                    onChange={(event) =>
-                                      onActionParamChange(
-                                        action.id,
-                                        param.name,
-                                        event.target.checked
-                                      )
-                                    }
-                                    className="size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900"
-                                  />
-                                  <span className="text-xs text-gray-600 dark:text-gray-400">
-                                    {param.description}
-                                  </span>
-                                </div>
-                              ) : isSingleSelect ? (
-                                <>
-                                  <select
-                                    id={fieldId}
-                                    disabled={isReadOnly}
-                                    value={
-                                      typeof currentValue === 'string'
-                                        ? currentValue
-                                        : (currentValue ?? '')
-                                    }
-                                    onChange={(event) =>
-                                      onActionParamChange(action.id, param.name, event.target.value)
-                                    }
-                                    className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-                                  >
-                                    {param.choices.map((choice) => (
-                                      <option
-                                        key={choice.value}
-                                        value={choice.value}
-                                        title={choice.description || ''}
-                                      >
-                                        {choice.label || choice.value}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  {param.description && (
-                                    <p className="text-xs text-gray-500 dark:text-gray-500">
-                                      {param.description}
-                                    </p>
-                                  )}
-                                </>
-                              ) : isMultiSelect ? (
-                                <div className="space-y-2">
-                                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                    {(param.choices || [])
-                                      .filter((choice) => {
-                                        const provider = action.params?.provider;
-                                        return (
-                                          !choice.group || !provider || choice.group === provider
-                                        );
-                                      })
-                                      .map((choice) => {
-                                        const key = choice.meta?.key || choice.value;
-                                        const selectedValues =
-                                          currentValue &&
-                                          typeof currentValue === 'object' &&
-                                          currentValue !== null
-                                            ? currentValue
-                                            : {};
-                                        const checked = Object.prototype.hasOwnProperty.call(
-                                          selectedValues,
-                                          key
-                                        );
-                                        const handleToggle = (nextChecked) => {
-                                          const next = { ...selectedValues };
-                                          if (nextChecked) {
-                                            if (!(key in next)) next[key] = '';
-                                          } else {
-                                            delete next[key];
-                                          }
-                                          onActionParamChange(action.id, param.name, next);
-                                        };
-                                        const handleValueChange = (val) => {
-                                          const next = { ...(selectedValues || {}) };
-                                          next[key] = val;
-                                          onActionParamChange(action.id, param.name, next);
-                                        };
-                                        const valueForInput = (() => {
-                                          const v = selectedValues[key];
-                                          if (typeof v === 'object' && v !== null) {
-                                            try {
-                                              return JSON.stringify(v);
-                                            } catch (e) {
-                                              return String(v);
-                                            }
-                                          }
-                                          return v ?? '';
-                                        })();
-                                        const metaType = choice.meta?.type || 'string';
-                                        return (
-                                          <div
-                                            key={choice.value}
-                                            className="rounded-md border border-gray-200 p-2 dark:border-gray-800"
-                                          >
-                                            <label className="flex items-start gap-2 text-sm">
-                                              <input
-                                                type="checkbox"
-                                                disabled={isReadOnly}
-                                                checked={checked}
-                                                onChange={(e) => handleToggle(e.target.checked)}
-                                                className="mt-1 size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900"
-                                              />
-                                              <span className="flex-1">
-                                                <span className="font-medium text-gray-800 dark:text-gray-200">
-                                                  {choice.label || choice.value}
-                                                </span>
-                                                {choice.description && (
-                                                  <p className="text-xs text-gray-500 dark:text-gray-500">
-                                                    {choice.description}
-                                                  </p>
-                                                )}
-                                              </span>
-                                            </label>
-                                            {checked && (
-                                              <div className="mt-2">
-                                                {metaType === 'object' ? (
-                                                  <textarea
-                                                    rows={3}
-                                                    disabled={isReadOnly}
-                                                    value={valueForInput}
-                                                    onChange={(e) =>
-                                                      handleValueChange(e.target.value)
-                                                    }
-                                                    placeholder={choice.label}
-                                                    className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-                                                  />
-                                                ) : (
-                                                  <input
-                                                    type={
-                                                      metaType === 'integer' ? 'number' : 'text'
-                                                    }
-                                                    disabled={isReadOnly}
-                                                    value={valueForInput}
-                                                    onChange={(e) =>
-                                                      handleValueChange(e.target.value)
-                                                    }
-                                                    placeholder={choice.label}
-                                                    className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-                                                  />
-                                                )}
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      })}
-                                  </div>
-                                  {param.description && (
-                                    <p className="text-xs text-gray-500 dark:text-gray-500">
-                                      {param.description}
-                                    </p>
-                                  )}
-                                </div>
-                              ) : isNumber ? (
-                                <input
-                                  id={fieldId}
-                                  type="number"
-                                  step={param.type === 'integer' ? 1 : 'any'}
-                                  disabled={isReadOnly}
-                                  value={currentValue ?? ''}
-                                  onChange={(event) =>
-                                    onActionParamChange(action.id, param.name, event.target.value)
-                                  }
-                                  placeholder={param.placeholder ?? (param.help || '')}
-                                  className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-                                />
-                              ) : (
-                                <>
-                                  <input
-                                    id={fieldId}
-                                    type={isPassword ? 'password' : 'text'}
-                                    disabled={isReadOnly}
-                                    value={
-                                      typeof currentValue === 'string'
-                                        ? currentValue
-                                        : isArray
-                                          ? (currentValue || []).join(', ')
-                                          : (currentValue ?? '')
-                                    }
-                                    onChange={(event) =>
-                                      onActionParamChange(action.id, param.name, event.target.value)
-                                    }
-                                    placeholder={
-                                      param.placeholder ??
-                                      (isArray ? 'tag.one, tag.two' : param.help || '')
-                                    }
-                                    className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-                                  />
-                                  {param.description && (
-                                    <p className="text-xs text-gray-500 dark:text-gray-500">
-                                      {param.description}
-                                    </p>
-                                  )}
-                                  {param.help && (
-                                    <p className="text-[11px] text-gray-500 dark:text-gray-500">
-                                      {param.help}
-                                    </p>
-                                  )}
-                                </>
-                              )}
-                            </div>
+                            <ParamInput
+                              key={param.name}
+                              id={fieldId}
+                              descriptor={param}
+                              provider={action.params?.provider}
+                              value={currentValue}
+                              onChange={(val) => onActionParamChange(action.id, param.name, val)}
+                            />
                           );
                         })}
                       </div>
