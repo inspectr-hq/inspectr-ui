@@ -16,7 +16,8 @@ import {
   extractConditions,
   moveItem,
   parseBoolean,
-  toArrayParam
+  toArrayParam,
+  getParamDefault
 } from '../utils/rulesHelpers.js';
 
 const createInitialForm = (events, actionsCatalog) => ({
@@ -274,6 +275,22 @@ export default function RulesApp() {
           return { ...action, type: nextType, params: {} };
         }
         const base = buildActionState(definition);
+        // If there is a provider + provider_options with variants, seed provider_options from provider
+        try {
+          const providerParam = (definition.params || []).find((p) => p.name === 'provider');
+          const optionsParam = (definition.params || []).find((p) => p.name === 'provider_options');
+          const providerValue = base.params?.provider;
+          if (providerParam && optionsParam && Array.isArray(optionsParam.variants)) {
+            const variant = optionsParam.variants.find((v) => v.value === providerValue);
+            if (variant) {
+              const seeded = (variant.params || []).reduce((acc, p) => {
+                acc[p.name] = getParamDefault(p);
+                return acc;
+              }, {});
+              base.params.provider_options = seeded;
+            }
+          }
+        } catch {}
         return { ...base, id: actionId, type: nextType };
       })
     }));
@@ -286,8 +303,22 @@ export default function RulesApp() {
         if (action.id !== actionId) return action;
         const nextParams = { ...action.params, [paramName]: value };
         if (paramName === 'provider') {
-          // Reset provider_options when provider changes to avoid stale selections
-          nextParams.provider_options = {};
+          // Seed provider_options defaults based on selected provider variant
+          const def = getActionDefinition(action.type);
+          const optionsParam = def?.params?.find((p) => p.name === 'provider_options');
+          if (optionsParam && Array.isArray(optionsParam.variants)) {
+            const variant = optionsParam.variants.find((v) => v.value === value);
+            if (variant) {
+              nextParams.provider_options = (variant.params || []).reduce((acc, p) => {
+                acc[p.name] = getParamDefault(p);
+                return acc;
+              }, {});
+            } else {
+              nextParams.provider_options = {};
+            }
+          } else {
+            nextParams.provider_options = {};
+          }
         }
         return { ...action, params: nextParams };
       })
@@ -399,7 +430,7 @@ export default function RulesApp() {
       }
       (definition.params || []).forEach((param) => {
         const raw = action.params?.[param.name];
-        if (param.type.startsWith('array')) {
+        if (typeof param.type === 'string' && param.type.startsWith('array')) {
           const values = toArrayParam(raw);
           if (param.required && values.length === 0) {
             issues.push(`${param.name} is required for the ${action.type} action.`);
@@ -411,6 +442,26 @@ export default function RulesApp() {
         } else if (param.type === 'boolean') {
           if (param.required && typeof raw !== 'boolean') {
             issues.push(`${param.name} must be toggled for the ${action.type} action.`);
+          }
+        } else if (param.type === 'integer' || param.type === 'number') {
+          const n = Number(raw);
+          if (param.required && !Number.isFinite(n)) {
+            issues.push(`${param.name} must be a valid ${param.type} for the ${action.type} action.`);
+          }
+        } else if (param.type === 'object') {
+          if (param.required) {
+            if (raw == null || (typeof raw === 'object' && Object.keys(raw).length === 0)) {
+              issues.push(`${param.name} is required for the ${action.type} action.`);
+            } else if (typeof raw === 'string') {
+              try {
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed !== 'object') {
+                  issues.push(`${param.name} must be a valid JSON object for the ${action.type} action.`);
+                }
+              } catch (e) {
+                issues.push(`${param.name} must be valid JSON for the ${action.type} action.`);
+              }
+            }
           }
         }
       });
@@ -443,32 +494,76 @@ export default function RulesApp() {
           if (param.required || values.length) params[param.name] = values;
         } else if (param.type === 'boolean') {
           if (rawValue !== undefined) params[param.name] = parseBoolean(rawValue);
+        } else if (param.type === 'integer' || param.type === 'number') {
+          if (rawValue !== undefined && rawValue !== '') {
+            const num = Number(rawValue);
+            if (Number.isFinite(num)) params[param.name] = num;
+          }
         } else if (param.type === 'object') {
-          if (rawValue && typeof rawValue === 'object') {
-            let obj = rawValue;
-            if (param.input === 'multi_select' && Array.isArray(param.choices)) {
-              const result = {};
-              Object.entries(rawValue).forEach(([k, v]) => {
-                const choice = param.choices.find((c) => (c.meta?.key || c.value) === k);
-                const t = choice?.meta?.type;
-                if (t === 'integer' || t === 'number') {
-                  const num = Number(v);
-                  result[k] = Number.isFinite(num) ? num : v;
-                } else if (t === 'boolean') {
-                  result[k] = v === true || v === 'true' || v === '1';
-                } else if (t === 'object') {
-                  try {
-                    result[k] = typeof v === 'string' ? JSON.parse(v) : v;
-                  } catch {
+          if (rawValue) {
+            if (typeof rawValue === 'object') {
+              let obj = rawValue;
+              if (param.input === 'multi_select' && Array.isArray(param.choices)) {
+                const result = {};
+                Object.entries(rawValue).forEach(([k, v]) => {
+                  const choice = param.choices.find((c) => (c.meta?.key || c.value) === k);
+                  const t = choice?.meta?.type;
+                  if (t === 'integer' || t === 'number') {
+                    const num = Number(v);
+                    result[k] = Number.isFinite(num) ? num : v;
+                  } else if (t === 'boolean') {
+                    result[k] = v === true || v === 'true' || v === '1';
+                  } else if (t === 'object') {
+                    try {
+                      result[k] = typeof v === 'string' ? JSON.parse(v) : v;
+                    } catch {
+                      result[k] = v;
+                    }
+                  } else {
                     result[k] = v;
                   }
-                } else {
-                  result[k] = v;
+                });
+                obj = result;
+              } else if (Array.isArray(param.variants) && param.name === 'provider_options') {
+                // Coerce nested provider options using variant parameter definitions
+                const provider = action.params?.provider;
+                const variant = param.variants.find((v) => v.value === provider);
+                if (variant) {
+                  const coerced = {};
+                  (variant.params || []).forEach((sub) => {
+                    const v = rawValue[sub.name];
+                    if (v === undefined) return;
+                    if (sub.type === 'integer' || sub.type === 'number') {
+                      const n = Number(v);
+                      coerced[sub.name] = Number.isFinite(n) ? n : v;
+                    } else if (sub.type === 'boolean') {
+                      coerced[sub.name] = v === true || v === 'true' || v === '1';
+                    } else if (typeof sub.type === 'string' && sub.type.startsWith('array')) {
+                      coerced[sub.name] = Array.isArray(v) ? v : toArrayParam(v);
+                    } else if (sub.type === 'object') {
+                      try {
+                        coerced[sub.name] = typeof v === 'string' ? JSON.parse(v) : v;
+                      } catch {
+                        coerced[sub.name] = v;
+                      }
+                    } else {
+                      coerced[sub.name] = v;
+                    }
+                  });
+                  obj = coerced;
                 }
-              });
-              obj = result;
+              }
+              if (param.required || Object.keys(obj).length) params[param.name] = obj;
+            } else if (typeof rawValue === 'string') {
+              try {
+                const parsed = JSON.parse(rawValue);
+                if (parsed && typeof parsed === 'object') {
+                  if (param.required || Object.keys(parsed).length) params[param.name] = parsed;
+                }
+              } catch {
+                // ignore invalid json
+              }
             }
-            if (param.required || Object.keys(obj).length) params[param.name] = obj;
           }
         } else {
           const trimmed = typeof rawValue === 'string' ? rawValue.trim() : rawValue;

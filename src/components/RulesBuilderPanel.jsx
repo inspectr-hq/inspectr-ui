@@ -550,25 +550,160 @@ const RulesBuilderPanel = ({
 
                       <div className="space-y-4">
                         {(definition.params || []).map((param) => {
+                          if (param.hidden) return null;
                           const fieldId = `${action.id}-${param.name}`;
                           const currentValue = action.params?.[param.name];
-                          const isBoolean = param.type === 'boolean';
-                          const isArray =
-                            typeof param.type === 'string' && param.type.startsWith('array');
-                          const isSingleSelect =
-                            param.input === 'single_select' && Array.isArray(param.choices);
-                          const isMultiSelect =
-                            param.input === 'multi_select' && Array.isArray(param.choices);
+                          const isBoolean = param.type === 'boolean' || param.input === 'boolean';
+                          const isArray = typeof param.type === 'string' && param.type.startsWith('array');
+                          const isSingleSelect = param.input === 'single_select' && Array.isArray(param.choices);
+                          const isMultiSelect = param.input === 'multi_select' && Array.isArray(param.choices);
+                          const isNumber = param.type === 'integer' || param.type === 'number' || param.input === 'number';
+                          const isObject = param.type === 'object' || param.input === 'object';
+
+                          const Label = (
+                            <label htmlFor={fieldId} className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                              {param.name}
+                              {param.required && <span className="ml-1 text-red-500">*</span>}
+                            </label>
+                          );
+
+                          // Object input with variants (e.g., provider_options driven by provider)
+                          if (isObject && Array.isArray(param.variants) && param.variants.length) {
+                            const controllerValue = action.params?.provider; // convention from API example
+                            const selectedVariant = param.variants.find((v) => v.value === controllerValue);
+                            const objectValue = (currentValue && typeof currentValue === 'object') ? currentValue : {};
+                            return (
+                              <div key={param.name} className="space-y-2">
+                                {Label}
+                                {!controllerValue ? (
+                                  <p className="text-xs text-gray-500 dark:text-gray-500">Select a provider to configure options.</p>
+                                ) : !selectedVariant ? (
+                                  <p className="text-xs text-gray-500 dark:text-gray-500">No options available for provider "{controllerValue}".</p>
+                                ) : (
+                                  <div className="space-y-3 rounded-md border border-gray-200 p-3 dark:border-gray-800">
+                                    {selectedVariant.description && (
+                                      <p className="text-xs text-gray-500 dark:text-gray-500">{selectedVariant.description}</p>
+                                    )}
+                                    {(selectedVariant.params || []).map((sub) => {
+                                      if (sub.hidden) return null;
+                                      const subId = `${fieldId}-${sub.name}`;
+                                      const subIsBoolean = sub.type === 'boolean' || sub.input === 'boolean';
+                                      const subIsNumber = sub.type === 'integer' || sub.type === 'number' || sub.input === 'number';
+                                      const subIsArray = typeof sub.type === 'string' && sub.type.startsWith('array');
+                                      const subIsObject = sub.type === 'object' || sub.input === 'object';
+                                      const subIsSingleSelect = sub.input === 'single_select' && Array.isArray(sub.choices);
+                                      const subValue = objectValue?.[sub.name];
+                                      const setSubValue = (val) => {
+                                        onActionParamChange(action.id, param.name, { ...objectValue, [sub.name]: val });
+                                      };
+                                      return (
+                                        <div key={sub.name} className="space-y-1">
+                                          <label htmlFor={subId} className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                                            {sub.label || sub.name}
+                                            {sub.required && <span className="ml-1 text-red-500">*</span>}
+                                          </label>
+                                          {subIsBoolean ? (
+                                            <div className="flex items-center gap-3">
+                                              <input
+                                                id={subId}
+                                                type="checkbox"
+                                                checked={Boolean(subValue ?? false)}
+                                                onChange={(e) => setSubValue(e.target.checked)}
+                                                className="size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                                              />
+                                              {sub.description && (
+                                                <span className="text-xs text-gray-600 dark:text-gray-400">{sub.description}</span>
+                                              )}
+                                            </div>
+                                          ) : subIsSingleSelect ? (
+                                            <select
+                                              id={subId}
+                                              value={typeof subValue === 'string' ? subValue : (subValue ?? '')}
+                                              onChange={(e) => setSubValue(e.target.value)}
+                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                            >
+                                              {(sub.choices || []).map((c) => (
+                                                <option key={c.value} value={c.value} title={c.description || ''}>
+                                                  {c.label || c.value}
+                                                </option>
+                                              ))}
+                                            </select>
+                                          ) : subIsNumber ? (
+                                            <input
+                                              id={subId}
+                                              type="number"
+                                              step={sub.type === 'integer' ? 1 : 'any'}
+                                              value={subValue ?? ''}
+                                              onChange={(e) => setSubValue(e.target.value)}
+                                              placeholder={sub.help || ''}
+                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                            />
+                                          ) : subIsArray ? (
+                                            <input
+                                              id={subId}
+                                              type="text"
+                                              value={Array.isArray(subValue) ? subValue.join(', ') : (subValue ?? '')}
+                                              onChange={(e) => setSubValue(e.target.value)}
+                                              placeholder={sub.help || ''}
+                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                            />
+                                          ) : subIsObject ? (
+                                            <textarea
+                                              id={subId}
+                                              rows={3}
+                                              value={typeof subValue === 'string' ? subValue : (subValue ? JSON.stringify(subValue, null, 2) : '')}
+                                              onChange={(e) => setSubValue(e.target.value)}
+                                              placeholder={sub.help || 'Enter JSON object'}
+                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                            />
+                                          ) : (
+                                            <input
+                                              id={subId}
+                                              type="text"
+                                              value={typeof subValue === 'string' ? subValue : (subValue ?? '')}
+                                              onChange={(e) => setSubValue(e.target.value)}
+                                              placeholder={sub.help || ''}
+                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                            />
+                                          )}
+                                          {sub.help && (
+                                            <p className="text-[11px] text-gray-500 dark:text-gray-500">{sub.help}</p>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                                {(param.description || param.help) && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-500">{param.description || param.help}</p>
+                                )}
+                              </div>
+                            );
+                          }
+
+                          // Generic object (e.g., headers JSON)
+                          if (isObject) {
+                            return (
+                              <div key={param.name} className="space-y-1">
+                                {Label}
+                                <textarea
+                                  id={fieldId}
+                                  rows={4}
+                                  value={typeof currentValue === 'string' ? currentValue : (currentValue ? JSON.stringify(currentValue, null, 2) : '')}
+                                  onChange={(e) => onActionParamChange(action.id, param.name, e.target.value)}
+                                  placeholder={param.help || param.description || 'Enter JSON object'}
+                                  className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                />
+                                {(param.description || param.help) && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-500">{param.description || param.help}</p>
+                                )}
+                              </div>
+                            );
+                          }
 
                           return (
                             <div key={param.name} className="space-y-1">
-                              <label
-                                htmlFor={fieldId}
-                                className="text-xs font-medium text-gray-500 dark:text-gray-400"
-                              >
-                                {param.name}
-                                {param.required && <span className="ml-1 text-red-500">*</span>}
-                              </label>
+                              {Label}
 
                               {isBoolean ? (
                                 <div className="flex items-center gap-3">
@@ -727,6 +862,16 @@ const RulesBuilderPanel = ({
                                     </p>
                                   )}
                                 </div>
+                              ) : isNumber ? (
+                                <input
+                                  id={fieldId}
+                                  type="number"
+                                  step={param.type === 'integer' ? 1 : 'any'}
+                                  value={currentValue ?? ''}
+                                  onChange={(event) => onActionParamChange(action.id, param.name, event.target.value)}
+                                  placeholder={param.help || ''}
+                                  className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                />
                               ) : (
                                 <>
                                   <input
@@ -742,13 +887,16 @@ const RulesBuilderPanel = ({
                                     onChange={(event) =>
                                       onActionParamChange(action.id, param.name, event.target.value)
                                     }
-                                    placeholder={isArray ? 'tag.one, tag.two' : ''}
+                                    placeholder={isArray ? 'tag.one, tag.two' : (param.help || '')}
                                     className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
                                   />
                                   {param.description && (
                                     <p className="text-xs text-gray-500 dark:text-gray-500">
                                       {param.description}
                                     </p>
+                                  )}
+                                  {param.help && (
+                                    <p className="text-[11px] text-gray-500 dark:text-gray-500">{param.help}</p>
                                   )}
                                 </>
                               )}
