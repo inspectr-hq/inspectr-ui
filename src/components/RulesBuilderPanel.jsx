@@ -559,6 +559,8 @@ const RulesBuilderPanel = ({
                           const isMultiSelect = param.input === 'multi_select' && Array.isArray(param.choices);
                           const isNumber = param.type === 'integer' || param.type === 'number' || param.input === 'number';
                           const isObject = param.type === 'object' || param.input === 'object';
+                          const isPassword = param.input === 'password';
+                          const isReadOnly = Boolean(param.readonly);
 
                           const Label = (
                             <label htmlFor={fieldId} className="text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -592,6 +594,8 @@ const RulesBuilderPanel = ({
                                       const subIsArray = typeof sub.type === 'string' && sub.type.startsWith('array');
                                       const subIsObject = sub.type === 'object' || sub.input === 'object';
                                       const subIsSingleSelect = sub.input === 'single_select' && Array.isArray(sub.choices);
+                                      const subIsPassword = sub.input === 'password';
+                                      const subReadOnly = Boolean(sub.readonly);
                                       const subValue = objectValue?.[sub.name];
                                       const setSubValue = (val) => {
                                         onActionParamChange(action.id, param.name, { ...objectValue, [sub.name]: val });
@@ -607,9 +611,10 @@ const RulesBuilderPanel = ({
                                               <input
                                                 id={subId}
                                                 type="checkbox"
+                                                disabled={subReadOnly}
                                                 checked={Boolean(subValue ?? false)}
                                                 onChange={(e) => setSubValue(e.target.checked)}
-                                                className="size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                                                className="size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900"
                                               />
                                               {sub.description && (
                                                 <span className="text-xs text-gray-600 dark:text-gray-400">{sub.description}</span>
@@ -618,9 +623,10 @@ const RulesBuilderPanel = ({
                                           ) : subIsSingleSelect ? (
                                             <select
                                               id={subId}
+                                              disabled={subReadOnly}
                                               value={typeof subValue === 'string' ? subValue : (subValue ?? '')}
                                               onChange={(e) => setSubValue(e.target.value)}
-                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
                                             >
                                               {(sub.choices || []).map((c) => (
                                                 <option key={c.value} value={c.value} title={c.description || ''}>
@@ -633,37 +639,41 @@ const RulesBuilderPanel = ({
                                               id={subId}
                                               type="number"
                                               step={sub.type === 'integer' ? 1 : 'any'}
+                                              disabled={subReadOnly}
                                               value={subValue ?? ''}
                                               onChange={(e) => setSubValue(e.target.value)}
                                               placeholder={sub.help || ''}
-                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
                                             />
                                           ) : subIsArray ? (
                                             <input
                                               id={subId}
                                               type="text"
+                                              disabled={subReadOnly}
                                               value={Array.isArray(subValue) ? subValue.join(', ') : (subValue ?? '')}
                                               onChange={(e) => setSubValue(e.target.value)}
                                               placeholder={sub.help || ''}
-                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
                                             />
                                           ) : subIsObject ? (
                                             <textarea
                                               id={subId}
                                               rows={3}
+                                              disabled={subReadOnly}
                                               value={typeof subValue === 'string' ? subValue : (subValue ? JSON.stringify(subValue, null, 2) : '')}
                                               onChange={(e) => setSubValue(e.target.value)}
                                               placeholder={sub.help || 'Enter JSON object'}
-                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
                                             />
                                           ) : (
                                             <input
                                               id={subId}
                                               type="text"
+                                              disabled={subReadOnly}
                                               value={typeof subValue === 'string' ? subValue : (subValue ?? '')}
                                               onChange={(e) => setSubValue(e.target.value)}
                                               placeholder={sub.help || ''}
-                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
                                             />
                                           )}
                                           {sub.help && (
@@ -689,10 +699,11 @@ const RulesBuilderPanel = ({
                                 <textarea
                                   id={fieldId}
                                   rows={4}
+                                  disabled={isReadOnly}
                                   value={typeof currentValue === 'string' ? currentValue : (currentValue ? JSON.stringify(currentValue, null, 2) : '')}
                                   onChange={(e) => onActionParamChange(action.id, param.name, e.target.value)}
                                   placeholder={param.help || param.description || 'Enter JSON object'}
-                                  className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                  className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
                                 />
                                 {(param.description || param.help) && (
                                   <p className="text-xs text-gray-500 dark:text-gray-500">{param.description || param.help}</p>
@@ -710,6 +721,7 @@ const RulesBuilderPanel = ({
                                   <input
                                     id={fieldId}
                                     type="checkbox"
+                                    disabled={isReadOnly}
                                     checked={Boolean(currentValue)}
                                     onChange={(event) =>
                                       onActionParamChange(
@@ -718,7 +730,7 @@ const RulesBuilderPanel = ({
                                         event.target.checked
                                       )
                                     }
-                                    className="size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                                    className="size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900"
                                   />
                                   <span className="text-xs text-gray-600 dark:text-gray-400">
                                     {param.description}
@@ -728,6 +740,7 @@ const RulesBuilderPanel = ({
                                 <>
                                   <select
                                     id={fieldId}
+                                    disabled={isReadOnly}
                                     value={
                                       typeof currentValue === 'string'
                                         ? currentValue
@@ -736,7 +749,7 @@ const RulesBuilderPanel = ({
                                     onChange={(event) =>
                                       onActionParamChange(action.id, param.name, event.target.value)
                                     }
-                                    className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                    className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
                                   >
                                     {param.choices.map((choice) => (
                                       <option
@@ -810,9 +823,10 @@ const RulesBuilderPanel = ({
                                             <label className="flex items-start gap-2 text-sm">
                                               <input
                                                 type="checkbox"
+                                                disabled={isReadOnly}
                                                 checked={checked}
                                                 onChange={(e) => handleToggle(e.target.checked)}
-                                                className="mt-1 size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                                                className="mt-1 size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900"
                                               />
                                               <span className="flex-1">
                                                 <span className="font-medium text-gray-800 dark:text-gray-200">
@@ -830,24 +844,26 @@ const RulesBuilderPanel = ({
                                                 {metaType === 'object' ? (
                                                   <textarea
                                                     rows={3}
+                                                    disabled={isReadOnly}
                                                     value={valueForInput}
                                                     onChange={(e) =>
                                                       handleValueChange(e.target.value)
                                                     }
                                                     placeholder={choice.label}
-                                                    className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                                    className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
                                                   />
                                                 ) : (
                                                   <input
                                                     type={
                                                       metaType === 'integer' ? 'number' : 'text'
                                                     }
+                                                    disabled={isReadOnly}
                                                     value={valueForInput}
                                                     onChange={(e) =>
                                                       handleValueChange(e.target.value)
                                                     }
                                                     placeholder={choice.label}
-                                                    className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                                    className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
                                                   />
                                                 )}
                                               </div>
@@ -867,16 +883,18 @@ const RulesBuilderPanel = ({
                                   id={fieldId}
                                   type="number"
                                   step={param.type === 'integer' ? 1 : 'any'}
+                                  disabled={isReadOnly}
                                   value={currentValue ?? ''}
                                   onChange={(event) => onActionParamChange(action.id, param.name, event.target.value)}
-                                  placeholder={param.help || ''}
-                                  className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                  placeholder={param.placeholder ?? (param.help || '')}
+                                  className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
                                 />
                               ) : (
                                 <>
                                   <input
                                     id={fieldId}
-                                    type="text"
+                                    type={isPassword ? 'password' : 'text'}
+                                    disabled={isReadOnly}
                                     value={
                                       typeof currentValue === 'string'
                                         ? currentValue
@@ -887,8 +905,8 @@ const RulesBuilderPanel = ({
                                     onChange={(event) =>
                                       onActionParamChange(action.id, param.name, event.target.value)
                                     }
-                                    placeholder={isArray ? 'tag.one, tag.two' : (param.help || '')}
-                                    className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                                    placeholder={param.placeholder ?? (isArray ? 'tag.one, tag.two' : (param.help || ''))}
+                                    className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
                                   />
                                   {param.description && (
                                     <p className="text-xs text-gray-500 dark:text-gray-500">

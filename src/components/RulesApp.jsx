@@ -432,24 +432,24 @@ export default function RulesApp() {
         const raw = action.params?.[param.name];
         if (typeof param.type === 'string' && param.type.startsWith('array')) {
           const values = toArrayParam(raw);
-          if (param.required && values.length === 0) {
+          if (!param.readonly && param.required && values.length === 0) {
             issues.push(`${param.name} is required for the ${action.type} action.`);
           }
         } else if (param.type === 'string') {
-          if (param.required && !`${raw ?? ''}`.trim()) {
+          if (!param.readonly && param.required && !`${raw ?? ''}`.trim()) {
             issues.push(`${param.name} is required for the ${action.type} action.`);
           }
         } else if (param.type === 'boolean') {
-          if (param.required && typeof raw !== 'boolean') {
+          if (!param.readonly && param.required && typeof raw !== 'boolean') {
             issues.push(`${param.name} must be toggled for the ${action.type} action.`);
           }
         } else if (param.type === 'integer' || param.type === 'number') {
           const n = Number(raw);
-          if (param.required && !Number.isFinite(n)) {
+          if (!param.readonly && param.required && !Number.isFinite(n)) {
             issues.push(`${param.name} must be a valid ${param.type} for the ${action.type} action.`);
           }
         } else if (param.type === 'object') {
-          if (param.required) {
+          if (param.required && !param.readonly) {
             if (raw == null || (typeof raw === 'object' && Object.keys(raw).length === 0)) {
               issues.push(`${param.name} is required for the ${action.type} action.`);
             } else if (typeof raw === 'string') {
