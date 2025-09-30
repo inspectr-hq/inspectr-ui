@@ -524,11 +524,16 @@ const RulesBuilderPanel = ({
                             {actionsCatalog.length === 0 && (
                               <option value="">No actions available</option>
                             )}
-                            {actionsCatalog.map((item) => (
-                              <option key={item.type} value={item.type}>
-                                {item.type}
-                              </option>
-                            ))}
+                            {actionsCatalog.map((item) => {
+                              const optionLabel = item.name
+                                ? `${item.name} (${item.type})`
+                                : item.type;
+                              return (
+                                <option key={item.type} value={item.type}>
+                                  {optionLabel}
+                                </option>
+                              );
+                            })}
                           </select>
                         </div>
                         <div className="flex items-center gap-2">
@@ -683,6 +688,29 @@ const RulesBuilderPanel = ({
                 </div>
               );
             })}
+            <button
+              type="button"
+              onClick={onAddAction}
+              className="inline-flex items-center gap-2 rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:bg-gray-900"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-4"
+                aria-hidden="true"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Action
+            </button>
           </div>
         </div>
       </div>

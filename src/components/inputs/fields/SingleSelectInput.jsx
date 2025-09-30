@@ -34,7 +34,7 @@ export default function SingleSelectInput({ id, descriptor, value, onChange, pro
         ))}
       </select>
       {(descriptor.description || descriptor.help) && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+        <p className="text-[11px] text-gray-500 dark:text-gray-400">
           {descriptor.description || descriptor.help}
         </p>
       )}

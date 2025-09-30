@@ -25,7 +25,7 @@ export default function NumberInput({ id, descriptor, value, onChange, readOnly 
         className={inputClass}
       />
       {descriptor.help && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">{descriptor.help}</p>
+        <p className="text-[11px] text-gray-500 dark:text-gray-400">{descriptor.help}</p>
       )}
     </div>
   );
