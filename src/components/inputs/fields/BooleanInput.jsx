@@ -26,7 +26,7 @@ export default function BooleanInput({ id, descriptor, value, onChange, readOnly
         )}
       </div>
       {descriptor.help && (
-        <p className="text-[11px] text-gray-500 dark:text-gray-500">{descriptor.help}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{descriptor.help}</p>
       )}
     </div>
   );
