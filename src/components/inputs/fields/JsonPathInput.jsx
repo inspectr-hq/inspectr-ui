@@ -26,6 +26,7 @@ export default function JsonPathInput({ id, descriptor, value, onChange, readOnl
         placeholder={placeholder}
         browseButtonLabel={browseLabel}
         disabled={isDisabled}
+        enablePreview
       />
       {helpText && <p className="text-xs text-gray-500 dark:text-gray-400">{helpText}</p>}
     </div>

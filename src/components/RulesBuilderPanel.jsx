@@ -331,6 +331,7 @@ const RulesBuilderPanel = ({
                             placeholder="$.request.path"
                             className="!space-y-1"
                             browseButtonLabel="Browse"
+                            enablePreview
                           />
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2">
