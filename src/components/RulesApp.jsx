@@ -17,31 +17,46 @@ import {
   moveItem,
   parseBoolean,
   toArrayParam,
-  getParamDefault
+  getParamDefault,
+  createOperatorOptions,
+  createOperatorLabelMap,
+  createOperatorMetaMap,
+  normalizeRuleOperators,
+  getDefaultOperatorValue
 } from '../utils/rulesHelpers.js';
 
-const createInitialForm = (events, actionsCatalog) => ({
+const createInitialForm = (events, actionsCatalog, defaultOperator) => ({
   name: '',
   description: '',
   event: events?.[0]?.type || '',
   priority: 10,
   active: true,
   expressionType: 'and',
-  conditions: [createCondition()],
+  conditions: [createCondition(defaultOperator)],
   actions: actionsCatalog?.length ? [buildActionState(actionsCatalog[0])] : []
 });
 
-const convertConditionValue = (value, valueType) => {
-  if (valueType === 'number') {
-    const numberValue = Number(value);
-    if (!Number.isNaN(numberValue)) return numberValue;
-    return value;
+const convertConditionValue = (value, valueType, isMultiValue = false) => {
+  const convertSingle = (input) => {
+    if (valueType === 'number') {
+      const numberValue = Number(input);
+      if (!Number.isNaN(numberValue)) return numberValue;
+      return input;
+    }
+    if (valueType === 'boolean') {
+      if (typeof input === 'boolean') return input;
+      if (typeof input === 'string') return input === 'true';
+      return Boolean(input);
+    }
+    return input;
+  };
+
+  if (isMultiValue) {
+    const raw = Array.isArray(value) ? value : toArrayParam(value);
+    return raw.map((item) => convertSingle(item));
   }
-  if (valueType === 'boolean') {
-    if (typeof value === 'boolean') return value;
-    return value === 'true';
-  }
-  return value;
+
+  return convertSingle(value);
 };
 
 export default function RulesApp() {
@@ -53,8 +68,6 @@ export default function RulesApp() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [openRuleId, setOpenRuleId] = useState(null);
-  const [form, setForm] = useState(() => createInitialForm([], []));
-  const [formErrors, setFormErrors] = useState([]);
   const [saving, setSaving] = useState(false);
   const [editingRuleId, setEditingRuleId] = useState(null);
   const initializedRef = useRef(false);
@@ -74,6 +87,21 @@ export default function RulesApp() {
   const [applyError, setApplyError] = useState('');
   const [applyPreview, setApplyPreview] = useState(null);
 
+  const [operatorCatalog, setOperatorCatalog] = useState([]);
+  const operatorOptions = useMemo(() => createOperatorOptions(operatorCatalog), [operatorCatalog]);
+  const operatorLabelMap = useMemo(
+    () => createOperatorLabelMap(operatorCatalog),
+    [operatorCatalog]
+  );
+  const operatorMetaMap = useMemo(() => createOperatorMetaMap(operatorCatalog), [operatorCatalog]);
+  const defaultOperatorValue = useMemo(
+    () => getDefaultOperatorValue(operatorCatalog),
+    [operatorCatalog]
+  );
+
+  const [form, setForm] = useState(() => createInitialForm([], [], defaultOperatorValue));
+  const [formErrors, setFormErrors] = useState([]);
+
   useEffect(() => {
     if (!client?.rules) return;
     let cancelled = false;
@@ -81,15 +109,17 @@ export default function RulesApp() {
     const load = async () => {
       try {
         setLoading(true);
-        const [rulesPayload, eventsPayload, actionsPayload] = await Promise.all([
+        const [rulesPayload, eventsPayload, actionsPayload, operatorsPayload] = await Promise.all([
           client.rules.list(),
           client.rules.getEvents(),
-          client.rules.getActions()
+          client.rules.getActions(),
+          client.rules.getOperators()
         ]);
         if (cancelled) return;
         setRules(rulesPayload?.rules || []);
         setEvents(eventsPayload || []);
         setActionsCatalog(actionsPayload || []);
+        setOperatorCatalog(normalizeRuleOperators(operatorsPayload));
         setError('');
       } catch (err) {
         if (cancelled) return;
@@ -110,10 +140,28 @@ export default function RulesApp() {
   useEffect(() => {
     if (loading) return;
     if (!initializedRef.current) {
-      setForm(createInitialForm(events, actionsCatalog));
+      setForm(createInitialForm(events, actionsCatalog, defaultOperatorValue));
       initializedRef.current = true;
     }
-  }, [loading, events, actionsCatalog]);
+  }, [loading, events, actionsCatalog, defaultOperatorValue]);
+
+  useEffect(() => {
+    if (!Array.isArray(operatorOptions) || operatorOptions.length === 0) return;
+    const available = new Set(operatorOptions.map((option) => option.value));
+    setForm((prev) => {
+      if (!prev?.conditions?.length) return prev;
+      let changed = false;
+      const nextConditions = prev.conditions.map((condition) => {
+        if (!available.has(condition.operator)) {
+          changed = true;
+          return { ...condition, operator: defaultOperatorValue };
+        }
+        return condition;
+      });
+      if (!changed) return prev;
+      return { ...prev, conditions: nextConditions };
+    });
+  }, [operatorOptions, defaultOperatorValue]);
 
   const eventMap = useMemo(() => {
     return events.reduce((acc, event) => {
@@ -191,7 +239,7 @@ export default function RulesApp() {
   };
 
   const resetForm = () => {
-    setForm(createInitialForm(events, actionsCatalog));
+    setForm(createInitialForm(events, actionsCatalog, defaultOperatorValue));
     setFormErrors([]);
     setEditingRuleId(null);
   };
@@ -221,6 +269,23 @@ export default function RulesApp() {
             return { ...condition, valueType: value, value: '' };
           }
         }
+        if (field === 'operator') {
+          const meta = operatorMetaMap[value] || {};
+          const requiresValue = meta.valueRequired !== false;
+          const nextValueType = requiresValue ? condition.valueType : 'string';
+          let nextValue = condition.value;
+          if (!requiresValue) {
+            nextValue = '';
+          } else if (nextValueType === 'boolean' && nextValue === '') {
+            nextValue = 'true';
+          }
+          return {
+            ...condition,
+            operator: value,
+            valueType: nextValueType,
+            value: nextValue
+          };
+        }
         return { ...condition, [field]: value };
       });
       return { ...prev, conditions: nextConditions };
@@ -235,7 +300,10 @@ export default function RulesApp() {
   };
 
   const handleAddCondition = () => {
-    setForm((prev) => ({ ...prev, conditions: [...prev.conditions, createCondition()] }));
+    setForm((prev) => ({
+      ...prev,
+      conditions: [...prev.conditions, createCondition(defaultOperatorValue)]
+    }));
   };
 
   const handleRemoveCondition = (index) => {
@@ -342,7 +410,14 @@ export default function RulesApp() {
     const conditions = rawConditions.length
       ? rawConditions.map((condition) => {
           const rawRight = condition.right;
-          const valueType = Array.isArray(rawRight) ? 'string' : detectValueType(rawRight);
+          let valueType;
+          if (Array.isArray(rawRight)) {
+            if (rawRight.every((item) => typeof item === 'number')) valueType = 'number';
+            else if (rawRight.every((item) => typeof item === 'boolean')) valueType = 'boolean';
+            else valueType = 'string';
+          } else {
+            valueType = detectValueType(rawRight);
+          }
           let value;
           if (Array.isArray(rawRight)) value = rawRight.join(', ');
           else if (valueType === 'boolean') value = rawRight ? 'true' : 'false';
@@ -355,7 +430,7 @@ export default function RulesApp() {
             value
           };
         })
-      : [createCondition()];
+      : [createCondition(defaultOperatorValue)];
 
     const actions = (() => {
       if (!rule?.actions?.length) {
@@ -415,8 +490,20 @@ export default function RulesApp() {
 
     form.conditions.forEach((condition, index) => {
       if (!condition.path.trim()) issues.push(`Condition ${index + 1} is missing a data path.`);
-      if (`${condition.value}`.trim() === '')
-        issues.push(`Condition ${index + 1} is missing a value.`);
+      const meta = operatorMetaMap[condition.operator] || {};
+      const requiresValue = meta.valueRequired !== false;
+      if (requiresValue) {
+        if (meta.multiValue) {
+          const values = Array.isArray(condition.value)
+            ? condition.value
+            : toArrayParam(condition.value);
+          if (!values.length) {
+            issues.push(`Condition ${index + 1} is missing a value.`);
+          }
+        } else if (`${condition.value}`.trim() === '') {
+          issues.push(`Condition ${index + 1} is missing a value.`);
+        }
+      }
     });
 
     if (!form.conditions.length) issues.push('Add at least one condition.');
@@ -482,11 +569,23 @@ export default function RulesApp() {
     active: !!form.active,
     expression: {
       op: form.expressionType,
-      args: form.conditions.map((condition) => ({
-        op: condition.operator,
-        left: { path: condition.path.trim() },
-        right: convertConditionValue(condition.value, condition.valueType)
-      }))
+      args: form.conditions.map((condition) => {
+        const meta = operatorMetaMap[condition.operator] || {};
+        const requiresValue = meta.valueRequired !== false;
+        const payload = {
+          op: condition.operator,
+          left: { path: condition.path.trim() }
+        };
+        if (requiresValue) {
+          const converted = convertConditionValue(
+            condition.value,
+            condition.valueType,
+            meta.multiValue === true
+          );
+          payload.right = converted;
+        }
+        return payload;
+      })
     },
     actions: form.actions.map((action) => {
       const definition = getActionDefinition(action.type) || { params: [] };
@@ -714,7 +813,8 @@ export default function RulesApp() {
     setIsBuilderOpen(true);
   };
 
-  const actionsReady = events.length > 0 && actionsCatalog.length > 0 && !loading;
+  const actionsReady =
+    events.length > 0 && actionsCatalog.length > 0 && operatorOptions.length > 0 && !loading;
   const selectedEventDescription = eventMap[form.event]?.description;
   const builderTitle = editingRuleId ? 'Edit rule' : 'Create rule';
   const builderDescription = editingRuleId
@@ -835,6 +935,7 @@ export default function RulesApp() {
             onDuplicateRule={handleDuplicateRule}
             onPauseRule={handlePauseRule}
             actionsDisabled={!actionsReady}
+            operatorLabelMap={operatorLabelMap}
           />
         </div>
         <div className="lg:col-span-1">
@@ -877,6 +978,7 @@ export default function RulesApp() {
           onAddAction={handleAddAction}
           onRemoveAction={handleRemoveAction}
           onMoveAction={handleMoveAction}
+          operatorOptions={operatorOptions}
         />
       </RuleBuilderDialog>
 

@@ -1,8 +1,9 @@
 // src/components/RulesBuilderPanel.jsx
 import React from 'react';
-import { aggregatorOptions, operatorOptions, valueTypeOptions } from '../utils/rulesHelpers.js';
+import { aggregatorOptions, valueTypeOptions } from '../utils/rulesHelpers.js';
 import ParamInput from './inputs/ParamInput.jsx';
 import JsonPathPicker from './JsonPathPicker.jsx';
+import { OperatorSelect, OperatorValueInput } from './inputs/operators/index.js';
 
 const MoveButtons = ({ onMoveUp, onMoveDown, disableUp, disableDown }) => (
   <div className="flex items-center gap-1">
@@ -72,10 +73,12 @@ const RulesBuilderPanel = ({
   onActionParamChange,
   onAddAction,
   onRemoveAction,
-  onMoveAction
+  onMoveAction,
+  operatorOptions
 }) => {
   const canMoveCondition = form.conditions.length > 1;
   const canMoveAction = form.actions.length > 1;
+  const availableOperators = Array.isArray(operatorOptions) ? operatorOptions : [];
 
   return (
     <form
@@ -274,151 +277,126 @@ const RulesBuilderPanel = ({
               </div>
             </div>
 
-            {form.conditions.map((condition, index) => (
-              <div
-                key={index}
-                className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
-              >
-                <div className="flex items-start gap-4 px-4 py-4">
-                  <div className="flex flex-col items-center gap-2">
-                    <span
-                      className="flex aspect-square h-10 items-center justify-center rounded-lg bg-sky-500"
-                      aria-hidden="true"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="size-6 text-white"
+            {form.conditions.map((condition, index) => {
+              const selectedOperator =
+                availableOperators.find((option) => option.value === condition.operator) ||
+                availableOperators[0];
+              const valueRequired = selectedOperator?.valueRequired !== false;
+              const multiValue = selectedOperator?.multiValue === true;
+
+              return (
+                <div
+                  key={index}
+                  className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
+                >
+                  <div className="flex items-start gap-4 px-4 py-4">
+                    <div className="flex flex-col items-center gap-2">
+                      <span
+                        className="flex aspect-square h-10 items-center justify-center rounded-lg bg-sky-500"
+                        aria-hidden="true"
                       >
-                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                        <path d="M9 17c2 0 2.8-1 2.8-2.8V10c0-2 1-3.3 3.2-3" />
-                        <path d="M9 11.2h5.7" />
-                      </svg>
-                    </span>
-                    <MoveButtons
-                      onMoveUp={() => onMoveCondition(index, index - 1)}
-                      onMoveDown={() => onMoveCondition(index, index + 1)}
-                      disableUp={!canMoveCondition || index === 0}
-                      disableDown={!canMoveCondition || index === form.conditions.length - 1}
-                    />
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-                      <div className="space-y-1">
-                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                          JSON path
-                        </label>
-                        <JsonPathPicker
-                          value={condition.path}
-                          onChange={(nextValue) => onConditionChange(index, 'path', nextValue)}
-                          placeholder="$.request.path"
-                          className="!space-y-1"
-                          browseButtonLabel="Browse"
-                        />
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="space-y-1">
-                          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                            Operator
-                          </label>
-                          <select
-                            value={condition.operator}
-                            onChange={(event) =>
-                              onConditionChange(index, 'operator', event.target.value)
-                            }
-                            className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-                          >
-                            {operatorOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                            Value Type
-                          </label>
-                          <select
-                            value={condition.valueType}
-                            onChange={(event) =>
-                              onConditionChange(index, 'valueType', event.target.value)
-                            }
-                            className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-                          >
-                            {valueTypeOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-                      <div className="space-y-1">
-                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                          Compare value
-                        </label>
-                        {condition.valueType === 'boolean' ? (
-                          (() => {
-                            const booleanValue =
-                              condition.value === ''
-                                ? 'true'
-                                : condition.value === true
-                                  ? 'true'
-                                  : condition.value === false
-                                    ? 'false'
-                                    : condition.value;
-                            return (
-                              <select
-                                value={booleanValue}
-                                onChange={(event) =>
-                                  onConditionChange(index, 'value', event.target.value)
-                                }
-                                className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-                              >
-                                <option value="true">true</option>
-                                <option value="false">false</option>
-                              </select>
-                            );
-                          })()
-                        ) : (
-                          <input
-                            type="text"
-                            value={condition.value}
-                            onChange={(event) =>
-                              onConditionChange(index, 'value', event.target.value)
-                            }
-                            placeholder={
-                              condition.valueType === 'number' ? 'e.g. 200' : 'e.g. /api/payments'
-                            }
-                            className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
-                          />
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-end justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => onRemoveCondition(index)}
-                          className="inline-flex items-center gap-2 rounded-md border border-transparent px-3 py-2 text-xs font-medium text-red-600 transition hover:border-red-200 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-red-400 dark:hover:border-red-800 dark:hover:bg-red-900/30"
-                          disabled={form.conditions.length === 1}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="size-6 text-white"
                         >
-                          Remove
-                        </button>
+                          <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                          <path d="M9 17c2 0 2.8-1 2.8-2.8V10c0-2 1-3.3 3.2-3" />
+                          <path d="M9 11.2h5.7" />
+                        </svg>
+                      </span>
+                      <MoveButtons
+                        onMoveUp={() => onMoveCondition(index, index - 1)}
+                        onMoveDown={() => onMoveCondition(index, index + 1)}
+                        disableUp={!canMoveCondition || index === 0}
+                        disableDown={!canMoveCondition || index === form.conditions.length - 1}
+                      />
+                    </div>
+                    <div className="flex-1 space-y-3">
+                      <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                            JSON path
+                          </label>
+                          <JsonPathPicker
+                            value={condition.path}
+                            onChange={(nextValue) => onConditionChange(index, 'path', nextValue)}
+                            placeholder="$.request.path"
+                            className="!space-y-1"
+                            browseButtonLabel="Browse"
+                          />
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                              Operator
+                            </label>
+                            <OperatorSelect
+                              value={condition.operator}
+                              options={availableOperators}
+                              onChange={(nextValue) =>
+                                onConditionChange(index, 'operator', nextValue)
+                              }
+                              disabled={saving || availableOperators.length === 0}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                              Value Type
+                            </label>
+                            <select
+                              value={condition.valueType}
+                              onChange={(event) =>
+                                onConditionChange(index, 'valueType', event.target.value)
+                              }
+                              disabled={!valueRequired}
+                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                            >
+                              {valueTypeOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                            Compare value
+                          </label>
+                          <OperatorValueInput
+                            value={condition.value}
+                            valueType={condition.valueType}
+                            valueRequired={valueRequired}
+                            multiValue={multiValue}
+                            onChange={(nextValue) => onConditionChange(index, 'value', nextValue)}
+                          />
+                        </div>
+                        <div className="flex flex-wrap items-end justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => onRemoveCondition(index)}
+                            className="inline-flex items-center gap-2 rounded-md border border-transparent px-3 py-2 text-xs font-medium text-red-600 transition hover:border-red-200 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-red-400 dark:hover:border-red-800 dark:hover:bg-red-900/30"
+                            disabled={form.conditions.length === 1}
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             <button
               type="button"
               onClick={onAddCondition}

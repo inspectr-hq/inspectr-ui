@@ -850,6 +850,18 @@ class RulesClient {
     if (!res.ok) throw new Error(`Rules actions failed (${res.status})`);
     return await res.json();
   }
+
+  async getOperators() {
+    const res = await fetch(`${this.client.apiEndpoint}/rules/operators`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Rules operators failed (${res.status})`);
+    const payload = await res.json();
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.operators)) return payload.operators;
+    return [];
+  }
 }
 
 // Export the client class as the default export

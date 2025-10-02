@@ -1,19 +1,72 @@
 // src/utils/rulesHelpers.js
 
-export const operatorOptions = [
-  { value: '==', label: 'is equal to' },
-  { value: '!=', label: 'is not equal to' },
-  { value: '>', label: 'is greater than' },
-  { value: '>=', label: 'is greater or equal to' },
-  { value: '<', label: 'is less than' },
-  { value: '<=', label: 'is less or equal to' }
-];
-
 export const valueTypeOptions = [
   { value: 'string', label: 'String' },
   { value: 'number', label: 'Number' },
   { value: 'boolean', label: 'Boolean' }
 ];
+
+export const normalizeRuleOperators = (operators) => {
+  if (!Array.isArray(operators) || operators.length === 0) {
+    return [];
+  }
+
+  const seen = new Set();
+  const normalized = operators
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const key = item.operator || item.value || item.op;
+      if (!key || typeof key !== 'string') return null;
+      const operator = key.trim();
+      if (!operator) return null;
+      if (seen.has(operator)) return null;
+      seen.add(operator);
+      const aliases = Array.isArray(item.aliases)
+        ? item.aliases.filter((alias) => typeof alias === 'string' && alias.trim())
+        : [];
+      return {
+        operator,
+        label: item.label || item.name || operator,
+        description: item.description || '',
+        aliases,
+        valueRequired: Boolean(item.value_required ?? item.valueRequired ?? item.requiresValue),
+        multiValue: Boolean(item.multi_value ?? item.multiValue)
+      };
+    })
+    .filter(Boolean);
+
+  return normalized;
+};
+
+export const createOperatorOptions = (operators = []) =>
+  operators.map((item) => ({
+    value: item.operator,
+    label: item.label || item.operator,
+    description: item.description || '',
+    valueRequired: item.valueRequired !== false,
+    multiValue: item.multiValue === true
+  }));
+
+export const createOperatorLabelMap = (operators = []) =>
+  operators.reduce((acc, item) => {
+    const label = item.label || item.operator;
+    acc[item.operator] = label;
+    (item.aliases || []).forEach((alias) => {
+      acc[alias] = label;
+    });
+    return acc;
+  }, {});
+
+export const createOperatorMetaMap = (operators = []) =>
+  operators.reduce((acc, item) => {
+    acc[item.operator] = item;
+    (item.aliases || []).forEach((alias) => {
+      acc[alias] = item;
+    });
+    return acc;
+  }, {});
+
+export const getDefaultOperatorValue = (operators = []) => operators[0]?.operator || '';
 
 export const aggregatorOptions = [
   { value: 'and', label: 'All conditions match' },
@@ -24,11 +77,6 @@ export const aggregatorHints = {
   and: 'All conditions must match before actions run.',
   or: 'Any condition may match before actions run.'
 };
-
-export const operatorLabelMap = operatorOptions.reduce((acc, option) => {
-  acc[option.value] = option.label;
-  return acc;
-}, {});
 
 export const actionTitleMap = {
   tag: 'Apply static tags',
@@ -58,9 +106,9 @@ export const getParamDefault = (param) => {
 
 export const createActionId = () => Math.random().toString(36).slice(2, 10);
 
-export const createCondition = () => ({
+export const createCondition = (operator = getDefaultOperatorValue()) => ({
   path: '',
-  operator: '==',
+  operator,
   value: '',
   valueType: 'string'
 });

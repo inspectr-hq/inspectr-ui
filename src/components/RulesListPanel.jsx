@@ -3,7 +3,6 @@ import React, { useMemo } from 'react';
 import {
   aggregatorHints,
   extractConditions,
-  operatorLabelMap,
   formatConditionValue,
   getActionDisplayName,
   formatActionParams,
@@ -91,7 +90,7 @@ const StepIcon = ({ variant }) => {
   );
 };
 
-const buildRuleSteps = (rule, eventMap) => {
+const buildRuleSteps = (rule, eventMap, operatorLabelMap) => {
   const aggregator = String(rule.expression?.op || 'and').toLowerCase();
   const aggregatorText = aggregatorHints[aggregator];
   const eventMeta = eventMap[rule.event] || {};
@@ -110,7 +109,7 @@ const buildRuleSteps = (rule, eventMap) => {
 
   const conditions = extractConditions(rule.expression);
   conditions.forEach((condition, index) => {
-    const operatorLabel = operatorLabelMap[condition.op] || condition.op;
+    const operatorLabel = operatorLabelMap?.[condition.op] || condition.op;
     const valueText = formatConditionValue(condition.right);
     const descriptionParts = [];
     if (condition.left?.path) descriptionParts.push(condition.left.path);
@@ -158,7 +157,8 @@ const RulesListPanel = ({
   onApplyHistory,
   actionsDisabled,
   onDuplicateRule,
-  onPauseRule
+  onPauseRule,
+  operatorLabelMap = {}
 }) => {
   const eventMap = useMemo(() => {
     return events.reduce((acc, event) => {
@@ -242,7 +242,7 @@ const RulesListPanel = ({
           <div className="space-y-3">
             {rules.map((rule) => {
               const isOpen = openRuleId === rule.id;
-              const steps = buildRuleSteps(rule, eventMap);
+              const steps = buildRuleSteps(rule, eventMap, operatorLabelMap);
               const updatedLabel = formatUpdateLabel(rule.updated_at || rule.created_at);
 
               return (
