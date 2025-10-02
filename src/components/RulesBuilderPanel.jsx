@@ -2,6 +2,7 @@
 import React from 'react';
 import { aggregatorOptions, operatorOptions, valueTypeOptions } from '../utils/rulesHelpers.js';
 import ParamInput from './inputs/ParamInput.jsx';
+import JsonPathPicker from './JsonPathPicker.jsx';
 
 const MoveButtons = ({ onMoveUp, onMoveDown, disableUp, disableDown }) => (
   <div className="flex items-center gap-1">
@@ -314,12 +315,12 @@ const RulesBuilderPanel = ({
                         <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
                           JSON path
                         </label>
-                        <input
-                          type="text"
+                        <JsonPathPicker
                           value={condition.path}
-                          onChange={(event) => onConditionChange(index, 'path', event.target.value)}
+                          onChange={(nextValue) => onConditionChange(index, 'path', nextValue)}
                           placeholder="$.request.path"
-                          className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                          className="!space-y-1"
+                          browseButtonLabel="Browse"
                         />
                       </div>
                       <div className="grid gap-3 sm:grid-cols-2">

@@ -8,6 +8,7 @@ import ArrayInput from './fields/ArrayInput.jsx';
 import ObjectInput from './fields/ObjectInput.jsx';
 import TextInput from './fields/TextInput.jsx';
 import PasswordInput from './fields/PasswordInput.jsx';
+import JsonPathInput from './fields/JsonPathInput.jsx';
 
 /**
  * Facade component that keeps the ParamInput API stable,
@@ -20,6 +21,23 @@ import PasswordInput from './fields/PasswordInput.jsx';
 export default function ParamInput({ id, descriptor, value, onChange, provider, className = '', readOnly }) {
   if (!descriptor || descriptor.hidden) return null;
 
+  const format = descriptor.format || descriptor.meta?.format;
+  const meta = descriptor.meta || {};
+  const normalize = (text) => (typeof text === 'string' ? text.toLowerCase() : '');
+  const matchesJsonPath = (text) => /json[\s_-]?path/.test(normalize(text));
+
+  const expectsJsonPath =
+    descriptor.input === 'json_path' ||
+    descriptor.type === 'json_path' ||
+    format === 'json_path' ||
+    meta.input === 'json_path' ||
+    meta.format === 'json_path' ||
+    meta.jsonPath === true ||
+    meta.json_path === true ||
+    matchesJsonPath(descriptor.name) ||
+    matchesJsonPath(descriptor.placeholder) ||
+    matchesJsonPath(meta.label);
+
   const isBoolean = descriptor.type === 'boolean' || descriptor.input === 'boolean';
   const isArray = typeof descriptor.type === 'string' && descriptor.type.startsWith('array');
   const isSingleSelect = descriptor.input === 'single_select' && Array.isArray(descriptor.choices);
@@ -29,7 +47,8 @@ export default function ParamInput({ id, descriptor, value, onChange, provider, 
   const isPassword = descriptor.input === 'password';
 
   let FieldComponent = TextInput;
-  if (isBoolean) FieldComponent = BooleanInput;
+  if (expectsJsonPath) FieldComponent = JsonPathInput;
+  else if (isBoolean) FieldComponent = BooleanInput;
   else if (isSingleSelect) FieldComponent = SingleSelectInput;
   else if (isMultiSelect) FieldComponent = MultiSelectInput;
   else if (isNumber) FieldComponent = NumberInput;
