@@ -809,7 +809,7 @@ export default function RulesApp() {
     setIsBuilderOpen(true);
   };
 
-  const handleDuplicateRule = (copy, original) => {
+  const handleDuplicateRule = (copy) => {
     if (!actionsReady) return;
     // Map the duplicated rule object into the builder form state
     const formState = mapRuleToForm(copy);

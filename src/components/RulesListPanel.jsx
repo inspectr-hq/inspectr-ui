@@ -404,7 +404,7 @@ const RulesListPanel = ({
                                 const copy = makeCopyForCreate(rule);
                                 if (!copy) return;
                                 if (onDuplicateRule) {
-                                  onDuplicateRule(copy, rule);
+                                  onDuplicateRule(copy);
                                 } else if (onCreateRule) {
                                   // Fallback: open create flow prefilled with the copy
                                   onCreateRule(copy);

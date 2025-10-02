@@ -1,18 +1,11 @@
 // src/components/RuleExportDialog.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { serializeRuleForExport, stringifyRuleExport } from '../utils/rulesHelpers.js';
 import { CopyButton } from './index.jsx';
 
 export default function RuleExportDialog({ open, rule, onClose }) {
   const exportObject = useMemo(() => serializeRuleForExport(rule), [rule]);
   const exportText = useMemo(() => stringifyRuleExport(rule), [rule]);
-  const [copyStatus, setCopyStatus] = useState('');
-
-  useEffect(() => {
-    if (!open) {
-      setCopyStatus('');
-    }
-  }, [open]);
 
   if (!open) return null;
 
@@ -59,10 +52,6 @@ export default function RuleExportDialog({ open, rule, onClose }) {
               <span>Rule export JSON</span>
               <CopyButton
                 textToCopy={exportText}
-                onCopy={() => {
-                  setCopyStatus('Copied!');
-                  setTimeout(() => setCopyStatus(''), 2000);
-                }}
                 showLabel
                 labelText="Copy"
                 copiedText="Copied"
