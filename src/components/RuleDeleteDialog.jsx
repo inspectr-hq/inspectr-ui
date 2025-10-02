@@ -25,7 +25,7 @@ export default function RuleDeleteDialog({
   const finalConfirm = confirmLabel || 'Delete Rule';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 !mt-0">
       <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-800 dark:bg-gray-900">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">{finalTitle}</h3>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{finalDescription}</p>
