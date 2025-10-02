@@ -158,6 +158,8 @@ const RulesListPanel = ({
   actionsDisabled,
   onDuplicateRule,
   onPauseRule,
+  onExportRule,
+  onImportRule,
   operatorLabelMap = {}
 }) => {
   const eventMap = useMemo(() => {
@@ -177,6 +179,14 @@ const RulesListPanel = ({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={onImportRule}
+            disabled={actionsDisabled || loading}
+            className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900"
+          >
+            Import rule
+          </button>
           <button
             type="button"
             onClick={onStartFromTemplate}
@@ -414,6 +424,31 @@ const RulesListPanel = ({
                                 <path d="M5 9a2 2 0 0 1 2-2h1v7a4 4 0 0 0 4 4h7v1a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9z"></path>
                               </svg>
                               Duplicate
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onExportRule && onExportRule(rule)}
+                              className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-900 shadow-sm transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-50 dark:hover:bg-gray-800/30"
+                              title="Export rule"
+                              aria-label="Export rule"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="-ml-0.5 mr-1.5 size-4"
+                              >
+                                <path d="M5 7v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7" />
+                                <path d="M12 3v12" />
+                                <path d="m8 11 4 4 4-4" />
+                              </svg>
+                              Export
                             </button>
                             <button
                               type="button"

@@ -8,6 +8,8 @@ import RuleBuilderDialog from './RuleBuilderDialog.jsx';
 import RuleTemplateDialog from './RuleTemplateDialog.jsx';
 import RuleApplyHistoryDialog from './RuleApplyHistoryDialog.jsx';
 import OperationTagsPanel from './OperationTagsPanel.jsx';
+import RuleExportDialog from './RuleExportDialog.jsx';
+import RuleImportDialog from './RuleImportDialog.jsx';
 import {
   buildActionState,
   createActionId,
@@ -86,6 +88,9 @@ export default function RulesApp() {
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState('');
   const [applyPreview, setApplyPreview] = useState(null);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [exportRule, setExportRule] = useState(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const [operatorCatalog, setOperatorCatalog] = useState([]);
   const operatorOptions = useMemo(() => createOperatorOptions(operatorCatalog), [operatorCatalog]);
@@ -813,6 +818,36 @@ export default function RulesApp() {
     setIsBuilderOpen(true);
   };
 
+  const handleExportRule = (rule) => {
+    if (!rule) return;
+    setExportRule(rule);
+    setIsExportOpen(true);
+  };
+
+  const handleCloseExport = () => {
+    setIsExportOpen(false);
+    setExportRule(null);
+  };
+
+  const handleOpenImport = () => {
+    if (!actionsReady) return;
+    setIsImportOpen(true);
+  };
+
+  const handleCloseImport = () => {
+    setIsImportOpen(false);
+  };
+
+  const handleApplyImportedRule = (importedRule) => {
+    if (!importedRule) return;
+    setForm(mapRuleToForm(importedRule));
+    setEditingRuleId(null);
+    setFormErrors([]);
+    setIsImportOpen(false);
+    setIsBuilderOpen(true);
+    setOpenRuleId(null);
+  };
+
   const actionsReady =
     events.length > 0 && actionsCatalog.length > 0 && operatorOptions.length > 0 && !loading;
   const selectedEventDescription = eventMap[form.event]?.description;
@@ -934,6 +969,8 @@ export default function RulesApp() {
             onApplyHistory={handleOpenApplyHistory}
             onDuplicateRule={handleDuplicateRule}
             onPauseRule={handlePauseRule}
+            onExportRule={handleExportRule}
+            onImportRule={handleOpenImport}
             actionsDisabled={!actionsReady}
             operatorLabelMap={operatorLabelMap}
           />
@@ -1002,6 +1039,14 @@ export default function RulesApp() {
         applying={applying}
         error={applyError}
         preview={applyPreview}
+      />
+
+      <RuleExportDialog open={isExportOpen} rule={exportRule} onClose={handleCloseExport} />
+
+      <RuleImportDialog
+        open={isImportOpen}
+        onCancel={handleCloseImport}
+        onImport={handleApplyImportedRule}
       />
     </div>
   );

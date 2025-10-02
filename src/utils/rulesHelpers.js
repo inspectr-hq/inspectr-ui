@@ -205,3 +205,168 @@ export const moveItem = (array, fromIndex, toIndex) => {
   copy.splice(end, 0, item);
   return copy;
 };
+
+export const serializeRuleForExport = (rule) => {
+  if (!rule || typeof rule !== 'object') return null;
+
+  const aggregator = String(rule.expression?.op || 'and').toLowerCase();
+  const normalizedAggregator = aggregator === 'or' ? 'or' : 'and';
+
+  const conditions = extractConditions(rule.expression).map((condition) => {
+    const base = {
+      path: condition.left?.path || '',
+      operator: condition.op || ''
+    };
+
+    if (condition.right && typeof condition.right === 'object' && !Array.isArray(condition.right)) {
+      if (condition.right.path) {
+        base.comparePath = condition.right.path;
+      } else if ('value' in condition.right) {
+        base.value = condition.right.value;
+      }
+    } else if (condition.right !== undefined) {
+      base.value = condition.right;
+    }
+
+    return base;
+  });
+
+  return {
+    name: rule.name || '',
+    description: rule.description || '',
+    event: rule.event || '',
+    priority:
+      typeof rule.priority === 'number'
+        ? rule.priority
+        : Number.isFinite(Number(rule.priority))
+          ? Number(rule.priority)
+          : 0,
+    active: rule.active !== false,
+    aggregator: normalizedAggregator,
+    conditions,
+    actions: (rule.actions || []).map((action) => ({
+      type: action?.type || '',
+      params: (action && typeof action === 'object' && action.params) || {}
+    }))
+  };
+};
+
+export const stringifyRuleExport = (rule) => {
+  const exportPayload = serializeRuleForExport(rule);
+  if (!exportPayload) return '';
+  try {
+    return JSON.stringify(exportPayload, null, 2);
+  } catch (error) {
+    console.error('Failed to stringify rule export', error);
+    return '';
+  }
+};
+
+export const parseRuleImport = (input) => {
+  if (input == null) {
+    throw new Error('Rule import is empty. Paste a JSON export to continue.');
+  }
+
+  let payload = input;
+  if (typeof input === 'string') {
+    const trimmed = input.trim();
+    if (!trimmed) {
+      throw new Error('Rule import cannot be blank. Paste the exported JSON first.');
+    }
+    try {
+      payload = JSON.parse(trimmed);
+    } catch (error) {
+      throw new Error(
+        'Rule import must be valid JSON. Paste the exported JSON exactly as provided.'
+      );
+    }
+  }
+
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new Error('Rule import must be a JSON object that matches the export format.');
+  }
+
+  const aggregatorRaw =
+    typeof payload.aggregator === 'string' ? payload.aggregator.toLowerCase() : 'and';
+  const aggregator = aggregatorRaw === 'or' ? 'or' : 'and';
+
+  const conditionsInput = Array.isArray(payload.conditions) ? payload.conditions : [];
+  if (!conditionsInput.length) {
+    throw new Error('Imported rules must define at least one condition.');
+  }
+
+  const args = conditionsInput.map((condition, index) => {
+    if (!condition || typeof condition !== 'object') {
+      throw new Error(`Condition ${index + 1} is invalid. Each condition must be an object.`);
+    }
+    const path = `${condition.path ?? condition.left ?? ''}`.trim();
+    if (!path) {
+      throw new Error(`Condition ${index + 1} is missing a data path.`);
+    }
+    const operator = `${condition.operator ?? condition.op ?? ''}`.trim();
+    if (!operator) {
+      throw new Error(`Condition ${index + 1} is missing an operator.`);
+    }
+
+    const node = {
+      op: operator,
+      left: { path }
+    };
+
+    if (condition.comparePath) {
+      node.right = { path: condition.comparePath };
+    } else if ('right' in condition) {
+      const right = condition.right;
+      if (right && typeof right === 'object' && !Array.isArray(right) && right.path) {
+        node.right = { path: right.path };
+      } else if (right !== undefined) {
+        node.right = right;
+      }
+    } else if ('value' in condition) {
+      node.right = condition.value;
+    } else if ('values' in condition) {
+      node.right = condition.values;
+    }
+
+    return node;
+  });
+
+  const actionsInput = Array.isArray(payload.actions) ? payload.actions : [];
+  if (!actionsInput.length) {
+    throw new Error('Imported rules must include at least one action.');
+  }
+
+  const actions = actionsInput.map((action, index) => {
+    if (!action || typeof action !== 'object') {
+      throw new Error(`Action ${index + 1} is invalid. Each action must be an object.`);
+    }
+    const type = `${action.type ?? ''}`.trim();
+    if (!type) {
+      throw new Error(`Action ${index + 1} is missing a type.`);
+    }
+    const params = action.params && typeof action.params === 'object' ? action.params : {};
+    return { type, params };
+  });
+
+  const priorityRaw = payload.priority;
+  let priority = 0;
+  if (typeof priorityRaw === 'number' && Number.isFinite(priorityRaw)) {
+    priority = priorityRaw;
+  } else if (priorityRaw != null) {
+    const parsed = Number(priorityRaw);
+    if (Number.isFinite(parsed)) priority = parsed;
+  }
+
+  return {
+    name: typeof payload.name === 'string' ? payload.name : '',
+    description: typeof payload.description === 'string' ? payload.description : '',
+    event: typeof payload.event === 'string' ? payload.event : '',
+    priority,
+    active: payload.active !== false,
+    expression: {
+      op: aggregator,
+      args
+    },
+    actions
+  };
+};

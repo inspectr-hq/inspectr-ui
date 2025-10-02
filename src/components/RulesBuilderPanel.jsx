@@ -499,7 +499,7 @@ const RulesBuilderPanel = ({
                           <select
                             value={action.type}
                             onChange={(event) => onActionTypeChange(action.id, event.target.value)}
-                            className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark;text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
+                            className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30"
                           >
                             {actionsCatalog.length === 0 && (
                               <option value="">No actions available</option>
