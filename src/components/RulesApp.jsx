@@ -88,6 +88,7 @@ export default function RulesApp() {
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState('');
   const [applyPreview, setApplyPreview] = useState(null);
+  const [applyPreviewType, setApplyPreviewType] = useState(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [exportRule, setExportRule] = useState(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -902,6 +903,7 @@ export default function RulesApp() {
     setIsApplyOpen(true);
     setApplyError('');
     setApplyPreview(null);
+    setApplyPreviewType(null);
   };
 
   const handleCloseApplyHistory = () => {
@@ -911,6 +913,7 @@ export default function RulesApp() {
     setApplyPreview(null);
     setApplyLoading(false);
     setApplying(false);
+    setApplyPreviewType(null);
   };
 
   const handlePreviewApply = async (options) => {
@@ -920,10 +923,10 @@ export default function RulesApp() {
       setApplyError('');
       const res = await client.rules.applyToHistory(applyRule.id, {
         ...options,
-        limit: 5,
         dryRun: true
       });
-      setApplyPreview(res);
+      setApplyPreview(res || {});
+      setApplyPreviewType('preview');
     } catch (err) {
       console.error('Preview apply failed', err);
       setApplyError(err?.message || 'Failed to preview');
@@ -938,8 +941,9 @@ export default function RulesApp() {
       setApplying(true);
       setApplyError('');
       const res = await client.rules.applyToHistory(applyRule.id, { ...options, dryRun: false });
+      setApplyPreview(res || {});
+      setApplyPreviewType('apply');
       setToast?.({ type: 'success', message: 'Rule applied to matching historical operations' });
-      setIsApplyOpen(false);
     } catch (err) {
       console.error('Apply to history failed', err);
       setApplyError(err?.message || 'Failed to apply');
@@ -1039,6 +1043,7 @@ export default function RulesApp() {
         applying={applying}
         error={applyError}
         preview={applyPreview}
+        previewType={applyPreviewType}
       />
 
       <RuleExportDialog open={isExportOpen} rule={exportRule} onClose={handleCloseExport} />

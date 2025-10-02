@@ -10,7 +10,8 @@ export default function RuleApplyHistoryDialog({
   loading,
   applying,
   error,
-  preview
+  preview,
+  previewType = 'preview'
 }) {
   const [filters, setFilters] = useState({
     since: '',
@@ -78,8 +79,30 @@ export default function RuleApplyHistoryDialog({
       preview.sampled ||
       preview.preview ||
       [];
-    return Array.isArray(candidates) ? candidates.slice(0, 5) : [];
+    return Array.isArray(candidates) ? candidates : [];
   }, [preview]);
+
+  const previewStats = useMemo(() => {
+    if (!preview || typeof preview !== 'object') return [];
+    const stats = [
+      { key: 'processed', label: 'Processed', value: preview.processed },
+      { key: 'matched', label: 'Matched', value: preview.matched },
+      { key: 'updated', label: 'Updated', value: preview.updated },
+      { key: 'duration_ms', label: 'Duration (ms)', value: preview.duration_ms }
+    ];
+    return stats.filter((item) => item.value !== undefined && item.value !== null);
+  }, [preview]);
+
+  const isApplyResult = previewType === 'apply';
+
+  const hasMatches = useMemo(() => {
+    if (!preview) return false;
+    if (typeof preview?.matched === 'number') return preview.matched > 0;
+    return previewList.length > 0;
+  }, [preview, previewList]);
+
+  const statsTitle = isApplyResult ? 'Apply results' : 'Preview summary';
+  const listTitle = isApplyResult ? 'Affected operations' : 'Preview matches';
 
   const renderItem = (item, idx) => {
     const method = item.method || item.req_method || item.http_method;
@@ -115,7 +138,7 @@ export default function RuleApplyHistoryDialog({
   };
 
   return !open ? null : (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 !mt-0">
       <div className="w-full max-w-3xl overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
         <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-4 dark:border-gray-800 sm:px-6">
           <div className="space-y-1">
@@ -123,7 +146,7 @@ export default function RuleApplyHistoryDialog({
               Apply “{rule?.name}” to history
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Optionally set filters, preview the top 5 matches, then apply.
+              Optionally set filters, review the results, then apply.
             </p>
           </div>
           <button
@@ -239,6 +262,12 @@ export default function RuleApplyHistoryDialog({
             </label>
           </div>
 
+          {isApplyResult && !applying && !error && (
+            <div className="mt-3 rounded border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700 dark:border-green-900 dark:bg-green-950/40 dark:text-green-300">
+              Rule applied to historical operations. Review the results below.
+            </div>
+          )}
+
           {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
           <div className="mt-4 flex items-center gap-3">
@@ -248,7 +277,7 @@ export default function RuleApplyHistoryDialog({
               disabled={loading}
               className="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-900 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-gray-700 dark:text-gray-50 dark:hover:bg-gray-800"
             >
-              {loading ? 'Previewing…' : 'Preview top 5'}
+              {loading ? 'Previewing…' : 'Preview matches'}
             </button>
             <button
               type="button"
@@ -267,16 +296,37 @@ export default function RuleApplyHistoryDialog({
             </button>
           </div>
 
+          {previewStats.length > 0 && (
+            <div className="mt-6 space-y-2">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
+                {statsTitle}
+              </h4>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {previewStats.map((stat) => (
+                  <div
+                    key={stat.key}
+                    className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900"
+                  >
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      {stat.label}
+                    </span>
+                    <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      {stat.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {previewList.length > 0 && (
             <div className="mt-6">
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
-                Top 5 preview
-              </h4>
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">{listTitle}</h4>
               <ul className="mt-2 space-y-2">{previewList.map(renderItem)}</ul>
             </div>
           )}
 
-          {!loading && preview && previewList.length === 0 && (
+          {!loading && preview && !hasMatches && (
             <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
               No matching operations found for the selected filters.
             </p>
@@ -286,129 +336,3 @@ export default function RuleApplyHistoryDialog({
     </div>
   );
 }
-
-const RuleTemplateDialog = ({
-  open,
-  groupedTemplates,
-  loading,
-  error,
-  onClose,
-  onRetry,
-  onSelect
-}) => {
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-5xl overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-4 dark:border-gray-800 sm:px-6">
-          <div className="space-y-1">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
-              Start from a template
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Choose a starter rule and customise it to fit your automation workflow.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center rounded-md border border-gray-300 p-2 text-gray-500 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-            aria-label="Close template dialog"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="size-4"
-            >
-              <line x1="18" x2="6" y1="6" y2="18" />
-              <line x1="6" x2="18" y1="6" y2="18" />
-            </svg>
-          </button>
-        </div>
-        <div className="max-h-[80vh] overflow-y-auto px-4 py-6 sm:px-6">
-          {loading ? (
-            <p className="text-sm text-gray-600 dark:text-gray-400">Loading templates…</p>
-          ) : error ? (
-            <div className="space-y-3">
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-              <button
-                type="button"
-                onClick={onRetry}
-                className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-              >
-                Try again
-              </button>
-            </div>
-          ) : groupedTemplates.length === 0 ? (
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              No templates available right now.
-            </p>
-          ) : (
-            <div className="space-y-6">
-              {groupedTemplates.map((group) => (
-                <section key={group.id} className="space-y-3">
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
-                      {group.label}
-                    </h4>
-                    {group.description && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {group.description}
-                      </p>
-                    )}
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {group.items.map((template) => (
-                      <div
-                        key={template.id}
-                        className="flex h-full flex-col justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-blue-400 hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
-                      >
-                        <div className="space-y-2">
-                          <h5 className="text-base font-semibold text-gray-900 dark:text-gray-50">
-                            {template.name}
-                          </h5>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {template.description}
-                          </p>
-                          <div className="mt-3 space-y-1 text-xs text-gray-500 dark:text-gray-500">
-                            <p>
-                              <span className="font-medium text-gray-700 dark:text-gray-300">
-                                Event:
-                              </span>{' '}
-                              {template.event}
-                            </p>
-                            <p>
-                              <span className="font-medium text-gray-700 dark:text-gray-300">
-                                Actions:
-                              </span>{' '}
-                              {template.actions?.length || 0}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => onSelect(template)}
-                          className="mt-4 inline-flex items-center justify-center rounded-md border border-transparent bg-blue-500 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500"
-                        >
-                          Use template
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
