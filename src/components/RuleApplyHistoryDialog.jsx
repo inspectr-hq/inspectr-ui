@@ -235,6 +235,18 @@ export default function RuleApplyHistoryDialog({
                 />
               </div>
             </div>
+            <div className="text-xs text-gray-700 dark:text-gray-300">
+              <span>Status codes</span>
+              <div className="mt-1">
+                <TagsInput
+                  options={STATUS_CODE_OPTIONS}
+                  selected={filters.statuses}
+                  onChange={handleStatusesChange}
+                  placeholder="Add status code..."
+                  colorFn={getStatusClass}
+                />
+              </div>
+            </div>
             <label className="text-xs text-gray-700 dark:text-gray-300">
               Path contains
               <input
@@ -276,18 +288,6 @@ export default function RuleApplyHistoryDialog({
                   selected={filters.tagsAny}
                   onChange={handleTagsAnyChange}
                   placeholder="Add tag..."
-                />
-              </div>
-            </div>
-            <div className="text-xs text-gray-700 dark:text-gray-300">
-              <span>Status codes</span>
-              <div className="mt-1">
-                <TagsInput
-                  options={STATUS_CODE_OPTIONS}
-                  selected={filters.statuses}
-                  onChange={handleStatusesChange}
-                  placeholder="Add status code..."
-                  colorFn={getStatusClass}
                 />
               </div>
             </div>
