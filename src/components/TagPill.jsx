@@ -25,7 +25,7 @@ export default function TagPill({ tag, showRemove = false, onRemove, removeLabel
 
   if (normalized.type === 'kv') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 pl-2.5 pr-2.5 py-1 text-xs text-slate-700 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 pl-2.5 pr-2.5 py-1 text-xs text-slate-700 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content">
         <span className="font-semibold uppercase tracking-wide text-[10px] text-slate-500 dark:text-dark-tremor-content">
           {normalized.key}:
         </span>
@@ -38,7 +38,7 @@ export default function TagPill({ tag, showRemove = false, onRemove, removeLabel
   }
 
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 pl-2.5 pr-2.5 py-1 font-mono text-[11px] font-medium text-slate-700 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 pl-2.5 pr-2.5 py-1 font-mono text-[11px] font-medium text-slate-700 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content">
       {normalized.display}
       {removeButton}
     </span>
