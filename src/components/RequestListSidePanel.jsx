@@ -3,6 +3,7 @@ import React from 'react';
 import TagsInput from './TagsInput.jsx';
 import { getStatusClass } from '../utils/getStatusClass.js';
 import { getMethodTagClass } from '../utils/getMethodClass.js';
+import { HTTP_METHOD_OPTIONS, STATUS_CODE_OPTIONS } from '../utils/operationFilterOptions.js';
 
 const RequestListSidePanel = ({
   isOpen,
@@ -51,21 +52,8 @@ const RequestListSidePanel = ({
   };
 
   // Define options for HTTP methods and status codes.
-  const methodOptions = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'];
-  const statusCodeOptions = [
-    '200',
-    '201',
-    '204',
-    '301',
-    '302',
-    '400',
-    '401',
-    '403',
-    '404',
-    '500',
-    '502',
-    '503'
-  ];
+  const methodOptions = HTTP_METHOD_OPTIONS;
+  const statusCodeOptions = STATUS_CODE_OPTIONS;
 
   return (
     <>

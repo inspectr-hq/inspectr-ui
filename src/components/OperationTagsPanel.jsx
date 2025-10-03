@@ -1,9 +1,9 @@
 // src/components/OperationTagsPanel.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useInspectr } from '../context/InspectrContext';
 import RuleDeleteDialog from './RuleDeleteDialog.jsx';
 
-export default function OperationTagsPanel() {
+export default function OperationTagsPanel({ onTagsUpdate }) {
   const { client, setToast } = useInspectr();
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,6 +16,11 @@ export default function OperationTagsPanel() {
 
   const hasClient = Boolean(client?.operations);
 
+  const applyTags = (list) => {
+    setTags(list);
+    onTagsUpdate?.(list);
+  };
+
   const loadTags = async () => {
     if (!hasClient) return;
     try {
@@ -24,7 +29,7 @@ export default function OperationTagsPanel() {
       const res = await client.operations.listTags();
       const list = Array.isArray(res?.tags) ? res.tags : [];
       list.sort((a, b) => a.localeCompare(b));
-      setTags(list);
+      applyTags(list);
     } catch (err) {
       console.error('Failed to load tags', err);
       setError(err?.message || 'Failed to load tags');
@@ -41,7 +46,7 @@ export default function OperationTagsPanel() {
       const res = await client.operations.listTags();
       const list = Array.isArray(res?.tags) ? res.tags : [];
       list.sort((a, b) => a.localeCompare(b));
-      setTags(list);
+      applyTags(list);
     } catch (err) {
       console.error('Failed to refresh tags', err);
       setError(err?.message || 'Failed to refresh tags');
@@ -60,7 +65,7 @@ export default function OperationTagsPanel() {
         if (cancelled) return;
         const list = Array.isArray(res?.tags) ? res.tags : [];
         list.sort((a, b) => a.localeCompare(b));
-        setTags(list);
+        applyTags(list);
       } catch (err) {
         if (cancelled) return;
         console.error('Failed to load tags', err);

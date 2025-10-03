@@ -92,6 +92,7 @@ export default function RulesApp() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [exportRule, setExportRule] = useState(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [tagOptions, setTagOptions] = useState([]);
 
   const [operatorCatalog, setOperatorCatalog] = useState([]);
   const operatorOptions = useMemo(() => createOperatorOptions(operatorCatalog), [operatorCatalog]);
@@ -980,7 +981,7 @@ export default function RulesApp() {
           />
         </div>
         <div className="lg:col-span-1">
-          <OperationTagsPanel />
+          <OperationTagsPanel onTagsUpdate={setTagOptions} />
         </div>
       </div>
 
@@ -1044,6 +1045,7 @@ export default function RulesApp() {
         error={applyError}
         preview={applyPreview}
         previewType={applyPreviewType}
+        tagOptions={tagOptions}
       />
 
       <RuleExportDialog open={isExportOpen} rule={exportRule} onClose={handleCloseExport} />

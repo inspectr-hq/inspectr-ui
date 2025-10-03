@@ -1,5 +1,9 @@
 // src/components/RuleApplyHistoryDialog.jsx
 import React, { useEffect, useMemo, useState } from 'react';
+import TagsInput from './TagsInput.jsx';
+import { getMethodTagClass } from '../utils/getMethodClass.js';
+import { getStatusClass } from '../utils/getStatusClass.js';
+import { HTTP_METHOD_OPTIONS, STATUS_CODE_OPTIONS } from '../utils/operationFilterOptions.js';
 
 export default function RuleApplyHistoryDialog({
   open,
@@ -11,61 +15,86 @@ export default function RuleApplyHistoryDialog({
   applying,
   error,
   preview,
-  previewType = 'preview'
+  previewType = 'preview',
+  tagOptions = []
 }) {
-  const [filters, setFilters] = useState({
+  const createDefaultFilters = () => ({
     since: '',
     until: '',
-    method: '',
+    methods: [],
     path: '',
     host: '',
-    tagsAll: '',
-    tagsAny: '',
-    statuses: ''
+    tagsAll: [],
+    tagsAny: [],
+    statuses: []
   });
+
+  const [filters, setFilters] = useState(createDefaultFilters);
+
+  const selectableTags = useMemo(() => {
+    if (!Array.isArray(tagOptions)) return [];
+    const unique = Array.from(new Set(tagOptions.filter((tag) => typeof tag === 'string')));
+    unique.sort((a, b) => a.localeCompare(b));
+    return unique;
+  }, [tagOptions]);
 
   useEffect(() => {
     if (!open) return;
     // reset filters and preview when opening
-    setFilters({
-      since: '',
-      until: '',
-      method: '',
-      path: '',
-      host: '',
-      tagsAll: '',
-      tagsAny: '',
-      statuses: ''
-    });
+    setFilters(createDefaultFilters());
   }, [open, rule?.id]);
+
+  const normalizeList = (values) =>
+    Array.isArray(values) ? values.map((value) => value.trim()).filter(Boolean) : [];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  const parseArrays = () => {
-    const toArray = (v) =>
-      v
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
-    const toNums = (v) =>
-      v
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((n) => Number(n))
-        .filter((n) => Number.isFinite(n));
+  const handleMethodsChange = (values) => {
+    const normalized = normalizeList(values).slice(0, 1);
+    setFilters((prev) => ({ ...prev, methods: normalized }));
+  };
+
+  const handleStatusesChange = (values) => {
+    setFilters((prev) => ({ ...prev, statuses: normalizeList(values) }));
+  };
+
+  const handleTagsAllChange = (values) => {
+    setFilters((prev) => ({ ...prev, tagsAll: normalizeList(values) }));
+  };
+
+  const handleTagsAnyChange = (values) => {
+    setFilters((prev) => ({ ...prev, tagsAny: normalizeList(values) }));
+  };
+
+  const buildPayload = () => {
+    const toDate = (value) => {
+      if (!value) return undefined;
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? undefined : date;
+    };
+
+    const statuses = (Array.isArray(filters.statuses) ? filters.statuses : [])
+      .map((code) => Number(code))
+      .filter((code) => Number.isFinite(code));
+
+    const methods = normalizeList(filters.methods).map((method) => method.toUpperCase());
+    const tagsAll = normalizeList(filters.tagsAll);
+    const tagsAny = normalizeList(filters.tagsAny);
+
+    const method = methods[0];
+
     return {
-      since: filters.since ? new Date(filters.since) : undefined,
-      until: filters.until ? new Date(filters.until) : undefined,
-      method: filters.method || undefined,
-      path: filters.path || undefined,
-      host: filters.host || undefined,
-      tagsAll: filters.tagsAll ? toArray(filters.tagsAll) : undefined,
-      tagsAny: filters.tagsAny ? toArray(filters.tagsAny) : undefined,
-      statuses: filters.statuses ? toNums(filters.statuses) : undefined
+      since: toDate(filters.since),
+      until: toDate(filters.until),
+      method,
+      path: filters.path?.trim() || undefined,
+      host: filters.host?.trim() || undefined,
+      tagsAll: tagsAll.length ? tagsAll : undefined,
+      tagsAny: tagsAny.length ? tagsAny : undefined,
+      statuses: statuses.length ? statuses : undefined
     };
   };
 
@@ -194,17 +223,18 @@ export default function RuleApplyHistoryDialog({
                 className="mt-1 w-full rounded border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-900"
               />
             </label>
-            <label className="text-xs text-gray-700 dark:text-gray-300">
-              Method
-              <input
-                type="text"
-                name="method"
-                placeholder="GET"
-                value={filters.method}
-                onChange={handleChange}
-                className="mt-1 w-full rounded border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-              />
-            </label>
+            <div className="text-xs text-gray-700 dark:text-gray-300">
+              <span>Method</span>
+              <div className="mt-1">
+                <TagsInput
+                  options={HTTP_METHOD_OPTIONS}
+                  selected={filters.methods}
+                  onChange={handleMethodsChange}
+                  placeholder="Select method"
+                  colorFn={getMethodTagClass}
+                />
+              </div>
+            </div>
             <label className="text-xs text-gray-700 dark:text-gray-300">
               Path contains
               <input
@@ -227,39 +257,40 @@ export default function RuleApplyHistoryDialog({
                 className="mt-1 w-full rounded border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-900"
               />
             </label>
-            <label className="text-xs text-gray-700 dark:text-gray-300">
-              Tags (all)
-              <input
-                type="text"
-                name="tagsAll"
-                placeholder="tag1,tag2"
-                value={filters.tagsAll}
-                onChange={handleChange}
-                className="mt-1 w-full rounded border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-              />
-            </label>
-            <label className="text-xs text-gray-700 dark:text-gray-300">
-              Tags (any)
-              <input
-                type="text"
-                name="tagsAny"
-                placeholder="tagA,tagB"
-                value={filters.tagsAny}
-                onChange={handleChange}
-                className="mt-1 w-full rounded border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-              />
-            </label>
-            <label className="text-xs text-gray-700 dark:text-gray-300">
-              Status codes
-              <input
-                type="text"
-                name="statuses"
-                placeholder="200,404"
-                value={filters.statuses}
-                onChange={handleChange}
-                className="mt-1 w-full rounded border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-              />
-            </label>
+            <div className="text-xs text-gray-700 dark:text-gray-300">
+              <span>Tags (all)</span>
+              <div className="mt-1">
+                <TagsInput
+                  options={selectableTags}
+                  selected={filters.tagsAll}
+                  onChange={handleTagsAllChange}
+                  placeholder="Add tag..."
+                />
+              </div>
+            </div>
+            <div className="text-xs text-gray-700 dark:text-gray-300">
+              <span>Tags (any)</span>
+              <div className="mt-1">
+                <TagsInput
+                  options={selectableTags}
+                  selected={filters.tagsAny}
+                  onChange={handleTagsAnyChange}
+                  placeholder="Add tag..."
+                />
+              </div>
+            </div>
+            <div className="text-xs text-gray-700 dark:text-gray-300">
+              <span>Status codes</span>
+              <div className="mt-1">
+                <TagsInput
+                  options={STATUS_CODE_OPTIONS}
+                  selected={filters.statuses}
+                  onChange={handleStatusesChange}
+                  placeholder="Add status code..."
+                  colorFn={getStatusClass}
+                />
+              </div>
+            </div>
           </div>
 
           {isApplyResult && !applying && !error && (
@@ -273,7 +304,7 @@ export default function RuleApplyHistoryDialog({
           <div className="mt-4 flex w-full items-center justify-end gap-3">
             <button
               type="button"
-              onClick={() => onPreview(parseArrays())}
+              onClick={() => onPreview(buildPayload())}
               disabled={loading}
               className="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-900 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-gray-700 dark:text-gray-50 dark:hover:bg-gray-800"
             >
@@ -281,7 +312,7 @@ export default function RuleApplyHistoryDialog({
             </button>
             <button
               type="button"
-              onClick={() => onApply(parseArrays())}
+              onClick={() => onApply(buildPayload())}
               disabled={applying}
               className="inline-flex items-center rounded-md border border-transparent bg-blue-500 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-blue-600 dark:hover:bg-blue-500"
             >
