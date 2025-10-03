@@ -270,7 +270,7 @@ export default function RuleApplyHistoryDialog({
 
           {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-4 flex w-full items-center justify-end gap-3">
             <button
               type="button"
               onClick={() => onPreview(parseArrays())}
