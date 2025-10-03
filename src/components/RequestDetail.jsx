@@ -11,6 +11,7 @@ import { Tooltip } from './ToolTip.jsx';
 import AuthIndicator from './AuthIndicator.jsx';
 import { normalizeTags, normalizeTag } from '../utils/normalizeTags.js';
 import RuleDeleteDialog from './RuleDeleteDialog.jsx';
+import TagPill from './TagPill.jsx';
 
 const RequestDetail = ({ operation, setCurrentTab }) => {
   // Get the client from context
@@ -376,44 +377,14 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
             Tags
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {tags.map((tag, index) =>
-              tag.type === 'kv' ? (
-                <span
-                  key={`tag-${index}`}
-                  className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content"
-                >
-                  <span className="font-semibold uppercase tracking-wide text-[10px] text-slate-500 dark:text-dark-tremor-content">
-                    {tag.key}
-                  </span>
-                  <span className="font-mono text-[11px] text-slate-700 dark:text-dark-tremor-content">
-                    {tag.value}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleRequestDeleteTag(tag)}
-                    className="inline-flex items-center justify-center text-xs font-semibold rounded-full text-red-700 transition hover:bg-red-50 dark:border-red-900/40 dark:text-red-300 dark:hover:bg-red-950"
-                    title={`Remove tag \"${tag.display}\" from this operation`}
-                  >
-                    x
-                  </button>
-                </span>
-              ) : (
-                <span
-                  key={`tag-${index}`}
-                  className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-mono text-[11px] font-medium text-slate-700 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content"
-                >
-                  {tag.display}
-                  <button
-                    type="button"
-                    onClick={() => handleRequestDeleteTag(tag)}
-                    className="ml-1 inline-flex items-center justify-center text-xs font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-900/40 dark:text-red-300 dark:hover:bg-red-950"
-                    title={`Remove tag \"${tag.display}\" from this operation`}
-                  >
-                    x
-                  </button>
-                </span>
-              )
-            )}
+            {tags.map((tag) => (
+              <TagPill
+                key={tag.token || tag.display}
+                tag={tag}
+                showRemove
+                onRemove={() => handleRequestDeleteTag(tag)}
+              />
+            ))}
           </div>
         </div>
       )}

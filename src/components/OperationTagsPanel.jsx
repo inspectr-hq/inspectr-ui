@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useInspectr } from '../context/InspectrContext';
 import RuleDeleteDialog from './RuleDeleteDialog.jsx';
+import TagPill from './TagPill.jsx';
 
 export default function OperationTagsPanel({ onTagsUpdate }) {
   const { client, setToast } = useInspectr();
@@ -154,9 +155,10 @@ export default function OperationTagsPanel({ onTagsUpdate }) {
             {tags.map((tag) => (
               <li key={tag} className="flex items-center justify-between gap-3 py-2">
                 <div className="inline-flex items-center gap-2">
-                  <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                    {tag}
-                  </span>
+                  <TagPill
+                    tag={tag}
+                  />
+
                 </div>
                 <button
                   type="button"
