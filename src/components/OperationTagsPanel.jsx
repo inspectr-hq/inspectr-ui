@@ -155,10 +155,7 @@ export default function OperationTagsPanel({ onTagsUpdate }) {
             {tags.map((tag) => (
               <li key={tag} className="flex items-center justify-between gap-3 py-2">
                 <div className="inline-flex items-center gap-2">
-                  <TagPill
-                    tag={tag}
-                  />
-
+                  <TagPill tag={tag} />
                 </div>
                 <button
                   type="button"
