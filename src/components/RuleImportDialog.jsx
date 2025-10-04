@@ -16,7 +16,7 @@ export default function RuleImportDialog({ open, onCancel, onImport, onImported 
       setFile(null);
       setError('');
       setImporting(false);
-      setOverwrite(true);
+      setOverwrite(false);
     }
   }, [open]);
 
