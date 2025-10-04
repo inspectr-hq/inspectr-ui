@@ -1,26 +1,51 @@
 // src/components/RuleExportDialog.jsx
-import React, { useMemo } from 'react';
-import { serializeRuleForExport, stringifyRuleExport } from '../utils/rulesHelpers.js';
-import { CopyButton } from './index.jsx';
+import React, { useMemo, useState } from 'react';
+import { useInspectr } from '../context/InspectrContext.jsx';
 
 export default function RuleExportDialog({ open, rule, onClose }) {
-  const exportObject = useMemo(() => serializeRuleForExport(rule), [rule]);
-  const exportText = useMemo(() => stringifyRuleExport(rule), [rule]);
+  const { client, setToast } = useInspectr();
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState('');
+
+  const ruleName = useMemo(() => rule?.name || 'All rules', [rule]);
 
   if (!open) return null;
 
+  const handleDownload = async () => {
+    if (!client?.rules?.export) return;
+    setDownloading(true);
+    setError('');
+    try {
+      const { blob, filename } = await client.rules.export({ id: rule?.id });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || 'rules.yaml';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setToast?.({ type: 'success', message: `Downloaded ${filename || 'rules.yaml'}` });
+      onClose?.();
+    } catch (err) {
+      console.error('Export download failed', err);
+      setError(err?.message || 'Failed to export rules');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 !mt-0">
-      <div className="w-full max-w-2xl overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
+      <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
         <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-4 dark:border-gray-800 sm:px-6">
           <div className="space-y-1">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">Export rule</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">Export rules</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Copy the JSON representation below to move this rule between workspaces or share with
-              a teammate.
+              Download YAML export{rule?.name ? ` for "${ruleName}"` : ''}.
             </p>
-            {exportObject?.name && (
-              <p className="text-xs text-gray-500 dark:text-gray-500">Rule: {exportObject.name}</p>
+            {rule?.name && (
+              <p className="text-xs text-gray-500 dark:text-gray-500">Rule: {ruleName}</p>
             )}
           </div>
           <button
@@ -47,31 +72,19 @@ export default function RuleExportDialog({ open, rule, onClose }) {
           </button>
         </div>
         <div className="space-y-4 px-4 py-4 sm:px-6">
-          <div>
-            <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-              <span>Rule export JSON</span>
-              <CopyButton
-                textToCopy={exportText}
-                showLabel
-                labelText="Copy"
-                copiedText="Copied"
-                className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-              />
-            </label>
-            <textarea
-              value={exportText}
-              readOnly
-              rows={14}
-              className="mt-2 block w-full resize-none rounded-md border border-gray-300 bg-gray-50 px-3 py-2 font-mono text-xs text-gray-800 shadow-inner focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-800 dark:bg-[#0B101F] dark:text-gray-100 dark:focus:border-blue-700 dark:focus:ring-blue-800/50"
-            />
-          </div>
-          <div className="flex justify-end">
+          {error && (
+            <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/50 dark:text-red-300">
+              {error}
+            </div>
+          )}
+          <div className="flex items-center justify-between">
             <button
               type="button"
-              onClick={onClose}
-              className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+              onClick={handleDownload}
+              disabled={downloading}
+              className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:bg-blue-500 dark:hover:bg-blue-400"
             >
-              Close
+              {downloading ? 'Preparing…' : 'Download rules.yaml'}
             </button>
           </div>
         </div>

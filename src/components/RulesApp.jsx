@@ -1054,6 +1054,7 @@ export default function RulesApp() {
         open={isImportOpen}
         onCancel={handleCloseImport}
         onImport={handleApplyImportedRule}
+        onImported={refreshRules}
       />
     </div>
   );

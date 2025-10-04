@@ -673,6 +673,100 @@ class RulesClient {
   }
 
   /**
+   * Export rules as YAML.
+   * Server endpoint: GET /api/rules/export
+   * - Response headers:
+   *   Content-Disposition: attachment; filename=rules.yaml
+   *   Content-Type: application/x-yaml
+   *
+   * @param {Object} [options]
+   * @param {string} [options.id] - Optional rule id to export a single rule if the server supports it
+   * @returns {Promise<{ blob: Blob, filename: string, contentType: string }>} Download payload
+   */
+  async export(options = {}) {
+    const id = options?.id;
+    const url = id
+      ? `${this.client.apiEndpoint}/rules/${encodeURIComponent(id)}/export`
+      : `${this.client.apiEndpoint}/rules/export`;
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { ...this.client.defaultHeaders, Accept: 'application/x-yaml' }
+    });
+
+    if (!res.ok) {
+      let errText = '';
+      try {
+        errText = await res.text();
+      } catch {}
+      throw new Error(`Rules export failed (${res.status})${errText ? `: ${errText}` : ''}`);
+    }
+
+    const blob = await res.blob();
+    const contentType = res.headers.get('Content-Type') || 'application/x-yaml';
+    const cd = res.headers.get('Content-Disposition') || '';
+    const filenameMatch = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i.exec(cd);
+    const filename = decodeURIComponent(filenameMatch?.[1] || filenameMatch?.[2] || 'rules.yaml');
+
+    return { blob, filename, contentType };
+  }
+
+  /**
+   * Import rules from YAML.
+   * Server endpoint: POST /api/rules/import
+   * - Request Content-Type: application/x-yaml
+   * - Response: JSON (import summary or created rules)
+   *
+   * @param {string|Blob|File} yaml - YAML content or file/blob
+   * @param {Object} [options]
+   * @param {boolean} [options.overwrite=false] - When true, adds ?overwrite=true to the request
+   * @returns {Promise<any>} Parsed JSON response
+   */
+  async import(yaml, options = {}) {
+    const isBlob =
+      yaml && typeof yaml === 'object' && (yaml instanceof Blob || yaml instanceof File);
+    const body = isBlob ? yaml : String(yaml ?? '');
+
+    const overwrite = options?.overwrite === true;
+    const url = `${this.client.apiEndpoint}/rules/import` + (overwrite ? `?overwrite=true` : '');
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        ...this.client.defaultHeaders,
+        'Content-Type': 'application/x-yaml',
+        Accept: 'application/json'
+      },
+      body
+    });
+
+    if (!res.ok) {
+      let errorBody = {};
+      try {
+        errorBody = await res.json();
+      } catch {
+        try {
+          const text = await res.text();
+          errorBody = { message: text };
+        } catch {}
+      }
+      const message =
+        errorBody?.error || errorBody?.message || `Rules import failed (${res.status})`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.body = errorBody;
+      throw err;
+    }
+
+    // Try to parse JSON response; fallback to empty object
+    try {
+      return await res.json();
+    } catch {
+      return {};
+    }
+  }
+
+  /**
    * Apply a rule to historical operations with optional filters.
    * Server endpoint: POST /api/rules/{id}/apply
    *
