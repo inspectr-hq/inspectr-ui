@@ -9,6 +9,7 @@ import DashBoardLineChart from './DashBoardLineChart.jsx';
 import DashBoardBarList from './DashBoardBarList.jsx';
 import DashBoardDonutChart from './DashBoardDonutChart.jsx';
 import DialogConfirmClearAll from './DialogConfirmClearAll.jsx';
+import DashBoardPercentileChart from './DashBoardPercentileChart.jsx';
 
 function joinClassNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -217,10 +218,18 @@ export default function DashBoardApp() {
   const formattedIntervalData = useMemo(() => {
     if (!stats?.by_interval) return [];
 
-    return stats.by_interval.map((item) => ({
-      ...item,
-      date: formatDateForChart(item.date)
-    }));
+    return stats.by_interval.map((item) => {
+      const mapped = {
+        ...item,
+        date: formatDateForChart(item.date)
+      };
+      // Map backend percentile keys to chart-friendly keys
+      if (item.median_response_time != null) mapped.p50 = item.median_response_time;
+      if (item.p90_response_time != null) mapped.p90 = item.p90_response_time;
+      if (item.p95_response_time != null) mapped.p95 = item.p95_response_time;
+      if (item.p99_response_time != null) mapped.p99 = item.p99_response_time;
+      return mapped;
+    });
   }, [stats?.by_interval]);
 
   // Update start and end when a date range button is clicked.
@@ -378,6 +387,14 @@ export default function DashBoardApp() {
           />
         </div>
 
+        {/* HTTP Request duration percentiles */}
+        <div className="mt-6 grid grid-cols-1">
+          <DashBoardPercentileChart
+            title="HTTP Request duration: p50, p90, p95, p99"
+            data={formattedIntervalData}
+          />
+        </div>
+
         <div className="mt-6 grid grid-cols-3 gap-4 items-stretch">
           <div className="col-span-2">
             <DashBoardLineChart
@@ -414,6 +431,20 @@ export default function DashBoardApp() {
           <DashBoardBarList
             title="Top Failed Endpoints"
             data={stats?.top_endpoints?.error}
+            toggleable={false}
+          />
+        </div>
+
+        {/* Fastest and Slowest Endpoints by P95 */}
+        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-2">
+          <DashBoardBarList
+            title="Top Fastest Endpoints (P95)"
+            data={stats?.top_endpoints?.fastest}
+            toggleable={false}
+          />
+          <DashBoardBarList
+            title="Top Slowest Endpoints (P95)"
+            data={stats?.top_endpoints?.slowest}
             toggleable={false}
           />
         </div>

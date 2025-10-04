@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import useLocalStorage from '../hooks/useLocalStorage.jsx';
 import InspectrClient from '../utils/inspectrSdk';
+import eventDB from '../utils/eventDB';
 
 // Create the context with default values
 const InspectrContext = createContext({
@@ -292,9 +293,13 @@ export const InspectrProvider = ({ children }) => {
       return;
     }
 
-    // Skip if we already have a token and sseEndpoint (already registered)
+    // Skip if we already have valid credentials; prevents duplicate registration on state updates
     // if (token && sseEndpoint) {
-    //   console.log('🔄 Already have a token and sseEndpoint, skipping auto-registration');
+    //   if (debugMode) {
+    //     console.log(
+    //       '🔄 Already registered with active token and SSE endpoint, skipping auto-registration'
+    //     );
+    //   }
     //   return;
     // }
 
@@ -313,6 +318,161 @@ export const InspectrProvider = ({ children }) => {
       console.log('⚠️ Missing credentials for auto-registration, skipping.');
     }
   }, [isInitialized, channel, channelCode, token, sseEndpoint]);
+
+  // ——— SSE connection lifecycle (moved from InspectrConnectionContext) ———
+  const [lastEventId, setLastEventId] = useLocalStorage('lastEventId', '');
+  const eventSourceRef = useRef(null);
+  const wasConnectedRef = useRef(false);
+
+  const BURST_WINDOW_MS = 50;
+  const BURST_THRESHOLD = 50;
+  const burstStartRef = useRef(0);
+  const burstCountRef = useRef(0);
+  const burstBufferRef = useRef([]);
+
+  const closeEventSource = () => {
+    if (eventSourceRef.current) {
+      try {
+        eventSourceRef.current.close();
+      } catch {}
+      eventSourceRef.current = null;
+    }
+  };
+
+  const connect = (overrideLastEventId) => {
+    // Close any existing instance first
+    closeEventSource();
+
+    if (!sseEndpoint || !token) return;
+
+    const storedLastEventId = overrideLastEventId ?? lastEventId;
+    let sseUrl = `${sseEndpoint}?token=${encodeURIComponent(token)}`;
+    if (storedLastEventId) {
+      const join = sseUrl.includes('?') ? '&' : '?';
+      sseUrl = `${sseUrl}${join}last_event_id=${encodeURIComponent(storedLastEventId)}`;
+    }
+
+    const eventSource = new EventSource(sseUrl);
+    eventSourceRef.current = eventSource;
+    console.log(`🔄 SSE connecting with ${sseUrl}`);
+
+    setConnectionStatus(wasConnectedRef.current ? 'reconnecting' : 'connecting');
+
+    eventSource.onopen = () => {
+      wasConnectedRef.current = true;
+      setConnectionStatus('connected');
+      if (debugMode) console.log('📡️ SSE connection opened.');
+    };
+
+    eventSource.onmessage = (e) => {
+      try {
+        const now = performance.now();
+        if (now - burstStartRef.current > BURST_WINDOW_MS) {
+          burstStartRef.current = now;
+          burstCountRef.current = 0;
+        }
+        burstCountRef.current++;
+
+        if (!e.data || e.data.trim() === '') {
+          if (debugMode) console.warn('Received empty SSE data, skipping');
+          return;
+        }
+        const event = JSON.parse(e.data);
+        if (debugMode) console.log('[Inspectr] Received event:', event);
+
+        // Normalize IDs and maintain lastEventId when operation_id present
+        if (event.operation_id) {
+          event.id = event.operation_id;
+          setLastEventId(event.operation_id);
+        } else {
+          event.id = event.id || `req-${Math.random().toString(36).slice(2, 11)}`;
+        }
+
+        if (burstCountRef.current < BURST_THRESHOLD) {
+          eventDB
+            .upsertEvent(event)
+            .catch((err) => console.error('Error saving event to DB:', err));
+        } else {
+          burstBufferRef.current.push(event);
+          if (burstCountRef.current === BURST_THRESHOLD) {
+            setTimeout(async () => {
+              try {
+                await eventDB.bulkUpsertEvents(burstBufferRef.current);
+              } catch (err) {
+                console.error('bulk save failed', err);
+              } finally {
+                burstBufferRef.current = [];
+                burstCountRef.current = 0;
+                burstStartRef.current = performance.now();
+              }
+            }, BURST_WINDOW_MS);
+          }
+        }
+      } catch (err) {
+        console.error('Error parsing SSE Inspectr data:', err);
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.error('❌ SSE connection error:', err);
+      setConnectionStatus('reconnecting');
+
+      if (reRegistrationFailedRef.current) {
+        console.log('❌ Maximum re-registration attempts reached. Closing EventSource.');
+        setConnectionStatus('disconnected');
+        try {
+          eventSource.close();
+        } catch {}
+        return;
+      }
+
+      // Attempt to re-register; the EventSource will auto-retry too
+      console.log('🔄 Starting re-registration retry loop due to SSE error.');
+      attemptReRegistration();
+    };
+  };
+
+  const disconnect = () => {
+    closeEventSource();
+    setConnectionStatus('disconnected');
+    console.log('📡️ SSE connection closed.');
+  };
+
+  const SYNC_LAST_EVENT_ID = 'sync';
+  const syncOperations = () => {
+    if (debugMode) {
+      console.log('[Inspectr] Syncing all operations...');
+    }
+
+    setLastEventId(SYNC_LAST_EVENT_ID);
+    connect(SYNC_LAST_EVENT_ID);
+  };
+
+  // Auto-connect when credentials change; keep alive across tab switches
+  useEffect(() => {
+    if (!sseEndpoint || !token) return;
+    // Reset re-registration counters and connect with current config
+    resetReRegistration();
+    connect();
+
+    // Cleanup on full unmount of provider (e.g., navigating away from Workspace)
+    return () => {
+      disconnect();
+    };
+    // We intentionally omit lastEventId here to avoid reconnects when it changes during streaming
+    // Sync action explicitly reconnects with override.
+  }, [sseEndpoint, token]);
+
+  // Close on full page unload
+  useEffect(() => {
+    const onUnload = () => {
+      try {
+        closeEventSource();
+      } catch {}
+    };
+    window.addEventListener('beforeunload', onUnload);
+    return () => window.removeEventListener('beforeunload', onUnload);
+  }, []);
 
   // Context value
   const contextValue = {
@@ -337,7 +497,14 @@ export const InspectrProvider = ({ children }) => {
     toast,
     setToast,
     debugMode,
-    client: inspectrClient
+    client: inspectrClient,
+    // Expose connection helpers/state
+    lastEventId,
+    setLastEventId,
+    connect,
+    disconnect,
+    syncOperations,
+    eventSource: eventSourceRef.current
   };
 
   return <InspectrContext.Provider value={contextValue}>{children}</InspectrContext.Provider>;

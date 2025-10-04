@@ -11,6 +11,22 @@ export default function DashBoardKpi({ overall }) {
     return <div>Loading KPI...</div>;
   }
 
+  const formatRate = (value) => {
+    if (value == null || isNaN(value)) return '0/s';
+    const perSecond = Number(value);
+    const perMinute = perSecond * 60;
+
+    // New rule: if below 1 per minute, always show per-second
+    if (perMinute < 1) {
+      if (perSecond >= 0.01) return `${perSecond.toFixed(2)}/s`;
+      if (perSecond > 0) return '<0.01/s';
+      return '0/s';
+    }
+
+    // Otherwise show per-second with two decimals
+    return `${perSecond.toFixed(2)}/s`;
+  };
+
   const kpiData = [
     {
       name: 'Total Requests',
@@ -36,11 +52,23 @@ export default function DashBoardKpi({ overall }) {
       stat: `${(overall.error_rate * 100).toFixed(1)}%`,
       change: '',
       changeType: 'neutral'
+    },
+    {
+      name: 'Request Rate',
+      stat: formatRate(overall.requests_per_second),
+      change: '',
+      changeType: 'neutral'
+    },
+    {
+      name: 'Request Failed Rate',
+      stat: formatRate(overall.errors_per_second),
+      change: '',
+      changeType: 'neutral'
     }
   ];
 
   return (
-    <dl className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <dl className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6">
       {kpiData.map((item) => (
         <Card key={item.name}>
           <div className="flex items-center justify-between">

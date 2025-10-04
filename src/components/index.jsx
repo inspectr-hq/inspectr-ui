@@ -12,6 +12,7 @@ export { default as DashBoardBarChart } from './DashBoardBarChart.jsx';
 export { default as DialogConfirmClear } from './DialogConfirmClear.jsx';
 export { default as DialogJwt } from './DialogJwt.jsx';
 export { default as DividerText } from './DividerText.jsx';
+export { default as RulesApp } from './RulesApp.jsx';
 export { default as RequestContent } from './RequestContent.jsx';
 export { default as RequestDetail } from './RequestDetail.jsx';
 export { default as RequestDetailsPanel } from './RequestDetailsPanel.jsx';

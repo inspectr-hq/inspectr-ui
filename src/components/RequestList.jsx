@@ -26,7 +26,8 @@ const RequestList = ({
   setSortField,
   setSortDirection,
   setFilters,
-  isSyncing
+  isSyncing,
+  tagOptions = []
 }) => {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -39,10 +40,12 @@ const RequestList = ({
 
   // Calculate the number of active filters.
   const activeFiltersCount = Object.entries(filters || {}).reduce((count, [key, value]) => {
-    // For custom timestampRange, check if object and has at least one non-empty field.
     if (key === 'timestampRange' && typeof value === 'object') {
       if (value.start || value.end) return count + 1;
       return count;
+    }
+    if (Array.isArray(value)) {
+      return value.length > 0 ? count + 1 : count;
     }
     return value ? count + 1 : count;
   }, 0);
@@ -232,6 +235,7 @@ const RequestList = ({
         setSortField={setSortField}
         setSortDirection={setSortDirection}
         setFilters={setFilters}
+        tagOptions={tagOptions}
       />
 
       {/* Clear All Dialog */}

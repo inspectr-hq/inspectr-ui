@@ -1,5 +1,14 @@
 // src/utils/eventDB.js
 import Dexie from 'dexie';
+import { normalizeTags, normalizeTagFilters } from './normalizeTags.js';
+
+const getRecordNormalizedTags = (record) => {
+  if (!record) return [];
+  if (Array.isArray(record.__normalizedTags)) return record.__normalizedTags;
+  const tags = normalizeTags(record?.raw?.data?.meta?.tags || []);
+  record.__normalizedTags = tags;
+  return tags;
+};
 
 class EventDB {
   constructor() {
@@ -14,6 +23,8 @@ class EventDB {
   // Helper method to transform a raw SSE event into a flattened record.
   transformEvent(event) {
     const { id, data, operation_id } = event;
+    const normalizedTags = normalizeTags(data?.meta?.tags || []);
+
     return {
       id,
       time: data.request.timestamp,
@@ -25,7 +36,9 @@ class EventDB {
       client_ip: data.request.client_ip,
       duration: data.timing.duration,
       status_code: data.response?.status,
-      raw: event
+      raw: event,
+      tagTokens: normalizedTags.map((tag) => tag.token),
+      tags: normalizedTags.map((tag) => tag.display)
     };
   }
 
@@ -69,7 +82,8 @@ class EventDB {
         filters.path ||
         filters.durationMin ||
         filters.durationMax ||
-        filters.host
+        filters.host ||
+        (filters.tags && filters.tags.length)
     );
 
     // --- Fast path: no filters → direct index count & page fetch ---
@@ -205,6 +219,21 @@ class EventDB {
       );
     }
 
+    // --- Filter on Tags ---
+    if (filters.tags && Array.isArray(filters.tags) && filters.tags.length > 0) {
+      const normalizedFilterTokens = normalizeTagFilters(filters.tags);
+      if (normalizedFilterTokens.length > 0) {
+        collection = collection.filter((item) => {
+          const recordTokens =
+            Array.isArray(item.tagTokens) && item.tagTokens.length > 0
+              ? item.tagTokens
+              : getRecordNormalizedTags(item).map((tag) => tag.token);
+          if (!recordTokens || recordTokens.length === 0) return false;
+          return normalizedFilterTokens.every((token) => recordTokens.includes(token));
+        });
+      }
+    }
+
     // Count result after filtering
     const totalCount = await collection.count();
 
@@ -263,6 +292,20 @@ class EventDB {
   // Clear all stored events.
   async clearEvents() {
     return await this.db.events.clear();
+  }
+
+  async getAllTagOptions() {
+    const records = await this.db.events.toArray();
+    const tagMap = new Map();
+    records.forEach((record) => {
+      const tags = getRecordNormalizedTags(record);
+      tags.forEach((tag) => {
+        if (!tagMap.has(tag.token)) {
+          tagMap.set(tag.token, tag.display);
+        }
+      });
+    });
+    return Array.from(tagMap.values()).sort((a, b) => a.localeCompare(b));
   }
 }
 

@@ -87,6 +87,7 @@ const UsageApp = () => {
     return false;
   })();
 
+  // MCP License & usage derived data
   const licenseLimit = (() => {
     const m = license?.features?.mcp;
     if (!m) return null;
@@ -125,6 +126,48 @@ const UsageApp = () => {
         ? mcpTotals.requests
         : 0;
   const mcpPercent = usageLimit ? Math.min(100, (mcpUsed / usageLimit) * 100) : 0;
+
+  // Rules License & usage derived data
+  const licenseRules = license?.features?.rules;
+  const usageRules = license?.usage?.features?.rules;
+  const rulesLimit = (() => {
+    const r = licenseRules;
+    if (!r) return null;
+    if (r.unlimited === true) return null;
+    if (typeof r.effective_limit === 'number') return r.effective_limit;
+    if (typeof r.default_limit === 'number') return r.default_limit;
+    return null;
+  })();
+  const rulesWindowText = (() => {
+    const w = usageRules?.window || licenseRules?.window;
+    if (!w) return null;
+    return w.charAt(0).toUpperCase() + w.slice(1);
+  })();
+  const rulesPeriodText = (() => {
+    const iso = usageRules?.period_start || licenseRules?.period_start;
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d)) return null;
+    return d.toISOString().slice(0, 10);
+  })();
+  const rulesPeriodEndText = (() => {
+    const iso = usageRules?.period_end || licenseRules?.period_end;
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d)) return null;
+    return d.toISOString().slice(0, 10);
+  })();
+  const sumObjectValues = (obj) =>
+    Object.values(obj || {}).reduce((acc, v) => (typeof v === 'number' ? acc + v : acc), 0);
+  const rulesTotals = metrics?.generic?.totals?.rules || {};
+  const rulesMetrics = metrics?.rules || {};
+  const rulesUsed =
+    typeof rulesTotals.definitions === 'number'
+      ? rulesTotals.definitions
+      : typeof rulesMetrics.definitions_total === 'number'
+        ? rulesMetrics.definitions_total
+        : 0;
+  const rulesPercent = rulesLimit ? Math.min(100, (rulesUsed / rulesLimit) * 100) : 0;
   const planKey = (() => {
     const fromLicense = (license?.license?.plan || '').toString().toLowerCase();
     const fromMetrics = (mcp?.plan || '').toString().toLowerCase();
@@ -416,6 +459,85 @@ const UsageApp = () => {
             <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
               {connections.total_disconnections ?? 0}
             </p>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <div className="flex items-center gap-2">
+          <img
+            src={toolsIcon}
+            width={24}
+            height={24}
+            alt=""
+            aria-hidden="true"
+            className="inline-block"
+          />
+          <Title className="!mb-0">Rules</Title>
+        </div>
+
+        <Text className="mt-1 text-gray-500">Overview of Rules definitions and actions usage.</Text>
+
+        {rulesLimit !== null && (
+          <div className="mt-6">
+            <Text className="mb-2">Definitions usage</Text>
+            <ProgressBar value={rulesPercent} color="indigo" />
+            <Text className="mt-2">
+              {rulesUsed} of {rulesLimit} rules defined
+            </Text>
+            <Text className="mt-1 text-gray-500">
+              Limit is the maximum number of rule definitions. No monthly reset.
+            </Text>
+          </div>
+        )}
+
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                Rules executed
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {rulesTotals.actions_executed ?? rulesMetrics.actions_executed ?? 0}
+              </p>
+            </div>
+            <div>
+              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                Actions triggered
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {rulesTotals.actions_triggered ?? 0}
+              </p>
+            </div>
+            <div>
+              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                Historically operations processed
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {rulesTotals.apply_processed ?? 0}
+              </p>
+            </div>
+            <div>
+              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                Historically operations updated
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {rulesTotals.apply_updated ?? 0}
+              </p>
+            </div>
+          </div>
+
+          {/* Right column: Actions by type */}
+          <div>
+            <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong mb-2">
+              Actions by type
+            </h4>
+            <BarList
+              data={Object.entries(rulesMetrics.actions_by_type || {}).map(([name, value]) => ({
+                name,
+                value
+              }))}
+            />
           </div>
         </div>
       </Card>

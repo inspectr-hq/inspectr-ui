@@ -51,6 +51,7 @@ class InspectrClient {
     this.service = new ServiceClient(this);
     this.stats = new StatsClient(this);
     this.mock = new MockClient(this);
+    this.rules = new RulesClient(this);
   }
 
   /**
@@ -282,6 +283,195 @@ class OperationsClient {
 
     if (!res.ok) throw new Error(`Import failed (${res.status})`);
   }
+
+  /**
+   * List all tags observed across operations.
+   * Server endpoint: GET /operations/tags
+   * @returns {Promise<{tags: string[]}>}
+   */
+  async listTags() {
+    const res = await fetch(`${this.client.apiEndpoint}/operations/tags`, {
+      headers: this.client.defaultHeaders
+    });
+    if (!res.ok) throw new Error(`List tags failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Delete one or more tags from a specific operation.
+   * Server endpoint: DELETE /operations/{id}/tags
+   * Provide either a single tag via `tag` (string or string[]) and/or `tags` (string|string[])
+   * @param {string} id - Operation ID
+   * @param {Object} [options]
+   * @param {string|string[]} [options.tag] - Repeatable tag parameter; if array, sent multiple times
+   * @param {string|string[]} [options.tags] - Comma-separated list of tags; if array, joined with commas
+   * @returns {Promise<{message: string, removed_count: number, operation: object}>}
+   */
+  async deleteOperationTags(id, options = {}) {
+    if (!id) throw new Error('Operation id is required');
+    const qs = new URLSearchParams();
+
+    const appendRepeatable = (name, value) => {
+      if (Array.isArray(value)) {
+        value.forEach((v) => {
+          if (v !== undefined && v !== null && `${v}` !== '') qs.append(name, String(v));
+        });
+      } else if (value !== undefined && value !== null && `${value}` !== '') {
+        qs.append(name, String(value));
+      }
+    };
+
+    const setCommaSeparated = (name, value) => {
+      if (Array.isArray(value)) {
+        if (value.length) qs.set(name, value.join(','));
+      } else if (value !== undefined && value !== null && `${value}` !== '') {
+        qs.set(name, String(value));
+      }
+    };
+
+    appendRepeatable('tag', options.tag);
+    setCommaSeparated('tags', options.tags);
+
+    if (!qs.has('tag') && !qs.has('tags')) {
+      throw new Error('At least one tag must be provided via options.tag or options.tags');
+    }
+
+    const url = `${this.client.apiEndpoint}/operations/${encodeURIComponent(id)}/tags`;
+    const res = await fetch(`${url}?${qs.toString()}`, {
+      method: 'DELETE',
+      headers: this.client.defaultHeaders
+    });
+
+    if (!res.ok) throw new Error(`Delete operation tags failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Delete a specific tag across operations (persisting changes; no dry-run).
+   * Server endpoint: DELETE /operations/tags/{tag}
+   * Optional filters are supported.
+   * @param {string} tag - The tag to remove
+   * @param {Object} [options]
+   * @param {string|Date} [options.since]
+   * @param {string|Date} [options.until]
+   * @param {string} [options.method]
+   * @param {string} [options.path]
+   * @param {string} [options.host]
+   * @param {string[]} [options.tagsAll]
+   * @param {string[]} [options.tagsAny]
+   * @param {number[]|string[]} [options.statuses]
+   * @param {number} [options.limit]
+   * @param {number} [options.pageSize]
+   * @returns {Promise<Object>} Result payload from the server
+   */
+  async deleteTag(tag, options = {}) {
+    if (!tag) throw new Error('tag is required');
+
+    const qs = new URLSearchParams();
+    const toRFC3339 = (v) => {
+      if (!v) return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return v;
+    };
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0)) return;
+      qs.set(k, Array.isArray(v) ? v.join(',') : String(v));
+    };
+
+    add('since', toRFC3339(options.since));
+    add('until', toRFC3339(options.until));
+    add('method', options.method);
+    add('path', options.path);
+    add('host', options.host);
+
+    if (Array.isArray(options.tagsAll) && options.tagsAll.length) {
+      add('tags_all', options.tagsAll);
+    }
+    if (Array.isArray(options.tagsAny) && options.tagsAny.length) {
+      add('tags_any', options.tagsAny);
+    }
+    if (Array.isArray(options.statuses) && options.statuses.length) {
+      add('statuses', options.statuses);
+    }
+    add('limit', options.limit);
+    add('page_size', options.pageSize);
+
+    const url = `${this.client.apiEndpoint}/operations/tags/${encodeURIComponent(tag)}`;
+    const res = await fetch(`${url}${qs.toString() ? '?' + qs.toString() : ''}`, {
+      method: 'DELETE',
+      headers: this.client.defaultHeaders
+    });
+
+    if (!res.ok) throw new Error(`Delete tag failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Bulk delete a tag from operations with optional dry-run.
+   * Server endpoint: POST /operations/tags/bulk-delete
+   * @param {Object} options
+   * @param {string} options.tag - Tag to remove (required)
+   * @param {string|Date} [options.since]
+   * @param {string|Date} [options.until]
+   * @param {string} [options.method]
+   * @param {string} [options.path]
+   * @param {string} [options.host]
+   * @param {string[]} [options.tagsAll]
+   * @param {string[]} [options.tagsAny]
+   * @param {number[]|string[]} [options.statuses]
+   * @param {number} [options.limit]
+   * @param {number} [options.pageSize]
+   * @param {boolean} [options.dryRun=true] - If true, performs dry-run without persisting changes
+   * @returns {Promise<Object>} Result payload from the server
+   */
+  async bulkDeleteTag(options = {}) {
+    const { tag } = options;
+    if (!tag) throw new Error('options.tag is required');
+
+    const qs = new URLSearchParams();
+    const toRFC3339 = (v) => {
+      if (!v) return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return v;
+    };
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0)) return;
+      qs.set(k, Array.isArray(v) ? v.join(',') : String(v));
+    };
+
+    add('tag', tag);
+    add('since', toRFC3339(options.since));
+    add('until', toRFC3339(options.until));
+    add('method', options.method);
+    add('path', options.path);
+    add('host', options.host);
+
+    if (Array.isArray(options.tagsAll) && options.tagsAll.length) {
+      add('tags_all', options.tagsAll);
+    }
+    if (Array.isArray(options.tagsAny) && options.tagsAny.length) {
+      add('tags_any', options.tagsAny);
+    }
+    if (Array.isArray(options.statuses) && options.statuses.length) {
+      add('statuses', options.statuses);
+    }
+    add('limit', options.limit);
+    add('page_size', options.pageSize);
+
+    // dry_run defaults to true on the server; include only if explicitly provided
+    if (options.dryRun !== undefined && options.dryRun !== null) {
+      add('dry_run', options.dryRun ? 'true' : 'false');
+    }
+
+    const url = `${this.client.apiEndpoint}/operations/tags/bulk-delete`;
+    const res = await fetch(`${url}?${qs.toString()}`, {
+      method: 'POST',
+      headers: this.client.defaultHeaders
+    });
+
+    if (!res.ok) throw new Error(`Bulk delete tag failed (${res.status})`);
+    return await res.json();
+  }
 }
 
 /**
@@ -471,6 +661,206 @@ class MockClient {
       throw new Error(body.error || `Mock launch failed (${res.status})`);
     }
     return await res.json();
+  }
+}
+
+/**
+ * RulesClient - Handles automation rule management
+ */
+class RulesClient {
+  constructor(client) {
+    this.client = client;
+  }
+
+  /**
+   * Apply a rule to historical operations with optional filters.
+   * Server endpoint: POST /api/rules/{id}/apply
+   *
+   * @param {string} id - Rule ID
+   * @param {Object} [options] - Filtering and execution options
+   * @param {string|Date} [options.since] - RFC3339 timestamp or Date to filter operations starting from this time
+   * @param {string|Date} [options.until] - RFC3339 timestamp or Date to filter operations up to this time
+   * @param {string} [options.method]
+   * @param {string} [options.path]
+   * @param {string} [options.host]
+   * @param {string[]} [options.tagsAll]
+   * @param {string[]} [options.tagsAny]
+   * @param {number[]} [options.statuses]
+   * @param {number} [options.limit]
+   * @param {number} [options.pageSize]
+   * @param {boolean} [options.dryRun=true] - If true, actions are not executed; only a preview/result is returned
+   * @returns {Promise<Object>} Result payload from the server
+   */
+  async applyToHistory(id, options = {}) {
+    if (!id) throw new Error('Rule id is required');
+
+    const qs = new URLSearchParams();
+    const toRFC3339 = (v) => {
+      if (!v) return undefined;
+      if (v instanceof Date) return v.toISOString();
+      // assume already RFC3339 or ISO 8601 string
+      return v;
+    };
+
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '') return;
+      qs.set(k, String(v));
+    };
+
+    add('since', toRFC3339(options.since));
+    add('until', toRFC3339(options.until));
+    add('method', options.method);
+    add('path', options.path);
+    add('host', options.host);
+
+    if (Array.isArray(options.tagsAll) && options.tagsAll.length) {
+      add('tags_all', options.tagsAll.join(','));
+    }
+    if (Array.isArray(options.tagsAny) && options.tagsAny.length) {
+      add('tags_any', options.tagsAny.join(','));
+    }
+    if (Array.isArray(options.statuses) && options.statuses.length) {
+      add('statuses', options.statuses.join(','));
+    }
+
+    if (typeof options.limit === 'number') add('limit', options.limit);
+    if (typeof options.pageSize === 'number') add('page_size', options.pageSize);
+
+    // default dryRun to true unless explicitly false
+    const dryRun = options.dryRun !== false;
+    add('dry_run', dryRun);
+
+    const url =
+      `${this.client.apiEndpoint}/rules/${encodeURIComponent(id)}/apply` +
+      (qs.toString() ? `?${qs.toString()}` : '');
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) {
+      let errorBody = {};
+      try {
+        errorBody = await res.json();
+      } catch (e) {}
+      const message = errorBody?.error || errorBody?.message || `Apply rule failed (${res.status})`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.body = errorBody;
+      throw err;
+    }
+
+    return await res.json();
+  }
+
+  async list() {
+    const res = await fetch(`${this.client.apiEndpoint}/rules`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Rules load failed (${res.status})`);
+    return await res.json();
+  }
+
+  async create(body) {
+    const res = await fetch(`${this.client.apiEndpoint}/rules`, {
+      method: 'POST',
+      headers: this.client.jsonHeaders,
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => ({}));
+      const message =
+        errorBody?.error || errorBody?.message || `Rule create failed (${res.status})`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.body = errorBody;
+      throw err;
+    }
+
+    return await res.json();
+  }
+
+  async get(id) {
+    const res = await fetch(`${this.client.apiEndpoint}/rules/${id}`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Rule load failed (${res.status})`);
+    return await res.json();
+  }
+
+  async replace(id, body) {
+    const res = await fetch(`${this.client.apiEndpoint}/rules/${id}`, {
+      method: 'PUT',
+      headers: this.client.jsonHeaders,
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => ({}));
+      const message =
+        errorBody?.error || errorBody?.message || `Rule update failed (${res.status})`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.body = errorBody;
+      throw err;
+    }
+
+    return await res.json();
+  }
+
+  async delete(id) {
+    const res = await fetch(`${this.client.apiEndpoint}/rules/${id}`, {
+      method: 'DELETE',
+      headers: this.client.defaultHeaders
+    });
+
+    if (!(res.ok || res.status === 204)) {
+      const errorBody = await res.json().catch(() => ({}));
+      const message =
+        errorBody?.error || errorBody?.message || `Rule delete failed (${res.status})`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.body = errorBody;
+      throw err;
+    }
+  }
+
+  async update(id, body) {
+    return this.replace(id, body);
+  }
+
+  async getEvents() {
+    const res = await fetch(`${this.client.apiEndpoint}/rules/events`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Rules events failed (${res.status})`);
+    return await res.json();
+  }
+
+  async getActions() {
+    const res = await fetch(`${this.client.apiEndpoint}/rules/actions`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Rules actions failed (${res.status})`);
+    return await res.json();
+  }
+
+  async getOperators() {
+    const res = await fetch(`${this.client.apiEndpoint}/rules/operators`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Rules operators failed (${res.status})`);
+    const payload = await res.json();
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.operators)) return payload.operators;
+    return [];
   }
 }
 
