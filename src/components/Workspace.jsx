@@ -255,10 +255,17 @@ const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
         ? 'red'
         : 'orange';
 
+  const handleClick = () => {
+    // Reset unread counter immediately when navigating to Request History
+    const ts = latestEventTime || new Date().toISOString();
+    setLastSeenAt(ts);
+    if (onClick) onClick();
+  };
+
   return (
     <button
       key={navItem.slug}
-      onClick={onClick}
+      onClick={handleClick}
       className={classNames(
         isActive
           ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
