@@ -77,7 +77,7 @@ export default function RuleExportDialog({ open, rule, onClose }) {
               {error}
             </div>
           )}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-end">
             <button
               type="button"
               onClick={handleDownload}

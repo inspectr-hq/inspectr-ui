@@ -8,7 +8,7 @@ export default function RuleImportDialog({ open, onCancel, onImport, onImported 
   const [file, setFile] = useState(null);
   const [error, setError] = useState('');
   const [importing, setImporting] = useState(false);
-  const [overwrite, setOverwrite] = useState(true);
+  const [overwrite, setOverwrite] = useState(false);
 
   useEffect(() => {
     if (!open) {
