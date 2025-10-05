@@ -39,3 +39,4 @@ export { default as SettingsInspectr } from './SettingsInspectr.jsx';
 export { default as SettingsMock } from './SettingsMock.jsx';
 export { default as SettingsGuard } from './SettingsGuard.jsx';
 export { default as SettingsFeaturePreviews } from './SettingsFeaturePreviews.jsx';
+export { default as SettingsConnector } from './SettingsConnector.jsx';

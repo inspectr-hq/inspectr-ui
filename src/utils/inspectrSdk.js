@@ -52,6 +52,7 @@ class InspectrClient {
     this.stats = new StatsClient(this);
     this.mock = new MockClient(this);
     this.rules = new RulesClient(this);
+    this.connectors = new ConnectorsClient(this);
   }
 
   /**
@@ -955,6 +956,89 @@ class RulesClient {
     if (Array.isArray(payload)) return payload;
     if (payload && Array.isArray(payload.operators)) return payload.operators;
     return [];
+  }
+}
+
+/**
+ * ConnectorsClient - Manage external connectors
+ */
+class ConnectorsClient {
+  constructor(client) {
+    this.client = client;
+  }
+
+  // List connectors
+  async list() {
+    const res = await fetch(`${this.client.apiEndpoint}/connectors`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+    if (!res.ok) throw new Error(`Connectors list failed (${res.status})`);
+    return await res.json();
+  }
+
+  // Create connector
+  async create(body) {
+    const res = await fetch(`${this.client.apiEndpoint}/connectors`, {
+      method: 'POST',
+      headers: this.client.jsonHeaders,
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => ({}));
+      const message =
+        errorBody?.error || errorBody?.message || `Connector create failed (${res.status})`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.body = errorBody;
+      throw err;
+    }
+    return await res.json();
+  }
+
+  // Get a single connector
+  async get(id) {
+    const res = await fetch(`${this.client.apiEndpoint}/connectors/${encodeURIComponent(id)}`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+    if (!res.ok) throw new Error(`Connector load failed (${res.status})`);
+    return await res.json();
+  }
+
+  // Update/replace a connector
+  async update(id, body) {
+    const res = await fetch(`${this.client.apiEndpoint}/connectors/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: this.client.jsonHeaders,
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => ({}));
+      const message =
+        errorBody?.error || errorBody?.message || `Connector update failed (${res.status})`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.body = errorBody;
+      throw err;
+    }
+    return await res.json();
+  }
+
+  // Delete a connector
+  async delete(id) {
+    const res = await fetch(`${this.client.apiEndpoint}/connectors/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: this.client.defaultHeaders
+    });
+
+    if (!(res.ok || res.status === 204)) {
+      const errorBody = await res.json().catch(() => ({}));
+      const message =
+        errorBody?.error || errorBody?.message || `Connector delete failed (${res.status})`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.body = errorBody;
+      throw err;
+    }
   }
 }
 
