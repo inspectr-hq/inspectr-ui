@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Divider } from '@tremor/react';
 import { useInspectr } from '../context/InspectrContext';
 import DialogConnectorForm from './DialogConnectorForm.jsx';
+import BadgeIndicator from './BadgeIndicator.jsx';
 
 const normalizeConnectors = (payload) => {
   if (!payload) return [];
@@ -67,7 +68,7 @@ const ActionsList = ({ actions }) => {
               <p className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
                 Parameters
               </p>
-              <ul className="list-disc pl-5 mt-1 space-y-1">
+              <ul className="mt-1 space-y-1 list-disc pl-5">
                 {action.params.map((param) => (
                   <li key={param?.name || param?.type}>
                     <span className="font-medium">{param?.name}</span>
@@ -254,6 +255,7 @@ export default function SettingsConnector() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('create');
   const [activeRecord, setActiveRecord] = useState(null);
+  const [updatingId, setUpdatingId] = useState(null);
 
   const fetchConnectors = useCallback(async () => {
     try {
@@ -299,6 +301,7 @@ export default function SettingsConnector() {
     );
     if (!confirmed) return;
     try {
+      setUpdatingId(record.id);
       await client.connectors.delete(record.id);
       setToast?.({ message: 'Connector deleted', type: 'success' });
       if (expandedId === record.id) {
@@ -308,6 +311,8 @@ export default function SettingsConnector() {
     } catch (err) {
       console.error('Connector delete error', err);
       setToast?.({ type: 'error', message: err?.message || 'Failed to delete connector' });
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -322,6 +327,35 @@ export default function SettingsConnector() {
     setToast?.({ message: 'Connector created', type: 'success' });
     fetchConnectors();
     return created;
+  };
+
+  const handleToggleEnabled = async (connector) => {
+    const record = connector?.record;
+    if (!record?.id) return;
+    setUpdatingId(record.id);
+    try {
+      const body = {
+        name: record.name,
+        server_url: record.server_url,
+        description: record.description,
+        enabled: !record.enabled,
+        headers: record.headers || {}
+      };
+      await client.connectors.update(record.id, body);
+      setToast?.({
+        message: `Connector ${record.enabled ? 'disabled' : 'enabled'}`,
+        type: 'success'
+      });
+      fetchConnectors();
+    } catch (err) {
+      console.error('Connector toggle error', err);
+      setToast?.({
+        type: 'error',
+        message: err?.message || 'Failed to update connector status'
+      });
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   const hasConnectors = connectors.length > 0;
@@ -363,28 +397,46 @@ export default function SettingsConnector() {
           )}
           {!loading && !error && hasConnectors && (
             <div className="space-y-4">
-              {connectors.map((connector) => {
+              {connectors.map((connector, index) => {
                 const record = connector?.record || {};
-                const id = record.id || record.name;
+                const id = record.id || record.name || `connector-${index}`;
+                const isBusy = updatingId === record.id;
                 return (
                   <div
                     key={id}
                     className="rounded-lg border border-tremor-border bg-white p-4 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
+                      <div className="flex flex-col gap-2">
                         <p className="text-base font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
                           {record.name || 'Unnamed connector'}
                         </p>
-                        <p className="mt-1 text-sm text-tremor-content dark:text-dark-tremor-content">
+                        <p className="text-sm text-tremor-content dark:text-dark-tremor-content">
                           {record.description || 'No description provided.'}
                         </p>
-                        <p className="mt-2 text-xs uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content-subtle">
-                          {record.base_url}
+                        <p className="text-xs uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content-subtle">
+                          {record.server_url || '—'}
                         </p>
-                        <p className="mt-1 text-xs text-tremor-content dark:text-dark-tremor-content">
-                          Status: {record.enabled ? 'Enabled' : 'Disabled'}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-tremor-content dark:text-dark-tremor-content">
+                          <div className="flex items-center gap-2">
+                            <span>Status</span>
+                            <BadgeIndicator variant={record.enabled ? 'success' : 'neutral'}>
+                              {record.enabled ? 'Enabled' : 'Disabled'}
+                            </BadgeIndicator>
+                          </div>
+                          <label className="inline-flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(record.enabled)}
+                              onChange={() => handleToggleEnabled(connector)}
+                              disabled={isBusy}
+                              className="h-4 w-4 rounded border-gray-300 text-tremor-brand focus:ring-tremor-brand"
+                            />
+                            <span className="font-medium">
+                              {record.enabled ? 'Disable' : 'Enable'}
+                            </span>
+                          </label>
+                        </div>
                       </div>
                       <div className="flex gap-2 self-start">
                         <button
@@ -392,21 +444,24 @@ export default function SettingsConnector() {
                           onClick={() =>
                             setExpandedId((prev) => (prev === record.id ? null : record.id))
                           }
-                          className="rounded-md border border-tremor-border px-3 py-2 text-sm font-medium text-tremor-content hover:bg-tremor-background-muted dark:border-dark-tremor-border dark:text-dark-tremor-content dark:hover:bg-dark-tremor-background-muted"
+                          className="rounded-md border border-tremor-border px-3 py-2 text-sm font-medium text-tremor-content hover:bg-tremor-background-muted dark:border-dark-tremor-border dark:text-dark-tremor-content dark:hover:bg-dark-tremor-background-muted disabled:cursor-not-allowed disabled:opacity-70"
+                          disabled={isBusy}
                         >
                           {expandedId === record.id ? 'Hide details' : 'Show details'}
                         </button>
                         <button
                           type="button"
                           onClick={() => handleEdit(connector)}
-                          className="rounded-md border border-tremor-border px-3 py-2 text-sm font-medium text-tremor-content hover:bg-tremor-background-muted dark:border-dark-tremor-border dark:text-dark-tremor-content dark:hover:bg-dark-tremor-background-muted"
+                          className="rounded-md border border-tremor-border px-3 py-2 text-sm font-medium text-tremor-content hover:bg-tremor-background-muted dark:border-dark-tremor-border dark:text-dark-tremor-content dark:hover:bg-dark-tremor-background-muted disabled:cursor-not-allowed disabled:opacity-70"
+                          disabled={isBusy}
                         >
                           Edit
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(connector)}
-                          className="rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                          className="rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
+                          disabled={isBusy}
                         >
                           Delete
                         </button>

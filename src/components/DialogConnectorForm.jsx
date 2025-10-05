@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 const defaultFormState = {
   name: '',
-  base_url: '',
+  server_url: '',
   description: '',
   enabled: true,
   headers: {}
@@ -26,6 +26,49 @@ const pairsToHeaders = (pairs) => {
   }, {});
 };
 
+const extractAuthFromHeaders = (headers = {}) => {
+  const entries = Object.entries(headers || {});
+  if (entries.length === 0) {
+    return {
+      authName: 'Authorization',
+      authToken: '',
+      restHeaders: {}
+    };
+  }
+
+  const lowered = entries.map(([key, value]) => [key, value, key.toLowerCase()]);
+  let authEntry = lowered.find(([, , lowerKey]) => lowerKey === 'authorization');
+  if (!authEntry) {
+    authEntry = lowered.find(
+      ([, value]) => typeof value === 'string' && /^\s*Bearer\s+/i.test(value)
+    );
+  }
+
+  if (!authEntry) {
+    return {
+      authName: 'Authorization',
+      authToken: '',
+      restHeaders: headers
+    };
+  }
+
+  const [key, value] = authEntry;
+  const token =
+    typeof value === 'string' ? value.replace(/^\s*Bearer\s+/i, '') : String(value ?? '');
+  const restHeaders = entries
+    .filter(([entryKey]) => entryKey !== key)
+    .reduce((acc, [entryKey, entryValue]) => {
+      acc[entryKey] = entryValue;
+      return acc;
+    }, {});
+
+  return {
+    authName: key,
+    authToken: token,
+    restHeaders
+  };
+};
+
 export default function DialogConnectorForm({
   open,
   mode = 'create',
@@ -34,30 +77,38 @@ export default function DialogConnectorForm({
   onSubmit
 }) {
   const [name, setName] = useState(initialData.name || '');
-  const [baseUrl, setBaseUrl] = useState(initialData.base_url || '');
+  const [serverUrl, setServerUrl] = useState(initialData.server_url || '');
   const [description, setDescription] = useState(initialData.description || '');
   const [enabled, setEnabled] = useState(
     typeof initialData.enabled === 'boolean' ? initialData.enabled : true
   );
   const [headerPairs, setHeaderPairs] = useState(headersToPairs(initialData.headers));
+  const [authHeaderName, setAuthHeaderName] = useState('Authorization');
+  const [authBearerToken, setAuthBearerToken] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (open) {
       setName(initialData.name || '');
-      setBaseUrl(initialData.base_url || '');
+      setServerUrl(initialData.server_url || '');
       setDescription(initialData.description || '');
       setEnabled(typeof initialData.enabled === 'boolean' ? initialData.enabled : true);
-      setHeaderPairs(headersToPairs(initialData.headers));
+      const { authName, authToken, restHeaders } = extractAuthFromHeaders(initialData.headers);
+      setAuthHeaderName(authName || 'Authorization');
+      setAuthBearerToken(authToken || '');
+      setHeaderPairs(headersToPairs(restHeaders));
+      const hasAdditionalHeaders = Object.keys(restHeaders || {}).length > 0;
+      setShowAdvanced(Boolean(authToken) || hasAdditionalHeaders);
       setError(null);
       setSaving(false);
     }
   }, [open, initialData]);
 
   const isDisabled = useMemo(() => {
-    return saving || !name.trim() || !baseUrl.trim();
-  }, [saving, name, baseUrl]);
+    return saving || !name.trim() || !serverUrl.trim();
+  }, [saving, name, serverUrl]);
 
   if (!open) return null;
 
@@ -87,11 +138,19 @@ export default function DialogConnectorForm({
     try {
       const payload = {
         name: name.trim(),
-        base_url: baseUrl.trim(),
+        server_url: serverUrl.trim(),
         description: description.trim(),
-        enabled: Boolean(enabled),
-        headers: pairsToHeaders(headerPairs)
+        enabled: Boolean(enabled)
       };
+      const headers = pairsToHeaders(headerPairs);
+      const trimmedAuthName = authHeaderName.trim();
+      const trimmedToken = authBearerToken.trim();
+      if (trimmedAuthName && trimmedToken) {
+        headers[trimmedAuthName] = /^Bearer\s+/i.test(trimmedToken)
+          ? trimmedToken
+          : `Bearer ${trimmedToken}`;
+      }
+      payload.headers = headers;
       await onSubmit(payload);
       onClose();
     } catch (err) {
@@ -100,6 +159,8 @@ export default function DialogConnectorForm({
       setSaving(false);
     }
   };
+
+  const handleToggleAdvanced = () => setShowAdvanced((prev) => !prev);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -138,14 +199,17 @@ export default function DialogConnectorForm({
             />
           </div>
           <div>
-            <label htmlFor="connector-base-url" className="block text-sm font-medium text-gray-700">
-              Base URL
+            <label
+              htmlFor="connector-server-url"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Server URL
             </label>
             <input
-              id="connector-base-url"
+              id="connector-server-url"
               type="url"
-              value={baseUrl}
-              onChange={(event) => setBaseUrl(event.target.value)}
+              value={serverUrl}
+              onChange={(event) => setServerUrl(event.target.value)}
               disabled={saving}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-tremor-brand focus:outline-none focus:ring-1 focus:ring-tremor-brand"
               placeholder="http://localhost:3100"
@@ -182,47 +246,104 @@ export default function DialogConnectorForm({
             </label>
           </div>
           <div>
-            <div className="flex items-center justify-between">
-              <span className="block text-sm font-medium text-gray-700">Headers</span>
-              <button
-                type="button"
-                onClick={addHeaderPair}
-                disabled={saving}
-                className="text-sm font-medium text-tremor-brand hover:text-tremor-brand-emphasis"
-              >
-                Add header
-              </button>
-            </div>
-            <div className="mt-2 space-y-2">
-              {headerPairs.map((pair, index) => (
-                <div key={index} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-                  <input
-                    type="text"
-                    value={pair.key}
-                    onChange={(event) => updateHeaderPair(index, 'key', event.target.value)}
-                    placeholder="Header name"
-                    disabled={saving}
-                    className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-tremor-brand focus:outline-none focus:ring-1 focus:ring-tremor-brand"
-                  />
-                  <input
-                    type="text"
-                    value={pair.value}
-                    onChange={(event) => updateHeaderPair(index, 'value', event.target.value)}
-                    placeholder="Header value"
-                    disabled={saving}
-                    className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-tremor-brand focus:outline-none focus:ring-1 focus:ring-tremor-brand"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeHeaderPair(index)}
-                    disabled={saving}
-                    className="text-sm text-red-600 hover:text-red-700"
-                  >
-                    Remove
-                  </button>
+            <button
+              type="button"
+              onClick={handleToggleAdvanced}
+              className="text-sm font-medium text-tremor-brand hover:text-tremor-brand-emphasis"
+              disabled={saving}
+            >
+              {showAdvanced ? 'Hide authentication & headers' : 'Show authentication & headers'}
+            </button>
+            {showAdvanced && (
+              <div className="mt-3 space-y-4 rounded-lg border border-tremor-border bg-tremor-background-muted p-4 dark:border-dark-tremor-border dark:bg-dark-tremor-background">
+                <div>
+                  <p className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                    API Token Authentication
+                  </p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label
+                        htmlFor="connector-auth-header"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Header Name
+                      </label>
+                      <input
+                        id="connector-auth-header"
+                        type="text"
+                        value={authHeaderName}
+                        onChange={(event) => setAuthHeaderName(event.target.value)}
+                        disabled={saving}
+                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-tremor-brand focus:outline-none focus:ring-1 focus:ring-tremor-brand"
+                        placeholder="Authorization"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="connector-auth-token"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Bearer Token
+                      </label>
+                      <input
+                        id="connector-auth-token"
+                        type="text"
+                        value={authBearerToken}
+                        onChange={(event) => setAuthBearerToken(event.target.value)}
+                        disabled={saving}
+                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-tremor-brand focus:outline-none focus:ring-1 focus:ring-tremor-brand"
+                        placeholder="Bearer Token"
+                      />
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="block text-sm font-medium text-gray-700">
+                      Additional Headers
+                    </span>
+                    <button
+                      type="button"
+                      onClick={addHeaderPair}
+                      disabled={saving}
+                      className="text-sm font-medium text-tremor-brand hover:text-tremor-brand-emphasis"
+                    >
+                      Add header
+                    </button>
+                  </div>
+                  <div className="mt-2 space-y-2">
+                    {headerPairs.map((pair, index) => (
+                      <div key={index} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                        <input
+                          type="text"
+                          value={pair.key}
+                          onChange={(event) => updateHeaderPair(index, 'key', event.target.value)}
+                          placeholder="Header name"
+                          disabled={saving}
+                          className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-tremor-brand focus:outline-none focus:ring-1 focus:ring-tremor-brand"
+                        />
+                        <input
+                          type="text"
+                          value={pair.value}
+                          onChange={(event) => updateHeaderPair(index, 'value', event.target.value)}
+                          placeholder="Header value"
+                          disabled={saving}
+                          className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-tremor-brand focus:outline-none focus:ring-1 focus:ring-tremor-brand"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeHeaderPair(index)}
+                          disabled={saving}
+                          className="text-sm text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
