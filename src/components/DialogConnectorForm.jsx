@@ -195,7 +195,7 @@ export default function DialogConnectorForm({
               onChange={(event) => setName(event.target.value)}
               disabled={saving}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-tremor-brand focus:outline-none focus:ring-1 focus:ring-tremor-brand"
-              placeholder="Example Connector"
+              placeholder="Custom Connector"
             />
           </div>
           <div>
@@ -220,16 +220,15 @@ export default function DialogConnectorForm({
               htmlFor="connector-description"
               className="block text-sm font-medium text-gray-700"
             >
-              Description
+              Description <span className={'text-xs text-gray-300'}>(optional)</span>
             </label>
-            <textarea
+            <input
               id="connector-description"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              rows={3}
               disabled={saving}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-tremor-brand focus:outline-none focus:ring-1 focus:ring-tremor-brand"
-              placeholder="Notify in a Slack channel"
+              placeholder="A custom connector for integrating with Inspectr Rules."
             />
           </div>
           <div className="flex items-center space-x-2">
@@ -252,7 +251,9 @@ export default function DialogConnectorForm({
               className="text-sm font-medium text-tremor-brand hover:text-tremor-brand-emphasis"
               disabled={saving}
             >
-              {showAdvanced ? 'Hide authentication & headers' : 'Show authentication & headers'}
+              {showAdvanced
+                ? 'Configure authentication & headers'
+                : 'Configure authentication & headers'}
             </button>
             {showAdvanced && (
               <div className="mt-3 space-y-4 rounded-lg border border-tremor-border bg-tremor-background-muted p-4 dark:border-dark-tremor-border dark:bg-dark-tremor-background">
