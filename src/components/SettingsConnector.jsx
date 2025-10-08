@@ -5,6 +5,7 @@ import { Disclosure, Switch } from '@headlessui/react';
 import { useInspectr } from '../context/InspectrContext';
 import DialogConnectorForm from './DialogConnectorForm.jsx';
 import BadgeIndicator from './BadgeIndicator.jsx';
+import RuleDeleteDialog from './RuleDeleteDialog.jsx';
 import { Tooltip } from './ToolTip.jsx';
 import { cx } from '../utils/cx.js';
 
@@ -287,6 +288,9 @@ export default function SettingsConnector() {
   const [modalMode, setModalMode] = useState('create');
   const [activeRecord, setActiveRecord] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
+  const [connectorPendingDelete, setConnectorPendingDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const fetchConnectors = useCallback(async () => {
     try {
@@ -324,27 +328,40 @@ export default function SettingsConnector() {
     setModalOpen(true);
   };
 
-  const handleDelete = async (connector) => {
+  const handleRequestDelete = (connector) => {
     const record = connector?.record;
     if (!record?.id) return;
-    const confirmed = window.confirm(
-      `Delete connector "${record.name || record.id}"? This action cannot be undone.`
-    );
-    if (!confirmed) return;
+    setConnectorPendingDelete(record);
+    setDeleteError('');
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!connectorPendingDelete?.id) return;
+    setIsDeleting(true);
+    setDeleteError('');
+    setUpdatingId(connectorPendingDelete.id);
     try {
-      setUpdatingId(record.id);
-      await client.connectors.delete(record.id);
+      await client.connectors.delete(connectorPendingDelete.id);
       setToast?.({ message: 'Connector deleted', type: 'success' });
-      if (expandedId === record.id) {
+      if (expandedId === connectorPendingDelete.id) {
         setExpandedId(null);
       }
+      setConnectorPendingDelete(null);
       fetchConnectors();
     } catch (err) {
       console.error('Connector delete error', err);
       setToast?.({ type: 'error', message: err?.message || 'Failed to delete connector' });
+      setDeleteError(err?.message || 'Failed to delete connector');
     } finally {
+      setIsDeleting(false);
       setUpdatingId(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    if (isDeleting) return;
+    setConnectorPendingDelete(null);
+    setDeleteError('');
   };
 
   const handleSubmit = async (payload) => {
@@ -515,7 +532,7 @@ export default function SettingsConnector() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDelete(connector)}
+                          onClick={() => handleRequestDelete(connector)}
                           className="rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
                           disabled={isBusy}
                         >
@@ -531,6 +548,26 @@ export default function SettingsConnector() {
           )}
         </div>
       </div>
+
+      <RuleDeleteDialog
+        open={Boolean(connectorPendingDelete)}
+        rule={connectorPendingDelete}
+        title="Delete connector?"
+        description={
+          <>
+            This will permanently remove{' '}
+            <span className="font-medium">
+              {connectorPendingDelete?.name || connectorPendingDelete?.id || 'this connector'}
+            </span>{' '}
+            and its configuration.
+          </>
+        }
+        confirmLabel="Delete Connector"
+        isDeleting={isDeleting}
+        error={deleteError}
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+      />
       <DialogConnectorForm
         open={modalOpen}
         mode={modalMode}
