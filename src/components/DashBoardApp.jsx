@@ -1,6 +1,6 @@
 // src/components/DashBoardApp.jsx
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Card, Select, SelectItem, Button } from '@tremor/react';
+import { Select, SelectItem, Button } from '@tremor/react';
 import { useInspectr } from '../context/InspectrContext';
 
 import DashBoardKpi from './DashBoardKpi.jsx';
@@ -10,6 +10,7 @@ import DashBoardBarList from './DashBoardBarList.jsx';
 import DashBoardDonutChart from './DashBoardDonutChart.jsx';
 import DialogConfirmClearAll from './DialogConfirmClearAll.jsx';
 import DashBoardPercentileChart from './DashBoardPercentileChart.jsx';
+import TagFilterDropdown from './TagFilterDropdown.jsx';
 
 function joinClassNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -159,6 +160,10 @@ export default function DashBoardApp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [group, setGroup] = useState('hour');
+  const [availableTags, setAvailableTags] = useState([]);
+  const [tagsLoading, setTagsLoading] = useState(false);
+  const [tagsError, setTagsError] = useState('');
+  const [selectedTag, setSelectedTag] = useState(null);
 
   // Date range
   const today = new Date();
@@ -181,7 +186,13 @@ export default function DashBoardApp() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Fetch statistics
-  const fetchStats = () => client.stats.getOperations({ group, start, end });
+  const fetchStats = () =>
+    client.stats.getOperations({
+      group,
+      start,
+      end,
+      tag: selectedTag || undefined
+    });
 
   // Handler for refresh button
   const handleLoadStats = async () => {
@@ -212,7 +223,42 @@ export default function DashBoardApp() {
   // Trigger fetching of statistics on component mount
   useEffect(() => {
     handleLoadStats();
-  }, [group, start, end]);
+  }, [group, start, end, selectedTag]);
+
+  useEffect(() => {
+    if (!client?.operations?.listTags) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setTagsLoading(true);
+        setTagsError('');
+        const response = await client.operations.listTags();
+        if (cancelled) return;
+        const list = Array.isArray(response?.tags) ? [...response.tags] : [];
+        list.sort((a, b) => a.localeCompare(b));
+        setAvailableTags(list);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('Failed to load tags', err);
+        setAvailableTags([]);
+        setTagsError(err?.message || 'Failed to load tags');
+      } finally {
+        if (!cancelled) {
+          setTagsLoading(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [client]);
+
+  useEffect(() => {
+    if (!selectedTag) return;
+    if (!availableTags.includes(selectedTag)) {
+      setSelectedTag(null);
+    }
+  }, [availableTags, selectedTag]);
 
   // Format dates in by_interval data for chart display
   const formattedIntervalData = useMemo(() => {
@@ -281,6 +327,14 @@ export default function DashBoardApp() {
                 onSelect={handleDateRangeSelect}
                 onCustomClick={handleCustomDateClick}
               />
+              <TagFilterDropdown
+                tags={availableTags}
+                selectedTag={selectedTag}
+                onSelect={setSelectedTag}
+                disabled={loading}
+                loading={tagsLoading}
+                error={tagsError}
+              />
               {/* Grouping Selectn */}
               <Select
                 className="w-full sm:w-fit [&>button]:rounded-tremor-small"
@@ -319,6 +373,11 @@ export default function DashBoardApp() {
                 </svg>
               </button>
             </div>
+            {tagsError && !tagsLoading ? (
+              <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                Tag filter unavailable: {tagsError}
+              </p>
+            ) : null}
 
             {/* Custom Date Range Picker - Absolutely positioned */}
             {showCustomDatePicker && (

@@ -596,8 +596,16 @@ class StatsClient {
    * @param {string} options.end - End date (ISO string)
    * @returns {Promise<Object>} - Statistics data
    */
-  async getOperations({ group, start, end }) {
-    const url = `${this.client.apiEndpoint}/stats/operations?group=${group}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
+  async getOperations({ group, start, end, tag }) {
+    const searchParams = new URLSearchParams({
+      group,
+      start,
+      end
+    });
+    if (tag) {
+      searchParams.append('tag', tag);
+    }
+    const url = `${this.client.apiEndpoint}/stats/operations?${searchParams.toString()}`;
 
     const res = await fetch(url, {
       headers: this.client.defaultHeaders
