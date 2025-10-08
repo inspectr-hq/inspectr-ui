@@ -1,7 +1,7 @@
-// src/components/RuleDeleteDialog.jsx
+// src/components/DialogDeleteConfirm.jsx
 import React from 'react';
 
-export default function RuleDeleteDialog({
+export default function DialogDeleteConfirm({
   open,
   rule,
   isDeleting,

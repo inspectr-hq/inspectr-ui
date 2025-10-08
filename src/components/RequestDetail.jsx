@@ -10,7 +10,7 @@ import { useInspectr } from '../context/InspectrContext';
 import { Tooltip } from './ToolTip.jsx';
 import AuthIndicator from './AuthIndicator.jsx';
 import { normalizeTags, normalizeTag } from '../utils/normalizeTags.js';
-import RuleDeleteDialog from './RuleDeleteDialog.jsx';
+import DialogDeleteConfirm from './DialogDeleteConfirm.jsx';
 import TagPill from './TagPill.jsx';
 
 const RequestDetail = ({ operation, setCurrentTab }) => {
@@ -390,7 +390,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
       )}
 
       {/* Confirm delete single tag dialog */}
-      <RuleDeleteDialog
+      <DialogDeleteConfirm
         open={Boolean(pendingTag)}
         isDeleting={isDeletingTag}
         error={deleteTagError}

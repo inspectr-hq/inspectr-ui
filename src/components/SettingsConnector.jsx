@@ -5,7 +5,7 @@ import { Disclosure, Switch } from '@headlessui/react';
 import { useInspectr } from '../context/InspectrContext';
 import DialogConnectorForm from './DialogConnectorForm.jsx';
 import BadgeIndicator from './BadgeIndicator.jsx';
-import RuleDeleteDialog from './RuleDeleteDialog.jsx';
+import DialogDeleteConfirm from './DialogDeleteConfirm.jsx';
 import { Tooltip } from './ToolTip.jsx';
 import { cx } from '../utils/cx.js';
 
@@ -549,7 +549,7 @@ export default function SettingsConnector() {
         </div>
       </div>
 
-      <RuleDeleteDialog
+      <DialogDeleteConfirm
         open={Boolean(connectorPendingDelete)}
         rule={connectorPendingDelete}
         title="Delete connector?"

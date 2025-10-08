@@ -1,7 +1,7 @@
 // src/components/OperationTagsPanel.jsx
 import React, { useEffect, useState } from 'react';
 import { useInspectr } from '../context/InspectrContext';
-import RuleDeleteDialog from './RuleDeleteDialog.jsx';
+import DialogDeleteConfirm from './DialogDeleteConfirm.jsx';
 import TagPill from './TagPill.jsx';
 
 export default function OperationTagsPanel({ onTagsUpdate }) {
@@ -189,7 +189,7 @@ export default function OperationTagsPanel({ onTagsUpdate }) {
         )}
       </div>
 
-      <RuleDeleteDialog
+      <DialogDeleteConfirm
         open={Boolean(pendingTag)}
         isDeleting={isDeleting}
         error={deleteError}

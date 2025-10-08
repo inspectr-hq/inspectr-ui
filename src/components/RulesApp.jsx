@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useInspectr } from '../context/InspectrContext';
 import RulesListPanel from './RulesListPanel.jsx';
 import RulesBuilderPanel from './RulesBuilderPanel.jsx';
-import RuleDeleteDialog from './RuleDeleteDialog.jsx';
+import DialogDeleteConfirm from './DialogDeleteConfirm.jsx';
 import RuleBuilderDialog from './RuleBuilderDialog.jsx';
 import RuleTemplateDialog from './RuleTemplateDialog.jsx';
 import RuleApplyHistoryDialog from './RuleApplyHistoryDialog.jsx';
@@ -985,7 +985,7 @@ export default function RulesApp() {
         </div>
       </div>
 
-      <RuleDeleteDialog
+      <DialogDeleteConfirm
         open={Boolean(rulePendingDelete)}
         rule={rulePendingDelete}
         isDeleting={isDeleting}
