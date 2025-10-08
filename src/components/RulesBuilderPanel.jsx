@@ -452,14 +452,19 @@ const RulesBuilderPanel = ({
             </div>
 
             {form.actions.map((action, index) => {
-              const definition = actionsCatalog.find((item) => item.type === action.type) || {
+              const matchedDefinition = actionsCatalog.find((item) => item.type === action.type);
+              const definition = matchedDefinition || {
                 params: []
               };
+              const isImpacted = !matchedDefinition && Boolean(action.type);
+              const cardClassName = [
+                'overflow-hidden rounded-lg border bg-white shadow-sm dark:bg-gray-900',
+                isImpacted
+                  ? 'border-amber-300 dark:border-amber-500/40'
+                  : 'border-gray-200 dark:border-gray-800'
+              ].join(' ');
               return (
-                <div
-                  key={action.id}
-                  className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
-                >
+                <div key={action.id} className={cardClassName}>
                   <div className="flex items-start gap-4 px-4 py-4">
                     <div className="flex flex-col items-center gap-2">
                       <span
@@ -504,6 +509,9 @@ const RulesBuilderPanel = ({
                             {actionsCatalog.length === 0 && (
                               <option value="">No actions available</option>
                             )}
+                            {isImpacted && action.type && (
+                              <option value={action.type}>{action.type}</option>
+                            )}
                             {actionsCatalog.map((item) => {
                               const baseLabel = item.label || item.name;
                               const optionLabel =
@@ -518,6 +526,13 @@ const RulesBuilderPanel = ({
                             })}
                           </select>
                         </div>
+                        {isImpacted && (
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+                              Connector disabled
+                            </span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
@@ -534,6 +549,36 @@ const RulesBuilderPanel = ({
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           {definition.description}
                         </p>
+                      )}
+
+                      {isImpacted && (
+                        <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-100">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="mt-0.5 size-4 flex-shrink-0"
+                            aria-hidden="true"
+                          >
+                            <path d="M10.29 3.86 1.82 18a1 1 0 0 0 .86 1.5h18.64a1 1 0 0 0 .86-1.5L13.71 3.86a1 1 0 0 0-1.72 0Z" />
+                            <path d="M12 9v4" />
+                            <path d="M12 17h.01" />
+                          </svg>
+                          <div>
+                            <p className="font-semibold">Action unavailable</p>
+                            <p className="mt-1 text-amber-700 dark:text-amber-200/80">
+                              This action is unavailable because its connector is disabled. The
+                              existing configuration is kept when you save, but the action will be
+                              skipped until the connector is enabled again.
+                            </p>
+                          </div>
+                        </div>
                       )}
 
                       <div className="space-y-4">

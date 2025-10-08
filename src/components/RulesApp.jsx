@@ -347,7 +347,12 @@ export default function RulesApp() {
         if (action.id !== actionId) return action;
         const definition = getActionDefinition(nextType);
         if (!definition) {
-          return { ...action, type: nextType, params: {} };
+          return {
+            ...action,
+            type: nextType,
+            definitionMissing: Boolean(nextType),
+            originalParams: action.originalParams ?? action.params ?? {}
+          };
         }
         const base = buildActionState(definition);
         // If there is a provider + provider_options with variants, seed provider_options from provider
@@ -446,13 +451,21 @@ export default function RulesApp() {
       return rule.actions.map((action) => {
         const definition = getActionDefinition(action.type);
         if (!definition) {
-          const params = Object.entries(action.params || {}).reduce((acc, [key, value]) => {
-            if (Array.isArray(value)) acc[key] = value.join(', ');
-            else if (typeof value === 'boolean') acc[key] = value;
-            else acc[key] = value != null ? String(value) : '';
-            return acc;
-          }, {});
-          return { id: createActionId(), type: action.type || '', params };
+          let preservedParams = {};
+          if (action?.params && typeof action.params === 'object') {
+            try {
+              preservedParams = JSON.parse(JSON.stringify(action.params));
+            } catch (err) {
+              preservedParams = { ...action.params };
+            }
+          }
+          return {
+            id: createActionId(),
+            type: action.type || '',
+            params: preservedParams,
+            definitionMissing: Boolean(action.type),
+            originalParams: preservedParams
+          };
         }
         const base = buildActionState(definition);
         const params = { ...base.params };
@@ -595,7 +608,17 @@ export default function RulesApp() {
       })
     },
     actions: form.actions.map((action) => {
-      const definition = getActionDefinition(action.type) || { params: [] };
+      const definition = getActionDefinition(action.type);
+      if (!definition) {
+        const preservedParams =
+          action.originalParams && Object.keys(action.originalParams).length
+            ? action.originalParams
+            : action.params || {};
+        return {
+          type: action.type,
+          params: preservedParams
+        };
+      }
       const params = {};
       (definition.params || []).forEach((param) => {
         const rawValue = action.params?.[param.name];
