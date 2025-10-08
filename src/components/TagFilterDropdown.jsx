@@ -13,7 +13,8 @@ export default function TagFilterDropdown({
   onSelect,
   disabled = false,
   loading = false,
-  error
+  error,
+  fullWidth = false
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef(null);
@@ -67,7 +68,7 @@ export default function TagFilterDropdown({
   const buttonLabelId = 'tag-filter-dropdown-label';
 
   return (
-    <div className="relative inline-block text-left">
+    <div className={cx('relative inline-block text-left', fullWidth ? 'w-full' : '')}>
       <button
         type="button"
         ref={buttonRef}
@@ -83,7 +84,8 @@ export default function TagFilterDropdown({
         aria-expanded={isOpen}
         aria-labelledby={buttonLabelId}
         className={cx(
-          'inline-flex items-center gap-2 rounded-tremor-small border border-tremor-border bg-tremor-background px-3 py-2 text-sm font-medium text-tremor-content-strong shadow-tremor-input transition focus:z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-tremor-brand/60',
+          'inline-flex items-center gap-2 rounded-tremor-small border border-tremor-border bg-tremor-background px-3 py-2 text-sm font-medium text-tremor-content-strong shadow-tremor-input transition focus:z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-tremor-brand/60 min-h-[42px]',
+          fullWidth ? 'w-full justify-start' : '',
           'hover:bg-tremor-background-subtle disabled:cursor-not-allowed disabled:opacity-70',
           'dark:border-dark-tremor-border dark:bg-gray-950 dark:text-dark-tremor-content-strong dark:shadow-dark-tremor-input dark:hover:bg-gray-950/60'
         )}
@@ -105,7 +107,10 @@ export default function TagFilterDropdown({
           role="menu"
           aria-orientation="vertical"
           aria-labelledby={buttonLabelId}
-          className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-md border border-tremor-border bg-tremor-background p-2 shadow-xl shadow-black/[2.5%] focus:outline-none dark:border-dark-tremor-border dark:bg-gray-950"
+          className={cx(
+            'absolute z-50 mt-2 w-64 rounded-md border border-tremor-border bg-tremor-background p-2 shadow-xl shadow-black/[2.5%] focus:outline-none dark:border-dark-tremor-border dark:bg-gray-950',
+            fullWidth ? 'left-0 right-auto origin-top-left' : 'right-0 origin-top-right'
+          )}
         >
           <div className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-tremor-content dark:text-dark-tremor-content">
             Select a tag

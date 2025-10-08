@@ -592,7 +592,7 @@ export default function DashBoardApp() {
         <div className="relative mt-4">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div className="flex flex-wrap items-center gap-2">
-              <TabList className="w-full sm:w-auto">
+              <TabList className="w-auto">
                 <Tab>Overview</Tab>
                 <Tab>Compare</Tab>
               </TabList>
@@ -606,11 +606,11 @@ export default function DashBoardApp() {
                   error={tagsError}
                 />
               ) : (
-                <div className="flex flex-wrap items-end gap-2">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Input A
-                    </span>
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="flex flex-row gap-1 items-center">
+                    {/*<span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">*/}
+                    {/*  Compare*/}
+                    {/*</span>*/}
                     <TagFilterDropdown
                       tags={availableTags}
                       selectedTag={compareLeftTag}
@@ -619,11 +619,11 @@ export default function DashBoardApp() {
                       loading={tagsLoading}
                       error={tagsError}
                     />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Input B
-                    </span>
+                    {/*</div>*/}
+                    {/*<div className="flex flex-col gap-1">*/}
+                    {/*<span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">*/}
+                    {/*  Right*/}
+                    {/*</span>*/}
                     <TagFilterDropdown
                       tags={availableTags}
                       selectedTag={normalizedRightTag}

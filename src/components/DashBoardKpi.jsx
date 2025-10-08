@@ -52,23 +52,27 @@ export default function DashBoardKpi({ overall }) {
       stat: `${(overall.error_rate * 100).toFixed(1)}%`,
       change: '',
       changeType: 'neutral'
-    },
-    {
-      name: 'Request Rate',
-      stat: formatRate(overall.requests_per_second),
-      change: '',
-      changeType: 'neutral'
-    },
-    {
-      name: 'Request Failed Rate',
-      stat: formatRate(overall.errors_per_second),
-      change: '',
-      changeType: 'neutral'
     }
+    // {
+    //   name: 'Request Rate',
+    //   stat: formatRate(overall.requests_per_second),
+    //   change: '',
+    //   changeType: 'neutral'
+    // },
+    // {
+    //   name: 'Request Failed Rate',
+    //   stat: formatRate(overall.errors_per_second),
+    //   change: '',
+    //   changeType: 'neutral'
+    // }
   ];
 
+  const countWidgets = kpiData.length;
+
   return (
-    <dl className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6">
+    <dl
+      className={`grid grid-cols-1 gap-${countWidgets} sm:grid-cols-2 lg:grid-cols-${countWidgets}`}
+    >
       {kpiData.map((item) => (
         <Card key={item.name}>
           <div className="flex items-center justify-between">
