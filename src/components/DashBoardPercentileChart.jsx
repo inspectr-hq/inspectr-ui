@@ -2,6 +2,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { AreaChart, Card } from '@tremor/react';
 
+import NoDataPlaceholder from './NoDataPlaceholder.jsx';
+
 function valueFormatter(number) {
   // Duration values are milliseconds
   if (number == null || Number.isNaN(number)) return '';
@@ -87,19 +89,7 @@ export default function DashBoardPercentileChart({
 
   const colors = useMemo(() => categories.map((k) => colorByKey[k]), [categories]);
 
-  // If no percentile data present, render a subtle placeholder card
-  if (availableKeys.length === 0) {
-    return (
-      <Card className="mt-4 rounded-tremor-small p-4">
-        <h3 className="font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-          {title}
-        </h3>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          No percentile data found for the selected range.
-        </p>
-      </Card>
-    );
-  }
+  const hasPercentileData = Array.isArray(data) && data.length > 0 && availableKeys.length > 0;
 
   return (
     <Card className="mt-4 rounded-tremor-small p-2">
@@ -120,33 +110,39 @@ export default function DashBoardPercentileChart({
       </div>
 
       <div className="p-6">
-        {categories.length === 0 ? (
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            No percentile selected. Toggle one or more options above.
-          </p>
+        {hasPercentileData ? (
+          categories.length === 0 ? (
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              No percentile selected. Toggle one or more options above.
+            </p>
+          ) : (
+            <>
+              <AreaChart
+                data={data}
+                index="date"
+                categories={categories}
+                colors={colors}
+                showGradient={false}
+                valueFormatter={valueFormatter}
+                className="mt-4 hidden h-80 w-full sm:block"
+              />
+              <AreaChart
+                data={data}
+                index="date"
+                categories={categories}
+                colors={colors}
+                showGradient={false}
+                valueFormatter={valueFormatter}
+                className="mt-4 h-48 w-full sm:hidden"
+              />
+            </>
+          )
         ) : (
-          <>
-            <AreaChart
-              data={data}
-              index="date"
-              categories={categories}
-              colors={colors}
-              showGradient={false}
-              valueFormatter={valueFormatter}
-              className="mt-4 hidden h-80 w-full sm:block"
-            />
-            <AreaChart
-              data={data}
-              index="date"
-              categories={categories}
-              colors={colors}
-              showGradient={false}
-              valueFormatter={valueFormatter}
-              className="mt-4 h-48 w-full sm:hidden"
-            />
-          </>
+          <NoDataPlaceholder className="h-40" />
         )}
-        <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">Values in milliseconds</p>
+        {hasPercentileData ? (
+          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">Values in milliseconds</p>
+        ) : null}
       </div>
     </Card>
   );

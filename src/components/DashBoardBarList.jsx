@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { BarList, Card } from '@tremor/react';
 
+import NoDataPlaceholder from './NoDataPlaceholder.jsx';
+
 const valueFormatter = (number) => `${Intl.NumberFormat('us').format(number).toString()}`;
 
 export default function DashBoardBarList({ title, data, toggleable = true }) {
@@ -21,6 +23,8 @@ export default function DashBoardBarList({ title, data, toggleable = true }) {
       }))
     : [];
 
+  const hasData = transformedData.length > 0;
+
   return (
     <Card className="mt-4 rounded-tremor-small p-2">
       <div className="flex items-center justify-between border-b border-tremor-border p-3 dark:border-dark-tremor-border">
@@ -32,9 +36,13 @@ export default function DashBoardBarList({ title, data, toggleable = true }) {
         </p>
       </div>
       <div className={`overflow-hidden p-6 ${showExtended ? '' : 'max-h-[260px]'}`}>
-        <BarList data={transformedData} valueFormatter={valueFormatter} />
+        {hasData ? (
+          <BarList data={transformedData} valueFormatter={valueFormatter} />
+        ) : (
+          <NoDataPlaceholder className="min-h-[150px]" />
+        )}
       </div>
-      {toggleable && (
+      {toggleable && hasData && (
         <div
           className={`flex justify-center ${
             extended

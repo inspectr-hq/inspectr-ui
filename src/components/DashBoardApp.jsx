@@ -1,6 +1,15 @@
 // src/components/DashBoardApp.jsx
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Select, SelectItem, Button } from '@tremor/react';
+import {
+  Select,
+  SelectItem,
+  Button,
+  TabGroup,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel
+} from '@tremor/react';
 import { useInspectr } from '../context/InspectrContext';
 
 import DashBoardKpi from './DashBoardKpi.jsx';
@@ -11,6 +20,7 @@ import DashBoardDonutChart from './DashBoardDonutChart.jsx';
 import DialogConfirmClearAll from './DialogConfirmClearAll.jsx';
 import DashBoardPercentileChart from './DashBoardPercentileChart.jsx';
 import TagFilterDropdown from './TagFilterDropdown.jsx';
+import TagPill from './TagPill.jsx';
 
 function joinClassNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -134,20 +144,205 @@ function DateRangeButtons({ selectedRange, onSelect, onCustomClick }) {
   );
 }
 
-function ContentPlaceholder() {
+function formatIntervalData(intervals) {
+  if (!Array.isArray(intervals)) return [];
+
+  return intervals.map((item) => {
+    const mapped = {
+      ...item,
+      date: formatDateForChart(item.date)
+    };
+
+    if (item.median_response_time != null) mapped.p50 = item.median_response_time;
+    if (item.p90_response_time != null) mapped.p90 = item.p90_response_time;
+    if (item.p95_response_time != null) mapped.p95 = item.p95_response_time;
+    if (item.p99_response_time != null) mapped.p99 = item.p99_response_time;
+
+    return mapped;
+  });
+}
+
+function DatasetLabel({ tag }) {
+  if (!tag) {
+    return (
+      <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        All operations
+      </span>
+    );
+  }
+
+  return <TagPill tag={tag} />;
+}
+
+function renderStatisticsContent(
+  statsData,
+  intervalData,
+  { includeTopMargin = true, layout = 'overview' } = {}
+) {
+  const isCompareLayout = layout === 'compare';
+  const singleColumnGrid = 'mt-6 grid grid-cols-1 gap-4';
+
   return (
-    <div className="relative h-full overflow-hidden rounded bg-gray-50 dark:bg-dark-tremor-background-subtle">
-      <svg
-        className="absolute inset-0 h-full w-full stroke-gray-200 dark:stroke-gray-700"
-        fill="none"
+    <>
+      <div className={includeTopMargin ? 'mt-6' : ''}>
+        <DashBoardKpi overall={statsData?.overall} />
+      </div>
+      <div
+        className={
+          isCompareLayout
+            ? singleColumnGrid
+            : 'mt-6 grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-2'
+        }
       >
-        <defs>
-          <pattern id="pattern-1" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-            <path d="M-3 13 15-5M-5 5l18-18M-1 21 17 3"></path>
-          </pattern>
-        </defs>
-        <rect stroke="none" fill="url(#pattern-1)" width="100%" height="100%"></rect>
-      </svg>
+        <DashBoardBarChart title="Traffic Volume" data={intervalData} />
+        <DashBoardLineChart
+          title="Average Response Times"
+          data={intervalData}
+          metricKey={['min_response_time', 'average_response_time', 'max_response_time']}
+          metricUnit="ms"
+          highlightValue={statsData?.overall?.average_response_time}
+          highlightLabel="Average Response Time"
+        />
+      </div>
+      <div className="mt-6 grid grid-cols-1">
+        <DashBoardPercentileChart
+          title="HTTP Request duration: p50, p90, p95, p99"
+          data={intervalData}
+        />
+      </div>
+      {isCompareLayout ? (
+        <>
+          <div className={singleColumnGrid}>
+            <DashBoardLineChart
+              title="Success / Error Rate"
+              data={intervalData}
+              metricKey={['success', 'errors']}
+              metricUnit=""
+              highlightValue={statsData?.overall?.average_errors}
+              highlightLabel="Average Errors"
+            />
+            <DashBoardBarList
+              title="Top Endpoints"
+              data={statsData?.top_endpoints?.all}
+              toggleable={false}
+            />
+          </div>
+          <div className={singleColumnGrid}>
+            <DashBoardDonutChart
+              title="Method Ratio"
+              description="Distribution of HTTP methods"
+              data={statsData?.totals?.method}
+            />
+            <DashBoardDonutChart
+              title="Status Ratio"
+              description="Distribution of HTTP status codes"
+              data={statsData?.totals?.status}
+            />
+            <DashBoardBarList
+              title="Top Failed Endpoints"
+              data={statsData?.top_endpoints?.error}
+              toggleable={false}
+            />
+          </div>
+          <div className={singleColumnGrid}>
+            <DashBoardBarList
+              title="Top Fastest Endpoints (P95)"
+              data={statsData?.top_endpoints?.fastest}
+              toggleable={false}
+            />
+            <DashBoardBarList
+              title="Top Slowest Endpoints (P95)"
+              data={statsData?.top_endpoints?.slowest}
+              toggleable={false}
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="mt-6 grid grid-cols-3 gap-4 items-stretch">
+            <div className="col-span-2">
+              <DashBoardLineChart
+                title="Success / Error Rate"
+                data={intervalData}
+                metricKey={['success', 'errors']}
+                metricUnit=""
+                highlightValue={statsData?.overall?.average_errors}
+                highlightLabel="Average Errors"
+              />
+            </div>
+            <div className="col-span-1">
+              <DashBoardBarList
+                title="Top Endpoints"
+                data={statsData?.top_endpoints?.all}
+                toggleable={false}
+              />
+            </div>
+          </div>
+          <div className="mt-6 grid grid-cols-3 gap-4 md:grid-cols-3 lg:grid-cols-3">
+            <DashBoardDonutChart
+              title="Method Ratio"
+              description="Distribution of HTTP methods"
+              data={statsData?.totals?.method}
+            />
+            <DashBoardDonutChart
+              title="Status Ratio"
+              description="Distribution of HTTP status codes"
+              data={statsData?.totals?.status}
+            />
+            <DashBoardBarList
+              title="Top Failed Endpoints"
+              data={statsData?.top_endpoints?.error}
+              toggleable={false}
+            />
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-2">
+            <DashBoardBarList
+              title="Top Fastest Endpoints (P95)"
+              data={statsData?.top_endpoints?.fastest}
+              toggleable={false}
+            />
+            <DashBoardBarList
+              title="Top Slowest Endpoints (P95)"
+              data={statsData?.top_endpoints?.slowest}
+              toggleable={false}
+            />
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+function ComparisonColumn({ label, tag, stats, intervalData, loading }) {
+  const hasData = Boolean(stats);
+
+  return (
+    <div className="rounded-tremor-small border border-tremor-border bg-tremor-background p-4 shadow-sm dark:border-dark-tremor-border dark:bg-gray-950">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+            {label}
+          </p>
+          <div className="mt-1">
+            <DatasetLabel tag={tag} />
+          </div>
+        </div>
+        {loading ? (
+          <span className="text-xs text-gray-500 dark:text-gray-400">Loading…</span>
+        ) : null}
+      </div>
+      {hasData ? (
+        <div className="mt-4">
+          {renderStatisticsContent(stats, intervalData, {
+            includeTopMargin: false,
+            layout: 'compare'
+          })}
+        </div>
+      ) : (
+        <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+          {loading ? 'Loading statistics…' : 'No data available for this selection.'}
+        </p>
+      )}
     </div>
   );
 }
@@ -157,13 +352,20 @@ export default function DashBoardApp() {
 
   // Stats payload
   const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [primaryLoading, setPrimaryLoading] = useState(false);
+  const [primaryError, setPrimaryError] = useState(null);
   const [group, setGroup] = useState('hour');
   const [availableTags, setAvailableTags] = useState([]);
   const [tagsLoading, setTagsLoading] = useState(false);
   const [tagsError, setTagsError] = useState('');
   const [selectedTag, setSelectedTag] = useState(null);
+  const [viewMode, setViewMode] = useState('overview');
+  const [compareLeftTag, setCompareLeftTag] = useState(null);
+  const [compareRightTag, setCompareRightTag] = useState(undefined);
+  const [compareLeftStats, setCompareLeftStats] = useState(null);
+  const [compareRightStats, setCompareRightStats] = useState(null);
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [compareError, setCompareError] = useState(null);
 
   // Date range
   const today = new Date();
@@ -185,28 +387,55 @@ export default function DashBoardApp() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Fetch statistics
-  const fetchStats = () =>
+  const fetchStatsForTag = (tag) =>
     client.stats.getOperations({
       group,
       start,
       end,
-      tag: selectedTag || undefined
+      tag: tag || undefined
     });
 
-  // Handler for refresh button
-  const handleLoadStats = async () => {
-    setLoading(true);
-    setError(null);
+  const loadPrimaryStats = async () => {
+    if (!client?.stats?.getOperations) return;
+    setPrimaryLoading(true);
+    setPrimaryError(null);
     try {
-      const data = await fetchStats();
+      const data = await fetchStatsForTag(selectedTag);
       setStats(data);
     } catch (err) {
-      setError(err.message);
       console.error(err);
+      setPrimaryError(err?.message || 'Failed to load statistics');
     } finally {
-      setLoading(false);
+      setPrimaryLoading(false);
     }
+  };
+
+  const loadCompareStats = async () => {
+    if (!client?.stats?.getOperations) return;
+    if (compareRightTag === undefined) return;
+
+    setCompareLoading(true);
+    setCompareError(null);
+    try {
+      const [left, right] = await Promise.all([
+        fetchStatsForTag(compareLeftTag),
+        fetchStatsForTag(compareRightTag)
+      ]);
+      setCompareLeftStats(left);
+      setCompareRightStats(right);
+    } catch (err) {
+      console.error(err);
+      setCompareError(err?.message || 'Failed to load comparison data');
+    } finally {
+      setCompareLoading(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    if (viewMode === 'compare') {
+      return loadCompareStats();
+    }
+    return loadPrimaryStats();
   };
 
   // Clear all operation stats.
@@ -214,16 +443,24 @@ export default function DashBoardApp() {
     try {
       // Clear operations from Inspectr
       await client.stats.deleteOperations();
-      await handleLoadStats();
+      await loadPrimaryStats();
+      if (viewMode === 'compare') {
+        await loadCompareStats();
+      }
     } catch (err) {
       console.error('Error clearing all operation stats:', err);
     }
   };
 
-  // Trigger fetching of statistics on component mount
+  // Trigger fetching of statistics on dependency changes
   useEffect(() => {
-    handleLoadStats();
-  }, [group, start, end, selectedTag]);
+    loadPrimaryStats();
+  }, [client, group, start, end, selectedTag]);
+
+  useEffect(() => {
+    if (viewMode !== 'compare') return;
+    loadCompareStats();
+  }, [client, viewMode, group, start, end, compareLeftTag, compareRightTag]);
 
   useEffect(() => {
     if (!client?.operations?.listTags) return;
@@ -260,23 +497,53 @@ export default function DashBoardApp() {
     }
   }, [availableTags, selectedTag]);
 
-  // Format dates in by_interval data for chart display
-  const formattedIntervalData = useMemo(() => {
-    if (!stats?.by_interval) return [];
+  useEffect(() => {
+    if (!compareLeftTag) return;
+    if (!availableTags.includes(compareLeftTag)) {
+      setCompareLeftTag(null);
+    }
+  }, [availableTags, compareLeftTag]);
 
-    return stats.by_interval.map((item) => {
-      const mapped = {
-        ...item,
-        date: formatDateForChart(item.date)
-      };
-      // Map backend percentile keys to chart-friendly keys
-      if (item.median_response_time != null) mapped.p50 = item.median_response_time;
-      if (item.p90_response_time != null) mapped.p90 = item.p90_response_time;
-      if (item.p95_response_time != null) mapped.p95 = item.p95_response_time;
-      if (item.p99_response_time != null) mapped.p99 = item.p99_response_time;
-      return mapped;
-    });
-  }, [stats?.by_interval]);
+  useEffect(() => {
+    if (compareRightTag === undefined) return;
+    if (compareRightTag === null) return;
+    if (!availableTags.includes(compareRightTag)) {
+      const fallback = availableTags.find((tag) => tag !== compareLeftTag) ?? null;
+      setCompareRightTag(fallback);
+    }
+  }, [availableTags, compareLeftTag, compareRightTag]);
+
+  useEffect(() => {
+    if (compareRightTag !== undefined) return;
+    if (availableTags.length === 0) {
+      setCompareRightTag(null);
+      return;
+    }
+    const fallback = availableTags.find((tag) => tag !== compareLeftTag) ?? availableTags[0];
+    setCompareRightTag(fallback ?? null);
+  }, [availableTags, compareLeftTag, compareRightTag]);
+
+  // Format dates in by_interval data for chart display
+  const formattedIntervalData = useMemo(
+    () => formatIntervalData(stats?.by_interval),
+    [stats?.by_interval]
+  );
+  const compareLeftIntervalData = useMemo(
+    () => formatIntervalData(compareLeftStats?.by_interval),
+    [compareLeftStats?.by_interval]
+  );
+  const compareRightIntervalData = useMemo(
+    () => formatIntervalData(compareRightStats?.by_interval),
+    [compareRightStats?.by_interval]
+  );
+
+  const tabIndex = viewMode === 'compare' ? 1 : 0;
+  const currentLoading = viewMode === 'compare' ? compareLoading : primaryLoading;
+  const normalizedRightTag = compareRightTag === undefined ? null : compareRightTag;
+
+  const handleTabChange = (index) => {
+    setViewMode(index === 1 ? 'compare' : 'overview');
+  };
 
   // Update start and end when a date range button is clicked.
   const handleDateRangeSelect = (item) => {
@@ -314,28 +581,67 @@ export default function DashBoardApp() {
           <h3 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
             Inspectr Statistics
           </h3>
-          {/* Date Range Display */}
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 sm:mt-0">
             <span className="font-medium">Range:</span> {formatDateForDisplay(start)} -{' '}
             {formatDateForDisplay(end)}
           </div>
-          <div className="mt-4 sm:mt-0 relative">
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-              {/* Date Range Buttons */}
+        </div>
+      </header>
+
+      <TabGroup index={tabIndex} onIndexChange={handleTabChange}>
+        <div className="relative mt-4">
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <TabList className="w-full sm:w-auto">
+                <Tab>Overview</Tab>
+                <Tab>Compare</Tab>
+              </TabList>
+              {viewMode === 'overview' ? (
+                <TagFilterDropdown
+                  tags={availableTags}
+                  selectedTag={selectedTag}
+                  onSelect={setSelectedTag}
+                  disabled={currentLoading}
+                  loading={tagsLoading}
+                  error={tagsError}
+                />
+              ) : (
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Input A
+                    </span>
+                    <TagFilterDropdown
+                      tags={availableTags}
+                      selectedTag={compareLeftTag}
+                      onSelect={setCompareLeftTag}
+                      disabled={currentLoading}
+                      loading={tagsLoading}
+                      error={tagsError}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Input B
+                    </span>
+                    <TagFilterDropdown
+                      tags={availableTags}
+                      selectedTag={normalizedRightTag}
+                      onSelect={setCompareRightTag}
+                      disabled={currentLoading}
+                      loading={tagsLoading}
+                      error={tagsError}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <DateRangeButtons
                 selectedRange={selectedRange}
                 onSelect={handleDateRangeSelect}
                 onCustomClick={handleCustomDateClick}
               />
-              <TagFilterDropdown
-                tags={availableTags}
-                selectedTag={selectedTag}
-                onSelect={setSelectedTag}
-                disabled={loading}
-                loading={tagsLoading}
-                error={tagsError}
-              />
-              {/* Grouping Selectn */}
               <Select
                 className="w-full sm:w-fit [&>button]:rounded-tremor-small"
                 enableClear={false}
@@ -347,23 +653,23 @@ export default function DashBoardApp() {
                 <SelectItem value="week">Weekly</SelectItem>
                 <SelectItem value="month">Monthly</SelectItem>
               </Select>
-
-              {/* Refresh Button */}
-              <Button onClick={handleLoadStats} className="mt-2 sm:mt-0">
-                {loading ? 'Loading' : 'Refresh'}
+              <Button onClick={handleRefresh} disabled={currentLoading}>
+                {currentLoading ? 'Loading' : 'Refresh'}
               </Button>
-
               <button
-                className="px-2 py-2 bg-red-500 text-white rounded text-xs cursor-pointer"
+                type="button"
+                className="rounded bg-red-500 px-2 py-2 text-xs text-white"
                 onClick={() => setIsDialogOpen(true)}
               >
+                <span className="sr-only">Clear all operation stats</span>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth="1.5"
                   stroke="currentColor"
-                  className="w-4 h-4 text-white"
+                  className="h-4 w-4"
+                  aria-hidden
                 >
                   <path
                     strokeLinecap="round"
@@ -373,152 +679,94 @@ export default function DashBoardApp() {
                 </svg>
               </button>
             </div>
-            {tagsError && !tagsLoading ? (
-              <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-                Tag filter unavailable: {tagsError}
+          </div>
+          {tagsError && !tagsLoading ? (
+            <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+              Tag filter unavailable: {tagsError}
+            </p>
+          ) : null}
+
+          {showCustomDatePicker && (
+            <div className="absolute top-full right-0 z-10 mt-2 flex flex-wrap items-center gap-2 rounded bg-gray-50 p-3 shadow dark:bg-gray-800">
+              <div className="flex flex-col">
+                <label className="text-xs text-gray-500 dark:text-gray-400">Start Date</label>
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="rounded border px-2 py-1 focus:outline-none focus:ring-2 focus:ring-tremor-brand dark:border-gray-600 dark:bg-gray-700"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="text-xs text-gray-500 dark:text-gray-400">Start Time</label>
+                <input
+                  type="time"
+                  value={customStartTime}
+                  onChange={(e) => setCustomStartTime(e.target.value)}
+                  className="rounded border px-2 py-1 focus:outline-none focus:ring-2 focus:ring-tremor-brand dark:border-gray-600 dark:bg-gray-700"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="text-xs text-gray-500 dark:text-gray-400">End Date</label>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="rounded border px-2 py-1 focus:outline-none focus:ring-2 focus:ring-tremor-brand dark:border-gray-600 dark:bg-gray-700"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="text-xs text-gray-500 dark:text-gray-400">End Time</label>
+                <input
+                  type="time"
+                  value={customEndTime}
+                  onChange={(e) => setCustomEndTime(e.target.value)}
+                  className="rounded border px-2 py-1 focus:outline-none focus:ring-2 focus:ring-tremor-brand dark:border-gray-600 dark:bg-gray-700"
+                />
+              </div>
+              <div className="flex items-end">
+                <Button onClick={handleApplyCustomDate} className="ml-2">
+                  Apply
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <TabPanels>
+          <TabPanel>
+            {primaryError ? (
+              <p className="mt-4 text-red-600 dark:text-red-400">Error: {primaryError}</p>
+            ) : null}
+            <main className="mt-6">{renderStatisticsContent(stats, formattedIntervalData)}</main>
+          </TabPanel>
+          <TabPanel>
+            {compareError ? (
+              <p className="mt-4 text-red-600 dark:text-red-400">
+                Comparison error: {compareError}
               </p>
             ) : null}
-
-            {/* Custom Date Range Picker - Absolutely positioned */}
-            {showCustomDatePicker && (
-              <div className="absolute top-full right-0 mt-2 z-10 flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded shadow">
-                <div className="flex flex-col">
-                  <label className="text-xs text-gray-500 dark:text-gray-400">Start Date</label>
-                  <input
-                    type="date"
-                    value={customStartDate}
-                    onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-tremor-brand dark:bg-gray-700 dark:border-gray-600"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-xs text-gray-500 dark:text-gray-400">Start Time</label>
-                  <input
-                    type="time"
-                    value={customStartTime}
-                    onChange={(e) => setCustomStartTime(e.target.value)}
-                    className="px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-tremor-brand dark:bg-gray-700 dark:border-gray-600"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-xs text-gray-500 dark:text-gray-400">End Date</label>
-                  <input
-                    type="date"
-                    value={customEndDate}
-                    onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-tremor-brand dark:bg-gray-700 dark:border-gray-600"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-xs text-gray-500 dark:text-gray-400">End Time</label>
-                  <input
-                    type="time"
-                    value={customEndTime}
-                    onChange={(e) => setCustomEndTime(e.target.value)}
-                    className="px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-tremor-brand dark:bg-gray-700 dark:border-gray-600"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={handleApplyCustomDate} className="ml-2">
-                    Apply
-                  </Button>
-                </div>
+            <main className="mt-6">
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                <ComparisonColumn
+                  label="Input A"
+                  tag={compareLeftTag}
+                  stats={compareLeftStats}
+                  intervalData={compareLeftIntervalData}
+                  loading={compareLoading}
+                />
+                <ComparisonColumn
+                  label="Input B"
+                  tag={normalizedRightTag}
+                  stats={compareRightStats}
+                  intervalData={compareRightIntervalData}
+                  loading={compareLoading}
+                />
               </div>
-            )}
-          </div>
-          {error && <p className="mt-2 text-red-600 dark:text-red-400">Error: {error}</p>}
-        </div>
-      </header>
-
-      <main>
-        <div className="mt-6">
-          <DashBoardKpi overall={stats?.overall} />
-        </div>
-        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-2">
-          <DashBoardBarChart title="Traffic Volume" data={formattedIntervalData} />
-          <DashBoardLineChart
-            title="Average Response Times"
-            data={formattedIntervalData}
-            metricKey={['min_response_time', 'average_response_time', 'max_response_time']}
-            metricUnit="ms"
-            highlightValue={stats?.overall?.average_response_time}
-            highlightLabel="Average Response Time"
-          />
-        </div>
-
-        {/* HTTP Request duration percentiles */}
-        <div className="mt-6 grid grid-cols-1">
-          <DashBoardPercentileChart
-            title="HTTP Request duration: p50, p90, p95, p99"
-            data={formattedIntervalData}
-          />
-        </div>
-
-        <div className="mt-6 grid grid-cols-3 gap-4 items-stretch">
-          <div className="col-span-2">
-            <DashBoardLineChart
-              title="Success / Error Rate"
-              data={formattedIntervalData}
-              metricKey={['success', 'errors']}
-              metricUnit=""
-              highlightValue={stats?.overall?.average_errors}
-              highlightLabel="Average Errors"
-            />
-          </div>
-          <div className="col-span-1">
-            <DashBoardBarList
-              title="Top Endpoints"
-              data={stats?.top_endpoints?.all}
-              toggleable={false}
-            />
-          </div>
-        </div>
-        <div className="mt-6 grid grid-cols-3 gap-4 md:grid-cols-3 lg:grid-cols-3">
-          <DashBoardDonutChart
-            title="Method Ratio"
-            description="Distribution of HTTP methods"
-            data={stats?.totals?.method}
-          />
-          <DashBoardDonutChart
-            title="Status Ratio"
-            description="Distribution of HTTP status codes"
-            data={stats?.totals?.status}
-          />
-          {/*<DashBoardDonutChart />*/}
-          {/*</div>*/}
-          {/*<div className="mt-6 grid grid-cols-3 gap-4 md:grid-cols-3 lg:grid-cols-3">*/}
-          <DashBoardBarList
-            title="Top Failed Endpoints"
-            data={stats?.top_endpoints?.error}
-            toggleable={false}
-          />
-        </div>
-
-        {/* Fastest and Slowest Endpoints by P95 */}
-        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-2">
-          <DashBoardBarList
-            title="Top Fastest Endpoints (P95)"
-            data={stats?.top_endpoints?.fastest}
-            toggleable={false}
-          />
-          <DashBoardBarList
-            title="Top Slowest Endpoints (P95)"
-            data={stats?.top_endpoints?.slowest}
-            toggleable={false}
-          />
-        </div>
-        {/*<div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">*/}
-        {/*  <Card className="h-36 rounded-tremor-small p-2">*/}
-        {/*    <ContentPlaceholder />*/}
-        {/*  </Card>*/}
-        {/*  <Card className="h-36 rounded-tremor-small p-2">*/}
-        {/*    <ContentPlaceholder />*/}
-        {/*  </Card>*/}
-        {/*  <Card className="h-36 rounded-tremor-small p-2">*/}
-        {/*    <ContentPlaceholder />*/}
-        {/*  </Card>*/}
-        {/*</div>*/}
-      </main>
+            </main>
+          </TabPanel>
+        </TabPanels>
+      </TabGroup>
 
       {/* Clear All Dialog */}
       <DialogConfirmClearAll
