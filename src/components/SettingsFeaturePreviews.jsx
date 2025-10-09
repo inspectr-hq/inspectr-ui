@@ -1,7 +1,8 @@
 import React from 'react';
 import { Divider } from '@tremor/react';
-import BadgeIndicator from './BadgeIndicator.jsx';
+import { Switch } from '@headlessui/react';
 import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
+import { cx } from '../utils/cx.js';
 
 const PREVIEWS = [
   {
@@ -69,12 +70,30 @@ export default function SettingsFeaturePreviews() {
                 />
               )}
               <div className="flex items-center pt-1 space-x-3">
-                <button
-                  onClick={() => feature.setEnabled(!feature.enabled)}
-                  className={`px-3 py-1.5 rounded-lg border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200`}
+                <Switch
+                  checked={Boolean(feature.enabled)}
+                  onChange={() => feature.setEnabled(!feature.enabled)}
+                  className={cx(
+                    'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-tremor-brand focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60',
+                    feature.enabled
+                      ? 'bg-tremor-brand dark:bg-dark-tremor-brand'
+                      : 'bg-gray-200 dark:bg-gray-700'
+                  )}
                 >
-                  {feature.enabled ? 'Disable' : 'Enable'}
-                </button>
+                  <span className="sr-only">
+                    {feature.enabled ? 'Disable feature preview' : 'Enable feature preview'}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className={cx(
+                      'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out',
+                      feature.enabled ? 'translate-x-4' : 'translate-x-0'
+                    )}
+                  />
+                </Switch>
+                <span className="text-sm font-medium text-tremor-content dark:text-dark-tremor-content">
+                  {feature.enabled ? 'Enabled' : 'Disabled'}
+                </span>
               </div>
             </div>
           ))}
