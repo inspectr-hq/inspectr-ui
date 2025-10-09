@@ -561,12 +561,29 @@ export default function SettingsConnector() {
                         </button>
                       </div>
 
-                      {/* Row 2: server URL (full width) */}
+                      {/* Row 2: server URL (left) + last sync (right) */}
                       <div className="sm:col-span-2">
-                        <p className="text-xs uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content-subtle">
-                          {record.server_url || '—'}
-                        </p>
+                        <div className="flex items-center justify-between text-xs">
+                          <p className="uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content-subtle">
+                            {record.server_url || '—'}
+                          </p>
+                          {connector?.last_sync && (
+                            <p className="text-tremor-content-subtle dark:text-dark-tremor-content-subtle">
+                              Last sync: {formatDateTime(connector.last_sync)}
+                            </p>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Row 2b: connection warning (full width, only if not ready and has error) */}
+                      {status !== 'ready' && connector?.last_error && (
+                        <div className="sm:col-span-2">
+                          <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-600 dark:bg-amber-950/40 dark:text-amber-200">
+                            <span className="font-medium">Connection warning:</span>{' '}
+                            {connector.last_error}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Row 3: connection + status + toggle (full width) */}
                       <div className="sm:col-span-2">
