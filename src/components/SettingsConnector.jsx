@@ -9,6 +9,66 @@ import DialogDeleteConfirm from './DialogDeleteConfirm.jsx';
 import { Tooltip } from './ToolTip.jsx';
 import { cx } from '../utils/cx.js';
 
+const CONNECTOR_STATUS_META = {
+  pending: {
+    label: 'Pending',
+    description: 'Inspectr is still discovering the connector metadata.',
+    dotClass: 'fill-amber-500 dark:fill-amber-400 animate-pulse',
+    badgeProps: {
+      variant: 'neutral',
+      filled: true,
+      backgroundClass:
+        'border-amber-300 bg-amber-100 text-amber-700 dark:border-amber-500 dark:bg-amber-900/40 dark:text-amber-200'
+    }
+  },
+  ready: {
+    label: 'Ready',
+    description: 'The connector is healthy and routable.',
+    dotClass: 'fill-emerald-500 dark:fill-emerald-400',
+    badgeProps: { variant: 'success', filled: true }
+  },
+  disabled: {
+    label: 'Disabled',
+    description: 'The connector is disabled and will never receive traffic.',
+    dotClass: 'fill-gray-300 dark:fill-gray-500',
+    badgeProps: {
+      variant: 'neutral',
+      filled: true,
+      backgroundClass:
+        'border-gray-300 bg-gray-200 text-gray-600 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300'
+    }
+  },
+  disconnected: {
+    label: 'Disconnected',
+    description: 'The connector is temporarily unreachable and will be retried with backoff.',
+    dotClass: 'fill-rose-500 dark:fill-rose-400',
+    badgeProps: { variant: 'error', filled: true }
+  },
+  unknown: {
+    label: 'Unknown',
+    description: 'The connector status is unknown.',
+    dotClass: 'fill-gray-300 dark:fill-gray-600 animate-pulse',
+    badgeProps: {
+      variant: 'neutral',
+      filled: true,
+      backgroundClass:
+        'border-gray-300 bg-gray-200 text-gray-600 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300'
+    }
+  }
+};
+
+const getConnectorStatus = (connector) => {
+  const explicitStatus = connector?.status || connector?.record?.status;
+  if (explicitStatus) return String(explicitStatus).toLowerCase();
+
+  if (connector?.record?.enabled === false) return 'disabled';
+  if (connector?.ready === true) return 'ready';
+  if (connector?.ready === false) return 'disconnected';
+  return 'pending';
+};
+
+const getStatusMeta = (status) => CONNECTOR_STATUS_META[status] || CONNECTOR_STATUS_META.unknown;
+
 const normalizeConnectors = (payload) => {
   if (!payload) return [];
   if (Array.isArray(payload)) return payload;
@@ -88,26 +148,21 @@ const ActionsList = ({ actions }) => {
   );
 };
 
-const ReadyIndicator = ({ ready, lastSync, error }) => {
-  const status = ready === true ? 'up' : ready === false ? 'down' : 'unknown';
-  const colorClasses =
-    status === 'up'
-      ? 'fill-green-500'
-      : status === 'down'
-        ? 'fill-red-500'
-        : 'fill-gray-400 animate-pulse';
+const ConnectorStatusIndicator = ({ status, lastSync, error }) => {
+  const normalizedStatus = status ? String(status).toLowerCase() : 'unknown';
+  const meta = getStatusMeta(normalizedStatus);
 
-  const tooltip = error
-    ? `${error}`
-    : `Last sync: ${lastSync ? formatDateTime(lastSync) : 'Never'}`;
+  const tooltipLines = [meta.description];
+  if (lastSync) tooltipLines.push(`Last sync: ${formatDateTime(lastSync)}`);
+  if (error) tooltipLines.push(`Last error: ${error}`);
+
+  const tooltipContent = (
+    <span className="block whitespace-pre-line">{tooltipLines.filter(Boolean).join('\n')}</span>
+  );
 
   return (
-    <Tooltip content={tooltip} sideOffset={4} side="left">
-      <svg
-        viewBox="0 0 6 6"
-        aria-hidden="true"
-        className={cx('h-3 w-3 cursor-pointer', colorClasses)}
-      >
+    <Tooltip content={tooltipContent} sideOffset={4} side="left">
+      <svg viewBox="0 0 6 6" aria-hidden="true" className={cx('h-3 w-3', meta.dotClass)}>
         <circle r="3" cx="3" cy="3" />
       </svg>
     </Tooltip>
@@ -150,6 +205,8 @@ const ConnectorMeta = ({ connector }) => {
   const record = connector?.record || {};
   const info = connector?.info || {};
   const actions = connector?.actions;
+  const status = getConnectorStatus(connector);
+  const statusMeta = getStatusMeta(status);
 
   return (
     <div className="mt-4 space-y-3">
@@ -157,15 +214,22 @@ const ConnectorMeta = ({ connector }) => {
         <dl className="grid gap-y-2 sm:grid-cols-2">
           <div>
             <dt className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-              Ready
+              Status
             </dt>
-            <dd className="flex items-center gap-2">
-              <ReadyIndicator
-                ready={connector?.ready}
-                lastSync={connector?.last_sync}
-                error={connector?.last_error}
-              />
-              <span>{connector?.ready ? 'Ready' : 'Not ready'}</span>
+            <dd className="space-y-1">
+              <div className="flex items-center gap-2">
+                <ConnectorStatusIndicator
+                  status={status}
+                  lastSync={connector?.last_sync}
+                  error={connector?.last_error}
+                />
+                <BadgeIndicator {...(statusMeta.badgeProps || {})}>
+                  {statusMeta.label}
+                </BadgeIndicator>
+              </div>
+              <p className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content-subtle">
+                {statusMeta.description}
+              </p>
             </dd>
           </div>
           <div>
@@ -449,6 +513,8 @@ export default function SettingsConnector() {
                 const record = connector?.record || {};
                 const id = record.id || record.name || `connector-${index}`;
                 const isBusy = updatingId === record.id;
+                const status = getConnectorStatus(connector);
+                const statusMeta = getStatusMeta(status);
                 return (
                   <div
                     key={id}
@@ -467,18 +533,19 @@ export default function SettingsConnector() {
                         </p>
                         <div className="flex flex-wrap items-center gap-4 text-xs text-tremor-content dark:text-dark-tremor-content">
                           <div className="flex items-center gap-2">
-                            <ReadyIndicator
-                              ready={connector?.ready}
+                            <span>Connection</span>
+                            <ConnectorStatusIndicator
+                              status={status}
                               lastSync={connector?.last_sync}
                               error={connector?.last_error}
                             />
-                            <span className="font-medium">
-                              {connector?.ready ? 'Ready' : 'Not ready'}
-                            </span>
+                            <BadgeIndicator {...(statusMeta.badgeProps || {})}>
+                              {statusMeta.label}
+                            </BadgeIndicator>
                           </div>
                           <div className="flex items-center gap-2">
                             <span>Status</span>
-                            <BadgeIndicator variant={record.enabled ? 'success' : 'neutral'}>
+                            <BadgeIndicator variant={record.enabled ? 'success' : 'neutral'} filled>
                               {record.enabled ? 'Enabled' : 'Disabled'}
                             </BadgeIndicator>
                           </div>
