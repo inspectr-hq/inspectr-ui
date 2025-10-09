@@ -24,6 +24,12 @@ const PREVIEWS = [
     description:
       "Enable Inspectr's MCP Server to expose operations and data via the Model Context Protocol for compatible AI Agents like Claude, ChatGPT, and more.",
     image: undefined
+  },
+  {
+    slug: 'feat_connectors',
+    title: 'Outbound Connectors',
+    description: 'Forward Inspectr events to other services by configuring outbound connectors.',
+    image: undefined
   }
 ];
 

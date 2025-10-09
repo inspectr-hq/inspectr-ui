@@ -1,6 +1,5 @@
 // src/components/SettingsApp.jsx
 import React, { useEffect, useState } from 'react';
-import { Divider } from '@tremor/react';
 import SettingsApiEndpoint from './SettingsApiEndpoint.jsx';
 import SettingsInspectr from './SettingsInspectr.jsx';
 import SettingsMock from './SettingsMock.jsx';
@@ -9,6 +8,7 @@ import SettingsFeaturePreviews from './SettingsFeaturePreviews.jsx';
 import SettingsMcpInfo from './SettingsMcpInfo.jsx';
 import SettingsConnector from './SettingsConnector.jsx';
 import { parseHash } from '../hooks/useHashRouter.jsx';
+import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 
 const navItems = [
   { slug: 'general', label: 'General' },
@@ -25,6 +25,7 @@ const getCurrent = () => {
 
 export default function SettingsApp() {
   const [current, setCurrent] = useState(getCurrent);
+  const [connectorsFeatureEnabled] = useFeaturePreview('feat_connectors');
 
   useEffect(() => {
     const onHashChange = () => setCurrent(getCurrent());
@@ -32,16 +33,27 @@ export default function SettingsApp() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
+  useEffect(() => {
+    if (current === 'connectors' && !connectorsFeatureEnabled) {
+      window.history.replaceState(null, '', '#settings/general');
+      setCurrent('general');
+    }
+  }, [connectorsFeatureEnabled, current]);
+
   const navigate = (slug) => {
     window.history.pushState(null, '', `#settings/${slug}`);
     setCurrent(slug);
   };
 
+  const items = connectorsFeatureEnabled
+    ? navItems
+    : navItems.filter((item) => item.slug !== 'connectors');
+
   return (
     <div className="flex flex-col md:flex-row min-h-[calc(100vh-120px)] bg-white dark:bg-gray-950">
       <aside className="md:w-56 border-b md:border-b-0 md:border-r border-tremor-border dark:border-dark-tremor-border md:min-h-full">
         <nav className="flex md:flex-col">
-          {navItems.map((item) => (
+          {items.map((item) => (
             <button
               key={item.slug}
               onClick={() => navigate(item.slug)}
@@ -60,7 +72,7 @@ export default function SettingsApp() {
             <SettingsMcpInfo />
           </>
         )}
-        {current === 'connectors' && <SettingsConnector />}
+        {current === 'connectors' && connectorsFeatureEnabled && <SettingsConnector />}
         {current === 'mock' && <SettingsMock />}
         {current === 'guard' && <SettingsGuard />}
         {current === 'previews' && <SettingsFeaturePreviews />}
