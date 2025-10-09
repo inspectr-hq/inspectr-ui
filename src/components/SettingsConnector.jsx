@@ -477,7 +477,7 @@ export default function SettingsConnector() {
       <div className="grid grid-cols-1 gap-10 md:grid-cols-3 items-start">
         <div>
           <h2 className="font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-            Connectors
+            Connectors (Preview)
           </h2>
           <p className="mt-1 text-tremor-default leading-6 text-tremor-content dark:text-dark-tremor-content">
             Manage outbound connectors to forward Inspectr events to other services.
@@ -520,18 +520,58 @@ export default function SettingsConnector() {
                     key={id}
                     className="rounded-lg border border-tremor-border bg-white p-4 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background"
                   >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="flex flex-col gap-2">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {/* Left column (row 1): name + description */}
+                      <div className="flex flex-col gap-1">
                         <p className="text-base font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
                           {record.name || 'Unnamed connector'}
                         </p>
                         <p className="text-sm text-tremor-content dark:text-dark-tremor-content">
                           {record.description || 'No description provided.'}
                         </p>
+                      </div>
+
+                      {/* Right column (row 1): action buttons */}
+                      <div className="flex gap-2 sm:justify-end self-start">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedId((prev) => (prev === record.id ? null : record.id))
+                          }
+                          className="rounded-md border border-tremor-border px-3 py-2 text-sm font-medium text-tremor-content hover:bg-tremor-background-muted dark:border-dark-tremor-border dark:text-dark-tremor-content dark:hover:bg-dark-tremor-background-muted disabled:cursor-not-allowed disabled:opacity-70"
+                          disabled={isBusy}
+                        >
+                          {expandedId === record.id ? 'Details' : 'Details'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(connector)}
+                          className="rounded-md border border-tremor-border px-3 py-2 text-sm font-medium text-tremor-content hover:bg-tremor-background-muted dark:border-dark-tremor-border dark:text-dark-tremor-content dark:hover:bg-dark-tremor-background-muted disabled:cursor-not-allowed disabled:opacity-70"
+                          disabled={isBusy}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRequestDelete(connector)}
+                          className="rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
+                          disabled={isBusy}
+                        >
+                          Delete
+                        </button>
+                      </div>
+
+                      {/* Row 2: server URL (full width) */}
+                      <div className="sm:col-span-2">
                         <p className="text-xs uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content-subtle">
                           {record.server_url || '—'}
                         </p>
+                      </div>
+
+                      {/* Row 3: connection + status + toggle (full width) */}
+                      <div className="sm:col-span-2">
                         <div className="flex flex-wrap items-center gap-4 text-xs text-tremor-content dark:text-dark-tremor-content">
+                          {/* Connection (dot + badge) */}
                           <div className="flex items-center gap-2">
                             <span>Connection</span>
                             <ConnectorStatusIndicator
@@ -543,13 +583,17 @@ export default function SettingsConnector() {
                               {statusMeta.label}
                             </BadgeIndicator>
                           </div>
+
+                          {/* Status (enabled/disabled) */}
                           <div className="flex items-center gap-2">
                             <span>Status</span>
                             <BadgeIndicator variant={record.enabled ? 'success' : 'neutral'} filled>
                               {record.enabled ? 'Enabled' : 'Disabled'}
                             </BadgeIndicator>
                           </div>
-                          <div className="inline-flex items-center gap-2">
+
+                          {/* Toggle */}
+                          <div className="flex items-center gap-2">
                             <Switch
                               checked={Boolean(record.enabled)}
                               onChange={() => handleToggleEnabled(connector)}
@@ -577,34 +621,6 @@ export default function SettingsConnector() {
                             </span>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex gap-2 self-start">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setExpandedId((prev) => (prev === record.id ? null : record.id))
-                          }
-                          className="rounded-md border border-tremor-border px-3 py-2 text-sm font-medium text-tremor-content hover:bg-tremor-background-muted dark:border-dark-tremor-border dark:text-dark-tremor-content dark:hover:bg-dark-tremor-background-muted disabled:cursor-not-allowed disabled:opacity-70"
-                          disabled={isBusy}
-                        >
-                          {expandedId === record.id ? 'Hide details' : 'Show details'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(connector)}
-                          className="rounded-md border border-tremor-border px-3 py-2 text-sm font-medium text-tremor-content hover:bg-tremor-background-muted dark:border-dark-tremor-border dark:text-dark-tremor-content dark:hover:bg-dark-tremor-background-muted disabled:cursor-not-allowed disabled:opacity-70"
-                          disabled={isBusy}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleRequestDelete(connector)}
-                          className="rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
-                          disabled={isBusy}
-                        >
-                          Delete
-                        </button>
                       </div>
                     </div>
                     {expandedId === record.id && <ConnectorMeta connector={connector} />}
