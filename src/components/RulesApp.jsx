@@ -64,6 +64,7 @@ const convertConditionValue = (value, valueType, isMultiValue = false) => {
 export default function RulesApp() {
   const { client, setToast } = useInspectr();
   const [rules, setRules] = useState([]);
+  const [rulesMeta, setRulesMeta] = useState(null);
   const [events, setEvents] = useState([]);
   const [actionsCatalog, setActionsCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -94,6 +95,34 @@ export default function RulesApp() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [tagOptions, setTagOptions] = useState([]);
 
+  const applyRulesPayload = (payload, fallbackPage = 1) => {
+    const rulesList = Array.isArray(payload?.rules) ? payload.rules : [];
+    setRules(rulesList);
+    const payloadMeta = payload?.meta;
+    if (payloadMeta && typeof payloadMeta === 'object') {
+      const normalizedMeta = { ...payloadMeta };
+      const safePage = Number(normalizedMeta.page ?? fallbackPage);
+      normalizedMeta.page = Number.isFinite(safePage) && safePage > 0 ? safePage : 1;
+      setRulesMeta(normalizedMeta);
+    } else {
+      setRulesMeta(null);
+    }
+  };
+
+  const fetchRules = async (pageNumber = 1) => {
+    if (!client?.rules) return null;
+    const requested = Number(pageNumber);
+    const target = Number.isFinite(requested) && requested > 0 ? requested : 1;
+    try {
+      return await client.rules.list({ page: target });
+    } catch (err) {
+      if (target === 1) {
+        return await client.rules.list();
+      }
+      throw err;
+    }
+  };
+
   const [operatorCatalog, setOperatorCatalog] = useState([]);
   const operatorOptions = useMemo(() => createOperatorOptions(operatorCatalog), [operatorCatalog]);
   const operatorLabelMap = useMemo(
@@ -117,16 +146,16 @@ export default function RulesApp() {
       try {
         setLoading(true);
         const [rulesPayload, eventsPayload, actionsPayload, operatorsPayload] = await Promise.all([
-          client.rules.list(),
+          fetchRules(1),
           client.rules.getEvents(),
           client.rules.getActions(),
           client.rules.getOperators()
         ]);
         if (cancelled) return;
-        setRules(rulesPayload?.rules || []);
-        setEvents(eventsPayload || []);
-        setActionsCatalog(actionsPayload || []);
-        setOperatorCatalog(normalizeRuleOperators(operatorsPayload));
+        applyRulesPayload(rulesPayload, rulesPayload?.meta?.page ?? 1);
+        setEvents(eventsPayload.events || []);
+        setActionsCatalog(actionsPayload.actions || []);
+        setOperatorCatalog(normalizeRuleOperators(operatorsPayload.operators || []));
         setError('');
       } catch (err) {
         if (cancelled) return;
@@ -177,12 +206,15 @@ export default function RulesApp() {
     }, {});
   }, [events]);
 
-  const refreshRules = async () => {
-    if (!client?.rules) return;
+  const refreshRules = async (page = rulesMeta?.page || 1) => {
+    if (!client?.rules) return null;
+    const requestedPage = Number(page);
+    const targetPage = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+    let response = null;
     try {
       setRefreshing(true);
-      const data = await client.rules.list();
-      setRules(data?.rules || []);
+      response = await fetchRules(targetPage);
+      applyRulesPayload(response, targetPage);
       setError('');
     } catch (err) {
       console.error('Failed to refresh rules', err);
@@ -190,6 +222,13 @@ export default function RulesApp() {
     } finally {
       setRefreshing(false);
     }
+    return response;
+  };
+
+  const handleRulesPageChange = async (page) => {
+    const targetPage = Number(page) || 1;
+    if (targetPage === (rulesMeta?.page || 1)) return;
+    await refreshRules(targetPage);
   };
 
   const handlePauseRule = async (rule) => {
@@ -743,9 +782,9 @@ export default function RulesApp() {
           next[index] = result;
           return next;
         });
-      } else {
-        await refreshRules();
       }
+
+      await refreshRules();
 
       closeBuilder();
     } catch (err) {
@@ -787,6 +826,7 @@ export default function RulesApp() {
         message: 'Rule deleted',
         subMessage: `${rulePendingDelete.name || 'Rule'} removed successfully.`
       });
+      await refreshRules();
       setRulePendingDelete(null);
     } catch (err) {
       console.error('Failed to delete rule', err);
@@ -1000,6 +1040,9 @@ export default function RulesApp() {
             onExportRule={handleExportRule}
             onImportRule={handleOpenImport}
             actionsDisabled={!actionsReady}
+            meta={rulesMeta}
+            onPageChange={handleRulesPageChange}
+            paginationAlwaysShow={false}
             operatorLabelMap={operatorLabelMap}
           />
         </div>

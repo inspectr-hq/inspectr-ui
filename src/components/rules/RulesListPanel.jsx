@@ -8,6 +8,7 @@ import {
   formatActionParams,
   formatUpdateLabel
 } from '../../utils/rulesHelpers.js';
+import ListPagination from '../ListPagination.jsx';
 
 const StepIcon = ({ variant }) => {
   if (variant === 'event') {
@@ -160,6 +161,9 @@ const RulesListPanel = ({
   onPauseRule,
   onExportRule,
   onImportRule,
+  meta,
+  onPageChange,
+  paginationAlwaysShow = false,
   operatorLabelMap = {}
 }) => {
   const eventMap = useMemo(() => {
@@ -205,7 +209,7 @@ const RulesListPanel = ({
           </button>
           <button
             type="button"
-            onClick={onRefresh}
+            onClick={() => onRefresh && onRefresh()}
             title="Refresh rules"
             disabled={isRefreshing || loading}
             className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900"
@@ -529,6 +533,13 @@ const RulesListPanel = ({
               );
             })}
           </div>
+        )}
+        {meta && (
+          <ListPagination
+            meta={meta}
+            onPageChange={onPageChange}
+            alwaysShow={paginationAlwaysShow}
+          />
         )}
       </div>
     </div>

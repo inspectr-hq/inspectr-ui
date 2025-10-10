@@ -857,8 +857,19 @@ class RulesClient {
     return await res.json();
   }
 
-  async list() {
-    const res = await fetch(`${this.client.apiEndpoint}/rules`, {
+  async list({ page, limit } = {}) {
+    let url = `${this.client.apiEndpoint}/rules`;
+
+    const params = new URLSearchParams();
+
+    if (page) params.set('page', page);
+    if (limit) params.set('limit', limit);
+
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+
+    const res = await fetch(url, {
       headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
     });
 
@@ -936,8 +947,19 @@ class RulesClient {
     return this.replace(id, body);
   }
 
-  async getEvents() {
-    const res = await fetch(`${this.client.apiEndpoint}/rules/events`, {
+  async getEvents({ page, limit } = {}) {
+    let url = `${this.client.apiEndpoint}/rules/events`;
+
+    const params = new URLSearchParams();
+
+    if (page) params.set('page', page);
+    if (limit) params.set('limit', limit);
+
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+
+    const res = await fetch(url, {
       headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
     });
 
@@ -945,8 +967,19 @@ class RulesClient {
     return await res.json();
   }
 
-  async getActions() {
-    const res = await fetch(`${this.client.apiEndpoint}/rules/actions`, {
+  async getActions({ page, limit } = {}) {
+    let url = `${this.client.apiEndpoint}/rules/actions`;
+
+    const params = new URLSearchParams();
+
+    if (page) params.set('page', page);
+    if (limit) params.set('limit', limit);
+
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+
+    const res = await fetch(url, {
       headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
     });
 
@@ -954,8 +987,19 @@ class RulesClient {
     return await res.json();
   }
 
-  async getOperators() {
-    const res = await fetch(`${this.client.apiEndpoint}/rules/operators`, {
+  async getOperators({ page, limit } = {}) {
+    let url = `${this.client.apiEndpoint}/rules/operators`;
+
+    const params = new URLSearchParams();
+
+    if (page) params.set('page', page);
+    if (limit) params.set('limit', limit);
+
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+
+    const res = await fetch(url, {
       headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
     });
 
@@ -976,8 +1020,18 @@ class ConnectorsClient {
   }
 
   // List connectors
-  async list() {
-    const res = await fetch(`${this.client.apiEndpoint}/connectors`, {
+  async list({ page, limit } = {}) {
+    let url = `${this.client.apiEndpoint}/connectors`;
+
+    const params = new URLSearchParams();
+
+    if (page) params.set('page', page);
+    if (limit) params.set('limit', limit);
+
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    const res = await fetch(url, {
       headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
     });
     if (!res.ok) throw new Error(`Connectors list failed (${res.status})`);

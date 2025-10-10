@@ -1,7 +1,42 @@
 // src/components/ListPagination.jsx
 import React from 'react';
 
-const ListPagination = ({ currentPage, totalPages, onPageChange }) => {
+const ListPagination = ({
+  currentPage: currentPageProp,
+  totalPages: totalPagesProp,
+  meta,
+  onPageChange,
+  alwaysShow = true
+}) => {
+  const safeNumber = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const metaPage = safeNumber(meta?.page ?? meta?.current_page);
+  const metaTotalPages = safeNumber(meta?.total_pages ?? meta?.totalPages);
+
+  const totalPages = Math.max(0, metaTotalPages ?? safeNumber(totalPagesProp) ?? 0);
+  const computedCurrentPage = metaPage ?? safeNumber(currentPageProp) ?? 1;
+  const currentPage = totalPages > 0 ? Math.min(Math.max(1, computedCurrentPage), totalPages) : 1;
+
+  if (totalPages === 0) {
+    return null;
+  }
+
+  if (!alwaysShow && totalPages <= 1) {
+    return null;
+  }
+
+  const isInteractive = typeof onPageChange === 'function';
+
+  const handlePageChange = (page) => {
+    if (!isInteractive) return;
+    if (page < 1 || page > totalPages) return;
+    if (page === currentPage) return;
+    onPageChange(page);
+  };
+
   // Helper function to compute page numbers with ellipsis when totalPages > 7.
   const getPageNumbers = (currentPage, totalPages) => {
     const pages = [];
@@ -46,9 +81,9 @@ const ListPagination = ({ currentPage, totalPages, onPageChange }) => {
         {/* Previous Button */}
         <li>
           <button
-            onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage <= 1}
-            className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white cursor-pointer"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={!isInteractive || currentPage <= 1}
+            className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white cursor-pointer"
           >
             <span className="sr-only">Previous</span>
             <svg
@@ -84,11 +119,12 @@ const ListPagination = ({ currentPage, totalPages, onPageChange }) => {
           return (
             <li key={item}>
               <button
-                onClick={() => onPageChange(item)}
+                onClick={() => handlePageChange(item)}
+                disabled={!isInteractive}
                 className={
                   active
-                    ? 'z-10 flex items-center justify-center px-3 h-8 leading-tight text-blue-600 border border-blue-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-700 dark:text-white cursor-pointer'
-                    : 'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white cursor-pointer'
+                    ? 'z-10 flex items-center justify-center px-3 h-8 leading-tight text-blue-600 border border-blue-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-700 dark:text-white cursor-pointer'
+                    : 'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white cursor-pointer'
                 }
               >
                 {item}
@@ -100,9 +136,9 @@ const ListPagination = ({ currentPage, totalPages, onPageChange }) => {
         {/* Next Button */}
         <li>
           <button
-            onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-            className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white cursor-pointer"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={!isInteractive || currentPage >= totalPages}
+            className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white cursor-pointer"
           >
             <span className="sr-only">Next</span>
             <svg

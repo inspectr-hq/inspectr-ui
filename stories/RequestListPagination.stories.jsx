@@ -42,3 +42,10 @@ LastPage.args = {
   currentPage: 10,
   totalPages: 10
 };
+
+export const HiddenWhenSinglePage = Template.bind({});
+HiddenWhenSinglePage.args = {
+  currentPage: 1,
+  totalPages: 1,
+  alwaysShow: false
+};
