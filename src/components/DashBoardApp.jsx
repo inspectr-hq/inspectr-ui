@@ -12,13 +12,13 @@ import {
 } from '@tremor/react';
 import { useInspectr } from '../context/InspectrContext';
 
-import DashBoardKpi from './DashBoardKpi.jsx';
-import DashBoardBarChart from './DashBoardBarChart.jsx';
-import DashBoardLineChart from './DashBoardLineChart.jsx';
-import DashBoardBarList from './DashBoardBarList.jsx';
-import DashBoardDonutChart from './DashBoardDonutChart.jsx';
+import DashBoardKpi from './dashboards/DashBoardKpi.jsx';
+import DashBoardBarChart from './dashboards/DashBoardBarChart.jsx';
+import DashBoardLineChart from './dashboards/DashBoardLineChart.jsx';
+import DashBoardBarList from './dashboards/DashBoardBarList.jsx';
+import DashBoardDonutChart from './dashboards/DashBoardDonutChart.jsx';
 import DialogConfirmClearAll from './DialogConfirmClearAll.jsx';
-import DashBoardPercentileChart from './DashBoardPercentileChart.jsx';
+import DashBoardPercentileChart from './dashboards/DashBoardPercentileChart.jsx';
 import TagFilterDropdown from './TagFilterDropdown.jsx';
 import TagPill from './TagPill.jsx';
 

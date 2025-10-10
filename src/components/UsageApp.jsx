@@ -9,8 +9,8 @@ import promptsIcon from '../assets/icons/prompts.svg';
 import { Card, Title, Text, Metric, ProgressBar, BarList, Button } from '@tremor/react';
 import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 import { useInspectr } from '../context/InspectrContext';
-import DialogLicense from './DialogLicense.jsx';
-import DialogLicenseInfo from './DialogLicenseInfo.jsx';
+import DialogLicense from './usage/DialogLicense.jsx';
+import DialogLicenseInfo from './usage/DialogLicenseInfo.jsx';
 
 const UsageApp = () => {
   const { client, setToast } = useInspectr();

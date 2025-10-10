@@ -1,9 +1,9 @@
 // src/components/InspectrApp.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import RequestList from './RequestList';
-import RequestDetailsPanel from './RequestDetailsPanel';
-import SettingsPanel from './SettingsPanel';
+import RequestList from './operations/RequestList';
+import RequestDetailsPanel from './operations/RequestDetailsPanel';
+import SettingsPanel from './operations/SettingsPanel';
 import eventDB from '../utils/eventDB';
 import useInspectrRouter from '../hooks/useInspectrRouter.jsx';
 import useLocalStorage from '../hooks/useLocalStorage.jsx';

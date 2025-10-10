@@ -1,12 +1,12 @@
 // src/components/SettingsApp.jsx
 import React, { useEffect, useState } from 'react';
-import SettingsApiEndpoint from './SettingsApiEndpoint.jsx';
-import SettingsInspectr from './SettingsInspectr.jsx';
-import SettingsMock from './SettingsMock.jsx';
-import SettingsGuard from './SettingsGuard.jsx';
-import SettingsFeaturePreviews from './SettingsFeaturePreviews.jsx';
-import SettingsMcpInfo from './SettingsMcpInfo.jsx';
-import SettingsConnector from './SettingsConnector.jsx';
+import SettingsApiEndpoint from './settings/SettingsApiEndpoint.jsx';
+import SettingsInspectr from './settings/SettingsInspectr.jsx';
+import SettingsMock from './settings/SettingsMock.jsx';
+import SettingsGuard from './settings/SettingsGuard.jsx';
+import SettingsFeaturePreviews from './settings/SettingsFeaturePreviews.jsx';
+import SettingsMcpInfo from './settings/SettingsMcpInfo.jsx';
+import SettingsConnector from './settings/SettingsConnector.jsx';
 import { parseHash } from '../hooks/useHashRouter.jsx';
 import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 

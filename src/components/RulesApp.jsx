@@ -1,15 +1,15 @@
 // src/components/RulesApp.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useInspectr } from '../context/InspectrContext';
-import RulesListPanel from './RulesListPanel.jsx';
-import RulesBuilderPanel from './RulesBuilderPanel.jsx';
+import RulesListPanel from './rules/RulesListPanel.jsx';
+import RulesBuilderPanel from './rules/RulesBuilderPanel.jsx';
 import DialogDeleteConfirm from './DialogDeleteConfirm.jsx';
-import RuleBuilderDialog from './RuleBuilderDialog.jsx';
-import RuleTemplateDialog from './RuleTemplateDialog.jsx';
-import RuleApplyHistoryDialog from './RuleApplyHistoryDialog.jsx';
-import OperationTagsPanel from './OperationTagsPanel.jsx';
-import RuleExportDialog from './RuleExportDialog.jsx';
-import RuleImportDialog from './RuleImportDialog.jsx';
+import RuleBuilderDialog from './rules/RuleBuilderDialog.jsx';
+import RuleTemplateDialog from './rules/RuleTemplateDialog.jsx';
+import RuleApplyHistoryDialog from './rules/RuleApplyHistoryDialog.jsx';
+import OperationTagsPanel from './rules/OperationTagsPanel.jsx';
+import RuleExportDialog from './rules/RuleExportDialog.jsx';
+import RuleImportDialog from './rules/RuleImportDialog.jsx';
 import {
   buildActionState,
   createActionId,
