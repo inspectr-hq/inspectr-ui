@@ -156,7 +156,7 @@ const RulesListPanel = ({
   onCreateRule,
   onStartFromTemplate,
   onApplyHistory,
-  actionsDisabled,
+  actionsDisabled = false,
   onDuplicateRule,
   onPauseRule,
   onExportRule,
@@ -186,7 +186,6 @@ const RulesListPanel = ({
           <button
             type="button"
             onClick={onImportRule}
-            disabled={actionsDisabled || loading}
             className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900"
           >
             Import rule
@@ -194,7 +193,6 @@ const RulesListPanel = ({
           <button
             type="button"
             onClick={onStartFromTemplate}
-            disabled={actionsDisabled || loading}
             className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900"
           >
             Start from template
@@ -202,7 +200,6 @@ const RulesListPanel = ({
           <button
             type="button"
             onClick={onCreateRule}
-            disabled={actionsDisabled || loading}
             className="inline-flex items-center rounded-md border border-transparent bg-blue-500 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-blue-600 dark:hover:bg-blue-500"
           >
             Add rule

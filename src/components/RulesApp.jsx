@@ -851,13 +851,11 @@ export default function RulesApp() {
   };
 
   const handleCreateRule = () => {
-    if (!actionsReady) return;
     resetForm();
     setIsBuilderOpen(true);
   };
 
   const handleStartFromTemplate = () => {
-    if (!actionsReady) return;
     setIsTemplateDialogOpen(true);
     if (!templatesLoading && templates.length === 0) {
       loadTemplates();
@@ -874,7 +872,6 @@ export default function RulesApp() {
   };
 
   const handleDuplicateRule = (copy) => {
-    if (!actionsReady) return;
     // Map the duplicated rule object into the builder form state
     const formState = mapRuleToForm(copy);
     setForm(formState);
@@ -895,7 +892,6 @@ export default function RulesApp() {
   };
 
   const handleOpenImport = () => {
-    if (!actionsReady) return;
     setIsImportOpen(true);
   };
 
@@ -913,8 +909,6 @@ export default function RulesApp() {
     setOpenRuleId(null);
   };
 
-  const actionsReady =
-    events.length > 0 && actionsCatalog.length > 0 && operatorOptions.length > 0 && !loading;
   const selectedEventDescription = eventMap[form.event]?.description;
   const builderTitle = editingRuleId ? 'Edit rule' : 'Create rule';
   const builderDescription = editingRuleId
@@ -1039,7 +1033,6 @@ export default function RulesApp() {
             onPauseRule={handlePauseRule}
             onExportRule={handleExportRule}
             onImportRule={handleOpenImport}
-            actionsDisabled={!actionsReady}
             meta={rulesMeta}
             onPageChange={handleRulesPageChange}
             paginationAlwaysShow={false}
