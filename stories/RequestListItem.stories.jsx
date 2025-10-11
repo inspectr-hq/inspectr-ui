@@ -1,6 +1,6 @@
 // stories/RequestListItem.stories.jsx
 import React from 'react';
-import RequestListItem from '../src/components/RequestListItem';
+import RequestListItem from '../src/components/operations/RequestListItem.jsx';
 
 export default {
   title: 'Components/RequestListItem',

@@ -1,6 +1,6 @@
 // stories/RequestDetail.stories.jsx
 import React from 'react';
-import RequestDetail from '../src/components/RequestDetail';
+import RequestDetail from '../src/components/operations/RequestDetail.jsx';
 
 export default {
   title: 'Components/RequestDetail',

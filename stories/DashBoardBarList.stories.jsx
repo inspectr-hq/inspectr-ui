@@ -1,5 +1,5 @@
 import React from 'react';
-import DashBoardBarList from '../src/components/DashBoardBarList';
+import DashBoardBarList from '../src/components/dashboards/DashBoardBarList.jsx';
 
 export default {
   title: 'Components/DashBoardBarList',

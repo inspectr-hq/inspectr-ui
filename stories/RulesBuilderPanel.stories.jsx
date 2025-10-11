@@ -1,6 +1,6 @@
 import React from 'react';
 import { action } from '@storybook/addon-actions';
-import RulesBuilderPanel from '../src/components/RulesBuilderPanel.jsx';
+import RulesBuilderPanel from '../src/components/rules/RulesBuilderPanel.jsx';
 import {
   mockActionsCatalog,
   mockEvents,

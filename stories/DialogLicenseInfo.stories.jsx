@@ -1,5 +1,5 @@
 import React from 'react';
-import DialogLicenseInfo from '../src/components/DialogLicenseInfo.jsx';
+import DialogLicenseInfo from '../src/components/usage/DialogLicenseInfo.jsx';
 
 export default {
   title: 'Components/DialogLicenseInfo',
