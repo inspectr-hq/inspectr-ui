@@ -1,6 +1,6 @@
 // src/components/workspace/WorkspaceOperationsApp.jsx
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Badge,
   Card,
@@ -128,9 +128,22 @@ const getHealthMeta = (successRate) => {
 };
 
 const EndpointCard = ({ endpoint }) => {
-  const { method, path, host, count, successRate, averageDuration, p95Duration, chartData, latestStatus } =
-    endpoint;
+  const {
+    method,
+    path,
+    host,
+    count,
+    successRate,
+    averageDuration,
+    p95Duration,
+    chartData,
+    latestStatus,
+    seriesLoading,
+    seriesError
+  } = endpoint;
   const health = getHealthMeta(successRate);
+  const showLoadingState = seriesLoading && !chartData.length;
+  const showErrorState = seriesError && !chartData.length;
 
   return (
     <Card className="h-full rounded-tremor-small border border-tremor-border dark:border-dark-tremor-border">
@@ -157,15 +170,29 @@ const EndpointCard = ({ endpoint }) => {
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
           <div className="lg:col-span-3">
-            <LineChart
-              data={chartData}
-              index="time"
-              categories={['duration', 'baseline']}
-              colors={['cyan', 'gray']}
-              showYAxis={false}
-              showLegend={false}
-              className="h-36"
-            />
+            {showLoadingState ? (
+              <div className="flex h-36 items-center justify-center rounded-md border border-dashed border-tremor-border text-sm text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
+                Loading series…
+              </div>
+            ) : showErrorState ? (
+              <div className="flex h-36 items-center justify-center rounded-md border border-rose-200 bg-rose-50 px-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-900/20 dark:text-rose-300">
+                Failed to load series
+              </div>
+            ) : chartData.length ? (
+              <LineChart
+                data={chartData}
+                index="time"
+                categories={['duration', 'baseline']}
+                colors={['cyan', 'gray']}
+                showYAxis={false}
+                showLegend={false}
+                className="h-36"
+              />
+            ) : (
+              <div className="flex h-36 items-center justify-center rounded-md border border-dashed border-tremor-border text-sm text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
+                No recent series data
+              </div>
+            )}
           </div>
           <div className="flex flex-col justify-between gap-4 rounded-tremor-small bg-gray-50 p-4 dark:bg-dark-tremor-background">
             <div>
@@ -333,6 +360,8 @@ export default function WorkspaceOperationsApp() {
   const [summary, setSummary] = useState(null);
   const [summaryError, setSummaryError] = useState(null);
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  const [seriesState, setSeriesState] = useState({});
+  const inFlightSeries = useRef(new Set());
 
   const latestEventMeta =
     useLiveQuery(
@@ -365,9 +394,10 @@ export default function WorkspaceOperationsApp() {
       setIsSummaryLoading(true);
       setSummaryError(null);
       try {
-        const result = await client.operations.summarize({ seriesLimit: MAX_CHART_POINTS });
+        const result = await client.operations.summarize();
         if (isMounted) {
           setSummary(result);
+          setSeriesState({});
         }
       } catch (err) {
         if (isMounted) {
@@ -387,19 +417,102 @@ export default function WorkspaceOperationsApp() {
     };
   }, [client, latestEventMeta?.id]);
 
+  useEffect(() => {
+    if (!client?.operations?.getSeries) return;
+    if (!summary?.summaries?.length) {
+      setSeriesState({});
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchSeriesForEndpoint = (endpoint) => {
+      const key = endpoint.key || `${endpoint.method} ${endpoint.path}`;
+      if (!endpoint.method || !endpoint.path) {
+        setSeriesState((prev) => ({
+          ...prev,
+          [key]: {
+            loading: false,
+            data: null,
+            error: new Error('Series endpoint requires method and path')
+          }
+        }));
+        return;
+      }
+      if (inFlightSeries.current.has(key)) {
+        return;
+      }
+      inFlightSeries.current.add(key);
+      let shouldFetch = false;
+      setSeriesState((prev) => {
+        const current = prev[key];
+        if (current && (current.loading || current.data || current.error)) {
+          return prev;
+        }
+        shouldFetch = true;
+        return {
+          ...prev,
+          [key]: { loading: true, data: null, error: null }
+        };
+      });
+
+      if (!shouldFetch) return;
+
+      const fetchOptions = {
+        method: String(endpoint.method || '').toUpperCase(),
+        path: endpoint.path,
+        host: endpoint.host || undefined,
+        seriesLimit: MAX_CHART_POINTS
+      };
+      // Info log to verify request parameters in most consoles
+      console.info('[WorkspaceOperationsApp] /operations/series →', fetchOptions);
+
+      client.operations
+        .getSeries(fetchOptions)
+        .then((result) => {
+          if (!isMounted) return;
+          setSeriesState((prev) => ({
+            ...prev,
+            [key]: { loading: false, data: result, error: null }
+          }));
+        })
+        .catch((err) => {
+          if (!isMounted) return;
+          setSeriesState((prev) => ({
+            ...prev,
+            [key]: { loading: false, data: null, error: err }
+          }));
+        })
+        .finally(() => {
+          inFlightSeries.current.delete(key);
+        });
+    };
+
+    summary.summaries.forEach(fetchSeriesForEndpoint);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [client, summary]);
+
   const endpoints = useMemo(() => {
     if (!summary?.summaries?.length) return [];
-    return summary.summaries.map((endpoint) => ({
-      ...endpoint,
-      chartData: (endpoint.series || [])
-        .slice(-MAX_CHART_POINTS)
-        .map((point) => ({
-          time: formatChartLabel(point.ts),
-          duration: point.duration ?? 0,
-          baseline: point.baseline ?? endpoint.averageDuration ?? 0
-        }))
-    }));
-  }, [summary]);
+    return summary.summaries.map((endpoint) => {
+      const key = endpoint.key || `${endpoint.method} ${endpoint.path}`;
+      const seriesEntry = seriesState[key] || {};
+      const chartData = (seriesEntry.data?.series || []).slice(-MAX_CHART_POINTS).map((point) => ({
+        time: formatChartLabel(point.ts),
+        duration: point.duration ?? 0,
+        baseline: point.baseline ?? endpoint.averageDuration ?? 0
+      }));
+      return {
+        ...endpoint,
+        chartData,
+        seriesLoading: seriesEntry.loading ?? false,
+        seriesError: seriesEntry.error || null
+      };
+    });
+  }, [summary, seriesState]);
 
   const fallbackEndpointCount = useMemo(() => {
     if (!operations.length) return 0;

@@ -345,7 +345,6 @@ class OperationsClient {
     setParam('tags', options.tags);
     setParam('tag_any', options.tagAny);
     setParam('tags_any', options.tagsAny);
-    setParam('series_limit', options.seriesLimit);
 
     const query = qs.toString();
     const url = `${this.client.apiEndpoint}/operations/summary${query ? `?${query}` : ''}`;
@@ -353,6 +352,75 @@ class OperationsClient {
       headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
     });
     if (!res.ok) throw new Error(`Operations summary failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Retrieve latency series for a specific method and path.
+   * Server endpoint: GET /operations/series
+   * @param {Object} options
+   * @param {string} options.method - HTTP method (required)
+   * @param {string} options.path - Operation path (required)
+   * @param {string} [options.operationId]
+   * @param {string|Date} [options.since]
+   * @param {string|Date} [options.until]
+   * @param {string} [options.host]
+   * @param {number} [options.minDuration]
+   * @param {number} [options.maxDuration]
+   * @param {string|number} [options.status]
+   * @param {Array<string|number>} [options.statuses]
+   * @param {string|string[]} [options.tag]
+   * @param {string[]} [options.tags]
+   * @param {string|string[]} [options.tagAny]
+   * @param {string[]} [options.tagsAny]
+   * @param {number} [options.seriesLimit]
+   * @returns {Promise<Object>} Series payload
+   */
+  async getSeries(options = {}) {
+    const { method, path } = options;
+    if (!method) throw new Error('options.method is required');
+    if (!path) throw new Error('options.path is required');
+
+    const qs = new URLSearchParams();
+    const toStringValue = (value) => {
+      if (value === undefined || value === null) return undefined;
+      if (value instanceof Date) return value.toISOString();
+      return String(value);
+    };
+    const setParam = (key, value) => {
+      if (value === undefined || value === null) return;
+      if (Array.isArray(value)) {
+        if (!value.length) return;
+        qs.set(key, value.map(toStringValue).join(','));
+        return;
+      }
+      const normalized = toStringValue(value);
+      if (normalized === undefined) return;
+      qs.set(key, normalized);
+    };
+
+    setParam('method', method);
+    setParam('path', path);
+    setParam('operation_id', options.operationId);
+    setParam('since', options.since);
+    setParam('until', options.until);
+    setParam('host', options.host);
+    setParam('min_duration', options.minDuration);
+    setParam('max_duration', options.maxDuration);
+    setParam('status', options.status);
+    setParam('statuses', options.statuses);
+    setParam('tag', options.tag);
+    setParam('tags', options.tags);
+    setParam('tag_any', options.tagAny);
+    setParam('tags_any', options.tagsAny);
+    setParam('series_limit', options.seriesLimit);
+
+    const query = qs.toString();
+    const url = `${this.client.apiEndpoint}/operations/series${query ? `?${query}` : ''}`;
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+    if (!res.ok) throw new Error(`Operations series failed (${res.status})`);
     return await res.json();
   }
 
