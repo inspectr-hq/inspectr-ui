@@ -10,6 +10,50 @@ export default function RuleTemplateDialog({
   onRetry,
   onSelect
 }) {
+  const [selectedGroupId, setSelectedGroupId] = React.useState(null);
+  const [searchTerm, setSearchTerm] = React.useState('');
+
+  React.useEffect(() => {
+    if (!open) {
+      setSelectedGroupId(null);
+      setSearchTerm('');
+      return;
+    }
+
+    if (groupedTemplates.length === 0) {
+      setSelectedGroupId(null);
+      return;
+    }
+
+    const hasSelectedGroup = groupedTemplates.some((group) => group.id === selectedGroupId);
+
+    if (!hasSelectedGroup) {
+      setSelectedGroupId(groupedTemplates[0]?.id ?? null);
+    }
+  }, [open, groupedTemplates, selectedGroupId]);
+
+  const selectedGroup = React.useMemo(
+    () => groupedTemplates.find((group) => group.id === selectedGroupId) ?? null,
+    [groupedTemplates, selectedGroupId]
+  );
+
+  const filteredTemplates = React.useMemo(() => {
+    if (!selectedGroup) return [];
+
+    if (!searchTerm.trim()) {
+      return selectedGroup.items;
+    }
+
+    const lowerSearch = searchTerm.toLowerCase();
+
+    return selectedGroup.items.filter((template) => {
+      const name = template.name?.toLowerCase() ?? '';
+      const description = template.description?.toLowerCase() ?? '';
+
+      return name.includes(lowerSearch) || description.includes(lowerSearch);
+    });
+  }, [selectedGroup, searchTerm]);
+
   if (!open) return null;
 
   return (
@@ -66,21 +110,100 @@ export default function RuleTemplateDialog({
               No templates available right now.
             </p>
           ) : (
-            <div className="space-y-6">
-              {groupedTemplates.map((group) => (
-                <section key={group.id} className="space-y-3">
+            <div className="grid gap-6 lg:grid-cols-[260px,1fr]">
+              <aside className="space-y-4">
+                <h4 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Template groups
+                </h4>
+                <div className="space-y-2">
+                  {groupedTemplates.map((group) => {
+                    const isSelected = group.id === selectedGroupId;
+
+                    return (
+                      <button
+                        key={group.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedGroupId(group.id);
+                          setSearchTerm('');
+                        }}
+                        className={`w-full rounded-md border px-4 py-3 text-left transition ${
+                          isSelected
+                            ? 'border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-500 dark:bg-blue-900/30 dark:text-blue-100'
+                            : 'border-gray-200 bg-white text-gray-900 hover:border-blue-300 hover:bg-blue-50/60 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-blue-500/70 dark:hover:bg-blue-900/20'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold">{group.label}</p>
+                            {group.description && (
+                              <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                                {group.description}
+                              </p>
+                            )}
+                          </div>
+                          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                            {group.items.length}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </aside>
+              <section className="space-y-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
-                      {group.label}
+                    <h4 className="text-base font-semibold text-gray-900 dark:text-gray-50">
+                      {selectedGroup?.label ?? 'Select a group'}
                     </h4>
-                    {group.description && (
+                    {selectedGroup?.description && (
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {group.description}
+                        {selectedGroup.description}
                       </p>
                     )}
                   </div>
+                  {selectedGroup && (
+                    <div className="relative w-full sm:w-64">
+                      <label htmlFor="template-search" className="sr-only">
+                        Search templates
+                      </label>
+                      <input
+                        id="template-search"
+                        type="search"
+                        value={searchTerm}
+                        onChange={(event) => setSearchTerm(event.target.value)}
+                        placeholder="Search templates"
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                      />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                        aria-hidden="true"
+                      >
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-3.6-3.6" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                {!selectedGroup ? (
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Select a group to view its templates.
+                  </p>
+                ) : filteredTemplates.length === 0 ? (
+                  <div className="rounded-md border border-dashed border-gray-300 p-6 text-center text-sm text-gray-600 dark:border-gray-700 dark:text-gray-400">
+                    No templates match your search in this group.
+                  </div>
+                ) : (
                   <div className="grid gap-4 sm:grid-cols-2">
-                    {group.items.map((template) => (
+                    {filteredTemplates.map((template) => (
                       <div
                         key={template.id}
                         className="flex h-full flex-col justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-blue-400 hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
@@ -117,8 +240,8 @@ export default function RuleTemplateDialog({
                       </div>
                     ))}
                   </div>
-                </section>
-              ))}
+                )}
+              </section>
             </div>
           )}
         </div>
