@@ -286,6 +286,77 @@ class OperationsClient {
   }
 
   /**
+   * Retrieve aggregated operation summaries and series data.
+   * Server endpoint: GET /operations/summary
+   * @param {Object} [options]
+   * @param {string} [options.operationId]
+   * @param {string|Date} [options.since]
+   * @param {string|Date} [options.until]
+   * @param {string} [options.sortField]
+   * @param {string} [options.sortDirection]
+   * @param {string|number} [options.status]
+   * @param {Array<string|number>} [options.statuses]
+   * @param {string} [options.path]
+   * @param {string} [options.host]
+   * @param {string} [options.method]
+   * @param {string[]} [options.methods]
+   * @param {number} [options.minDuration]
+   * @param {number} [options.maxDuration]
+   * @param {string|string[]} [options.tag]
+   * @param {string[]} [options.tags]
+   * @param {string|string[]} [options.tagAny]
+   * @param {string[]} [options.tagsAny]
+   * @param {number} [options.seriesLimit]
+   * @returns {Promise<Object>} Aggregated summary payload
+   */
+  async summarize(options = {}) {
+    const qs = new URLSearchParams();
+    const toStringValue = (value) => {
+      if (value === undefined || value === null) return undefined;
+      if (value instanceof Date) return value.toISOString();
+      return String(value);
+    };
+    const setParam = (key, value) => {
+      if (value === undefined || value === null) return;
+      if (Array.isArray(value)) {
+        if (value.length === 0) return;
+        qs.set(key, value.map(toStringValue).join(','));
+        return;
+      }
+      const normalized = toStringValue(value);
+      if (normalized === undefined) return;
+      qs.set(key, normalized);
+    };
+
+    setParam('operation_id', options.operationId);
+    setParam('since', options.since);
+    setParam('until', options.until);
+    setParam('sort_field', options.sortField);
+    setParam('sort_direction', options.sortDirection);
+    setParam('status', options.status);
+    setParam('statuses', options.statuses);
+    setParam('path', options.path);
+    setParam('host', options.host);
+    setParam('method', options.method);
+    setParam('methods', options.methods);
+    setParam('min_duration', options.minDuration);
+    setParam('max_duration', options.maxDuration);
+    setParam('tag', options.tag);
+    setParam('tags', options.tags);
+    setParam('tag_any', options.tagAny);
+    setParam('tags_any', options.tagsAny);
+    setParam('series_limit', options.seriesLimit);
+
+    const query = qs.toString();
+    const url = `${this.client.apiEndpoint}/operations/summary${query ? `?${query}` : ''}`;
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+    if (!res.ok) throw new Error(`Operations summary failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
    * List all tags observed across operations.
    * Server endpoint: GET /operations/tags
    * @returns {Promise<{tags: string[]}>}
