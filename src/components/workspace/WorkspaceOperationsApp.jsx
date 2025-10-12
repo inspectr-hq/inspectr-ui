@@ -1,6 +1,6 @@
 // src/components/workspace/WorkspaceOperationsApp.jsx
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Badge,
   Card,
@@ -33,6 +33,8 @@ import { useInspectr } from '../../context/InspectrContext.jsx';
 
 const MAX_LIST_ITEMS = 100;
 const MAX_CHART_POINTS = 40;
+
+const endpointKey = (m, p) => `${m} ${p}`;
 
 const MethodBadge = ({ method }) => (
   <span
@@ -118,10 +120,11 @@ const formatChartLabel = (timestamp) => {
 };
 
 const getHealthMeta = (successRate) => {
-  if (successRate >= 95) {
+  const sr = Number(successRate) || 0;
+  if (sr >= 95) {
     return { label: 'Healthy', color: 'bg-emerald-500' };
   }
-  if (successRate >= 80) {
+  if (sr >= 80) {
     return { label: 'Warning', color: 'bg-amber-500' };
   }
   return { label: 'Critical', color: 'bg-rose-500' };
@@ -141,6 +144,7 @@ const EndpointCard = ({ endpoint }) => {
     seriesLoading,
     seriesError
   } = endpoint;
+  const numberFmt = useMemo(() => new Intl.NumberFormat(), []);
   const health = getHealthMeta(successRate);
   const showLoadingState = seriesLoading && !chartData.length;
   const showErrorState = seriesError && !chartData.length;
@@ -152,18 +156,18 @@ const EndpointCard = ({ endpoint }) => {
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <MethodBadge method={method} />
-              {host ? (
-                <Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-                  {host}
-                </Text>
-              ) : null}
+              <Title className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {path}
+              </Title>
             </div>
-            <Title className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong">
-              {path}
-            </Title>
+            {host ? (
+              <Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+                {host}
+              </Text>
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
-            <Badge color="slate">Requests {new Intl.NumberFormat().format(count)}</Badge>
+            <Badge color="slate">Requests {numberFmt.format(count)}</Badge>
             <StatusBadge status={latestStatus} />
           </div>
         </div>
@@ -427,7 +431,7 @@ export default function WorkspaceOperationsApp() {
 
       await Promise.all(
         endpoints.map(async (ep) => {
-          const key = `${ep.method} ${ep.path}`;
+          const key = endpointKey(ep.method, ep.path);
 
           // Mark as loading for this key
           setSeriesState((prev) => ({
@@ -468,7 +472,7 @@ export default function WorkspaceOperationsApp() {
   const endpoints = useMemo(() => {
     if (!summary?.summaries?.length) return [];
     return summary.summaries.map((endpoint) => {
-      const key = `${endpoint.method} ${endpoint.path}`;
+      const key = endpointKey(endpoint.method, endpoint.path);
       const seriesEntry = seriesState[key] || {};
       const chartData = (seriesEntry.data?.series || []).slice(-MAX_CHART_POINTS).map((point) => ({
         time: formatChartLabel(point.ts),
@@ -477,6 +481,7 @@ export default function WorkspaceOperationsApp() {
       }));
       return {
         ...endpoint,
+        key,
         chartData,
         seriesLoading: seriesEntry.loading ?? false,
         seriesError: seriesEntry.error || null
