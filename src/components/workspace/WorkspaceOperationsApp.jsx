@@ -361,7 +361,6 @@ export default function WorkspaceOperationsApp() {
   const [summaryError, setSummaryError] = useState(null);
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
   const [seriesState, setSeriesState] = useState({});
-  const inFlightSeries = useRef(new Set());
 
   const latestEventMeta =
     useLiveQuery(
@@ -419,86 +418,57 @@ export default function WorkspaceOperationsApp() {
 
   useEffect(() => {
     if (!client?.operations?.getSeries) return;
-    if (!summary?.summaries?.length) {
-      setSeriesState({});
-      return;
-    }
+    if (!summary?.summaries?.length) return;
 
     let isMounted = true;
 
-    const fetchSeriesForEndpoint = (endpoint) => {
-      const key = endpoint.key || `${endpoint.method} ${endpoint.path}`;
-      if (!endpoint.method || !endpoint.path) {
-        setSeriesState((prev) => ({
-          ...prev,
-          [key]: {
-            loading: false,
-            data: null,
-            error: new Error('Series endpoint requires method and path')
+    const loadAllSeries = async () => {
+      const endpoints = summary.summaries;
+
+      await Promise.all(
+        endpoints.map(async (ep) => {
+          const key = `${ep.method} ${ep.path}`;
+
+          // Mark as loading for this key
+          setSeriesState((prev) => ({
+            ...prev,
+            [key]: { ...(prev[key] || {}), loading: true, error: null }
+          }));
+
+          try {
+            const data = await client.operations.getSeries({
+              method: ep.method,
+              path: ep.path,
+              seriesLimit: MAX_CHART_POINTS
+            });
+
+            if (!isMounted) return;
+            setSeriesState((prev) => ({
+              ...prev,
+              [key]: { ...(prev[key] || {}), loading: false, data, error: null }
+            }));
+          } catch (err) {
+            if (!isMounted) return;
+            setSeriesState((prev) => ({
+              ...prev,
+              [key]: { ...(prev[key] || {}), loading: false, error: err }
+            }));
           }
-        }));
-        return;
-      }
-      if (inFlightSeries.current.has(key)) {
-        return;
-      }
-      inFlightSeries.current.add(key);
-      let shouldFetch = false;
-      setSeriesState((prev) => {
-        const current = prev[key];
-        if (current && (current.loading || current.data || current.error)) {
-          return prev;
-        }
-        shouldFetch = true;
-        return {
-          ...prev,
-          [key]: { loading: true, data: null, error: null }
-        };
-      });
-
-      if (!shouldFetch) return;
-
-      const fetchOptions = {
-        method: String(endpoint.method || '').toUpperCase(),
-        path: endpoint.path,
-        host: endpoint.host || undefined,
-        seriesLimit: MAX_CHART_POINTS
-      };
-      // Info log to verify request parameters in most consoles
-      console.info('[WorkspaceOperationsApp] /operations/series →', fetchOptions);
-
-      client.operations
-        .getSeries(fetchOptions)
-        .then((result) => {
-          if (!isMounted) return;
-          setSeriesState((prev) => ({
-            ...prev,
-            [key]: { loading: false, data: result, error: null }
-          }));
         })
-        .catch((err) => {
-          if (!isMounted) return;
-          setSeriesState((prev) => ({
-            ...prev,
-            [key]: { loading: false, data: null, error: err }
-          }));
-        })
-        .finally(() => {
-          inFlightSeries.current.delete(key);
-        });
+      );
     };
 
-    summary.summaries.forEach(fetchSeriesForEndpoint);
+    loadAllSeries();
 
     return () => {
       isMounted = false;
     };
-  }, [client, summary]);
+  }, [client, summary?.summaries]);
 
   const endpoints = useMemo(() => {
     if (!summary?.summaries?.length) return [];
     return summary.summaries.map((endpoint) => {
-      const key = endpoint.key || `${endpoint.method} ${endpoint.path}`;
+      const key = `${endpoint.method} ${endpoint.path}`;
       const seriesEntry = seriesState[key] || {};
       const chartData = (seriesEntry.data?.series || []).slice(-MAX_CHART_POINTS).map((point) => ({
         time: formatChartLabel(point.ts),
@@ -514,45 +484,11 @@ export default function WorkspaceOperationsApp() {
     });
   }, [summary, seriesState]);
 
-  const fallbackEndpointCount = useMemo(() => {
-    if (!operations.length) return 0;
-    const unique = new Set();
-    operations.forEach((operation) => {
-      if (operation?.method && operation?.path) {
-        unique.add(`${operation.method} ${operation.path}`);
-      }
-    });
-    return unique.size;
-  }, [operations]);
-
-  const { fallbackErrorCount, fallbackAverageDuration } = useMemo(() => {
-    if (!operations.length) return { fallbackErrorCount: 0, fallbackAverageDuration: 0 };
-
-    let errorCountAccumulator = 0;
-    let durationSum = 0;
-    let durationCount = 0;
-
-    operations.forEach((operation) => {
-      if ((operation.status || 0) >= 400) {
-        errorCountAccumulator += 1;
-      }
-      if (Number.isFinite(operation.duration)) {
-        durationSum += operation.duration;
-        durationCount += 1;
-      }
-    });
-
-    return {
-      fallbackErrorCount: errorCountAccumulator,
-      fallbackAverageDuration: durationCount ? Math.round(durationSum / durationCount) : 0
-    };
-  }, [operations]);
 
   const totalOperations = summary?.totals?.totalOperations ?? operations.length;
-  const totalEndpoints =
-    summary?.totals?.totalEndpoints ?? fallbackEndpointCount;
-  const errorCount = summary?.totals?.errorCount ?? fallbackErrorCount;
-  const averageDuration = summary?.totals?.averageDuration ?? fallbackAverageDuration;
+  const totalEndpoints = summary?.totals?.totalEndpoints;
+  const errorCount = summary?.totals?.errorCount;
+  const averageDuration = summary?.totals?.averageDuration;
 
   return (
     <div className="space-y-6">
