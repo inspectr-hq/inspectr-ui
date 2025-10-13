@@ -247,7 +247,8 @@ const EndpointMode = ({ endpoints, loading, error }) => {
   }
 
   return (
-    <Grid numItemsSm={1} numItemsLg={2} className="gap-4">
+    // <Grid numItemsSm={1} numItemsLg={2} className="gap-4">
+    <Grid>
       {endpoints.map((endpoint) => (
         <EndpointCard key={endpoint.key} endpoint={endpoint} />
       ))}
