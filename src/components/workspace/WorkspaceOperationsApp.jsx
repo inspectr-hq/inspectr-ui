@@ -755,6 +755,8 @@ const TimelineMode = ({ operations }) => {
                               <span className="max-w-md truncate text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
                                 {operation.path || '/'}
                               </span>
+                               <span className="max-w-md truncate text-[11px] text-tremor-content-subtle dark:text-dark-tremor-content">({formatDuration(operation.duration)})</span>
+                            {/*<span className="max-w-md truncate  text-[11px] text-tremor-content-subtle dark:text-dark-tremor-content">{operation.host || '—'}</span>*/}
                             </span>
                             <span>{formatTimestamp(operation.timestamp)}</span>
                           </div>
@@ -765,11 +767,8 @@ const TimelineMode = ({ operations }) => {
                               title={tooltip}
                             >
                               <span className="px-2 truncate">{operation.method}</span>
+                              <span className="px-2 truncate">Duration {formatDuration(operation.duration)}</span>
                             </div>
-                          </div>
-                          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-tremor-content-subtle dark:text-dark-tremor-content">
-                            <span>Duration {formatDuration(operation.duration)}</span>
-                            <span>{operation.host || '—'}</span>
                           </div>
                         </div>
                       );
