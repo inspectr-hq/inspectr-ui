@@ -506,14 +506,16 @@ export default function DashBoardApp() {
                 {compareFeatureEnabled && <Tab>Compare</Tab>}
               </TabList>
               {viewMode === 'overview' ? (
-                <TagFilterDropdown
-                  tags={availableTags}
-                  selectedTag={selectedTag}
-                  onSelect={setSelectedTag}
-                  disabled={currentLoading}
-                  loading={tagsLoading}
-                  error={tagsError}
-                />
+                compareFeatureEnabled && (
+                  <TagFilterDropdown
+                    tags={availableTags}
+                    selectedTag={selectedTag}
+                    onSelect={setSelectedTag}
+                    disabled={currentLoading}
+                    loading={tagsLoading}
+                    error={tagsError}
+                  />
+                )
               ) : (
                 <div className="flex flex-wrap items-end gap-3">
                   <div className="flex flex-row gap-1 items-center">
