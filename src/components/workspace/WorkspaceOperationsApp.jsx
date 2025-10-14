@@ -690,17 +690,24 @@ const TimelineMode = ({ operations }) => {
           <EmptyState message="No operations captured in the selected range." />
         ) : (
           <div className="space-y-4">
-            <div className="relative h-12">
-              <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-dashed border-tremor-border dark:border-dark-tremor-border" />
-              {ticks.map((tick) => (
-                <div
-                  key={tick.key}
-                  className="absolute -translate-x-1/2 whitespace-nowrap text-[11px] font-medium text-tremor-content-subtle dark:text-dark-tremor-content"
-                  style={{ left: `${clampPercent(tick.percent)}%` }}
-                >
-                  {tick.label}
+            <div className="flex flex-col md:flex-row md:items-center md:gap-4">
+              {/* Left spacer to match info column width on md+ */}
+              <div className="hidden md:block md:w-1/3 lg:w-1/5" />
+              {/* Right: ticks aligned to gantt column width */}
+              <div className="w-full md:w-2/3 lg:w-4/5">
+                <div className="relative h-12">
+                  <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-dashed border-tremor-border dark:border-dark-tremor-border" />
+                  {ticks.map((tick) => (
+                    <div
+                      key={tick.key}
+                      className="absolute -translate-x-1/2 whitespace-nowrap text-[11px] font-medium text-tremor-content-subtle dark:text-dark-tremor-content"
+                      style={{ left: `${clampPercent(tick.percent)}%` }}
+                    >
+                      {tick.label}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
             <div className="space-y-4">
               {rows.map((row) => (
@@ -744,30 +751,36 @@ const TimelineMode = ({ operations }) => {
                         tag?.token || 'all'
                       }-${index}`;
                       return (
-                        <div key={operationKey} className="space-y-1">
-                          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-tremor-content-subtle dark:text-dark-tremor-content">
-                            <span className="flex items-center gap-2 font-medium text-tremor-content dark:text-dark-tremor-content">
-                              <span
-                                className={`font-semibold uppercase ${getMethodTextClass(operation.method)}`}
-                              >
+                        <div key={operationKey} className="flex flex-col gap-2 md:flex-row md:items-stretch md:gap-4">
+                          {/* Left: info (two lines) */}
+                          <div className="w-full min-w-0 md:w-1/3 lg:w-1/5">
+                            <div className="flex items-center gap-2 text-[11px]">
+                              <span className={`font-semibold uppercase ${getMethodTextClass(operation.method)}`}>
                                 {operation.method}
                               </span>
                               <span className="max-w-md truncate text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
                                 {operation.path || '/'}
                               </span>
-                               <span className="max-w-md truncate text-[11px] text-tremor-content-subtle dark:text-dark-tremor-content">({formatDuration(operation.duration)})</span>
-                            {/*<span className="max-w-md truncate  text-[11px] text-tremor-content-subtle dark:text-dark-tremor-content">{operation.host || '—'}</span>*/}
-                            </span>
-                            <span>{formatTimestamp(operation.timestamp)}</span>
+                              <span className="max-w-md truncate text-[11px] text-tremor-content-subtle dark:text-dark-tremor-content">
+                                ({formatDuration(operation.duration)})
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-tremor-content-subtle dark:text-dark-tremor-content">
+                              {formatTimestamp(operation.timestamp)}
+                            </div>
                           </div>
-                          <div className="relative h-10 rounded-tremor-small border border-dashed border-tremor-border bg-tremor-background-subtle dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
-                            <div
-                              className={`absolute inset-y-1 flex items-center overflow-hidden rounded ${colorClass} text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm`}
-                              style={{ left: `${left}%`, width: widthValue, transform }}
-                              title={tooltip}
-                            >
-                              <span className="px-2 truncate">{operation.method}</span>
-                              <span className="px-2 truncate">Duration {formatDuration(operation.duration)}</span>
+
+                          {/* Right: gantt bar */}
+                          <div className="w-full md:w-2/3 lg:w-4/5">
+                            <div className="relative h-10 rounded-tremor-small border border-dashed border-tremor-border bg-tremor-background-subtle dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
+                              <div
+                                className={`absolute inset-y-1 flex items-center overflow-hidden rounded ${colorClass} text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm`}
+                                style={{ left: `${left}%`, width: widthValue, transform }}
+                                title={tooltip}
+                              >
+                                <span className="px-2 truncate">{operation.method}</span>
+                                <span className="px-2 truncate">Duration {formatDuration(operation.duration)}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
