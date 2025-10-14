@@ -23,6 +23,7 @@ import TagFilterDropdown from './TagFilterDropdown.jsx';
 import TagPill from './TagPill.jsx';
 import DateRangeButtons from './DateRangeButtons.jsx';
 import { getStartOfDay, getEndOfDay } from '../utils/timeRange.js';
+import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 
 // Helper: Format date for range display
 function formatDateForDisplay(dateString) {
@@ -254,6 +255,9 @@ function ComparisonColumn({ label, tag, stats, intervalData, loading }) {
 
 export default function DashBoardApp() {
   const { client } = useInspectr();
+
+  // Feature
+  const [compareFeatureEnabled] = useFeaturePreview('feat_statistics_compare', false);
 
   // Stats payload
   const [stats, setStats] = useState(null);
@@ -499,7 +503,7 @@ export default function DashBoardApp() {
             <div className="flex flex-wrap items-center gap-2">
               <TabList className="w-auto">
                 <Tab>Overview</Tab>
-                <Tab>Compare</Tab>
+                {compareFeatureEnabled && <Tab>Compare</Tab>}
               </TabList>
               {viewMode === 'overview' ? (
                 <TagFilterDropdown

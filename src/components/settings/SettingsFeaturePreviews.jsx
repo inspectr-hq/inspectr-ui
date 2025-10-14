@@ -29,15 +29,41 @@ const PREVIEWS = [
   },
   {
     slug: 'feat_connectors',
-    title: 'Outbound Connectors',
+    title: 'Inspectr Connectors',
     description: 'Forward Inspectr events to other services by configuring outbound connectors.',
-    image: undefined
+    image: undefined,
+    defaultEnabled: false,
+    removeWhenFalse: true
+  },
+  {
+    slug: 'feat_rules_ui',
+    title: 'Rules Experience',
+    description: 'Toggle access to the Rules workspace and usage analytics sections.',
+    image: undefined,
+    defaultEnabled: false,
+    removeWhenFalse: true
+  },
+  {
+    slug: 'feat_workspace_display',
+    title: 'Workspace Display',
+    description: 'Show the workspace explorer navigation with Endpoint, List, Table, and Timeline modes.',
+    image: undefined,
+    defaultEnabled: false,
+    removeWhenFalse: true
+  },
+  {
+    slug: 'feat_statistics_compare',
+    title: 'Statistics Compare Mode',
+    description: 'Enable the Compare tab and navigation within Inspectr statistics.',
+    image: undefined,
+    defaultEnabled: false,
+    removeWhenFalse: true
   }
 ];
 
 export default function SettingsFeaturePreviews() {
   const features = PREVIEWS.map((f) => {
-    const [enabled, setEnabled] = useFeaturePreview(f.slug);
+    const [enabled, setEnabled] = useFeaturePreview(f.slug, f.defaultEnabled, f.removeWhenFalse);
     return { ...f, enabled, setEnabled };
   });
 

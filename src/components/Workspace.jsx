@@ -1,6 +1,6 @@
 // src/components/Workspace.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DashBoardApp from './DashBoardApp.jsx';
 import InspectrApp from './InspectrApp.jsx';
 import SettingsApp from './SettingsApp.jsx';
@@ -18,12 +18,13 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import eventDB from '../utils/eventDB.js';
 import NotificationBadge from './NotificationBadge.jsx';
 import useLocalStorage from '../hooks/useLocalStorage.jsx';
+import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
-const navigation = [
+const BASE_NAVIGATION = [
   { name: 'Request History', slug: 'inspectr', component: InspectrApp },
   { name: 'Workspace', slug: 'workspace', component: WorkspaceOperationsApp },
   { name: 'Statistics', slug: 'statistics', component: DashBoardApp },
@@ -49,7 +50,24 @@ const Logo = (props) => (
 );
 
 export default function Workspace() {
-  const [currentTab, setCurrentTab] = useState(navigation[0]);
+  const [rulesFeatureEnabled] = useFeaturePreview('feat_rules_ui', false);
+  const [workspaceFeatureEnabled] = useFeaturePreview('feat_workspace_display', false);
+
+  const navigation = useMemo(() => {
+    let items = BASE_NAVIGATION;
+
+    if (rulesFeatureEnabled !== true) {
+      items = items.filter((item) => item.slug !== 'rules');
+    }
+
+    if (workspaceFeatureEnabled !== true) {
+      items = items.filter((item) => item.slug !== 'workspace');
+    }
+
+    return items;
+  }, [rulesFeatureEnabled, workspaceFeatureEnabled]);
+
+  const [currentTab, setCurrentTab] = useState(() => navigation[0]);
   const { route, currentNav, handleTabClick } = useHashRouter(navigation);
   const ActiveComponent = currentNav.component;
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -59,6 +77,12 @@ export default function Workspace() {
   useEffect(() => {
     setIsRecording(!!recordStart);
   }, [recordStart]);
+
+  useEffect(() => {
+    if (currentNav) {
+      setCurrentTab(currentNav);
+    }
+  }, [currentNav]);
 
   const [isRecordExportOpen, setIsRecordExportOpen] = useState(false);
   const recordCount = useLiveQuery(async () => {

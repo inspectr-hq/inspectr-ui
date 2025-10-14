@@ -15,6 +15,7 @@ import DialogLicenseInfo from './usage/DialogLicenseInfo.jsx';
 const UsageApp = () => {
   const { client, setToast } = useInspectr();
   const [mcpFeatureEnabled] = useFeaturePreview('feat_export_mcp_server');
+  const [rulesFeatureEnabled] = useFeaturePreview('feat_rules_ui', false);
   const [metrics, setMetrics] = useState(null);
   const [license, setLicense] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -463,84 +464,88 @@ const UsageApp = () => {
         </div>
       </Card>
 
-      <Card className="p-6">
-        <div className="flex items-center gap-2">
-          <img
-            src={toolsIcon}
-            width={24}
-            height={24}
-            alt=""
-            aria-hidden="true"
-            className="inline-block"
-          />
-          <Title className="!mb-0">Rules</Title>
-        </div>
-
-        <Text className="mt-1 text-gray-500">Overview of Rules definitions and actions usage.</Text>
-
-        {rulesLimit !== null && (
-          <div className="mt-6">
-            <Text className="mb-2">Definitions usage</Text>
-            <ProgressBar value={rulesPercent} color="indigo" />
-            <Text className="mt-2">
-              {rulesUsed} of {rulesLimit} rules defined
-            </Text>
-            <Text className="mt-1 text-gray-500">
-              Limit is the maximum number of rule definitions. No monthly reset.
-            </Text>
-          </div>
-        )}
-
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                Rules executed
-              </p>
-              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                {rulesTotals.actions_executed ?? rulesMetrics.actions_executed ?? 0}
-              </p>
-            </div>
-            <div>
-              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                Actions triggered
-              </p>
-              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                {rulesTotals.actions_triggered ?? 0}
-              </p>
-            </div>
-            <div>
-              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                Historically operations processed
-              </p>
-              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                {rulesTotals.apply_processed ?? 0}
-              </p>
-            </div>
-            <div>
-              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                Historically operations updated
-              </p>
-              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                {rulesTotals.apply_updated ?? 0}
-              </p>
-            </div>
-          </div>
-
-          {/* Right column: Actions by type */}
-          <div>
-            <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong mb-2">
-              Actions by type
-            </h4>
-            <BarList
-              data={Object.entries(rulesMetrics.actions_by_type || {}).map(([name, value]) => ({
-                name,
-                value
-              }))}
+      {rulesFeatureEnabled && (
+        <Card className="p-6">
+          <div className="flex items-center gap-2">
+            <img
+              src={toolsIcon}
+              width={24}
+              height={24}
+              alt=""
+              aria-hidden="true"
+              className="inline-block"
             />
+            <Title className="!mb-0">Rules</Title>
           </div>
-        </div>
-      </Card>
+
+          <Text className="mt-1 text-gray-500">
+            Overview of Rules definitions and actions usage.
+          </Text>
+
+          {rulesLimit !== null && (
+            <div className="mt-6">
+              <Text className="mb-2">Definitions usage</Text>
+              <ProgressBar value={rulesPercent} color="indigo" />
+              <Text className="mt-2">
+                {rulesUsed} of {rulesLimit} rules defined
+              </Text>
+              <Text className="mt-1 text-gray-500">
+                Limit is the maximum number of rule definitions. No monthly reset.
+              </Text>
+            </div>
+          )}
+
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                  Rules executed
+                </p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {rulesTotals.actions_executed ?? rulesMetrics.actions_executed ?? 0}
+                </p>
+              </div>
+              <div>
+                <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                  Actions triggered
+                </p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {rulesTotals.actions_triggered ?? 0}
+                </p>
+              </div>
+              <div>
+                <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                  Historically operations processed
+                </p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {rulesTotals.apply_processed ?? 0}
+                </p>
+              </div>
+              <div>
+                <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                  Historically operations updated
+                </p>
+                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {rulesTotals.apply_updated ?? 0}
+                </p>
+              </div>
+            </div>
+
+            {/* Right column: Actions by type */}
+            <div>
+              <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong mb-2">
+                Actions by type
+              </h4>
+              <BarList
+                data={Object.entries(rulesMetrics.actions_by_type || {}).map(([name, value]) => ({
+                  name,
+                  value
+                }))}
+              />
+            </div>
+          </div>
+        </Card>
+      )}
 
       {mcpFeatureEnabled && (
         <Card className="p-6">
