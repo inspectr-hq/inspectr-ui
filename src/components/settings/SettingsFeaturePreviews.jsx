@@ -3,6 +3,7 @@ import React from 'react';
 import { Divider } from '@tremor/react';
 import { Switch } from '@headlessui/react';
 import useFeaturePreview from '../../hooks/useFeaturePreview.jsx';
+import useLocalStorage from '../../hooks/useLocalStorage.jsx';
 import { cx } from '../../utils/cx.js';
 
 const PREVIEWS = [
@@ -26,8 +27,11 @@ const PREVIEWS = [
     description:
       "Enable Inspectr's MCP Server to expose operations and data via the Model Context Protocol for compatible AI Agents like Claude, ChatGPT, and more.",
     image: undefined
-  },
-  /*{
+  }
+];
+
+const FUTURE_FEATURES = [
+  {
     slug: 'feat_connectors',
     title: 'Inspectr Connectors',
     description: 'Forward Inspectr events to other services by configuring outbound connectors.',
@@ -58,11 +62,19 @@ const PREVIEWS = [
     image: undefined,
     defaultEnabled: false,
     removeWhenFalse: true
-  }*/
+  }
 ];
 
 export default function SettingsFeaturePreviews() {
-  const features = PREVIEWS.map((f) => {
+  const [futureFlag] = useLocalStorage('future', 'false');
+  const isFutureEnabled = futureFlag === 'true';
+
+  const previewDefinitions = React.useMemo(
+    () => (isFutureEnabled ? [...PREVIEWS, ...FUTURE_FEATURES] : PREVIEWS),
+    [isFutureEnabled]
+  );
+
+  const features = previewDefinitions.map((f) => {
     const [enabled, setEnabled] = useFeaturePreview(f.slug, f.defaultEnabled, f.removeWhenFalse);
     return { ...f, enabled, setEnabled };
   });
