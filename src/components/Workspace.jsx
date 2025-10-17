@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import DashBoardApp from './DashBoardApp.jsx';
 import InspectrApp from './InspectrApp.jsx';
 import SettingsApp from './SettingsApp.jsx';
-import WorkspaceOperationsApp from './workspace/WorkspaceOperationsApp.jsx';
+import InsightsApp from './insights/InsightsApp.jsx';
 import UsageApp from './UsageApp.jsx';
 import RulesApp from './RulesApp.jsx';
 import useHashRouter from '../hooks/useHashRouter.jsx';
@@ -26,7 +26,7 @@ function classNames(...classes) {
 
 const BASE_NAVIGATION = [
   { name: 'Request History', slug: 'inspectr', component: InspectrApp },
-  { name: 'Workspace', slug: 'workspace', component: WorkspaceOperationsApp },
+  { name: 'Insights', slug: 'insights', component: InsightsApp },
   { name: 'Statistics', slug: 'statistics', component: DashBoardApp },
   { name: 'Usage', slug: 'usage', component: UsageApp },
   { name: 'Rules', slug: 'rules', component: RulesApp },
@@ -61,7 +61,7 @@ export default function Workspace() {
     }
 
     if (workspaceFeatureEnabled !== true) {
-      items = items.filter((item) => item.slug !== 'workspace');
+      items = items.filter((item) => item.slug !== 'insights');
     }
 
     return items;
@@ -182,7 +182,7 @@ export default function Workspace() {
 
         {/* ——— Content Area ——— */}
         <div className="flex-grow overflow-auto">
-          {['workspace', 'statistics', 'settings', 'usage', 'rules'].includes(currentNav.slug) ? (
+          {['insights', 'statistics', 'settings', 'usage', 'rules'].includes(currentNav.slug) ? (
             <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-950">
               <ActiveComponent key={currentNav.slug} />
             </div>

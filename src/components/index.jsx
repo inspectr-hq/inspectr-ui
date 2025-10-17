@@ -29,7 +29,7 @@ export { default as Terminal } from './Terminal.jsx';
 export { default as ToastNotification } from './ToastNotification.jsx';
 export { default as NotificationBadge } from './NotificationBadge.jsx';
 export { default as Workspace } from './Workspace.jsx';
-export { default as WorkspaceOperationsApp } from './workspace/WorkspaceOperationsApp.jsx';
+export { default as InsightsApp } from './insights/InsightsApp.jsx';
 export { default as ServiceStatus } from './settings/ServiceStatus.jsx';
 export { default as DialogAuthConfig } from './settings/DialogAuthConfig.jsx';
 export { default as DialogExportOperations } from './operations/DialogExportOperations.jsx';
