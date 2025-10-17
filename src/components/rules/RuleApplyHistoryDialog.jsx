@@ -30,6 +30,7 @@ export default function RuleApplyHistoryDialog({
   });
 
   const [filters, setFilters] = useState(createDefaultFilters);
+  const [areFiltersVisible, setAreFiltersVisible] = useState(false);
 
   const selectableTags = useMemo(() => {
     if (!Array.isArray(tagOptions)) return [];
@@ -42,6 +43,7 @@ export default function RuleApplyHistoryDialog({
     if (!open) return;
     // reset filters and preview when opening
     setFilters(createDefaultFilters());
+    setAreFiltersVisible(false);
   }, [open, rule?.id]);
 
   const normalizeList = (values) =>
@@ -68,6 +70,30 @@ export default function RuleApplyHistoryDialog({
   const handleTagsAnyChange = (values) => {
     setFilters((prev) => ({ ...prev, tagsAny: normalizeList(values) }));
   };
+
+  const resetFilters = () => {
+    setFilters(createDefaultFilters());
+    setAreFiltersVisible(false);
+  };
+
+  const activeFilters = useMemo(() => {
+    const list = [];
+    if (filters.since) list.push('Since');
+    if (filters.until) list.push('Until');
+    if (filters.methods?.length) list.push('Method');
+    if (filters.statuses?.length) list.push('Status codes');
+    if (filters.path?.trim()) list.push('Path');
+    if (filters.host?.trim()) list.push('Host');
+    if (filters.tagsAll?.length) list.push('Tags (all)');
+    if (filters.tagsAny?.length) list.push('Tags (any)');
+    return list;
+  }, [filters]);
+
+  useEffect(() => {
+    if (activeFilters.length > 0) {
+      setAreFiltersVisible(true);
+    }
+  }, [activeFilters.length]);
 
   const buildPayload = () => {
     const toDate = (value) => {
@@ -202,95 +228,130 @@ export default function RuleApplyHistoryDialog({
           </button>
         </div>
         <div className="max-h-[80vh] overflow-auto p-4 sm:p-6">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="text-xs text-gray-700 dark:text-gray-300">
-              Since
-              <input
-                type="datetime-local"
-                name="since"
-                value={filters.since}
-                onChange={handleChange}
-                className="mt-1 w-full rounded border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-              />
-            </label>
-            <label className="text-xs text-gray-700 dark:text-gray-300">
-              Until
-              <input
-                type="datetime-local"
-                name="until"
-                value={filters.until}
-                onChange={handleChange}
-                className="mt-1 w-full rounded border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-              />
-            </label>
-            <div className="text-xs text-gray-700 dark:text-gray-300">
-              <span>Method</span>
-              <div className="mt-1">
-                <TagsInput
-                  options={HTTP_METHOD_OPTIONS}
-                  selected={filters.methods}
-                  onChange={handleMethodsChange}
-                  placeholder="Select method"
-                  colorFn={getMethodTagClass}
-                />
+          <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Filters (optional)
+                </h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {activeFilters.length === 0
+                    ? 'No filters applied. Inspectr will search across all stored operations.'
+                    : `Active filters: ${activeFilters.join(', ')}`}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {activeFilters.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="rounded border border-gray-300 px-2 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                  >
+                    Clear filters
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setAreFiltersVisible((prev) => !prev)}
+                  className="rounded border border-transparent bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                >
+                  {areFiltersVisible ? 'Hide filters' : 'Show filters'}
+                </button>
               </div>
             </div>
-            <div className="text-xs text-gray-700 dark:text-gray-300">
-              <span>Status codes</span>
-              <div className="mt-1">
-                <TagsInput
-                  options={STATUS_CODE_OPTIONS}
-                  selected={filters.statuses}
-                  onChange={handleStatusesChange}
-                  placeholder="Add status code..."
-                  colorFn={getStatusClass}
-                />
+
+            {areFiltersVisible && (
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="text-xs text-gray-700 dark:text-gray-300">
+                  Since
+                  <input
+                    type="datetime-local"
+                    name="since"
+                    value={filters.since}
+                    onChange={handleChange}
+                    className="mt-1 w-full rounded border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                  />
+                </label>
+                <label className="text-xs text-gray-700 dark:text-gray-300">
+                  Until
+                  <input
+                    type="datetime-local"
+                    name="until"
+                    value={filters.until}
+                    onChange={handleChange}
+                    className="mt-1 w-full rounded border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                  />
+                </label>
+                <div className="text-xs text-gray-700 dark:text-gray-300">
+                  <span>Method</span>
+                  <div className="mt-1">
+                    <TagsInput
+                      options={HTTP_METHOD_OPTIONS}
+                      selected={filters.methods}
+                      onChange={handleMethodsChange}
+                      placeholder="Select method"
+                      colorFn={getMethodTagClass}
+                    />
+                  </div>
+                </div>
+                <div className="text-xs text-gray-700 dark:text-gray-300">
+                  <span>Status codes</span>
+                  <div className="mt-1">
+                    <TagsInput
+                      options={STATUS_CODE_OPTIONS}
+                      selected={filters.statuses}
+                      onChange={handleStatusesChange}
+                      placeholder="Add status code..."
+                      colorFn={getStatusClass}
+                    />
+                  </div>
+                </div>
+                <label className="text-xs text-gray-700 dark:text-gray-300">
+                  Path contains
+                  <input
+                    type="text"
+                    name="path"
+                    placeholder="/api/users"
+                    value={filters.path}
+                    onChange={handleChange}
+                    className="mt-1 w-full rounded border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                  />
+                </label>
+                <label className="text-xs text-gray-700 dark:text-gray-300">
+                  Host
+                  <input
+                    type="text"
+                    name="host"
+                    placeholder="api.example.com"
+                    value={filters.host}
+                    onChange={handleChange}
+                    className="mt-1 w-full rounded border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                  />
+                </label>
+                <div className="text-xs text-gray-700 dark:text-gray-300">
+                  <span>Tags (all)</span>
+                  <div className="mt-1">
+                    <TagsInput
+                      options={selectableTags}
+                      selected={filters.tagsAll}
+                      onChange={handleTagsAllChange}
+                      placeholder="Add tag..."
+                    />
+                  </div>
+                </div>
+                <div className="text-xs text-gray-700 dark:text-gray-300">
+                  <span>Tags (any)</span>
+                  <div className="mt-1">
+                    <TagsInput
+                      options={selectableTags}
+                      selected={filters.tagsAny}
+                      onChange={handleTagsAnyChange}
+                      placeholder="Add tag..."
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-            <label className="text-xs text-gray-700 dark:text-gray-300">
-              Path contains
-              <input
-                type="text"
-                name="path"
-                placeholder="/api/users"
-                value={filters.path}
-                onChange={handleChange}
-                className="mt-1 w-full rounded border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-              />
-            </label>
-            <label className="text-xs text-gray-700 dark:text-gray-300">
-              Host
-              <input
-                type="text"
-                name="host"
-                placeholder="api.example.com"
-                value={filters.host}
-                onChange={handleChange}
-                className="mt-1 w-full rounded border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-              />
-            </label>
-            <div className="text-xs text-gray-700 dark:text-gray-300">
-              <span>Tags (all)</span>
-              <div className="mt-1">
-                <TagsInput
-                  options={selectableTags}
-                  selected={filters.tagsAll}
-                  onChange={handleTagsAllChange}
-                  placeholder="Add tag..."
-                />
-              </div>
-            </div>
-            <div className="text-xs text-gray-700 dark:text-gray-300">
-              <span>Tags (any)</span>
-              <div className="mt-1">
-                <TagsInput
-                  options={selectableTags}
-                  selected={filters.tagsAny}
-                  onChange={handleTagsAnyChange}
-                  placeholder="Add tag..."
-                />
-              </div>
-            </div>
+            )}
           </div>
 
           {isApplyResult && !applying && !error && (
