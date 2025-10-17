@@ -4,6 +4,49 @@ import { JSONPath } from 'jsonpath-plus';
 import { inspectrJsonPathTree, flattenJsonPathTree } from '../utils/inspectrJsonPaths';
 import useRecentOperations from '../hooks/useRecentOperations.jsx';
 
+const parseJsonSafely = (value) => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (trimmed === '') return value;
+  const startsLikeJson = trimmed.startsWith('{') || trimmed.startsWith('[');
+  if (!startsLikeJson) return value;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return value;
+  }
+};
+
+const prepareOperationForPreview = (operation) => {
+  if (!operation || typeof operation !== 'object') return operation;
+
+  const next = { ...operation };
+
+  if (operation.request && typeof operation.request === 'object') {
+    next.request = { ...operation.request };
+    if ('body' in operation.request) {
+      const parsed = parseJsonSafely(operation.request.body);
+      if (parsed !== operation.request.body) {
+        next.request.body = parsed;
+        next.request.__rawBody = operation.request.body;
+      }
+    }
+  }
+
+  if (operation.response && typeof operation.response === 'object') {
+    next.response = { ...operation.response };
+    if ('body' in operation.response) {
+      const parsed = parseJsonSafely(operation.response.body);
+      if (parsed !== operation.response.body) {
+        next.response.body = parsed;
+        next.response.__rawBody = operation.response.body;
+      }
+    }
+  }
+
+  return next;
+};
+
 function renderTree(nodes, onSelect, depth = 0) {
   if (!nodes) return null;
 
@@ -125,7 +168,8 @@ export default function JsonPathPicker({
 
     setIsEvaluating(true);
     try {
-      const rawResult = JSONPath({ path: trimmedValue, json: operation });
+      const evaluationTarget = prepareOperationForPreview(operation);
+      const rawResult = JSONPath({ path: trimmedValue, json: evaluationTarget });
       const matches = Array.isArray(rawResult) ? rawResult : [rawResult];
       const matchesCount = matches.length;
 
