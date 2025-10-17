@@ -155,7 +155,12 @@ export default function RulesApp() {
         applyRulesPayload(rulesPayload, rulesPayload?.meta?.page ?? 1);
         setEvents(eventsPayload.events || []);
         setActionsCatalog(actionsPayload.actions || []);
-        setOperatorCatalog(normalizeRuleOperators(operatorsPayload.operators || []));
+        const operatorList = Array.isArray(operatorsPayload)
+          ? operatorsPayload
+          : Array.isArray(operatorsPayload?.operators)
+            ? operatorsPayload.operators
+            : [];
+        setOperatorCatalog(normalizeRuleOperators(operatorList));
         setError('');
       } catch (err) {
         if (cancelled) return;
