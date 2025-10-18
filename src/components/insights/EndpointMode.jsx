@@ -27,7 +27,7 @@ export default function EndpointMode({ endpoints, loading, error }) {
   }
 
   return (
-    <Grid>
+    <Grid numItemsSm={1} numItemsMd={1} numItemsLg={1} className="gap-4">
       {endpoints.map((endpoint) => (
         <EndpointCard key={endpoint.key} endpoint={endpoint} />
       ))}

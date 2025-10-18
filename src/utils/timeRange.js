@@ -29,9 +29,23 @@ const createPreset = (label, startDate, endDate) => {
   };
 };
 
+const createRollingPreset = (label, startDate, endDate) => {
+  const start = startDate instanceof Date ? startDate.toISOString() : new Date(startDate).toISOString();
+  const end = endDate instanceof Date ? endDate.toISOString() : new Date(endDate).toISOString();
+  return {
+    label,
+    start,
+    end,
+    tooltip: `${start} – ${end}`
+  };
+};
+
 export const getTimeRangePresets = (referenceDate = new Date()) => {
   const today = referenceDate instanceof Date ? new Date(referenceDate) : new Date();
+  const rollingEnd = today;
+  const rollingStart = new Date(rollingEnd.getTime() - 60 * 60 * 1000);
   const presets = [
+    createRollingPreset('Last hour', rollingStart, rollingEnd),
     createPreset('Today', today, today),
     createPreset('7D', new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000), today),
     createPreset('30D', new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000), today),

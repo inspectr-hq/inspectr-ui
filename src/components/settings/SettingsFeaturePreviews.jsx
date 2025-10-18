@@ -42,15 +42,15 @@ const FUTURE_FEATURES = [
   {
     slug: 'feat_rules_ui',
     title: 'Rules Experience',
-    description: 'Toggle access to the Rules workspace and usage analytics sections.',
+    description: 'Toggle access to the Rules engine.',
     image: undefined,
     defaultEnabled: false,
     removeWhenFalse: true
   },
   {
-    slug: 'feat_workspace_display',
-    title: 'Workspace Display',
-    description: 'Show the workspace explorer navigation with Endpoint, List, Table, and Timeline modes.',
+    slug: 'feat_insights_display',
+    title: 'Insights Display',
+    description: 'Show the insights explorer navigation with Endpoint, List, Table, and Timeline modes.',
     image: undefined,
     defaultEnabled: false,
     removeWhenFalse: true
