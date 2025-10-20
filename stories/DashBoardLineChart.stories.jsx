@@ -1,5 +1,5 @@
 import React from 'react';
-import DashBoardLineChart from '../src/components/DashBoardLineChart';
+import DashBoardLineChart from '../src/components/dashboards/DashBoardLineChart.jsx';
 
 export default {
   title: 'Components/DashBoardLineChart',

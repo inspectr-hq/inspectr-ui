@@ -1,0 +1,102 @@
+// src/components/DashBoardKpi.jsx
+
+import { Card } from '@tremor/react';
+
+function classNames(...classes) {
+  return classes.filter(Boolean).join(' ');
+}
+
+export default function DashBoardKpi({ overall }) {
+  if (!overall) {
+    return <div>Loading KPI...</div>;
+  }
+
+  const formatRate = (value) => {
+    if (value == null || isNaN(value)) return '0/s';
+    const perSecond = Number(value);
+    const perMinute = perSecond * 60;
+
+    // New rule: if below 1 per minute, always show per-second
+    if (perMinute < 1) {
+      if (perSecond >= 0.01) return `${perSecond.toFixed(2)}/s`;
+      if (perSecond > 0) return '<0.01/s';
+      return '0/s';
+    }
+
+    // Otherwise show per-second with two decimals
+    return `${perSecond.toFixed(2)}/s`;
+  };
+
+  const kpiData = [
+    {
+      name: 'Total Requests',
+      stat: overall.total_requests,
+      // Optionally, include change info if available
+      change: '',
+      changeType: 'neutral'
+    },
+    {
+      name: 'Average Response Time',
+      stat: `${overall.average_response_time} ms`,
+      change: '',
+      changeType: 'neutral'
+    },
+    {
+      name: 'Success Rate',
+      stat: `${(overall.success_rate * 100).toFixed(1)}%`,
+      change: '',
+      changeType: 'neutral'
+    },
+    {
+      name: 'Error Rate',
+      stat: `${(overall.error_rate * 100).toFixed(1)}%`,
+      change: '',
+      changeType: 'neutral'
+    }
+    // {
+    //   name: 'Request Rate',
+    //   stat: formatRate(overall.requests_per_second),
+    //   change: '',
+    //   changeType: 'neutral'
+    // },
+    // {
+    //   name: 'Request Failed Rate',
+    //   stat: formatRate(overall.errors_per_second),
+    //   change: '',
+    //   changeType: 'neutral'
+    // }
+  ];
+
+  const countWidgets = kpiData.length;
+
+  return (
+    <dl
+      className={`grid grid-cols-1 gap-${countWidgets} sm:grid-cols-2 lg:grid-cols-${countWidgets}`}
+    >
+      {kpiData.map((item) => (
+        <Card key={item.name}>
+          <div className="flex items-center justify-between">
+            <dt className="text-tremor-default font-medium text-tremor-content dark:text-dark-tremor-content">
+              {item.name}
+            </dt>
+            {item.change && (
+              <span
+                className={classNames(
+                  item.changeType === 'positive'
+                    ? 'bg-emerald-100 text-emerald-800 ring-emerald-600/10 dark:bg-emerald-400/10 dark:text-emerald-500 dark:ring-emerald-400/20'
+                    : 'bg-red-100 text-red-800 ring-red-600/10 dark:bg-red-400/10 dark:text-red-500 dark:ring-red-400/20',
+                  'inline-flex items-center rounded-tremor-small px-2 py-1 text-tremor-label font-medium ring-1 ring-inset'
+                )}
+              >
+                {item.change}
+              </span>
+            )}
+          </div>
+          <dd className="text-tremor-metric font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+            {item.stat}
+          </dd>
+        </Card>
+      ))}
+    </dl>
+  );
+}

@@ -1,5 +1,5 @@
 import React from 'react';
-import DashBoardKpi from '../src/components/DashBoardKpi';
+import DashBoardKpi from '../src/components/dashboards/DashBoardKpi.jsx';
 
 export default {
   title: 'Components/DashBoardKpi',

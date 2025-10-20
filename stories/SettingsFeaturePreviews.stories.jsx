@@ -1,5 +1,5 @@
 import React from 'react';
-import SettingsFeaturePreviews from '../src/components/SettingsFeaturePreviews';
+import SettingsFeaturePreviews from '../src/components/settings/SettingsFeaturePreviews.jsx';
 import { InspectrProvider } from '../src/context/InspectrContext';
 
 export default {

@@ -1,6 +1,6 @@
 // stories/RequestContent.stories.jsx
 import React from 'react';
-import RequestContent from '../src/components/RequestContent';
+import RequestContent from '../src/components/operations/RequestContent.jsx';
 
 export default {
   title: 'Components/RequestContent',

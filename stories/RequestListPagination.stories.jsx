@@ -1,10 +1,10 @@
-// src/components/RequestListPagination.stories.jsx
+// src/components/ListPagination.stories.jsx
 import React, { useState } from 'react';
 import { action } from '@storybook/addon-actions';
-import RequestListPagination from '../src/components/RequestListPagination';
+import RequestListPagination from '../src/components/ListPagination';
 
 export default {
-  title: 'Components/RequestListPagination',
+  title: 'Components/ListPagination',
   component: RequestListPagination
 };
 
@@ -41,4 +41,11 @@ export const LastPage = Template.bind({});
 LastPage.args = {
   currentPage: 10,
   totalPages: 10
+};
+
+export const HiddenWhenSinglePage = Template.bind({});
+HiddenWhenSinglePage.args = {
+  currentPage: 1,
+  totalPages: 1,
+  alwaysShow: false
 };

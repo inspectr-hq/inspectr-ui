@@ -1,30 +1,35 @@
 // src/components/Workspace.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DashBoardApp from './DashBoardApp.jsx';
 import InspectrApp from './InspectrApp.jsx';
 import SettingsApp from './SettingsApp.jsx';
+import InsightsApp from './insights/InsightsApp.jsx';
 import UsageApp from './UsageApp.jsx';
+import RulesApp from './RulesApp.jsx';
 import useHashRouter from '../hooks/useHashRouter.jsx';
 import ToastNotification from './ToastNotification.jsx';
-import DialogMockLaunch from './DialogMockLaunch.jsx';
-import DialogExportOperations from './DialogExportOperations.jsx';
-import DialogExportRecords from './DialogExportRecords.jsx';
-import DialogImportOperations from './DialogImportOperations.jsx';
+import DialogMockLaunch from './settings/DialogMockLaunch.jsx';
+import DialogExportOperations from './operations/DialogExportOperations.jsx';
+import DialogExportRecords from './operations/DialogExportRecords.jsx';
+import DialogImportOperations from './operations/DialogImportOperations.jsx';
 import { InspectrProvider, useInspectr } from '../context/InspectrContext';
 import { useLiveQuery } from 'dexie-react-hooks';
 import eventDB from '../utils/eventDB.js';
 import NotificationBadge from './NotificationBadge.jsx';
 import useLocalStorage from '../hooks/useLocalStorage.jsx';
+import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
-const navigation = [
+const BASE_NAVIGATION = [
   { name: 'Request History', slug: 'inspectr', component: InspectrApp },
+  { name: 'Insights', slug: 'insights', component: InsightsApp },
   { name: 'Statistics', slug: 'statistics', component: DashBoardApp },
   { name: 'Usage', slug: 'usage', component: UsageApp },
+  { name: 'Rules', slug: 'rules', component: RulesApp },
   { name: 'Settings', slug: 'settings', component: SettingsApp }
 ];
 
@@ -45,7 +50,24 @@ const Logo = (props) => (
 );
 
 export default function Workspace() {
-  const [currentTab, setCurrentTab] = useState(navigation[0]);
+  const [rulesFeatureEnabled] = useFeaturePreview('feat_rules_ui', false);
+  const [workspaceFeatureEnabled] = useFeaturePreview('feat_insights_display', false);
+
+  const navigation = useMemo(() => {
+    let items = BASE_NAVIGATION;
+
+    if (rulesFeatureEnabled !== true) {
+      items = items.filter((item) => item.slug !== 'rules');
+    }
+
+    if (workspaceFeatureEnabled !== true) {
+      items = items.filter((item) => item.slug !== 'insights');
+    }
+
+    return items;
+  }, [rulesFeatureEnabled, workspaceFeatureEnabled]);
+
+  const [currentTab, setCurrentTab] = useState(() => navigation[0]);
   const { route, currentNav, handleTabClick } = useHashRouter(navigation);
   const ActiveComponent = currentNav.component;
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -55,6 +77,12 @@ export default function Workspace() {
   useEffect(() => {
     setIsRecording(!!recordStart);
   }, [recordStart]);
+
+  useEffect(() => {
+    if (currentNav) {
+      setCurrentTab(currentNav);
+    }
+  }, [currentNav]);
 
   const [isRecordExportOpen, setIsRecordExportOpen] = useState(false);
   const recordCount = useLiveQuery(async () => {
@@ -79,21 +107,31 @@ export default function Workspace() {
                 </a>
               </div>
               <nav className="flex-1 -mb-px flex space-x-6" aria-label="Tabs">
-                {navigation.map((navItem) => (
-                  <button
-                    key={navItem.slug}
-                    onClick={() => handleTabClick(navItem)}
-                    className={classNames(
-                      navItem.slug === currentNav.slug
-                        ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
-                        : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong dark:text-dark-tremor-content-emphasis hover:dark:border-dark-tremor-content-subtle hover:dark:text-dark-tremor-content-strong',
-                      'inline-flex items-center whitespace-nowrap border-b-2 px-2 text-tremor-default font-medium'
-                    )}
-                    aria-current={navItem.name === currentTab.name ? 'page' : undefined}
-                  >
-                    {navItem.name}
-                  </button>
-                ))}
+                {navigation.map((navItem) =>
+                  navItem.slug === 'inspectr' ? (
+                    <InspectrNavButton
+                      key={navItem.slug}
+                      navItem={navItem}
+                      isActive={navItem.slug === currentNav.slug}
+                      onClick={() => handleTabClick(navItem)}
+                      isCurrent={navItem.name === currentTab.name}
+                    />
+                  ) : (
+                    <button
+                      key={navItem.slug}
+                      onClick={() => handleTabClick(navItem)}
+                      className={classNames(
+                        navItem.slug === currentNav.slug
+                          ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
+                          : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong dark:text-dark-tremor-content-emphasis hover:dark:border-dark-tremor-content-subtle hover:dark:text-dark-tremor-content-strong',
+                        'inline-flex items-center whitespace-nowrap border-b-2 px-2 text-tremor-default font-medium'
+                      )}
+                      aria-current={navItem.name === currentTab.name ? 'page' : undefined}
+                    >
+                      {navItem.name}
+                    </button>
+                  )
+                )}
               </nav>
               <div className="ml-auto flex items-center space-x-2">
                 <button
@@ -144,7 +182,7 @@ export default function Workspace() {
 
         {/* ——— Content Area ——— */}
         <div className="flex-grow overflow-auto">
-          {['statistics', 'settings', 'usage'].includes(currentNav.slug) ? (
+          {['insights', 'statistics', 'settings', 'usage', 'rules'].includes(currentNav.slug) ? (
             <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-950">
               <ActiveComponent key={currentNav.slug} />
             </div>
@@ -194,5 +232,80 @@ const ToastNotificationFromContext = () => {
       type={toast.type}
       onClose={() => setToast(null)}
     />
+  );
+};
+
+// Specialized nav button for the Inspectr tab that shows unread count and connection-colored badge
+const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
+  const { connectionStatus } = useInspectr();
+  const [lastSeenAt, setLastSeenAt] = useLocalStorage('inspectrLastSeenAt', null);
+
+  // Latest event time in Dexie
+  const latestEventTime = useLiveQuery(async () => {
+    try {
+      const last = await eventDB.db.events.orderBy('time').last();
+      return last?.time || null;
+    } catch (e) {
+      return null;
+    }
+  }, []);
+
+  // Initialize lastSeenAt on first run to avoid counting backlog as unread
+  useEffect(() => {
+    if (!lastSeenAt && latestEventTime) {
+      setLastSeenAt(latestEventTime);
+    }
+  }, [latestEventTime]);
+
+  // When the Inspectr tab is active, mark all as seen up to the latest event
+  useEffect(() => {
+    if (isActive && latestEventTime) {
+      setLastSeenAt(latestEventTime);
+    }
+  }, [isActive, latestEventTime]);
+
+  // Count unread events newer than lastSeenAt
+  const unreadCount = useLiveQuery(async () => {
+    if (!lastSeenAt) return 0;
+    try {
+      return await eventDB.db.events.where('time').above(lastSeenAt).count();
+    } catch (e) {
+      return 0;
+    }
+  }, [lastSeenAt]);
+
+  const color =
+    connectionStatus === 'connected'
+      ? 'green'
+      : connectionStatus === 'disconnected'
+        ? 'red'
+        : 'orange';
+
+  const handleClick = () => {
+    // Reset unread counter immediately when navigating to Request History
+    const ts = latestEventTime || new Date().toISOString();
+    setLastSeenAt(ts);
+    if (onClick) onClick();
+  };
+
+  return (
+    <button
+      key={navItem.slug}
+      onClick={handleClick}
+      className={classNames(
+        isActive
+          ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
+          : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong dark:text-dark-tremor-content-emphasis hover:dark:border-dark-tremor-content-subtle hover:dark:text-dark-tremor-content-strong',
+        'inline-flex items-center whitespace-nowrap border-b-2 px-2 text-tremor-default font-medium relative'
+      )}
+      aria-current={isCurrent ? 'page' : undefined}
+    >
+      {navItem.name}
+      {!isActive && unreadCount > 0 && (
+        <span className="absolute -top-3 -right-2">
+          <NotificationBadge count={unreadCount} color={color} />
+        </span>
+      )}
+    </button>
   );
 };

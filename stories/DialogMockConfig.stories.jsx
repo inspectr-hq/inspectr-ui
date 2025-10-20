@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { action } from '@storybook/addon-actions';
-import DialogMockConfig from '../src/components/DialogMockConfig';
+import DialogMockConfig from '../src/components/settings/DialogMockConfig.jsx';
 
 export default {
   title: 'Components/DialogMockConfig',

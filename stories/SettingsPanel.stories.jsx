@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import SettingsPanel from '../src/components/SettingsPanel';
+import SettingsPanel from '../src/components/operations/SettingsPanel.jsx';
 import { InspectrProvider, useInspectr } from '../src/context/InspectrContext';
 
 export default {

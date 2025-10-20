@@ -1,9 +1,9 @@
 // src/components/InspectrApp.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import RequestList from './RequestList';
-import RequestDetailsPanel from './RequestDetailsPanel';
-import SettingsPanel from './SettingsPanel';
+import RequestList from './operations/RequestList';
+import RequestDetailsPanel from './operations/RequestDetailsPanel';
+import SettingsPanel from './operations/SettingsPanel';
 import eventDB from '../utils/eventDB';
 import useInspectrRouter from '../hooks/useInspectrRouter.jsx';
 import useLocalStorage from '../hooks/useLocalStorage.jsx';
@@ -16,35 +16,12 @@ const SESSION_FILTER_OPTIONS = Object.freeze({ resetOnReload: true });
 
 const InspectrApp = () => {
   // Get all the shared state from context
-  const {
-    apiEndpoint,
-    setApiEndpoint,
-    connectionStatus,
-    setConnectionStatus,
-    sseEndpoint,
-    channelCode,
-    setChannelCode,
-    channel,
-    setChannel,
-    token,
-    reRegistrationFailedRef,
-    handleRegister,
-    attemptReRegistration,
-    resetReRegistration,
-    toast,
-    setToast,
-    debugMode,
-    client
-  } = useInspectr();
+  const { toast, setToast, client } = useInspectr();
+
+  const { syncOperations: connectionSync, setLastEventId: setConnectionLastEventId } =
+    useInspectr();
 
   const pageSize = 100;
-  const SYNC_LAST_EVENT_ID = 'sync';
-
-  const burstStartRef = useRef(0);
-  const burstCountRef = useRef(0);
-  const burstBufferRef = useRef([]);
-  const BURST_WINDOW_MS = 50; // milliseconds
-  const BURST_THRESHOLD = 50; // switch to bulk once >100 ops
   const LEFT_PANEL_WIDTH = 33;
 
   const [page, setPage] = useState(1);
@@ -64,12 +41,6 @@ const InspectrApp = () => {
     SESSION_FILTER_OPTIONS
   );
 
-  const [lastEventId, setLastEventId] = useLocalStorage('lastEventId', '');
-
-  // SSE connection references
-  const wasConnectedRef = useRef(false);
-  const eventSourceRef = useRef(null);
-
   // Live query: get the events for the current page.
   const { results: operations = [], totalCount = 0 } =
     useLiveQuery(
@@ -85,6 +56,9 @@ const InspectrApp = () => {
       { throttle: 100 }
     ) || {};
 
+  const tagOptions =
+    useLiveQuery(() => eventDB.getAllTagOptions(), [], [], { throttle: 300 }) || [];
+
   // Paginate
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
 
@@ -92,141 +66,13 @@ const InspectrApp = () => {
   const { selectedOperation, currentTab, handleSelect, handleTabChange, clearSelection } =
     useInspectrRouter(operations);
 
-  const connectSSE = (overrideLastEventId) => {
-    if (eventSourceRef.current) {
-      console.log('Closing SSE EventSource connection');
-      eventSourceRef.current.close();
-    }
-
-    if (!sseEndpoint) return;
-
-    const storedLastEventId = overrideLastEventId || lastEventId;
-    let sseUrl = `${sseEndpoint}?token=${token}`;
-    if (storedLastEventId) {
-      sseUrl += sseUrl.includes('?')
-        ? `&last_event_id=${storedLastEventId}`
-        : `?last_event_id=${storedLastEventId}`;
-    }
-
-    const generateId = (opId) => opId || `req-${Math.random().toString(36).substr(2, 9)}`;
-    const eventSource = new EventSource(sseUrl);
-    eventSourceRef.current = eventSource;
-    console.log(`🔄 SSE connecting with ${sseUrl}`);
-
-    eventSource.onopen = () => {
-      console.log('📡️ SSE connection opened.');
-      wasConnectedRef.current = true;
-      setConnectionStatus('connected');
-    };
-
-    eventSource.onmessage = (e) => {
-      try {
-        const now = performance.now();
-        if (now - burstStartRef.current > BURST_WINDOW_MS) {
-          // window expired → reset
-          burstStartRef.current = now;
-          burstCountRef.current = 0;
-        }
-        burstCountRef.current++;
-
-        // Check if data is empty or whitespace only
-        if (!e.data || e.data.trim() === '') {
-          console.warn('Received empty SSE data, skipping');
-          return;
-        }
-
-        // Parse data as event
-        const event = JSON.parse(e.data);
-
-        if (debugMode) {
-          console.log('[Inspectr] Received event:', event);
-        }
-
-        // Update the list and, if it's the first event, select it
-        if (!event.id) event.id = generateId(event.operation_id);
-        if (event.operation_id) {
-          event.id = event.operation_id;
-          setLastEventId(event.operation_id);
-        }
-
-        if (burstCountRef.current < BURST_THRESHOLD) {
-          // Save the incoming event to the DB
-          eventDB
-            .upsertEvent(event)
-            .catch((err) => console.error('Error saving event to DB:', err));
-        } else {
-          // burst detected → buffer & flush as bulk
-          burstBufferRef.current.push(event);
-
-          if (burstCountRef.current === BURST_THRESHOLD) {
-            setTimeout(async () => {
-              try {
-                await eventDB.bulkUpsertEvents(burstBufferRef.current);
-              } catch (err) {
-                console.error('bulk save failed', err);
-              } finally {
-                // reset for the next burst
-                burstBufferRef.current = [];
-                burstCountRef.current = 0;
-                burstStartRef.current = performance.now();
-              }
-            }, BURST_WINDOW_MS);
-          }
-        }
-      } catch (error) {
-        console.error('Error parsing SSE Inspectr data:', error);
-      }
-    };
-
-    eventSource.onerror = (err) => {
-      console.error('❌ SSE connection error:', err);
-      wasConnectedRef.current = false;
-      setConnectionStatus('reconnecting');
-
-      if (reRegistrationFailedRef.current) {
-        console.log('❌ Maximum re-registration attempts reached. Closing EventSource.');
-        setConnectionStatus('disconnected');
-        eventSource.close();
-        return;
-      }
-
-      // Start the re-registration retry loop if not already in progress
-      if (!reRegistrationFailedRef.current) {
-        console.log('🔄 Starting re-registration retry loop due to SSE error.');
-        attemptReRegistration();
-      }
-      // The EventSource will try to reconnect automatically
-    };
-  };
-
   const syncOperations = () => {
     setIsSyncing(true);
-    setLastEventId(SYNC_LAST_EVENT_ID);
-    connectSSE(SYNC_LAST_EVENT_ID);
-
-    if (debugMode) {
-      console.log('[Inspectr] Syncing all operations...');
-    }
-
+    // Delegate sync to persistent connection provider
+    connectionSync();
     // Set a timeout to normalize the syncing state
-    setTimeout(() => {
-      setIsSyncing(false);
-    }, 2500);
+    setTimeout(() => setIsSyncing(false), 2500);
   };
-
-  // Connect to SSE when the component mounts or credentials change.
-  useEffect(() => {
-    resetReRegistration();
-    connectSSE();
-
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        setConnectionStatus('disconnected');
-        console.log('📡️ SSE connection closed.');
-      }
-    };
-  }, [sseEndpoint, token]); // Run only once on mount
 
   // Ensure selection stays in sync with the available operations
   useEffect(() => {
@@ -255,8 +101,8 @@ const InspectrApp = () => {
       // Clear operations from Inspectr
       await deleteAllOperationsApi();
 
-      // Unset lastEventId
-      localStorage.removeItem('lastEventId');
+      // Unset lastEventId (via connection context)
+      setConnectionLastEventId('');
     } catch (err) {
       console.error('Error clearing all operations:', err);
     }
@@ -406,6 +252,7 @@ const InspectrApp = () => {
             setFilters={setFilters}
             syncOperations={syncOperations}
             isSyncing={isSyncing}
+            tagOptions={tagOptions}
           />
         </div>
         <div

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import DialogMockLaunch from '../src/components/DialogMockLaunch';
+import DialogMockLaunch from '../src/components/settings/DialogMockLaunch.jsx';
 import { InspectrProvider } from '../src/context/InspectrContext';
 
 export default {

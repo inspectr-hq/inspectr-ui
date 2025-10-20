@@ -1,6 +1,6 @@
 // stories/RequestDetailsPanel.stories.jsx
 import React from 'react';
-import RequestDetailsPanel from '../src/components/RequestDetailsPanel';
+import RequestDetailsPanel from '../src/components/operations/RequestDetailsPanel.jsx';
 
 export default {
   title: 'Components/RequestDetailsPanel',

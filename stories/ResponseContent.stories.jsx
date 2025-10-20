@@ -1,6 +1,6 @@
 // stories/ResponseContent.stories.jsx
 import React from 'react';
-import ResponseContent from '../src/components/ResponseContent';
+import ResponseContent from '../src/components/operations/ResponseContent.jsx';
 
 export default {
   title: 'Components/ResponseContent',

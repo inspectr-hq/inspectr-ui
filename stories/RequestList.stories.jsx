@@ -1,6 +1,6 @@
 // stories/RequestList.stories.jsx
 import React, { useState } from 'react';
-import RequestList from '../src/components/RequestList';
+import RequestList from '../src/components/operations/RequestList.jsx';
 
 export default {
   title: 'Components/RequestList',

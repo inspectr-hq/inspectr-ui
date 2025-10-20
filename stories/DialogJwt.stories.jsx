@@ -1,6 +1,6 @@
 // src/stories/JWTDialog.stories.jsx
 import React, { useState } from 'react';
-import DialogJwt from '../src/components/DialogJwt';
+import DialogJwt from '../src/components/operations/DialogJwt.jsx';
 
 export default {
   title: 'Components/DialogJwt',
