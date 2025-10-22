@@ -22,6 +22,7 @@ import EndpointMode from './EndpointMode.jsx';
 import ListMode from './ListMode.jsx';
 import TableMode from './TableMode.jsx';
 import TimelineMode from './TimelineMode.jsx';
+import TraceMode from './TraceMode.jsx';
 import { formatChartLabel, normalizeOperation, endpointKey } from './insightsUtils.js';
 import { MAX_CHART_POINTS } from './constants.js';
 
@@ -204,6 +205,7 @@ export default function InsightsApp() {
           <Tab>List mode</Tab>
           <Tab>Table mode</Tab>
           <Tab>Timeline mode</Tab>
+          <Tab>Trace mode</Tab>
         </TabList>
         <TabPanels className="mt-6 space-y-6">
           <TabPanel>
@@ -217,6 +219,9 @@ export default function InsightsApp() {
           </TabPanel>
           <TabPanel>
             <TimelineMode operations={operations} />
+          </TabPanel>
+          <TabPanel>
+            <TraceMode operations={operations} />
           </TabPanel>
         </TabPanels>
       </TabGroup>
