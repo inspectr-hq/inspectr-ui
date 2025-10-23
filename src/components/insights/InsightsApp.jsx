@@ -18,6 +18,7 @@ import {
 import { useLiveQuery } from 'dexie-react-hooks';
 import eventDB from '../../utils/eventDB.js';
 import { useInspectr } from '../../context/InspectrContext.jsx';
+import { parseHash } from '../../hooks/useHashRouter.jsx';
 import EndpointMode from './EndpointMode.jsx';
 import ListMode from './ListMode.jsx';
 import TableMode from './TableMode.jsx';
@@ -26,12 +27,45 @@ import TraceMode from './TraceMode.jsx';
 import { formatChartLabel, normalizeOperation, endpointKey } from './insightsUtils.js';
 import { MAX_CHART_POINTS } from './constants.js';
 
+const INSIGHTS_TABS = ['endpoint', 'list', 'table', 'timeline', 'trace'];
+const TRACE_TAB_INDEX = INSIGHTS_TABS.indexOf('trace');
+
+const getTabIndexForParams = (view, traceId) => {
+  if (traceId && TRACE_TAB_INDEX >= 0) {
+    return TRACE_TAB_INDEX;
+  }
+  if (!view) return 0;
+  const index = INSIGHTS_TABS.indexOf(view);
+  return index >= 0 ? index : 0;
+};
+
+const getInitialInsightsState = () => {
+  if (typeof window === 'undefined') {
+    return { tabIndex: 0, traceId: null, traceOperationId: null };
+  }
+  const { slug, params } = parseHash();
+  if (slug !== 'insights') {
+    return { tabIndex: 0, traceId: null, traceOperationId: null };
+  }
+  const traceId = params.trace || null;
+  const traceOperationId = params.traceOp || params.operation || null;
+  const view = params.view;
+  const tabIndex = getTabIndexForParams(view, traceId);
+  return { tabIndex, traceId, traceOperationId };
+};
+
 export default function InsightsApp() {
   const { client } = useInspectr();
+  const initialInsightsState = useMemo(() => getInitialInsightsState(), []);
   const [summary, setSummary] = useState(null);
   const [summaryError, setSummaryError] = useState(null);
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
   const [seriesState, setSeriesState] = useState({});
+  const [tabIndex, setTabIndex] = useState(initialInsightsState.tabIndex);
+  const [traceSelection, setTraceSelection] = useState({
+    traceId: initialInsightsState.traceId,
+    operationId: initialInsightsState.traceOperationId
+  });
 
   const latestEventMeta =
     useLiveQuery(() => eventDB.db.events.orderBy('time').last(), [], null, { throttle: 300 }) ||
@@ -50,6 +84,112 @@ export default function InsightsApp() {
         .sort((a, b) => (b.timestampMs || 0) - (a.timestampMs || 0)),
     [records]
   );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const syncFromHash = () => {
+      const { slug, params } = parseHash();
+      if (slug !== 'insights') return;
+      const traceId = params.trace || null;
+      const traceOperationId = params.traceOp || params.operation || null;
+      const view = params.view;
+      const nextTabIndex = getTabIndexForParams(view, traceId);
+
+      setTabIndex(nextTabIndex);
+      setTraceSelection((prev) => {
+        if (prev.traceId === traceId && prev.operationId === traceOperationId) {
+          return prev;
+        }
+        return { traceId, operationId: traceOperationId };
+      });
+    };
+
+    syncFromHash();
+    window.addEventListener('hashchange', syncFromHash);
+    return () => window.removeEventListener('hashchange', syncFromHash);
+  }, []);
+
+  const updateInsightsHash = (patch = {}) => {
+    if (typeof window === 'undefined') return;
+    const { slug, params } = parseHash();
+    const nextParams = slug === 'insights' ? { ...params } : {};
+
+    Object.entries(patch).forEach(([key, value]) => {
+      if (value === null || value === undefined || value === '') {
+        delete nextParams[key];
+      } else {
+        nextParams[key] = String(value);
+      }
+    });
+
+    const search = new URLSearchParams();
+    Object.entries(nextParams).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        search.set(key, value);
+      }
+    });
+    const qs = search.toString();
+    const nextHash = `#insights${qs ? `?${qs}` : ''}`;
+    if (typeof window !== 'undefined' && window.location.hash !== nextHash) {
+      window.history.replaceState(null, '', nextHash);
+    }
+  };
+
+  const handleTabIndexChange = (index) => {
+    setTabIndex(index);
+    const viewKey = INSIGHTS_TABS[index] || 'endpoint';
+    if (viewKey === 'trace') {
+      updateInsightsHash({
+        view: 'trace',
+        trace: traceSelection.traceId ?? null,
+        traceOp: traceSelection.operationId ?? null
+      });
+    } else {
+      updateInsightsHash({ view: viewKey, trace: null, traceOp: null });
+    }
+  };
+
+  const handleTraceSelectionChange = (nextTraceId) => {
+    setTraceSelection((prev) => {
+      const sameTrace = prev.traceId === nextTraceId;
+      const nextState = {
+        traceId: nextTraceId || null,
+        operationId: sameTrace ? prev.operationId : null
+      };
+      if (sameTrace && prev.operationId === nextState.operationId) {
+        return prev;
+      }
+      updateInsightsHash({
+        view: 'trace',
+        trace: nextState.traceId ?? null,
+        traceOp: nextState.operationId ?? null
+      });
+      return nextState;
+    });
+
+    if (TRACE_TAB_INDEX >= 0 && tabIndex !== TRACE_TAB_INDEX) {
+      setTabIndex(TRACE_TAB_INDEX);
+    }
+  };
+
+  const handleOperationSelectionChange = (nextOperationId) => {
+    setTraceSelection((prev) => {
+      const nextState = {
+        traceId: prev.traceId,
+        operationId: nextOperationId || null
+      };
+      if (prev.traceId === nextState.traceId && prev.operationId === nextState.operationId) {
+        return prev;
+      }
+      updateInsightsHash({
+        view: 'trace',
+        trace: nextState.traceId ?? null,
+        traceOp: nextState.operationId ?? null
+      });
+      return nextState;
+    });
+  };
 
   useEffect(() => {
     if (!client?.operations?.summarize) return;
@@ -199,7 +339,7 @@ export default function InsightsApp() {
         </Grid>
       </Card>
 
-      <TabGroup>
+      <TabGroup index={tabIndex} onIndexChange={handleTabIndexChange}>
         <TabList>
           <Tab>Endpoint mode</Tab>
           <Tab>List mode</Tab>
@@ -221,7 +361,14 @@ export default function InsightsApp() {
             <TimelineMode operations={operations} />
           </TabPanel>
           <TabPanel>
-            <TraceMode operations={operations} />
+            <TraceMode
+              operations={operations}
+              initialTraceId={traceSelection.traceId}
+              initialOperationId={traceSelection.operationId}
+              onTraceChange={handleTraceSelectionChange}
+              onOperationChange={handleOperationSelectionChange}
+              isActive={tabIndex === TRACE_TAB_INDEX}
+            />
           </TabPanel>
         </TabPanels>
       </TabGroup>

@@ -52,6 +52,7 @@ class InspectrClient {
     this.stats = new StatsClient(this);
     this.mock = new MockClient(this);
     this.rules = new RulesClient(this);
+    this.traces = new TracesClient(this);
     this.connectors = new ConnectorsClient(this);
   }
 
@@ -768,6 +769,79 @@ class StatsClient {
       return;
     }
     throw new Error(`Delete stats operations failed (${res.status})`);
+  }
+}
+
+/**
+ * TracesClient - Handles trace exploration
+ * @private
+ */
+class TracesClient {
+  constructor(client) {
+    this.client = client;
+  }
+
+  /**
+   * List traces with optional pagination
+   * @param {Object} [options]
+   * @param {number} [options.page]
+   * @param {number} [options.limit]
+   * @param {string} [options.source]
+   * @param {string} [options.search]
+   * @returns {Promise<Object>} Trace collection response
+   */
+  async list(options = {}) {
+    const params = new URLSearchParams();
+    const { page, limit, source, search } = options;
+
+    if (page !== undefined && page !== null) params.set('page', String(page));
+    if (limit !== undefined && limit !== null) params.set('limit', String(limit));
+    if (source) params.set('source', source);
+    if (search) params.set('search', search);
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/traces${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: {
+        ...this.client.defaultHeaders,
+        Accept: 'application/json'
+      }
+    });
+
+    if (!res.ok) throw new Error(`Trace list failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Fetch a single trace with operations
+   * @param {string} traceId
+   * @param {Object} [options]
+   * @param {number} [options.page]
+   * @param {number} [options.limit]
+   * @returns {Promise<Object>} Trace detail response
+   */
+  async get(traceId, options = {}) {
+    if (!traceId) throw new Error('Trace ID is required');
+
+    const params = new URLSearchParams();
+    const { page, limit } = options;
+
+    if (page !== undefined && page !== null) params.set('page', String(page));
+    if (limit !== undefined && limit !== null) params.set('limit', String(limit));
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/traces/${encodeURIComponent(traceId)}${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: {
+        ...this.client.defaultHeaders,
+        Accept: 'application/json'
+      }
+    });
+
+    if (!res.ok) throw new Error(`Trace detail failed (${res.status})`);
+    return await res.json();
   }
 }
 

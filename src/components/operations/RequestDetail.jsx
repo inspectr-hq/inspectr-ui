@@ -178,6 +178,12 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
 
   const buttonClasses =
     'flex items-center space-x-2 px-2 py-1 border border-slate-600 dark:border-blue-500 text-slate-700 dark:text-white bg-slate-100 dark:bg-blue-600 rounded focus:outline-none cursor-pointer transition-transform duration-150 ease-in-out active:scale-95 hover:bg-slate-200 dark:hover:bg-blue-700 active:ring active:ring-slate-300 dark:active:ring-blue-400';
+  const traceInfo = operation?.meta?.trace || null;
+  const traceId = traceInfo?.trace_id || null;
+  const traceSource = traceInfo?.source || null;
+  const hasTrace = Boolean(traceId);
+  const traceButtonClasses =
+    'flex items-center space-x-2 px-2 py-1 border border-purple-500 text-purple-600 dark:text-purple-200 bg-purple-50 dark:bg-purple-900/30 rounded focus:outline-none cursor-pointer transition-transform duration-150 ease-in-out active:scale-95 hover:bg-purple-100 dark:hover:bg-purple-800/50 active:ring active:ring-purple-200 dark:active:ring-purple-400';
 
   // check icon SVG.
   const CheckIcon = () => (
@@ -189,6 +195,19 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
       stroke="currentColor"
     >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+    </svg>
+  );
+
+  const TraceIcon = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className="h-4 w-4"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12h13.5m0 0-5.25-5.25M18 12l-5.25 5.25" />
     </svg>
   );
 
@@ -235,6 +254,23 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
     }
   };
 
+  const handleViewTrace = () => {
+    if (!traceId) return;
+    const traceParams = new URLSearchParams();
+    traceParams.set('view', 'trace');
+    traceParams.set('trace', traceId);
+    const traceOperationId = operation?.operation_id || null;
+    if (traceOperationId) {
+      traceParams.set('traceOp', traceOperationId);
+    }
+    const hashValue = `#insights?${traceParams.toString()}`;
+    if (window.location.hash === hashValue) {
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    } else {
+      window.location.hash = hashValue;
+    }
+  };
+
   return (
     <div className="mb-4 p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded shadow dark:shadow-dark-tremor-shadow relative">
       <div className="flex items-center justify-between mb-2">
@@ -245,6 +281,17 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
           <AuthIndicator operation={operation} onClick={handleAuthIndicatorClick} />
         </div>
         <div className="flex space-x-2">
+          {hasTrace ? (
+            <Tooltip
+              content={traceSource ? `View ${traceSource} trace` : 'View trace timeline'}
+              side="bottom"
+            >
+              <button type="button" onClick={handleViewTrace} className={traceButtonClasses}>
+                <TraceIcon />
+                <span className="text-xs">View trace</span>
+              </button>
+            </Tooltip>
+          ) : null}
           {/* Copy as cURL Button */}
           <button onClick={handleCopyCurl} className={buttonClasses}>
             {copiedCurl ? (
@@ -314,6 +361,13 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
           </span>
           <CopyButton textToCopy={operation.request.url} showLabel={false} />
         </div>
+        {hasTrace ? (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-purple-700 dark:text-purple-300">
+            <span className="font-semibold uppercase tracking-wide">Trace</span>
+            {traceSource ? <span>{traceSource}</span> : null}
+            <span className="font-mono text-[11px] break-all">{traceId}</span>
+          </div>
+        ) : null}
         <div className="text-gray-500 dark:text-dark-tremor-content text-xs">
           Received on{' '}
           <span className="font-semibold">{formatTimestamp(operation?.request?.timestamp)}</span> •

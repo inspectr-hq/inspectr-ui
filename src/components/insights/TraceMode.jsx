@@ -2,10 +2,12 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Badge, Card, Flex, Select, SelectItem, Text, Title } from '@tremor/react';
+import { useInspectr } from '../../context/InspectrContext.jsx';
 import MethodBadge from './MethodBadge.jsx';
 import StatusBadge from './StatusBadge.jsx';
 import EmptyState from './EmptyState.jsx';
 import { formatDuration, formatTimestamp } from '../../utils/formatters.js';
+import { normalizeTags } from '../../utils/normalizeTags.js';
 
 const classNames = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -25,13 +27,22 @@ const getDotColorClass = (status) => {
   return 'bg-slate-400';
 };
 
-const formatTraceLabel = (trace) => {
-  if (!trace) return 'Unknown trace';
-  if (trace.label) return trace.label;
-  return trace.traceId || 'Trace';
+const MIN_BAR_WIDTH_PERCENT = 2;
+
+const safeParseUrl = (value) => {
+  if (!value) return null;
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
 };
 
-const MIN_BAR_WIDTH_PERCENT = 2;
+const parseTimestamp = (value, fallback) => {
+  if (!value) return fallback ?? null;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : fallback ?? null;
+};
 
 const toDisplayString = (value) => {
   if (value === null || value === undefined) return 'N/A';
@@ -43,186 +54,319 @@ const toDisplayString = (value) => {
   }
 };
 
-const pickAgentLabel = (operation) => {
-  if (!operation?.tags?.length) return null;
-  const agentTag =
-    operation.tags.find((tag) => tag.keyToken === 'agent') ||
-    operation.tags.find((tag) => tag.key === 'agent');
-  if (!agentTag) return null;
-  return agentTag.value || agentTag.display || null;
+const formatTraceLabel = (trace) => {
+  if (!trace) return 'Unknown trace';
+  return trace.trace_id || trace.traceId || 'Trace';
 };
 
-const TRACE_GROUP_FALLBACK = 'Ungrouped';
+const computeTraceDuration = (traceSummary, operations) => {
+  if (traceSummary?.first_seen && traceSummary?.last_seen) {
+    const first = Date.parse(traceSummary.first_seen);
+    const last = Date.parse(traceSummary.last_seen);
+    if (Number.isFinite(first) && Number.isFinite(last) && last >= first) {
+      return last - first;
+    }
+  }
 
-export default function TraceMode({ operations }) {
-  const traces = useMemo(() => {
-    if (!Array.isArray(operations) || operations.length === 0) return [];
+  if (!operations?.length) return null;
+  let min = null;
+  let max = null;
+  operations.forEach((operation, index) => {
+    const startMs = Number.isFinite(operation.timestampMs) ? operation.timestampMs : index;
+    const duration = Number.isFinite(operation.duration) ? operation.duration : 0;
+    const opStart = startMs;
+    const opEnd = opStart + duration;
+    min = min === null ? opStart : Math.min(min, opStart);
+    max = max === null ? opEnd : Math.max(max, opEnd);
+  });
+  if (min === null || max === null || max < min) return null;
+  return max - min;
+};
 
-    const grouped = new Map();
+const normalizeTraceOperation = (operation, index) => {
+  if (!operation) return null;
 
-    operations.forEach((operation, index) => {
-      if (!operation) return;
-      const traceId = operation.operationId || operation.id || `trace-${index}`;
-      if (!grouped.has(traceId)) {
-        grouped.set(traceId, []);
-      }
-      const normalizedOperation = {
-        ...operation,
-        _internalId: operation.id || `${traceId}-${grouped.get(traceId).length}`
-      };
-      grouped.get(traceId).push(normalizedOperation);
-    });
+  const request = operation.request || {};
+  const response = operation.response || {};
+  const timing = operation.timing || {};
+  const meta = operation.meta || {};
+  const url = request.url || '';
+  const parsedUrl = safeParseUrl(url);
+  const timestamp =
+    request.timestamp ||
+    response.timestamp ||
+    meta.timestamp ||
+    operation.timestamp ||
+    null;
+  const timestampMs = parseTimestamp(timestamp, index);
+  const durationValue = Number.isFinite(Number(timing.duration))
+    ? Number(timing.duration)
+    : Number.isFinite(Number(operation.duration))
+      ? Number(operation.duration)
+      : null;
 
-    return Array.from(grouped.entries())
-      .map(([traceId, traceOperations]) => {
-        const sortedOperations = [...traceOperations].sort((a, b) => {
-          const aTime = Number.isFinite(a.timestampMs) ? a.timestampMs : 0;
-          const bTime = Number.isFinite(b.timestampMs) ? b.timestampMs : 0;
-          return aTime - bTime;
-        });
+  return {
+    id: operation.operation_id || operation.operationId || `operation-${index}`,
+    method: (request.method || operation.method || 'GET').toUpperCase(),
+    status: response.status ?? operation.status ?? null,
+    duration: durationValue,
+    timestamp,
+    timestampMs,
+    path: request.path || parsedUrl?.pathname || url || '/',
+    host: request.server || parsedUrl?.host || '',
+    url,
+    request,
+    response,
+    timing,
+    tags: normalizeTags(meta.tags),
+    correlationId: operation.correlation_id || null,
+    traceInfo: meta.trace || null,
+    raw: operation
+  };
+};
 
-        const traceStart = sortedOperations.reduce((acc, operation) => {
-          if (!Number.isFinite(operation.timestampMs)) return acc;
-          if (acc === null) return operation.timestampMs;
-          return Math.min(acc, operation.timestampMs);
-        }, null);
+export default function TraceMode({
+  operations: _legacyOperations = [],
+  initialTraceId = null,
+  initialOperationId = null,
+  onTraceChange,
+  onOperationChange,
+  isActive = true
+}) {
+  const { client } = useInspectr();
+  const [traceList, setTraceList] = useState([]);
+  const [traceListMeta, setTraceListMeta] = useState(null);
+  const [isTraceListLoading, setIsTraceListLoading] = useState(false);
+  const [traceListError, setTraceListError] = useState(null);
 
-        const traceEnd = sortedOperations.reduce((acc, operation) => {
-          const startMs = Number.isFinite(operation.timestampMs)
-            ? operation.timestampMs
-            : traceStart ?? 0;
-          const durationMs = Number.isFinite(operation.duration) ? operation.duration : 0;
-          const operationEnd = startMs + durationMs;
-          if (acc === null) return operationEnd;
-          return Math.max(acc, operationEnd);
-        }, traceStart);
+  const [selectedTraceId, setSelectedTraceId] = useState(initialTraceId ?? null);
 
-        const agentBuckets = new Map();
-        sortedOperations.forEach((operation) => {
-          const agentLabel = pickAgentLabel(operation);
-          const key = agentLabel ? agentLabel.toLowerCase() : '__default__';
-          const label = agentLabel || TRACE_GROUP_FALLBACK;
+  const [traceDetail, setTraceDetail] = useState(null);
+  const [traceDetailMeta, setTraceDetailMeta] = useState(null);
+  const [traceOperations, setTraceOperations] = useState([]);
+  const [isTraceDetailLoading, setIsTraceDetailLoading] = useState(false);
+  const [traceDetailError, setTraceDetailError] = useState(null);
 
-          if (!agentBuckets.has(key)) {
-            agentBuckets.set(key, { key, label, operations: [] });
-          }
-          agentBuckets.get(key).operations.push(operation);
-        });
+  const [selectedOperationId, setSelectedOperationId] = useState(initialOperationId ?? null);
 
-        const groups = Array.from(agentBuckets.values()).map((group) => ({
-          ...group,
-          operations: [...group.operations].sort((a, b) => {
-            const aTime = Number.isFinite(a.timestampMs) ? a.timestampMs : 0;
-            const bTime = Number.isFinite(b.timestampMs) ? b.timestampMs : 0;
-            return aTime - bTime;
-          })
-        }));
+  useEffect(() => {
+    if (!client?.traces?.list) return;
 
-        const primaryOperation = sortedOperations.find(
-          (operation) => operation.raw?.data?.meta?.trace_name
-        );
-        const label =
-          primaryOperation?.raw?.data?.meta?.trace_name ||
-          sortedOperations[0]?.raw?.data?.meta?.name ||
-          traceId;
+    let isActive = true;
+    setIsTraceListLoading(true);
+    setTraceListError(null);
 
-        return {
-          traceId,
-          label,
-          startMs: traceStart,
-          endMs: traceEnd,
-          durationMs:
-            traceStart != null && traceEnd != null ? Math.max(traceEnd - traceStart, 0) : null,
-          operations: sortedOperations,
-          groups
-        };
+    client.traces
+      .list({ limit: 50 })
+      .then((result) => {
+        if (!isActive) return;
+        setTraceList(Array.isArray(result?.traces) ? result.traces : []);
+        setTraceListMeta(result?.meta || null);
       })
-      .sort((a, b) => {
-        const aStart = Number.isFinite(a.startMs) ? a.startMs : 0;
-        const bStart = Number.isFinite(b.startMs) ? b.startMs : 0;
-        return bStart - aStart;
+      .catch((err) => {
+        if (!isActive) return;
+        setTraceListError(err);
+        setTraceList([]);
+        setTraceListMeta(null);
+      })
+      .finally(() => {
+        if (!isActive) return;
+        setIsTraceListLoading(false);
       });
-  }, [operations]);
 
-  const [selectedTraceId, setSelectedTraceId] = useState(() =>
-    traces.length ? traces[0].traceId : null
-  );
-
-  useEffect(() => {
-    if (!traces.length) {
-      setSelectedTraceId(null);
-      return;
-    }
-    if (selectedTraceId && traces.some((trace) => trace.traceId === selectedTraceId)) {
-      return;
-    }
-    setSelectedTraceId(traces[0]?.traceId ?? null);
-  }, [traces, selectedTraceId]);
-
-  const selectedTrace = useMemo(() => {
-    if (!selectedTraceId) return traces[0] || null;
-    return traces.find((trace) => trace.traceId === selectedTraceId) || traces[0] || null;
-  }, [traces, selectedTraceId]);
-
-  const [selectedOperationId, setSelectedOperationId] = useState(null);
+    return () => {
+      isActive = false;
+    };
+  }, [client]);
 
   useEffect(() => {
-    if (!selectedTrace?.operations?.length) {
+    if (!traceList.length) {
+      if (selectedTraceId !== null) {
+        setSelectedTraceId(null);
+      }
+      return;
+    }
+
+    const hasInitial =
+      initialTraceId && traceList.some((trace) => trace.trace_id === initialTraceId);
+    const hasSelected =
+      selectedTraceId && traceList.some((trace) => trace.trace_id === selectedTraceId);
+
+    const preferredTraceId = hasInitial
+      ? initialTraceId
+      : hasSelected
+        ? selectedTraceId
+        : traceList[0].trace_id;
+
+    if (preferredTraceId !== selectedTraceId) {
+      setSelectedTraceId(preferredTraceId);
+    }
+  }, [traceList, initialTraceId, selectedTraceId]);
+
+  useEffect(() => {
+    if (!client?.traces?.get || !selectedTraceId) {
+      setTraceDetail(null);
+      setTraceDetailMeta(null);
+      setTraceOperations([]);
       setSelectedOperationId(null);
       return;
     }
-    if (
-      selectedOperationId &&
-      selectedTrace.operations.some((operation) => operation._internalId === selectedOperationId)
-    ) {
-      return;
-    }
-    setSelectedOperationId(selectedTrace.operations[0]._internalId);
-  }, [selectedTrace, selectedOperationId]);
 
-  const selectedOperation = useMemo(() => {
-    if (!selectedTrace?.operations?.length || !selectedOperationId) return null;
-    return (
-      selectedTrace.operations.find(
-        (operation) => operation._internalId === selectedOperationId
-      ) || null
-    );
-  }, [selectedTrace, selectedOperationId]);
+    let isActive = true;
+    setIsTraceDetailLoading(true);
+    setTraceDetailError(null);
 
-  const [expandedGroups, setExpandedGroups] = useState(() => new Set());
+    client.traces
+      .get(selectedTraceId, { limit: 50 })
+      .then((result) => {
+        if (!isActive) return;
+        setTraceDetail(result?.trace || null);
+        setTraceDetailMeta(result?.meta || null);
+        setTraceOperations(Array.isArray(result?.operations) ? result.operations : []);
+      })
+      .catch((err) => {
+        if (!isActive) return;
+        setTraceDetailError(err);
+        setTraceDetail(null);
+        setTraceDetailMeta(null);
+        setTraceOperations([]);
+      })
+      .finally(() => {
+        if (!isActive) return;
+        setIsTraceDetailLoading(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [client, selectedTraceId]);
+
+  const normalizedOperations = useMemo(() => {
+    if (!Array.isArray(traceOperations)) return [];
+    return traceOperations
+      .map((operation, index) => normalizeTraceOperation(operation, index))
+      .filter(Boolean)
+      .sort((a, b) => {
+        const aTime = Number.isFinite(a.timestampMs) ? a.timestampMs : 0;
+        const bTime = Number.isFinite(b.timestampMs) ? b.timestampMs : 0;
+        return aTime - bTime;
+      });
+  }, [traceOperations]);
 
   useEffect(() => {
-    if (!selectedTrace?.groups?.length) {
-      setExpandedGroups(new Set());
+    if (!normalizedOperations.length) {
+      if (selectedOperationId !== null) {
+        setSelectedOperationId(null);
+      }
       return;
     }
-    setExpandedGroups(new Set(selectedTrace.groups.map((group) => group.key)));
-  }, [selectedTraceId, selectedTrace?.groups]);
 
-  const baseStart = Number.isFinite(selectedTrace?.startMs) ? selectedTrace.startMs : 0;
-  const baseEnd = Number.isFinite(selectedTrace?.endMs) ? selectedTrace.endMs : baseStart;
+    const hasInitial =
+      initialOperationId &&
+      normalizedOperations.some((operation) => operation.id === initialOperationId);
+    const hasSelected =
+      selectedOperationId &&
+      normalizedOperations.some((operation) => operation.id === selectedOperationId);
+
+    const preferredOperationId = hasInitial
+      ? initialOperationId
+      : hasSelected
+        ? selectedOperationId
+        : normalizedOperations[0].id;
+
+    if (preferredOperationId !== selectedOperationId) {
+      setSelectedOperationId(preferredOperationId);
+    }
+  }, [normalizedOperations, initialOperationId, selectedOperationId]);
+
+  const selectedOperation = useMemo(() => {
+    if (!selectedOperationId) return null;
+    return (
+      normalizedOperations.find((operation) => operation.id === selectedOperationId) || null
+    );
+  }, [normalizedOperations, selectedOperationId]);
+
+  useEffect(() => {
+    if (!isActive || typeof onTraceChange !== 'function') return;
+    onTraceChange(selectedTraceId || null);
+  }, [selectedTraceId, onTraceChange, isActive]);
+
+  useEffect(() => {
+    if (!isActive || typeof onOperationChange !== 'function') return;
+    onOperationChange(selectedOperationId || null);
+  }, [selectedOperationId, onOperationChange, isActive]);
+
+  const traceSummary = useMemo(() => {
+    if (traceDetail) return traceDetail;
+    return traceList.find((trace) => trace.trace_id === selectedTraceId) || null;
+  }, [traceDetail, traceList, selectedTraceId]);
+
+  const traceDurationMs = useMemo(
+    () => computeTraceDuration(traceSummary, normalizedOperations),
+    [traceSummary, normalizedOperations]
+  );
+
+  const timelineBounds = useMemo(() => {
+    if (!normalizedOperations.length) {
+      return { start: 0, end: 1 };
+    }
+    let min = null;
+    let max = null;
+    normalizedOperations.forEach((operation, index) => {
+      const startMs = Number.isFinite(operation.timestampMs) ? operation.timestampMs : index;
+      const duration = Number.isFinite(operation.duration) ? operation.duration : 0;
+      const opStart = startMs;
+      const opEnd = opStart + duration;
+      min = min === null ? opStart : Math.min(min, opStart);
+      max = max === null ? opEnd : Math.max(max, opEnd);
+    });
+    if (min === null || max === null) {
+      return { start: 0, end: 1 };
+    }
+    if (max <= min) {
+      return { start: min, end: min + 1 };
+    }
+    return { start: min, end: max };
+  }, [normalizedOperations]);
+
+  const baseStart = timelineBounds.start;
+  const baseEnd = timelineBounds.end;
   const baseDuration = Math.max(baseEnd - baseStart, 1);
+
+  const handleTraceSelect = (traceId) => {
+    if (!traceId) {
+      setSelectedTraceId(null);
+      setSelectedOperationId(null);
+      return;
+    }
+    if (traceId !== selectedTraceId) {
+      setSelectedOperationId(null);
+    }
+    setSelectedTraceId(traceId);
+  };
+
+  const handleOperationSelect = (operationId) => {
+    setSelectedOperationId(operationId);
+  };
 
   const renderOperation = (operation) => {
     const startMs = Number.isFinite(operation.timestampMs) ? operation.timestampMs : baseStart;
-    const durationMs = Number.isFinite(operation.duration) ? operation.duration : 0;
+    const duration = Number.isFinite(operation.duration) ? operation.duration : 0;
     const rawOffset = ((startMs - baseStart) / baseDuration) * 100;
     const offset = Math.min(Math.max(rawOffset, 0), 100);
-    const widthRaw = (durationMs / baseDuration) * 100;
+    const widthRaw = (duration / baseDuration) * 100;
     const width = Math.min(
       Math.max(Number.isFinite(widthRaw) ? widthRaw : MIN_BAR_WIDTH_PERCENT, MIN_BAR_WIDTH_PERCENT),
       100 - offset
     );
-    const isActive = selectedOperationId === operation._internalId;
-    const title =
-      operation.raw?.data?.meta?.name ||
-      `${operation.method || 'REQUEST'} ${operation.path || operation.host || '/'}`;
+    const isActive = selectedOperationId === operation.id;
+    const title = `${operation.method} ${operation.path}`;
 
     return (
       <button
-        key={operation._internalId}
+        key={operation.id}
         type="button"
-        onClick={() => setSelectedOperationId(operation._internalId)}
+        onClick={() => handleOperationSelect(operation.id)}
         className={classNames(
           'w-full rounded-tremor-small border px-3 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:border-dark-tremor-border',
           isActive
@@ -250,6 +394,9 @@ export default function TraceMode({ operations }) {
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
           <MethodBadge method={operation.method} />
           <StatusBadge status={operation.status} />
+          {operation.traceInfo?.source ? (
+            <Badge color="blue">{operation.traceInfo.source}</Badge>
+          ) : null}
           {operation.host ? <span className="truncate">{operation.host}</span> : null}
         </div>
         <div className="relative mt-3 h-2 rounded-full bg-slate-100 dark:bg-dark-tremor-background-subtle">
@@ -268,23 +415,49 @@ export default function TraceMode({ operations }) {
     );
   };
 
-  if (!operations.length) {
-    return <EmptyState message="No operations available for trace view." />;
-  }
-
-  if (!traces.length || !selectedTrace) {
+  if (!client?.traces?.list || !client?.traces?.get) {
     return (
-      <Card className="rounded-tremor-small border border-dashed border-tremor-border p-6 text-center text-sm text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
-        Start streaming operations to explore traces.
+      <Card className="rounded-tremor-small border border-dashed border-tremor-border p-6 text-sm text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
+        Trace exploration requires an Inspectr API version that exposes the /api/traces endpoints.
       </Card>
     );
   }
 
-  const metaEntries = selectedOperation?.raw?.data?.meta
-    ? Object.entries(selectedOperation.raw.data.meta)
-        .filter(([key]) => key !== 'tags')
-        .map(([key, value]) => ({ key, value: toDisplayString(value) }))
-    : [];
+  if (isTraceListLoading && !traceList.length) {
+    return (
+      <Card className="rounded-tremor-small border border-tremor-border p-6 text-center text-sm text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
+        Loading traces…
+      </Card>
+    );
+  }
+
+  if (traceListError && !traceList.length) {
+    return (
+      <Card className="rounded-tremor-small border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-900/20 dark:text-rose-300">
+        Failed to load traces: {traceListError.message || 'Unexpected error'}
+      </Card>
+    );
+  }
+
+  if (!traceList.length) {
+    return <EmptyState message="No traces recorded yet. Start sending traffic to populate this view." />;
+  }
+
+  const traceSources = traceSummary?.sources || traceDetail?.sources || [];
+  const operationCount = traceSummary?.operation_count || normalizedOperations.length;
+
+  const metaEntries = (() => {
+    if (!selectedOperation?.raw?.meta) return [];
+    return Object.entries(selectedOperation.raw.meta)
+      .filter(([key]) => key !== 'tags' && key !== 'trace')
+      .map(([key, value]) => ({ key, value: toDisplayString(value) }));
+  })();
+
+  const genericTraceEntries = (() => {
+    const generic = selectedOperation?.traceInfo?.generic;
+    if (!generic || typeof generic !== 'object') return [];
+    return Object.entries(generic).map(([key, value]) => ({ key, value: toDisplayString(value) }));
+  })();
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
@@ -295,100 +468,84 @@ export default function TraceMode({ operations }) {
               Trace explorer
             </Title>
             <Text className="mt-1 text-sm text-tremor-content dark:text-dark-tremor-content">
-              Inspect a single operation across its downstream calls and agent handoffs.
+              Inspect spans collected for a trace and explore downstream requests.
             </Text>
           </div>
-          <Badge color="slate">{`${selectedTrace?.operations?.length ?? 0} steps`}</Badge>
+          <Badge color={traceDetailError ? 'rose' : 'slate'}>
+            {`${operationCount} ${operationCount === 1 ? 'step' : 'steps'}`}
+          </Badge>
         </Flex>
 
         <div className="mt-6 flex flex-col gap-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-                Trace
-              </Text>
-              <Text className="text-sm text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                {formatTraceLabel(selectedTrace)}
-              </Text>
+            <div className="space-y-2">
+              <div>
+                <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                  Trace
+                </Text>
+                <Text className="text-sm text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {formatTraceLabel(traceSummary)}
+                </Text>
+              </div>
+              {traceSources?.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {traceSources.map((source) => (
+                    <Badge key={source} color="blue">
+                      {source}
+                    </Badge>
+                  ))}
+                </div>
+              ) : null}
+              <div className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+                {traceSummary?.first_seen ? (
+                  <div>First seen: {formatTimestamp(traceSummary.first_seen)}</div>
+                ) : null}
+                {traceSummary?.last_seen ? (
+                  <div>Last seen: {formatTimestamp(traceSummary.last_seen)}</div>
+                ) : null}
+                {traceDurationMs != null ? (
+                  <div>Observed duration: {formatDuration(traceDurationMs)}</div>
+                ) : null}
+              </div>
             </div>
             <Select
-              className="w-full sm:w-64 [&>button]:rounded-tremor-small"
+              className="w-full sm:w-72 [&>button]:rounded-tremor-small"
               enableClear={false}
-              value={selectedTraceId ?? selectedTrace.traceId}
-              onValueChange={setSelectedTraceId}
+              value={selectedTraceId ?? traceSummary?.trace_id ?? ''}
+              onValueChange={handleTraceSelect}
             >
-              {traces.map((trace) => (
-                <SelectItem key={trace.traceId} value={trace.traceId}>
+              {traceList.map((trace) => (
+                <SelectItem key={trace.trace_id} value={trace.trace_id}>
                   {formatTraceLabel(trace)}
                 </SelectItem>
               ))}
             </Select>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-            <span>{selectedTrace?.operations?.length ?? 0} recorded steps</span>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
             <span>
-              {selectedTrace?.durationMs != null ? formatDuration(selectedTrace.durationMs) : 'N/A'}
+              Page {traceDetailMeta?.page || traceListMeta?.page || 1} of{' '}
+              {traceListMeta?.total_pages || traceDetailMeta?.total_pages || 1}
+            </span>
+            <span>
+              {isTraceDetailLoading ? 'Refreshing trace…' : `Total operations: ${operationCount}`}
             </span>
           </div>
 
+          {traceDetailError ? (
+            <Card className="rounded-tremor-small border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-900/20 dark:text-rose-300">
+              Failed to load trace details: {traceDetailError.message || 'Unexpected error'}
+            </Card>
+          ) : null}
+
           <div className="space-y-4">
-            {selectedTrace.groups.map((group) => {
-              const isExpanded = expandedGroups.has(group.key);
-              return (
-                <div
-                  key={group.key}
-                  className="overflow-hidden rounded-tremor-small border border-tremor-border dark:border-dark-tremor-border"
-                >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setExpandedGroups((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(group.key)) {
-                          next.delete(group.key);
-                        } else {
-                          next.add(group.key);
-                        }
-                        return next;
-                      })
-                    }
-                    className="flex w-full items-center justify-between gap-3 bg-gray-50 px-4 py-3 text-left text-sm font-medium text-tremor-content-strong transition hover:bg-gray-100 dark:bg-dark-tremor-background dark:text-dark-tremor-content-strong dark:hover:bg-dark-tremor-background-subtle"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-semibold text-tremor-content-strong shadow-sm dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content">
-                        {group.label.slice(0, 2).toUpperCase()}
-                      </span>
-                      <span>{group.label}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs font-normal text-tremor-content-subtle dark:text-dark-tremor-content">
-                      <span>{group.operations.length} steps</span>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        className={classNames(
-                          'h-3.5 w-3.5 transition-transform',
-                          isExpanded ? 'rotate-180' : 'rotate-0'
-                        )}
-                        aria-hidden
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                  </button>
-                  {isExpanded ? (
-                    <div className="divide-y divide-tremor-border dark:divide-dark-tremor-border">
-                      {group.operations.map((operation) => renderOperation(operation))}
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
+            {normalizedOperations.length ? (
+              normalizedOperations.map((operation) => renderOperation(operation))
+            ) : (
+              <Card className="rounded-tremor-small border border-dashed border-tremor-border p-6 text-center text-sm text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
+                No operations recorded for this trace.
+              </Card>
+            )}
           </div>
         </div>
       </Card>
@@ -399,8 +556,7 @@ export default function TraceMode({ operations }) {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <Title className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                  {selectedOperation.raw?.data?.meta?.name ||
-                    `${selectedOperation.method} ${selectedOperation.path}`}
+                  {`${selectedOperation.method} ${selectedOperation.path}`}
                 </Title>
                 <Text className="mt-1 text-sm text-tremor-content dark:text-dark-tremor-content">
                   {selectedOperation.host || selectedOperation.request?.server || 'Unspecified host'}
@@ -420,7 +576,7 @@ export default function TraceMode({ operations }) {
                 <dl className="mt-3 divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
                   <div className="flex items-center justify-between gap-3 py-2">
                     <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                      Created
+                      Request time
                     </dt>
                     <dd className="text-right text-tremor-content dark:text-dark-tremor-content">
                       {formatTimestamp(selectedOperation.timestamp)}
@@ -428,37 +584,34 @@ export default function TraceMode({ operations }) {
                   </div>
                   <div className="flex items-center justify-between gap-3 py-2">
                     <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
+                      Operation ID
+                    </dt>
+                    <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
+                      {selectedOperation.id}
+                    </dd>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 py-2">
+                    <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
+                      Correlation ID
+                    </dt>
+                    <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
+                      {selectedOperation.correlationId || '—'}
+                    </dd>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 py-2">
+                    <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
                       Trace ID
                     </dt>
                     <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
-                      {selectedOperation.operationId || '—'}
+                      {selectedOperation.traceInfo?.trace_id || '—'}
                     </dd>
                   </div>
                   <div className="flex items-center justify-between gap-3 py-2">
                     <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                      Request
-                    </dt>
-                    <dd className="flex flex-col items-end gap-1 text-right text-tremor-content dark:text-dark-tremor-content">
-                      <span className="font-medium">{selectedOperation.method}</span>
-                      <span className="truncate text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-                        {selectedOperation.path || selectedOperation.url || '/'}
-                      </span>
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 py-2">
-                    <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                      Status
-                    </dt>
-                    <dd>
-                      <StatusBadge status={selectedOperation.status} />
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 py-2">
-                    <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                      Duration
+                      Trace source
                     </dt>
                     <dd className="text-right text-tremor-content dark:text-dark-tremor-content">
-                      {formatDuration(selectedOperation.duration)}
+                      {selectedOperation.traceInfo?.source || '—'}
                     </dd>
                   </div>
                   <div className="flex items-center justify-between gap-3 py-2">
@@ -471,6 +624,26 @@ export default function TraceMode({ operations }) {
                   </div>
                 </dl>
               </div>
+
+              {selectedOperation.traceInfo?.generic && genericTraceEntries.length ? (
+                <div>
+                  <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                    Trace metadata
+                  </Text>
+                  <div className="mt-2 space-y-3">
+                    {genericTraceEntries.map((entry) => (
+                      <div key={entry.key}>
+                        <Text className="text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                          {entry.key}
+                        </Text>
+                        <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-tremor-small bg-gray-900 px-3 py-2 text-xs text-gray-100 dark:bg-gray-800 dark:text-gray-100">
+                          {entry.value}
+                        </pre>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               {selectedOperation.tags?.length ? (
                 <div>
@@ -524,7 +697,7 @@ export default function TraceMode({ operations }) {
           </div>
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
-            Select a step to inspect its details.
+            {isTraceDetailLoading ? 'Loading trace details…' : 'Select a span to inspect its details.'}
           </div>
         )}
       </Card>
