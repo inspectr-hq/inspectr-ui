@@ -242,77 +242,61 @@ export default function TraceTimelineMode({
           onClick={() => handleToggleGroup(group.id)}
           className="flex w-full items-center gap-3 px-3 py-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
         >
-          <span
-            className={classNames(
-              'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border',
-              isExpanded
-                ? 'border-tremor-brand text-tremor-brand'
-                : 'border-slate-300 text-slate-500 dark:border-slate-600 dark:text-slate-400'
-            )}
-            aria-hidden
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className={classNames('h-3.5 w-3.5 transition-transform', isExpanded ? 'rotate-180' : 'rotate-0')}
-            >
-              <path
-                fillRule="evenodd"
-                d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </span>
-          <div className="grid flex-1 items-center gap-3 pl-2 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2 text-sm font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                <Text className="text-sm font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                          {group.label}
-                  </Text>
-                {group.subtitle ? (
-                  <Text className="mt-0.5 text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-                    {group.subtitle}
-                  </Text>
-                ) : null}
-              </div>
-              {/*<Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">*/}
-              {/*  {formatTimestamp(operation.timestamp)}*/}
-              {/*</Text>*/}
+          <div className="grid w-full items-center gap-3 pl-2 sm:grid-cols-[1.5rem_minmax(0,1fr)_70%]">
+            {/* Column 0: caret/icon */}
+            <div className="flex justify-center">
+              <span
+                className={classNames(
+                  'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border',
+                  isExpanded
+                    ? 'border-tremor-brand text-tremor-brand'
+                    : 'border-slate-300 text-slate-500 dark:border-slate-600 dark:text-slate-400'
+                )}
+                aria-hidden
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className={classNames('h-3.5 w-3.5 transition-transform', isExpanded ? 'rotate-180' : 'rotate-0')}
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </span>
             </div>
-            <div className="flex items-center gap-3">
-              <Text className="w-20 text-right text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-                {formatDuration(durationMs)}
+
+            {/* Column 1: flexible (label + optional subtitle) */}
+            <div className="min-w-0 flex flex-col">
+              <div className="flex items-center gap-2 truncate">
+                <Text className="truncate text-sm font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {group.label}
+                </Text>
+              </div>
+              {group.subtitle ? (
+                <Text className="truncate text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+                  {group.subtitle}
+                </Text>
+              ) : null}
+            </div>
+
+            {/* Column 2: duration + bar (flex-1) + badge */}
+            <div className="min-w-0 flex items-center gap-3">
+              <Text className="w-20 shrink-0 text-right text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {formatDuration(traceDurationMs)}
               </Text>
-              {renderBar({ start: startMs ?? baseStart, duration: durationMs, variant: 'brand' })}
-              <Badge color="slate">{group.operations.length}</Badge>
+              <div className="flex-1 min-w-0">
+                {renderBar({ start: startMs ?? baseStart, duration: traceDurationMs, variant: 'brand' })}
+              </div>
+              <div className="w-10 shrink-0 flex justify-center">
+                <Badge color="slate">{group.operations.length}</Badge>
+              </div>
             </div>
           </div>
-          {/*<div className="grid flex-1 items-center gap-3 pl-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">*/}
-          {/*  /!* Column 1: label + optional subtitle (no count badge here) *!/*/}
-          {/*  <div className="min-w-0">*/}
-          {/*    <div className="flex items-center gap-2">*/}
-          {/*      <Text className="text-sm font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">*/}
-          {/*        {group.label}*/}
-          {/*      </Text>*/}
-          {/*    </div>*/}
-          {/*    {group.subtitle ? (*/}
-          {/*      <Text className="mt-0.5 text-xs text-tremor-content-subtle dark:text-dark-tremor-content">*/}
-          {/*        {group.subtitle}*/}
-          {/*      </Text>*/}
-          {/*    ) : null}*/}
-          {/*  </div>*/}
-
-          {/*  /!* Column 2: duration + parent bar + count badge *!/*/}
-          {/*  <div className="min-w-0 flex items-center gap-3">*/}
-          {/*    <Text className="w-20 shrink-0 text-right font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">*/}
-          {/*      {formatDuration(durationMs)}*/}
-          {/*    </Text>*/}
-          {/*    {renderBar({ start: startMs ?? baseStart, duration: durationMs, variant: 'brand' })}*/}
-          {/*    <Badge color="slate">{group.operations.length}</Badge>*/}
-          {/*  </div>*/}
-          {/*</div>*/}
-      </button>
+        </button>
 
         {isExpanded ? (
           <div className="border-t border-tremor-border px-3 py-2 dark:border-dark-tremor-border">
@@ -341,14 +325,19 @@ export default function TraceTimelineMode({
             : 'hover:bg-slate-100 dark:hover:bg-dark-tremor-background-subtle'
         )}
       >
-        <span
-          className={classNames(
-            'h-2 w-2 rounded-full',
-            getDotColorClass(operation.status ?? null)
-          )}
-        />
-        <div className="grid flex-1 items-center gap-3 pl-2 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
-          <div className="flex flex-col">
+        <div className="grid w-full items-center gap-3 pl-2 sm:grid-cols-[1.5rem_minmax(0,1fr)_70%]">
+          {/* Column 0: status dot */}
+          <div className="flex justify-center">
+            <span
+              className={classNames(
+                'h-2 w-2 rounded-full',
+                getDotColorClass(operation.status ?? null)
+              )}
+            />
+          </div>
+
+          {/* Column 1: label + timestamp */}
+          <div className="min-w-0 flex flex-col">
             <div className="flex items-center gap-2 text-sm font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
               <MethodBadge method={operation.method} />
               <span className="truncate">{operation.traceInfo?.source || operation.path}</span>
@@ -357,12 +346,18 @@ export default function TraceTimelineMode({
               {formatTimestamp(operation.timestamp)}
             </Text>
           </div>
-          <div className="flex items-center gap-3">
-            <Text className="w-20 text-right text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+
+          {/* Column 2: duration + bar (flex-1) + status badge */}
+          <div className="min-w-0 flex items-center gap-3">
+            <Text className="w-20 shrink-0 text-right text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
               {formatDuration(operation.duration)}
             </Text>
-            {renderBar({ start, duration, status: operation.status })}
-            <StatusBadge status={operation.status} />
+            <div className="flex-1 min-w-0">
+              {renderBar({ start, duration, status: operation.status })}
+            </div>
+            <div className="w-10 shrink-0 flex justify-center">
+              <StatusBadge status={operation.status} />
+            </div>
           </div>
         </div>
       </button>
@@ -373,7 +368,7 @@ export default function TraceTimelineMode({
     if (!normalizedOperations.length) return null;
     return (
       <div className="hidden items-center gap-4 rounded-tremor-small border border-slate-200 px-3 py-2 text-xs text-tremor-content-subtle dark:border-slate-700 dark:text-dark-tremor-content lg:flex">
-        <span className="w-20 text-right">Timeline DAAR</span>
+        <span className="w-20 text-right">Timeline</span>
         <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-dark-tremor-background-subtle">
           {normalizedOperations.map((operation, index) => {
             const { start, duration } = getOperationTiming(operation, index);
@@ -499,20 +494,20 @@ export default function TraceTimelineMode({
           ) : null}
 
           <div className="space-y-3">
-            {renderTraceSummaryBar()}
-            {renderTimelineTrack()}
-            <div className="relative hidden h-8 w-full items-center justify-between rounded-tremor-small border border-dashed border-slate-200 px-3 text-xs text-tremor-content-subtle dark:border-slate-700 dark:text-dark-tremor-content lg:flex">
-              {timelineTicks.map((tick) => (
-                <div key={tick.id} className="relative flex-1">
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                    {tick.label}
-                  </span>
-                  {tick.id > 0 && tick.id < timelineTicks.length - 1 ? (
-                    <span className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-slate-300 dark:bg-slate-700" />
-                  ) : null}
-                </div>
-              ))}
-            </div>
+            {/*{renderTraceSummaryBar()}*/}
+            {/*{renderTimelineTrack()}*/}
+            {/*<div className="relative hidden h-8 w-full items-center justify-between rounded-tremor-small border border-dashed border-slate-200 px-3 text-xs text-tremor-content-subtle dark:border-slate-700 dark:text-dark-tremor-content lg:flex">*/}
+            {/*  {timelineTicks.map((tick) => (*/}
+            {/*    <div key={tick.id} className="relative flex-1">*/}
+            {/*      <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap">*/}
+            {/*        {tick.label}*/}
+            {/*      </span>*/}
+            {/*      {tick.id > 0 && tick.id < timelineTicks.length - 1 ? (*/}
+            {/*        <span className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-slate-300 dark:bg-slate-700" />*/}
+            {/*      ) : null}*/}
+            {/*    </div>*/}
+            {/*  ))}*/}
+            {/*</div>*/}
             {groups.length ? (
               groups.map((group) => renderGroupRow(group))
             ) : (
