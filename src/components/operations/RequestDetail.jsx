@@ -257,7 +257,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
   const handleViewTrace = () => {
     if (!traceId) return;
     const traceParams = new URLSearchParams();
-    traceParams.set('view', 'trace');
+    traceParams.set('view', 'trace-timeline');
     traceParams.set('trace', traceId);
     const traceOperationId = operation?.operation_id || null;
     if (traceOperationId) {

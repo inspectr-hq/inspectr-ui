@@ -24,19 +24,25 @@ import ListMode from './ListMode.jsx';
 import TableMode from './TableMode.jsx';
 import TimelineMode from './TimelineMode.jsx';
 import TraceMode from './TraceMode.jsx';
+import TraceTimelineMode from './TraceTimelineMode.jsx';
 import { formatChartLabel, normalizeOperation, endpointKey } from './insightsUtils.js';
 import { MAX_CHART_POINTS } from './constants.js';
 
-const INSIGHTS_TABS = ['endpoint', 'list', 'table', 'timeline', 'trace'];
-const TRACE_TAB_INDEX = INSIGHTS_TABS.indexOf('trace');
+const TRACE_CLASSIC_VIEW = 'trace';
+const TRACE_TIMELINE_VIEW = 'trace-timeline';
+
+const INSIGHTS_TABS = ['endpoint', 'list', 'table', 'timeline', TRACE_CLASSIC_VIEW, TRACE_TIMELINE_VIEW];
+const TRACE_CLASSIC_TAB_INDEX = INSIGHTS_TABS.indexOf(TRACE_CLASSIC_VIEW);
+const TRACE_TIMELINE_TAB_INDEX = INSIGHTS_TABS.indexOf(TRACE_TIMELINE_VIEW);
 
 const getTabIndexForParams = (view, traceId) => {
-  if (traceId && TRACE_TAB_INDEX >= 0) {
-    return TRACE_TAB_INDEX;
+  if (view && INSIGHTS_TABS.includes(view)) {
+    return INSIGHTS_TABS.indexOf(view);
   }
-  if (!view) return 0;
-  const index = INSIGHTS_TABS.indexOf(view);
-  return index >= 0 ? index : 0;
+  if (traceId && TRACE_TIMELINE_TAB_INDEX >= 0) {
+    return TRACE_TIMELINE_TAB_INDEX;
+  }
+  return 0;
 };
 
 const getInitialInsightsState = () => {
@@ -139,56 +145,57 @@ export default function InsightsApp() {
   const handleTabIndexChange = (index) => {
     setTabIndex(index);
     const viewKey = INSIGHTS_TABS[index] || 'endpoint';
-    if (viewKey === 'trace') {
-      updateInsightsHash({
-        view: 'trace',
-        trace: traceSelection.traceId ?? null,
-        traceOp: traceSelection.operationId ?? null
-      });
-    } else {
-      updateInsightsHash({ view: viewKey, trace: null, traceOp: null });
-    }
+    const isTraceView = viewKey === TRACE_CLASSIC_VIEW || viewKey === TRACE_TIMELINE_VIEW;
+    updateInsightsHash({
+      view: viewKey,
+      trace: isTraceView ? traceSelection.traceId ?? null : null,
+      traceOp: isTraceView ? traceSelection.operationId ?? null : null
+    });
   };
 
   const handleTraceSelectionChange = (nextTraceId) => {
-    setTraceSelection((prev) => {
-      const sameTrace = prev.traceId === nextTraceId;
-      const nextState = {
-        traceId: nextTraceId || null,
-        operationId: sameTrace ? prev.operationId : null
-      };
-      if (sameTrace && prev.operationId === nextState.operationId) {
-        return prev;
-      }
-      updateInsightsHash({
-        view: 'trace',
-        trace: nextState.traceId ?? null,
-        traceOp: nextState.operationId ?? null
-      });
-      return nextState;
+    const sameTrace = traceSelection.traceId === nextTraceId;
+    const nextState = {
+      traceId: nextTraceId || null,
+      operationId: sameTrace ? traceSelection.operationId : null
+    };
+    setTraceSelection(nextState);
+
+    const currentViewKey = INSIGHTS_TABS[tabIndex];
+    const isTraceView = currentViewKey === TRACE_CLASSIC_VIEW || currentViewKey === TRACE_TIMELINE_VIEW;
+    const targetViewKey = isTraceView ? currentViewKey : TRACE_TIMELINE_VIEW;
+
+    updateInsightsHash({
+      view: targetViewKey,
+      trace: nextState.traceId ?? null,
+      traceOp: nextState.operationId ?? null
     });
 
-    if (TRACE_TAB_INDEX >= 0 && tabIndex !== TRACE_TAB_INDEX) {
-      setTabIndex(TRACE_TAB_INDEX);
+    if (!isTraceView && TRACE_TIMELINE_TAB_INDEX >= 0) {
+      setTabIndex(TRACE_TIMELINE_TAB_INDEX);
     }
   };
 
   const handleOperationSelectionChange = (nextOperationId) => {
-    setTraceSelection((prev) => {
-      const nextState = {
-        traceId: prev.traceId,
-        operationId: nextOperationId || null
-      };
-      if (prev.traceId === nextState.traceId && prev.operationId === nextState.operationId) {
-        return prev;
-      }
-      updateInsightsHash({
-        view: 'trace',
-        trace: nextState.traceId ?? null,
-        traceOp: nextState.operationId ?? null
-      });
-      return nextState;
+    const nextState = {
+      traceId: traceSelection.traceId,
+      operationId: nextOperationId || null
+    };
+    setTraceSelection(nextState);
+
+    const currentViewKey = INSIGHTS_TABS[tabIndex];
+    const isTraceView = currentViewKey === TRACE_CLASSIC_VIEW || currentViewKey === TRACE_TIMELINE_VIEW;
+    const targetViewKey = isTraceView ? currentViewKey : TRACE_TIMELINE_VIEW;
+
+    updateInsightsHash({
+      view: targetViewKey,
+      trace: nextState.traceId ?? null,
+      traceOp: nextState.operationId ?? null
     });
+
+    if (!isTraceView && TRACE_TIMELINE_TAB_INDEX >= 0) {
+      setTabIndex(TRACE_TIMELINE_TAB_INDEX);
+    }
   };
 
   useEffect(() => {
@@ -345,7 +352,8 @@ export default function InsightsApp() {
           <Tab>List mode</Tab>
           <Tab>Table mode</Tab>
           <Tab>Timeline mode</Tab>
-          <Tab>Trace mode</Tab>
+          <Tab>Trace explorer</Tab>
+          <Tab>Trace timeline</Tab>
         </TabList>
         <TabPanels className="mt-6 space-y-6">
           <TabPanel>
@@ -367,7 +375,17 @@ export default function InsightsApp() {
               initialOperationId={traceSelection.operationId}
               onTraceChange={handleTraceSelectionChange}
               onOperationChange={handleOperationSelectionChange}
-              isActive={tabIndex === TRACE_TAB_INDEX}
+              isActive={tabIndex === TRACE_CLASSIC_TAB_INDEX}
+            />
+          </TabPanel>
+          <TabPanel>
+            <TraceTimelineMode
+              operations={operations}
+              initialTraceId={traceSelection.traceId}
+              initialOperationId={traceSelection.operationId}
+              onTraceChange={handleTraceSelectionChange}
+              onOperationChange={handleOperationSelectionChange}
+              isActive={tabIndex === TRACE_TIMELINE_TAB_INDEX}
             />
           </TabPanel>
         </TabPanels>
