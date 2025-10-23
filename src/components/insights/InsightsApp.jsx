@@ -159,6 +159,12 @@ export default function InsightsApp() {
       traceId: nextTraceId || null,
       operationId: sameTrace ? traceSelection.operationId : null
     };
+    if (
+      traceSelection.traceId === nextState.traceId &&
+      traceSelection.operationId === nextState.operationId
+    ) {
+      return;
+    }
     setTraceSelection(nextState);
 
     const currentViewKey = INSIGHTS_TABS[tabIndex];
@@ -181,6 +187,12 @@ export default function InsightsApp() {
       traceId: traceSelection.traceId,
       operationId: nextOperationId || null
     };
+    if (
+      traceSelection.traceId === nextState.traceId &&
+      traceSelection.operationId === nextState.operationId
+    ) {
+      return;
+    }
     setTraceSelection(nextState);
 
     const currentViewKey = INSIGHTS_TABS[tabIndex];

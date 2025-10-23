@@ -1,6 +1,6 @@
 // src/components/insights/useTraceExplorer.js
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useInspectr } from '../../context/InspectrContext.jsx';
 import {
   buildTimelineBounds,
@@ -38,6 +38,19 @@ export const useTraceExplorer = ({
 
   const [selectedOperationId, setSelectedOperationId] = useState(initialOperationId ?? null);
 
+  const traceChangeCallbackRef = useRef(onTraceChange);
+  const operationChangeCallbackRef = useRef(onOperationChange);
+  const lastTraceNotificationRef = useRef(undefined);
+  const lastOperationNotificationRef = useRef(undefined);
+
+  useEffect(() => {
+    traceChangeCallbackRef.current = onTraceChange;
+  }, [onTraceChange]);
+
+  useEffect(() => {
+    operationChangeCallbackRef.current = onOperationChange;
+  }, [onOperationChange]);
+
   useEffect(() => {
     if (initialTraceId && initialTraceId !== selectedTraceId) {
       setSelectedTraceId(initialTraceId);
@@ -51,7 +64,7 @@ export const useTraceExplorer = ({
   }, [initialOperationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!supportsTraces) return;
+    if (!supportsTraces || !isActive) return;
 
     let alive = true;
     setIsTraceListLoading(true);
@@ -78,7 +91,7 @@ export const useTraceExplorer = ({
     return () => {
       alive = false;
     };
-  }, [supportsTraces, client, listLimit]);
+  }, [supportsTraces, client, listLimit, isActive]);
 
   useEffect(() => {
     if (!traceList.length) {
@@ -101,7 +114,7 @@ export const useTraceExplorer = ({
   }, [traceList, selectedTraceId, initialTraceId]);
 
   useEffect(() => {
-    if (!supportsTraces || !selectedTraceId) {
+    if (!supportsTraces || !isActive || !selectedTraceId) {
       setTraceDetail(null);
       setTraceDetailMeta(null);
       setTraceOperations([]);
@@ -136,7 +149,7 @@ export const useTraceExplorer = ({
     return () => {
       alive = false;
     };
-  }, [supportsTraces, client, selectedTraceId, detailLimit]);
+  }, [supportsTraces, client, selectedTraceId, detailLimit, isActive]);
 
   const normalizedOperations = useMemo(() => {
     if (!Array.isArray(traceOperations)) return [];
@@ -198,14 +211,24 @@ export const useTraceExplorer = ({
   const timeline = useMemo(() => buildTimelineBounds(normalizedOperations), [normalizedOperations]);
 
   useEffect(() => {
-    if (!isActive || typeof onTraceChange !== 'function') return;
-    onTraceChange(selectedTraceId || null);
-  }, [selectedTraceId, onTraceChange, isActive]);
+    if (!isActive || typeof traceChangeCallbackRef.current !== 'function') return;
+    if (lastTraceNotificationRef.current === selectedTraceId) return;
+    lastTraceNotificationRef.current = selectedTraceId;
+    traceChangeCallbackRef.current(selectedTraceId || null);
+  }, [selectedTraceId, isActive]);
 
   useEffect(() => {
-    if (!isActive || typeof onOperationChange !== 'function') return;
-    onOperationChange(selectedOperationId || null);
-  }, [selectedOperationId, onOperationChange, isActive]);
+    if (!isActive || typeof operationChangeCallbackRef.current !== 'function') return;
+    if (lastOperationNotificationRef.current === selectedOperationId) return;
+    lastOperationNotificationRef.current = selectedOperationId;
+    operationChangeCallbackRef.current(selectedOperationId || null);
+  }, [selectedOperationId, isActive]);
+
+  useEffect(() => {
+    if (isActive) return;
+    setIsTraceListLoading(false);
+    setIsTraceDetailLoading(false);
+  }, [isActive]);
 
   const selectTrace = (traceId) => {
     if (!traceId) {

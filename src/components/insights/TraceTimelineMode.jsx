@@ -17,7 +17,8 @@ import {
 } from './traceUtils.js';
 import { useTraceExplorer } from './useTraceExplorer.js';
 
-const MIN_BAR_WIDTH_PERCENT = 2;
+const MIN_BAR_WIDTH_PERCENT = 3;
+const TIMELINE_TICK_COUNT = 4;
 
 const deriveGroupLabel = (operations) => {
   if (!operations.length) return 'Trace group';
@@ -78,6 +79,18 @@ export default function TraceTimelineMode({
 
   const baseStart = timeline.start;
   const baseDuration = timeline.duration;
+
+  const timelineTicks = useMemo(() => {
+    if (!Number.isFinite(baseDuration) || baseDuration <= 0) return [];
+    return Array.from({ length: TIMELINE_TICK_COUNT + 1 }, (_, index) => {
+      const fraction = index / TIMELINE_TICK_COUNT;
+      return {
+        id: index,
+        position: fraction * 100,
+        label: formatDuration(baseDuration * fraction)
+      };
+    });
+  }, [baseDuration]);
 
   const groups = useMemo(() => {
     if (!normalizedOperations.length) return [];
@@ -163,21 +176,45 @@ export default function TraceTimelineMode({
     });
   };
 
-  const renderBar = ({ start, duration, status }) => {
-    const rawOffset = ((start - baseStart) / baseDuration) * 100;
-    const offset = Math.min(Math.max(rawOffset, 0), 100);
-    const widthRaw = (duration / baseDuration) * 100;
-    const width = Math.min(
-      Math.max(Number.isFinite(widthRaw) ? widthRaw : MIN_BAR_WIDTH_PERCENT, MIN_BAR_WIDTH_PERCENT),
-      100 - offset
-    );
+  const renderBar = ({ start, duration, status, total = baseDuration, variant = 'status' }) => {
+    if (!Number.isFinite(total) || total <= 0) {
+      return <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-dark-tremor-background-subtle" />;
+    }
+    // Use `total` (not baseDuration) and compute right edge to avoid 0px widths at ~100% offsets
+    const denom = Number.isFinite(total) && total > 0 ? total : baseDuration;
+    const rawOffset = ((start - baseStart) / denom) * 100;
+    const rawWidth = (duration / denom) * 100;
+
+    // Clamp helper
+    const clamp = (v, min = 0, max = 100) => Math.min(Math.max(v, min), max);
+
+    // Clamp offset, then clamp the right edge
+    let offset = clamp(rawOffset);
+    let right = clamp(offset + rawWidth);
+
+    // Derive width and enforce a minimum visible width
+    let width = right - offset;
+    if (!Number.isFinite(width) || width <= 0) {
+      width = MIN_BAR_WIDTH_PERCENT;
+      if (offset >= 100) offset = 100 - width; // pull left if at the edge
+    } else if (width < MIN_BAR_WIDTH_PERCENT) {
+      // Expand to minimum width while keeping inside the container
+      const desiredRight = Math.min(100, offset + MIN_BAR_WIDTH_PERCENT);
+      width = desiredRight - offset;
+      if (width < MIN_BAR_WIDTH_PERCENT) {
+        offset = Math.max(0, 100 - MIN_BAR_WIDTH_PERCENT);
+        width = MIN_BAR_WIDTH_PERCENT;
+      }
+    }
 
     return (
-      <div className="relative h-2 flex-1 rounded-full bg-slate-200 dark:bg-dark-tremor-background-subtle">
+      <div className="relative h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-dark-tremor-background-subtle">
         <span
           className={classNames(
             'absolute top-0 h-2 rounded-full transition-all',
-            getBarColorClass(status ?? null)
+            variant === 'brand'
+              ? 'bg-tremor-brand/80 dark:bg-tremor-brand/60'
+              : getBarColorClass(status ?? null)
           )}
           style={{ left: `${offset}%`, width: `${width}%` }}
         />
@@ -227,26 +264,55 @@ export default function TraceTimelineMode({
               />
             </svg>
           </span>
-          <div className="min-w-[12rem] flex-1">
-            <div className="flex items-center gap-2">
-              <Text className="text-sm font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                {group.label}
+          <div className="grid flex-1 items-center gap-3 pl-2 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 text-sm font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                <Text className="text-sm font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                          {group.label}
+                  </Text>
+                {group.subtitle ? (
+                  <Text className="mt-0.5 text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+                    {group.subtitle}
+                  </Text>
+                ) : null}
+              </div>
+              {/*<Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">*/}
+              {/*  {formatTimestamp(operation.timestamp)}*/}
+              {/*</Text>*/}
+            </div>
+            <div className="flex items-center gap-3">
+              <Text className="w-20 text-right text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+                {formatDuration(durationMs)}
               </Text>
+              {renderBar({ start: startMs ?? baseStart, duration: durationMs, variant: 'brand' })}
               <Badge color="slate">{group.operations.length}</Badge>
             </div>
-            {group.subtitle ? (
-              <Text className="mt-0.5 text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-                {group.subtitle}
-              </Text>
-            ) : null}
           </div>
-          <div className="flex items-center gap-4">
-            <Text className="w-20 text-right text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-              {formatDuration(durationMs)}
-            </Text>
-            {renderBar({ start: startMs ?? baseStart, duration: durationMs, status: group.maxStatus })}
-          </div>
-        </button>
+          {/*<div className="grid flex-1 items-center gap-3 pl-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">*/}
+          {/*  /!* Column 1: label + optional subtitle (no count badge here) *!/*/}
+          {/*  <div className="min-w-0">*/}
+          {/*    <div className="flex items-center gap-2">*/}
+          {/*      <Text className="text-sm font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">*/}
+          {/*        {group.label}*/}
+          {/*      </Text>*/}
+          {/*    </div>*/}
+          {/*    {group.subtitle ? (*/}
+          {/*      <Text className="mt-0.5 text-xs text-tremor-content-subtle dark:text-dark-tremor-content">*/}
+          {/*        {group.subtitle}*/}
+          {/*      </Text>*/}
+          {/*    ) : null}*/}
+          {/*  </div>*/}
+
+          {/*  /!* Column 2: duration + parent bar + count badge *!/*/}
+          {/*  <div className="min-w-0 flex items-center gap-3">*/}
+          {/*    <Text className="w-20 shrink-0 text-right font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">*/}
+          {/*      {formatDuration(durationMs)}*/}
+          {/*    </Text>*/}
+          {/*    {renderBar({ start: startMs ?? baseStart, duration: durationMs, variant: 'brand' })}*/}
+          {/*    <Badge color="slate">{group.operations.length}</Badge>*/}
+          {/*  </div>*/}
+          {/*</div>*/}
+      </button>
 
         {isExpanded ? (
           <div className="border-t border-tremor-border px-3 py-2 dark:border-dark-tremor-border">
@@ -281,23 +347,75 @@ export default function TraceTimelineMode({
             getDotColorClass(operation.status ?? null)
           )}
         />
-        <div className="flex min-w-[13rem] flex-col">
-          <div className="flex items-center gap-2 text-sm font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-            <MethodBadge method={operation.method} />
-            <span className="truncate">{operation.traceInfo?.source || operation.path}</span>
+        <div className="grid flex-1 items-center gap-3 pl-2 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 text-sm font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+              <MethodBadge method={operation.method} />
+              <span className="truncate">{operation.traceInfo?.source || operation.path}</span>
+            </div>
+            <Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+              {formatTimestamp(operation.timestamp)}
+            </Text>
           </div>
-          <Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-            {formatTimestamp(operation.timestamp)}
-          </Text>
-        </div>
-        <div className="flex items-center gap-3 pl-2">
-          <Text className="w-20 text-right text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-            {formatDuration(operation.duration)}
-          </Text>
-          {renderBar({ start, duration, status: operation.status })}
-          <StatusBadge status={operation.status} />
+          <div className="flex items-center gap-3">
+            <Text className="w-20 text-right text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+              {formatDuration(operation.duration)}
+            </Text>
+            {renderBar({ start, duration, status: operation.status })}
+            <StatusBadge status={operation.status} />
+          </div>
         </div>
       </button>
+    );
+  };
+
+  const renderTimelineTrack = () => {
+    if (!normalizedOperations.length) return null;
+    return (
+      <div className="hidden items-center gap-4 rounded-tremor-small border border-slate-200 px-3 py-2 text-xs text-tremor-content-subtle dark:border-slate-700 dark:text-dark-tremor-content lg:flex">
+        <span className="w-20 text-right">Timeline DAAR</span>
+        <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-dark-tremor-background-subtle">
+          {normalizedOperations.map((operation, index) => {
+            const { start, duration } = getOperationTiming(operation, index);
+            const rawOffset = ((start - baseStart) / baseDuration) * 100;
+            const offset = Math.min(Math.max(rawOffset, 0), 100);
+            const widthRaw = (duration / baseDuration) * 100;
+            const width = Math.min(
+              Math.max(Number.isFinite(widthRaw) ? widthRaw : MIN_BAR_WIDTH_PERCENT, MIN_BAR_WIDTH_PERCENT),
+              100 - offset
+            );
+            return (
+              <span
+                key={operation.id}
+                className={classNames(
+                  'absolute top-0 h-2 rounded-full opacity-90',
+                  getBarColorClass(operation.status ?? null)
+                )}
+                style={{ left: `${offset}%`, width: `${width}%` }}
+                title={`${operation.method} ${operation.path} • ${formatDuration(operation.duration)}`}
+              />
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderTraceSummaryBar = () => {
+    if (!Number.isFinite(baseDuration) || baseDuration <= 0) return null;
+
+    return (
+      <div className="flex items-center gap-4 rounded-tremor-small border border-slate-200 px-3 py-2 text-xs text-tremor-content-subtle dark:border-slate-700 dark:text-dark-tremor-content">
+        <span className="w-20 text-right font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+          {traceDurationMs != null ? formatDuration(traceDurationMs) : '—'} HERE
+        </span>
+        <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-dark-tremor-background-subtle">
+          <span
+            className="absolute top-0 h-2 w-full rounded-full bg-tremor-brand/80 transition-all dark:bg-tremor-brand/60"
+            style={{ left: '0%', width: '100%' }}
+          />
+        </div>
+      </div>
     );
   };
 
@@ -381,6 +499,20 @@ export default function TraceTimelineMode({
           ) : null}
 
           <div className="space-y-3">
+            {renderTraceSummaryBar()}
+            {renderTimelineTrack()}
+            <div className="relative hidden h-8 w-full items-center justify-between rounded-tremor-small border border-dashed border-slate-200 px-3 text-xs text-tremor-content-subtle dark:border-slate-700 dark:text-dark-tremor-content lg:flex">
+              {timelineTicks.map((tick) => (
+                <div key={tick.id} className="relative flex-1">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                    {tick.label}
+                  </span>
+                  {tick.id > 0 && tick.id < timelineTicks.length - 1 ? (
+                    <span className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-slate-300 dark:bg-slate-700" />
+                  ) : null}
+                </div>
+              ))}
+            </div>
             {groups.length ? (
               groups.map((group) => renderGroupRow(group))
             ) : (
@@ -398,4 +530,3 @@ export default function TraceTimelineMode({
     </div>
   );
 }
-
