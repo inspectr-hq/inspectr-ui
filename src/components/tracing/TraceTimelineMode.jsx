@@ -1,11 +1,11 @@
-// src/components/insights/TraceTimelineMode.jsx
+// src/components/tracing/TraceTimelineMode.jsx
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Badge, Card, Flex, Select, SelectItem, Text, Title } from '@tremor/react';
-import EmptyState from './EmptyState.jsx';
+import EmptyState from '../insights/EmptyState.jsx';
 import TraceOperationDetail from './TraceOperationDetail.jsx';
-import StatusBadge from './StatusBadge.jsx';
-import MethodBadge from './MethodBadge.jsx';
+import StatusBadge from '../insights/StatusBadge.jsx';
+import MethodBadge from '../insights/MethodBadge.jsx';
 import { formatDuration, formatTimestamp } from '../../utils/formatters.js';
 import {
   classNames,
@@ -92,7 +92,7 @@ export default function TraceTimelineMode({
     });
   }, [baseDuration]);
 
-  const groups = useMemo(() => {
+  const allGroups = useMemo(() => {
     if (!normalizedOperations.length) return [];
     const bucket = new Map();
 
@@ -126,9 +126,33 @@ export default function TraceTimelineMode({
       .sort((a, b) => (a.startMs ?? 0) - (b.startMs ?? 0));
   }, [normalizedOperations]);
 
+  const activeGroupId = useMemo(() => {
+    if (!allGroups.length) return null;
+    if (selectedOperation?.correlationId) {
+      const match = allGroups.find((group) => group.operations.some((op) => op.correlationId === selectedOperation.correlationId));
+      if (match) return match.id;
+    }
+    if (selectedOperation) {
+      const match = allGroups.find((group) => group.operations.some((op) => op.id === selectedOperation.id));
+      if (match) return match.id;
+    }
+    return allGroups[0].id;
+  }, [allGroups, selectedOperation]);
+
+  const groups = useMemo(() => {
+    if (!allGroups.length) return [];
+    if (!activeGroupId) return [allGroups[0]];
+    const match = allGroups.find((group) => group.id === activeGroupId);
+    return match ? [match] : [allGroups[0]];
+  }, [allGroups, activeGroupId]);
+
   const [expandedGroups, setExpandedGroups] = useState(() => new Set());
 
   useEffect(() => {
+    if (!groups.length) {
+      setExpandedGroups(new Set());
+      return;
+    }
     setExpandedGroups(new Set(groups.map((group) => group.id)));
   }, [selectedTraceId, groups]);
 
@@ -286,10 +310,15 @@ export default function TraceTimelineMode({
             {/* Column 2: duration + bar (flex-1) + badge */}
             <div className="min-w-0 flex items-center gap-3">
               <Text className="w-20 shrink-0 text-right text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                {formatDuration(traceDurationMs)}
+                {formatDuration(durationMs)}
               </Text>
               <div className="flex-1 min-w-0">
-                {renderBar({ start: startMs ?? baseStart, duration: traceDurationMs, variant: 'brand' })}
+                {renderBar({
+                  start: startMs ?? baseStart,
+                  duration: durationMs,
+                  total: baseDuration,
+                  variant: 'brand'
+                })}
               </div>
               <div className="w-10 shrink-0 flex justify-center">
                 <Badge color="slate">{group.operations.length}</Badge>
@@ -402,7 +431,7 @@ export default function TraceTimelineMode({
     return (
       <div className="flex items-center gap-4 rounded-tremor-small border border-slate-200 px-3 py-2 text-xs text-tremor-content-subtle dark:border-slate-700 dark:text-dark-tremor-content">
         <span className="w-20 text-right font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-          {traceDurationMs != null ? formatDuration(traceDurationMs) : '—'} HERE
+          {traceDurationMs != null ? formatDuration(traceDurationMs) : '—'}
         </span>
         <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-dark-tremor-background-subtle">
           <span

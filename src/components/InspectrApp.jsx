@@ -9,6 +9,7 @@ import useInspectrRouter from '../hooks/useInspectrRouter.jsx';
 import useLocalStorage from '../hooks/useLocalStorage.jsx';
 import useSessionStorage from '../hooks/useSessionStorage.jsx';
 import { useInspectr } from '../context/InspectrContext';
+import { parseHash } from '../hooks/useHashRouter.jsx';
 
 const FILTER_STORAGE_KEY = 'requestFilters';
 const DEFAULT_FILTERS = Object.freeze({});
@@ -81,12 +82,23 @@ const InspectrApp = () => {
     const currentExists =
       selectedOperation && operations.some((op) => op.id === selectedOperation.id);
 
-    if (!currentExists) {
-      if (operations.length > 0) {
-        handleSelect(operations[0]);
-      } else {
-        clearSelection();
+    if (currentExists) return;
+
+    const { slug, operationId } = parseHash();
+    const hasRouteSelection = slug === 'inspectr' && operationId;
+
+    if (hasRouteSelection) {
+      const match = operations.find((op) => String(op.id) === operationId);
+      if (match) {
+        handleSelect(match);
       }
+      return;
+    }
+
+    if (operations.length > 0) {
+      handleSelect(operations[0]);
+    } else {
+      clearSelection();
     }
   }, [operations, selectedOperation]);
 

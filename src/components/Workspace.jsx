@@ -5,6 +5,7 @@ import DashBoardApp from './DashBoardApp.jsx';
 import InspectrApp from './InspectrApp.jsx';
 import SettingsApp from './SettingsApp.jsx';
 import InsightsApp from './insights/InsightsApp.jsx';
+import TracingApp from './tracing/TracingApp.jsx';
 import UsageApp from './UsageApp.jsx';
 import RulesApp from './RulesApp.jsx';
 import useHashRouter from '../hooks/useHashRouter.jsx';
@@ -26,6 +27,7 @@ function classNames(...classes) {
 
 const BASE_NAVIGATION = [
   { name: 'Request History', slug: 'inspectr', component: InspectrApp },
+  { name: 'Trace Explorer', slug: 'traces', component: TracingApp, hidden: true },
   { name: 'Insights', slug: 'insights', component: InsightsApp },
   { name: 'Statistics', slug: 'statistics', component: DashBoardApp },
   { name: 'Usage', slug: 'usage', component: UsageApp },
@@ -69,6 +71,7 @@ export default function Workspace() {
 
   const [currentTab, setCurrentTab] = useState(() => navigation[0]);
   const { route, currentNav, handleTabClick } = useHashRouter(navigation);
+  const visibleNavigation = useMemo(() => navigation.filter((item) => !item.hidden), [navigation]);
   const ActiveComponent = currentNav.component;
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -107,7 +110,7 @@ export default function Workspace() {
                 </a>
               </div>
               <nav className="flex-1 -mb-px flex space-x-6" aria-label="Tabs">
-                {navigation.map((navItem) =>
+                {visibleNavigation.map((navItem) =>
                   navItem.slug === 'inspectr' ? (
                     <InspectrNavButton
                       key={navItem.slug}
@@ -182,13 +185,15 @@ export default function Workspace() {
 
         {/* ——— Content Area ——— */}
         <div className="flex-grow overflow-auto">
-          {['insights', 'statistics', 'settings', 'usage', 'rules'].includes(currentNav.slug) ? (
+          {['insights', 'statistics', 'settings', 'usage', 'rules', 'traces'].includes(
+            currentNav.slug
+          ) ? (
             <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-950">
-              <ActiveComponent key={currentNav.slug} />
+              <ActiveComponent key={currentNav.slug} route={route} />
             </div>
           ) : (
             // InspectrApp takes care of its own layout now
-            <InspectrApp key="inspectr" />
+            <InspectrApp key="inspectr" route={route} />
           )}
         </div>
 

@@ -5,15 +5,15 @@ import { Badge, Card, Flex, Select, SelectItem, Text, Title } from '@tremor/reac
 import MethodBadge from './MethodBadge.jsx';
 import StatusBadge from './StatusBadge.jsx';
 import EmptyState from './EmptyState.jsx';
-import TraceOperationDetail from './TraceOperationDetail.jsx';
+import TraceOperationDetail from '../tracing/TraceOperationDetail.jsx';
 import { formatDuration, formatTimestamp } from '../../utils/formatters.js';
 import {
   classNames,
   formatTraceLabel,
   getBarColorClass,
   getDotColorClass
-} from './traceUtils.js';
-import { useTraceExplorer } from './useTraceExplorer.js';
+} from '../tracing/traceUtils.js';
+import { useTraceExplorer } from '../tracing/useTraceExplorer.js';
 
 const MIN_BAR_WIDTH_PERCENT = 2;
 
@@ -250,4 +250,3 @@ export default function TraceMode({
     </div>
   );
 }
-

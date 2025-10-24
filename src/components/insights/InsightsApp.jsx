@@ -24,7 +24,7 @@ import ListMode from './ListMode.jsx';
 import TableMode from './TableMode.jsx';
 import TimelineMode from './TimelineMode.jsx';
 import TraceMode from './TraceMode.jsx';
-import TraceTimelineMode from './TraceTimelineMode.jsx';
+import TraceTimelineMode from '../tracing/TraceTimelineMode.jsx';
 import { formatChartLabel, normalizeOperation, endpointKey } from './insightsUtils.js';
 import { MAX_CHART_POINTS } from './constants.js';
 

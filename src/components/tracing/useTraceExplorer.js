@@ -1,4 +1,4 @@
-// src/components/insights/useTraceExplorer.js
+// src/components/tracing/useTraceExplorer.js
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useInspectr } from '../../context/InspectrContext.jsx';

@@ -1,8 +1,8 @@
-// src/components/insights/TraceOperationDetail.jsx
+// src/components/tracing/TraceOperationDetail.jsx
 
 import React from 'react';
 import { Badge, Text, Title } from '@tremor/react';
-import StatusBadge from './StatusBadge.jsx';
+import StatusBadge from '../insights/StatusBadge.jsx';
 import { formatDuration, formatTimestamp } from '../../utils/formatters.js';
 import { extractGenericTraceEntries, extractMetaEntries, toDisplayString } from './traceUtils.js';
 

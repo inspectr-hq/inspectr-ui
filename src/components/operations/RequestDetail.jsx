@@ -294,14 +294,8 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
 
   const handleViewTrace = () => {
     if (!traceId) return;
-    const traceParams = new URLSearchParams();
-    traceParams.set('view', 'trace-timeline');
-    traceParams.set('trace', traceId);
-    const traceOperationId = operation?.operation_id || null;
-    if (traceOperationId) {
-      traceParams.set('traceOp', traceOperationId);
-    }
-    const hashValue = `#insights?${traceParams.toString()}`;
+    const traceOperationId = operation?.operation_id || operation?.id || null;
+    const hashValue = `#traces/${traceId}${traceOperationId ? `/${traceOperationId}` : ''}`;
     if (window.location.hash === hashValue) {
       window.dispatchEvent(new HashChangeEvent('hashchange'));
     } else {

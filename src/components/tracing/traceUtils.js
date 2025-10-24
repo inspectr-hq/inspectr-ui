@@ -1,4 +1,4 @@
-// src/components/insights/traceUtils.js
+// src/components/tracing/traceUtils.js
 
 import { normalizeTags } from '../../utils/normalizeTags.js';
 
