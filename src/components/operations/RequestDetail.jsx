@@ -130,6 +130,27 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
       });
   };
 
+  // Download the operation as a JSON file
+  const handleDownloadOperation = () => {
+    try {
+      const data = operation ? { ...operation } : {};
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const idPart = operation?.id ? String(operation.id) : String(Date.now());
+      const filename = `operation_${idPart}.json`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[Inspectr] Failed to download operation JSON:', err);
+    }
+  };
+
   // Tag delete handlers
   const handleRequestDeleteTag = (tag) => {
     setPendingTag(tag);
@@ -229,6 +250,23 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
     </svg>
   );
 
+  const DownloadIcon = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className="h-4 w-4"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M7.5 10.5L12 15m0 0l4.5-4.5M12 15V3"
+      />
+    </svg>
+  );
+
   const handleAuthIndicatorClick = () => {
     const guard = operation?.meta?.inspectr?.guard || {};
     const guardKey = guard['inspectr-auth-key'];
@@ -292,6 +330,11 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
               </button>
             </Tooltip>
           ) : null}
+          {/* Export JSON Button */}
+          <button onClick={handleDownloadOperation} className={buttonClasses} aria-label="Export as JSON">
+            <DownloadIcon />
+            {/*<span className="text-xs">Export JSON</span>*/}
+          </button>
           {/* Copy as cURL Button */}
           <button onClick={handleCopyCurl} className={buttonClasses}>
             {copiedCurl ? (
@@ -361,13 +404,6 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
           </span>
           <CopyButton textToCopy={operation.request.url} showLabel={false} />
         </div>
-        {hasTrace ? (
-          <div className="flex flex-wrap items-center gap-2 text-xs text-purple-700 dark:text-purple-300">
-            <span className="font-semibold uppercase tracking-wide">Trace</span>
-            {traceSource ? <span>{traceSource}</span> : null}
-            <span className="font-mono text-[11px] break-all">{traceId}</span>
-          </div>
-        ) : null}
         <div className="text-gray-500 dark:text-dark-tremor-content text-xs">
           Received on{' '}
           <span className="font-semibold">{formatTimestamp(operation?.request?.timestamp)}</span> •
