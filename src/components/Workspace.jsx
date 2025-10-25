@@ -20,6 +20,7 @@ import eventDB from '../utils/eventDB.js';
 import NotificationBadge from './NotificationBadge.jsx';
 import useLocalStorage from '../hooks/useLocalStorage.jsx';
 import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
+import { normalizeTimestamp, isTimestampAfter } from '../utils/timestampUtils.js';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -244,6 +245,7 @@ const ToastNotificationFromContext = () => {
 const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
   const { connectionStatus } = useInspectr();
   const [lastSeenAt, setLastSeenAt] = useLocalStorage('inspectrLastSeenAt', null);
+  const [trackedLastSeenAt, setTrackedLastSeenAt] = useState(() => normalizeTimestamp(lastSeenAt));
 
   // Latest event time in Dexie
   const latestEventTime = useLiveQuery(async () => {
@@ -255,29 +257,33 @@ const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
     }
   }, []);
 
-  // Initialize lastSeenAt on first run to avoid counting backlog as unread
-  useEffect(() => {
-    if (!lastSeenAt && latestEventTime) {
-      setLastSeenAt(latestEventTime);
-    }
-  }, [latestEventTime]);
-
-  // When the Inspectr tab is active, mark all as seen up to the latest event
-  useEffect(() => {
-    if (isActive && latestEventTime) {
-      setLastSeenAt(latestEventTime);
-    }
-  }, [isActive, latestEventTime]);
-
   // Count unread events newer than lastSeenAt
   const unreadCount = useLiveQuery(async () => {
-    if (!lastSeenAt) return 0;
+    if (!trackedLastSeenAt) return 0;
     try {
-      return await eventDB.db.events.where('time').above(lastSeenAt).count();
+      return await eventDB.db.events.where('time').above(trackedLastSeenAt).count();
     } catch (e) {
       return 0;
     }
-  }, [lastSeenAt]);
+  }, [trackedLastSeenAt]);
+
+  useEffect(() => {
+    const normalizedLast = normalizeTimestamp(lastSeenAt);
+    setTrackedLastSeenAt((prev) => {
+      const normalizedPrev = normalizeTimestamp(prev);
+      if (!normalizedLast) return normalizedPrev ? prev : null;
+      if (isActive) {
+        return normalizedLast;
+      }
+      if (!normalizedPrev) {
+        return normalizedLast;
+      }
+      if (isTimestampAfter(normalizedLast, normalizedPrev)) {
+        return normalizedPrev;
+      }
+      return normalizedLast;
+    });
+  }, [lastSeenAt, isActive]);
 
   const color =
     connectionStatus === 'connected'
@@ -287,9 +293,14 @@ const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
         : 'orange';
 
   const handleClick = () => {
+    const normalizedLatest = normalizeTimestamp(latestEventTime) || new Date().toISOString();
     // Reset unread counter immediately when navigating to Request History
-    const ts = latestEventTime || new Date().toISOString();
-    setLastSeenAt(ts);
+    setLastSeenAt((prev) => {
+      const normalizedPrev = normalizeTimestamp(prev);
+      const shouldUpdate = !normalizedPrev || isTimestampAfter(normalizedLatest, normalizedPrev);
+      return shouldUpdate ? normalizedLatest : normalizedPrev;
+    });
+    setTrackedLastSeenAt(normalizedLatest);
     if (onClick) onClick();
   };
 
