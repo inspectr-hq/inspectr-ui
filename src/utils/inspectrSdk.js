@@ -831,6 +831,154 @@ class StatsClient {
   }
 
   /**
+   * Overview KPIs for a time window (totals, rates, Apdex).
+   * Server endpoint: GET /stats/operations/overview
+   * @param {Object} [options]
+   * @param {string|Date} [options.from]
+   * @param {string|Date} [options.to]
+   * @param {string} [options.interval] - hour|day|week|month (server-specific)
+   * @param {string} [options.tag]
+   * @returns {Promise<Object>} Overview envelope
+   */
+  async getOverview(options = {}) {
+    const toISOString = (v) => {
+      if (v === undefined || v === null || v === '') return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return String(v);
+    };
+    const params = new URLSearchParams();
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '') return;
+      params.set(k, String(v));
+    };
+
+    add('from', toISOString(options.from));
+    add('to', toISOString(options.to));
+    add('interval', options.interval);
+    add('tag', options.tag);
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/stats/operations/overview${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Stats overview failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Time-bucketed statistics suitable for charting.
+   * Server endpoint: GET /stats/operations/buckets
+   * @param {Object} [options]
+   * @param {string|Date} [options.from]
+   * @param {string|Date} [options.to]
+   * @param {string} [options.interval] - hour|day|week|month
+   * @param {string} [options.group] - optional grouping hint (e.g., status_class)
+   * @param {string} [options.tag]
+   * @returns {Promise<Object>} Buckets envelope
+   */
+  async getBuckets(options = {}) {
+    const toISOString = (v) => {
+      if (v === undefined || v === null || v === '') return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return String(v);
+    };
+    const params = new URLSearchParams();
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '') return;
+      params.set(k, String(v));
+    };
+
+    add('from', toISOString(options.from));
+    add('to', toISOString(options.to));
+    add('interval', options.interval);
+    add('group', options.group);
+    add('tag', options.tag);
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/stats/operations/buckets${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Stats buckets failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Aggregate statistics grouped by a dimension.
+   * Server endpoint: GET /stats/operations/aggregate/{dimension}
+   * @param {('path'|'method'|'host'|'status_class'|'status'|'tag')} dimension - Required group-by dimension
+   * @param {Object} [options]
+   * @param {string|Date} [options.from]
+   * @param {string|Date} [options.to]
+   * @param {string|string[]} [options.metrics] - e.g., 'count', 'avg_ms', 'p95_ms', 'error_rate'
+   * @param {number} [options.limit]
+   * @param {string} [options.order] - e.g., '-count', '+avg_ms'
+   * @param {string|string[]} [options.method]
+   * @param {string|string[]} [options.status]
+   * @param {string|string[]} [options.statusClass]
+   * @param {string} [options.path]
+   * @param {string} [options.pathPrefix]
+   * @param {string} [options.host]
+   * @param {string|string[]} [options.tag]
+   * @returns {Promise<Object>} Aggregate envelope
+   */
+  async aggregateBy(dimension, options = {}) {
+    const allowed = ['path', 'method', 'host', 'status_class', 'status', 'tag'];
+    if (!allowed.includes(dimension)) {
+      throw new Error(`Invalid dimension: ${dimension}. Allowed: ${allowed.join(', ')}`);
+    }
+
+    const toISOString = (v) => {
+      if (v === undefined || v === null || v === '') return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return String(v);
+    };
+    const params = new URLSearchParams();
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '') return;
+      params.set(k, String(v));
+    };
+    const addCsv = (k, v) => {
+      if (v === undefined || v === null) return;
+      if (Array.isArray(v)) {
+        if (!v.length) return;
+        params.set(k, v.map((x) => String(x)).join(','));
+      } else {
+        params.set(k, String(v));
+      }
+    };
+
+    add('from', toISOString(options.from));
+    add('to', toISOString(options.to));
+    addCsv('metrics', options.metrics);
+    if (typeof options.limit === 'number') add('limit', options.limit);
+    add('order', options.order);
+
+    addCsv('method', options.method);
+    addCsv('status', options.status);
+    addCsv('status_class', options.statusClass);
+    add('path', options.path);
+    add('path_prefix', options.pathPrefix);
+    add('host', options.host);
+    addCsv('tag', options.tag);
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/stats/operations/aggregate/${encodeURIComponent(dimension)}${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Stats aggregate failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
    * Delete All operation statistics
    * @returns {Promise<void>}
    */
