@@ -339,24 +339,38 @@ export default function DashBoardApp() {
 
     const overall = overview?.data ?? overview?.overall ?? overview ?? null;
 
-    const requests_per_minute = buckets?.meta?.requests_per_minute ?? {};
+    const by_interval = (buckets?.data ?? []).map((it) => {
+      const series = it?.series ?? {};
+      const twoXX = Number(series['2xx'] ?? 0);
+      const threeXX = Number(series['3xx'] ?? 0);
+      const fourXX = Number(series['4xx'] ?? 0);
+      const fiveXX = Number(series['5xx'] ?? 0);
 
-    const by_interval = (buckets?.data ?? []).map((it) => ({
-      date: it.timestamp || it.date,
-      total_requests: it.requests ?? it.total_requests,
-      success: it.success,
-      errors: it.errors,
-      '2xx': it['2xx'],
-      '4xx': it['4xx'],
-      '5xx': it['5xx'],
-      average_response_time: it.avg_ms ?? it.average_response_time,
-      min_response_time: it.min_ms ?? it.min_response_time,
-      max_response_time: it.max_ms ?? it.max_response_time,
-      median_response_time: it.p50_ms ?? it.median_response_time,
-      p90_response_time: it.p90_ms ?? it.p90_response_time,
-      p95_response_time: it.p95_ms ?? it.p95_response_time,
-      p99_response_time: it.p99_ms ?? it.p99_response_time
-    }));
+      const total_requests =
+        (typeof it.requests === 'number' ? it.requests : it.total_requests) ??
+        twoXX + threeXX + fourXX + fiveXX;
+
+      const success = (typeof it.success === 'number' ? it.success : undefined) ?? twoXX + threeXX;
+
+      const errors = (typeof it.errors === 'number' ? it.errors : undefined) ?? fourXX + fiveXX;
+
+      return {
+        date: it.timestamp || it.date,
+        total_requests,
+        success,
+        errors,
+        '2xx': twoXX,
+        '4xx': fourXX,
+        '5xx': fiveXX,
+        average_response_time: it.avg_ms ?? it.average_response_time,
+        min_response_time: it.min_ms ?? it.min_response_time,
+        max_response_time: it.max_ms ?? it.max_response_time,
+        median_response_time: it.p50_ms ?? it.median_response_time,
+        p90_response_time: it.p90_ms ?? it.p90_response_time,
+        p95_response_time: it.p95_ms ?? it.p95_response_time,
+        p99_response_time: it.p99_ms ?? it.p99_response_time
+      };
+    });
 
     const totals = {
       method: Object.fromEntries((byMethod?.data?.rows ?? []).map((r) => [r.method, r.count])),
@@ -381,7 +395,6 @@ export default function DashBoardApp() {
 
     return {
       overall,
-      requests_per_minute,
       by_interval,
       totals,
       top_endpoints
