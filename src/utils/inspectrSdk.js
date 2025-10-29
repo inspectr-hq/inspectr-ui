@@ -890,12 +890,27 @@ class StatsClient {
       if (v === undefined || v === null || v === '') return;
       params.set(k, String(v));
     };
+    const addCsv = (k, v) => {
+      if (v === undefined || v === null) return;
+      if (Array.isArray(v)) {
+        if (!v.length) return;
+        params.set(k, v.map((x) => String(x)).join(','));
+      } else {
+        params.set(k, String(v));
+      }
+    };
 
     add('from', toISOString(options.from));
     add('to', toISOString(options.to));
     add('interval', options.interval);
     add('group', options.group);
-    add('tag', options.tag);
+    addCsv('method', options.method);
+    addCsv('status', options.status);
+    addCsv('status_class', options.statusClass);
+    addCsv('tag', options.tag);
+    addCsv('path', options.path);
+    add('path_prefix', options.pathPrefix);
+    addCsv('host', options.host);
 
     const qs = params.toString();
     const url = `${this.client.apiEndpoint}/stats/operations/buckets${qs ? `?${qs}` : ''}`;

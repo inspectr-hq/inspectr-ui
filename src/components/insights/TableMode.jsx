@@ -34,93 +34,160 @@ const extractTimestampMs = (operation) => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
-const getDayBucket = (timestamp) => {
+const MAX_TAG_ITEMS = 16;
+const MAX_PATH_ITEMS = 18;
+
+const MAX_STATUS_ITEMS = 50;
+
+const FACET_CONFIG = [
+  { key: 'status', dimension: 'status', limit: MAX_STATUS_ITEMS },
+  { key: 'method', dimension: 'method', limit: 12 },
+  { key: 'host', dimension: 'host', limit: 12 },
+  { key: 'path', dimension: 'path', limit: MAX_PATH_ITEMS },
+  { key: 'tags', dimension: 'tag', limit: MAX_TAG_ITEMS }
+];
+
+const sortFacetItems = (items) =>
+  [...items].sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count;
+    return a.label.localeCompare(b.label);
+  });
+
+const ensureSelectedFacetValues = (items, selectedValues, createItem) => {
+  if (!selectedValues.length) return items;
+  const map = new Map(items.map((item) => [item.value, item]));
+  selectedValues.forEach((value) => {
+    if (!map.has(value)) {
+      map.set(value, createItem(value));
+    }
+  });
+  return sortFacetItems(Array.from(map.values()));
+};
+
+const MS_INTERVALS = {
+  hour: 60 * 60 * 1000,
+  day: DAY_IN_MS,
+  week: 7 * DAY_IN_MS
+};
+
+const getBucketMeta = (timestamp, interval = 'day') => {
   if (!timestamp) {
-    return { key: 'unknown', label: 'Unknown', sortValue: Number.POSITIVE_INFINITY };
+    return { label: 'Unknown', sortValue: Number.POSITIVE_INFINITY, startMs: null, endMs: null };
   }
 
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) {
-    return { key: 'invalid', label: 'Unknown', sortValue: Number.POSITIVE_INFINITY };
+    return { label: 'Unknown', sortValue: Number.POSITIVE_INFINITY, startMs: null, endMs: null };
   }
 
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  const key = `${year}-${month}-${day}`;
-  const label = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  const sortValue = Date.UTC(year, date.getUTCMonth(), date.getUTCDate());
-  const endValue = sortValue + DAY_IN_MS - 1;
+  const duration = MS_INTERVALS[interval] ?? DAY_IN_MS;
+  const startMs = date.getTime();
+  const endMs = startMs + duration - 1;
 
-  return { key, label, sortValue, startMs: sortValue, endMs: endValue };
+  let label;
+  if (interval === 'hour') {
+    label = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } else if (interval === 'week') {
+    label = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  } else {
+    label = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  }
+
+  return { label, sortValue: startMs, startMs, endMs };
 };
 
-const buildCountItems = (operations, selector, normalizer) => {
-  const counts = new Map();
-  operations.forEach((operation) => {
-    const rawValue = selector(operation);
-    const value = normalizer(rawValue);
-    counts.set(value, (counts.get(value) || 0) + 1);
-  });
+const pickTotalRequests = (record) =>
+  Number(record?.requests ?? record?.total_requests ?? record?.count ?? 0);
 
-  return Array.from(counts.entries())
-    .map(([value, count]) => ({
-      value,
-      label: value,
-      count
-    }))
-    .sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count;
-      return a.label.localeCompare(b.label);
-    });
+const FACET_VALUE_EXTRACTORS = {
+  status: (row) => row?.status ?? row?.key ?? row?.value,
+  method: (row) => row?.method ?? row?.key ?? row?.value,
+  host: (row) => row?.host ?? row?.key ?? row?.value,
+  path: (row) => row?.path ?? row?.key ?? row?.value,
+  tags: (row) => row?.tag ?? row?.key ?? row?.value
 };
 
-const MAX_TAG_ITEMS = 16;
-const MAX_PATH_ITEMS = 18;
+const FACET_NORMALIZERS = {
+  status: normalizeStatus,
+  method: normalizeMethod,
+  host: normalizeHost,
+  path: normalizePath,
+  tags: (value) => (value && typeof value === 'string' ? value : 'Unknown')
+};
 
-const buildTagCountItems = (operations) => {
-  const counts = new Map();
-  operations.forEach((operation) => {
-    (operation.tags || []).forEach((tag) => {
-      if (!tag || !tag.token) return;
-      const existing =
-        counts.get(tag.token) ||
-        {
-          value: tag.token,
-          label: tag.display || tag.raw || tag.token,
-          count: 0
-        };
-      existing.count += 1;
-      counts.set(tag.token, existing);
-    });
-  });
+const buildFacetItemsFromAggregate = (rows, key) => {
+  const extractValue = FACET_VALUE_EXTRACTORS[key];
+  const normalizeValue = FACET_NORMALIZERS[key] || ((value) => value ?? 'Unknown');
+  if (!extractValue) return [];
 
-  return Array.from(counts.values())
-    .sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count;
-      return a.label.localeCompare(b.label);
+  const items = rows
+    .map((row) => {
+      const rawValue = extractValue(row);
+      const value = normalizeValue(rawValue);
+      if (!value) return null;
+      const count = Number(row?.count ?? row?.total ?? 0);
+      return {
+        value,
+        label: value,
+        count: Number.isFinite(count) ? count : 0
+      };
     })
-    .slice(0, MAX_TAG_ITEMS);
+    .filter(Boolean);
+
+  return sortFacetItems(items);
 };
 
-const buildPathCountItems = (operations) => {
-  const counts = new Map();
-  operations.forEach((operation) => {
-    const value = normalizePath(operation.path);
-    counts.set(value, (counts.get(value) || 0) + 1);
-  });
+const buildFacetPlaceholderItem = (key, rawValue) => {
+  const normalizeValue = FACET_NORMALIZERS[key] || ((value) => value ?? 'Unknown');
+  const value = normalizeValue(rawValue);
+  return {
+    value,
+    label: value,
+    count: 0
+  };
+};
 
-  return Array.from(counts.entries())
-    .map(([value, count]) => ({
-      value,
-      label: value,
-      count
-    }))
-    .sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count;
-      return a.label.localeCompare(b.label);
+const buildChartSeriesFromBuckets = (buckets, categories, defaultValues, interval) => {
+  if (!Array.isArray(buckets) || buckets.length === 0) {
+    return [];
+  }
+
+  const knownCategories = categories.filter((category) => category !== 'Other');
+  const includeOther = categories.includes('Other');
+
+  return buckets
+    .map((entry) => {
+      const timestamp = entry?.timestamp ?? entry?.date ?? entry?.bucket ?? null;
+      const { label, sortValue, startMs, endMs } = getBucketMeta(timestamp, interval);
+      const record = {
+        day: label,
+        dayKey: timestamp || sortValue,
+        startMs,
+        endMs,
+        sortValue,
+        ...defaultValues
+      };
+
+      let knownSum = 0;
+      knownCategories.forEach((category) => {
+        // Prefer values from the bucket's `series` map, fall back to top-level for compatibility
+        const value = Number(entry?.series?.[category] ?? entry?.[category] ?? 0);
+        if (Number.isFinite(value)) {
+          record[category] = value;
+          knownSum += value;
+        }
+      });
+
+      if (includeOther) {
+        const total = pickTotalRequests(entry);
+        const otherValue = Number.isFinite(total) ? Math.max(0, total - knownSum) : 0;
+        record.Other = otherValue;
+      }
+
+      return record;
     })
-    .slice(0, MAX_PATH_ITEMS);
+    .sort((a, b) => a.sortValue - b.sortValue)
+    .map(({ sortValue, ...record }) => record);
 };
 
 const DURATION_BUCKETS = [
@@ -192,6 +259,20 @@ export default function TableMode({ operations }) {
   const [tableMeta, setTableMeta] = useState(null);
   const [tableLoading, setTableLoading] = useState(false);
   const [tableError, setTableError] = useState(null);
+  const [chartState, setChartState] = useState({
+    data: [],
+    interval: 'day',
+    loading: false,
+    error: null,
+    total: 0
+  });
+  const [facetState, setFacetState] = useState(() => ({
+    status: { items: [], total: 0, loading: false, error: null },
+    method: { items: [], total: 0, loading: false, error: null },
+    host: { items: [], total: 0, loading: false, error: null },
+    path: { items: [], total: 0, loading: false, error: null },
+    tags: { items: [], total: 0, loading: false, error: null }
+  }));
   const referenceDate = useMemo(() => new Date(), []);
   const defaultPreset = useMemo(() => findPresetByLabel('30D', referenceDate), [referenceDate]);
   const defaultStart = defaultPreset?.start ?? getStartOfDay(referenceDate);
@@ -260,6 +341,26 @@ export default function TableMode({ operations }) {
       pathFilterValues,
       durationFilterValues
     ]
+  );
+  const buildStatsQueryFilters = useMemo(
+    () => ({
+      get(skipKey) {
+        const query = {};
+        const assign = (key, values) => {
+          if (!values.length) return;
+          query[key] = values.length === 1 ? values[0] : values;
+        };
+
+        if (skipKey !== 'status') assign('status', statusFilterValues);
+        if (skipKey !== 'method') assign('method', methodFilterValues);
+        if (skipKey !== 'host') assign('host', hostFilterValues);
+        if (skipKey !== 'path') assign('path', pathFilterValues);
+        if (skipKey !== 'tags') assign('tag', tagFilterValues);
+
+        return query;
+      }
+    }),
+    [hostFilterValues, methodFilterValues, pathFilterValues, statusFilterValues, tagFilterValues]
   );
   const filterCardRef = useRef(null);
   const [filterCardHeight, setFilterCardHeight] = useState(null);
@@ -499,26 +600,171 @@ export default function TableMode({ operations }) {
     selectedDurationBuckets
   ]);
 
-  const statusItems = useMemo(
-    () => buildCountItems(operationsWithinRange, (op) => op.status, normalizeStatus),
-    [operationsWithinRange]
-  );
-  const methodItems = useMemo(
-    () => buildCountItems(operationsWithinRange, (op) => op.method, normalizeMethod),
-    [operationsWithinRange]
-  );
+  useEffect(() => {
+    if (!hasValidRange) {
+      setChartState({
+        data: [],
+        interval: 'day',
+        loading: false,
+        error: null,
+        total: 0
+      });
+      return;
+    }
+    if (!client?.stats?.getBuckets) {
+      return;
+    }
+
+    let cancelled = false;
+    setChartState((prev) => ({ ...prev, loading: true, error: null }));
+
+    const fetchBuckets = async () => {
+      const filters = buildStatsQueryFilters.get(undefined);
+      try {
+        const response = await client.stats.getBuckets({
+          from: start,
+          to: end,
+          interval: 'day',
+          group: 'status',
+          ...filters
+        });
+        if (cancelled) return;
+        // API returns an array of bucket objects in `data`, each with a `series` map of status counts
+        const buckets = Array.isArray(response?.data) ? response.data : [];
+        const interval = response?.meta?.interval || 'day';
+        const total = buckets.reduce((sum, record) => sum + pickTotalRequests(record), 0);
+        setChartState({
+          data: buckets,
+          interval,
+          loading: false,
+          error: null,
+          total
+        });
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : 'Failed to load chart data';
+        setChartState({
+          data: [],
+          interval: 'day',
+          loading: false,
+          error: message,
+          total: 0
+        });
+      }
+    };
+
+    fetchBuckets();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [buildStatsQueryFilters, client, end, hasValidRange, start]);
+
+  useEffect(() => {
+    if (!hasValidRange) {
+      setFacetState((prev) => {
+        const next = { ...prev };
+        FACET_CONFIG.forEach(({ key }) => {
+          next[key] = { items: [], total: 0, loading: false, error: null };
+        });
+        return next;
+      });
+      return;
+    }
+    if (!client?.stats?.aggregateBy) {
+      return;
+    }
+
+    let cancelled = false;
+
+    setFacetState((prev) => {
+      const next = { ...prev };
+      FACET_CONFIG.forEach(({ key }) => {
+        next[key] = { ...prev[key], loading: true, error: null };
+      });
+      return next;
+    });
+
+    const fetchFacets = async () => {
+      const common = {
+        from: start,
+        to: end,
+        metrics: ['count'],
+        order: '-count'
+      };
+
+      const results = await Promise.all(
+        FACET_CONFIG.map(async (config) => {
+          const filters = buildStatsQueryFilters.get(config.key);
+          try {
+            const response = await client.stats.aggregateBy(config.dimension, {
+              ...common,
+              ...filters,
+              limit: config.limit
+            });
+            const rows = response?.data?.rows ?? [];
+            const items = buildFacetItemsFromAggregate(rows, config.key);
+            const total = items.reduce(
+              (sum, item) => sum + (Number.isFinite(item.count) ? item.count : 0),
+              0
+            );
+            return { key: config.key, items, total, error: null };
+          } catch (error) {
+            const message =
+              error instanceof Error ? error.message : 'Failed to load facet data';
+            return { key: config.key, items: [], total: 0, error: message };
+          }
+        })
+      );
+
+      if (cancelled) return;
+
+      setFacetState((prev) => {
+        const next = { ...prev };
+        results.forEach(({ key, items, total, error }) => {
+          next[key] = { items, total, error, loading: false };
+        });
+        return next;
+      });
+    };
+
+    fetchFacets();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [buildStatsQueryFilters, client, end, hasValidRange, start]);
+
+  const statusItems = useMemo(() => {
+    const base = facetState.status.items;
+    return ensureSelectedFacetValues(base, statusFilterValues, (value) =>
+      buildFacetPlaceholderItem('status', value)
+    );
+  }, [facetState.status.items, statusFilterValues]);
+  const methodItems = useMemo(() => {
+    const base = facetState.method.items;
+    return ensureSelectedFacetValues(base, methodFilterValues, (value) =>
+      buildFacetPlaceholderItem('method', value)
+    );
+  }, [facetState.method.items, methodFilterValues]);
   const hostItems = useMemo(() => {
-    const items = buildCountItems(operationsWithinRange, (op) => op.host, normalizeHost);
-    return items.slice(0, 12);
-  }, [operationsWithinRange]);
-  const tagItems = useMemo(
-    () => buildTagCountItems(operationsWithinRange),
-    [operationsWithinRange]
-  );
-  const pathItems = useMemo(
-    () => buildPathCountItems(operationsWithinRange),
-    [operationsWithinRange]
-  );
+    const base = facetState.host.items;
+    return ensureSelectedFacetValues(base, hostFilterValues, (value) =>
+      buildFacetPlaceholderItem('host', value)
+    ).slice(0, 12);
+  }, [facetState.host.items, hostFilterValues]);
+  const tagItems = useMemo(() => {
+    const base = facetState.tags.items;
+    return ensureSelectedFacetValues(base, tagFilterValues, (value) =>
+      buildFacetPlaceholderItem('tags', value)
+    ).slice(0, MAX_TAG_ITEMS);
+  }, [facetState.tags.items, tagFilterValues]);
+  const pathItems = useMemo(() => {
+    const base = facetState.path.items;
+    return ensureSelectedFacetValues(base, pathFilterValues, (value) =>
+      buildFacetPlaceholderItem('path', value)
+    ).slice(0, MAX_PATH_ITEMS);
+  }, [facetState.path.items, pathFilterValues]);
   const durationItems = useMemo(
     () => buildDurationCountItems(operationsWithinRange),
     [operationsWithinRange]
@@ -601,79 +847,43 @@ export default function TableMode({ operations }) {
     });
   };
 
-  const filteredOperations = useMemo(() => {
-    const { status, method, host, tags, path, duration } = selectedFilters;
-    const hasStatusFilter = status.size > 0;
-    const hasMethodFilter = method.size > 0;
-    const hasHostFilter = host.size > 0;
-    const hasTagFilter = tags.size > 0;
-    const hasPathFilter = path.size > 0;
-    const hasDurationFilter = duration.size > 0;
-    if (!hasValidRange) return [];
-
-    if (
-      !hasStatusFilter &&
-      !hasMethodFilter &&
-      !hasHostFilter &&
-      !hasTagFilter &&
-      !hasPathFilter &&
-      !hasDurationFilter
-    ) {
-      return operationsWithinRange;
-    }
-
-    return operationsWithinRange.filter((operation) => {
-      if (hasStatusFilter && !status.has(normalizeStatus(operation.status))) return false;
-      if (hasMethodFilter && !method.has(normalizeMethod(operation.method))) return false;
-      if (hasHostFilter && !host.has(normalizeHost(operation.host))) return false;
-      if (
-        hasTagFilter &&
-        !(operation.tags || []).some((tag) => tag?.token && tags.has(tag.token))
-      ) {
-        return false;
-      }
-      if (hasPathFilter && !path.has(normalizePath(operation.path))) return false;
-      if (hasDurationFilter && !duration.has(getDurationBucketKey(operation.duration))) return false;
-      return true;
-    });
-  }, [operationsWithinRange, selectedFilters, hasValidRange]);
-
   const barChartData = useMemo(() => {
-    if (!filteredOperations.length || !hasValidRange) return [];
-
-    const categorySet = new Set(chartCategories);
-    const hasOtherCategory = categorySet.has('Other');
-    const dataMap = new Map();
-
-    filteredOperations.forEach((operation) => {
-      const { key, label, sortValue, startMs: bucketStart, endMs: bucketEnd } = getDayBucket(
-        operation.timestamp
-      );
-      const statusKey = normalizeStatus(operation.status);
-      const category = categorySet.has(statusKey)
-        ? statusKey
-        : hasOtherCategory
-          ? 'Other'
-          : statusKey;
-
-      const existing = dataMap.get(key);
-      const bucket =
-        existing || {
-          day: label,
-          dayKey: key,
-          sortValue,
-          startMs: bucketStart,
-          endMs: bucketEnd,
-          ...defaultCategoryValues
-        };
-      bucket[category] = (bucket[category] || 0) + 1;
-      dataMap.set(key, bucket);
-    });
-
-    return Array.from(dataMap.values())
-      .sort((a, b) => a.sortValue - b.sortValue)
-      .map(({ sortValue, ...record }) => record);
-  }, [chartCategories, defaultCategoryValues, filteredOperations, hasValidRange]);
+    if (!hasValidRange) return [];
+    if (!chartState.data.length) return [];
+    return buildChartSeriesFromBuckets(
+      chartState.data,
+      chartCategories,
+      defaultCategoryValues,
+      chartState.interval
+    );
+  }, [chartCategories, chartState.data, chartState.interval, defaultCategoryValues, hasValidRange]);
+  const rangeTotalRequests = useMemo(() => {
+    if (!hasValidRange) return 0;
+    return Number.isFinite(chartState.total) ? chartState.total : 0;
+  }, [chartState.total, hasValidRange]);
+  const visibleRequests = useMemo(() => {
+    if (!hasValidRange) return 0;
+    if (chartState.data.length > 0) {
+      return chartState.total;
+    }
+    if (statusFilterValues.length > 0) {
+      return statusItems.reduce((sum, item) => {
+        if (statusFilterValues.includes(item.value)) {
+          const value = Number(item.count) || 0;
+          return sum + value;
+        }
+        return sum;
+      }, 0);
+    }
+    return rangeTotalRequests;
+  }, [
+    chartState.data,
+    chartState.total,
+    hasValidRange,
+    rangeTotalRequests,
+    statusFilterValues,
+    statusItems
+  ]);
 
   const activeFilterCount =
     selectedFilters.status.size +
@@ -867,8 +1077,8 @@ export default function TableMode({ operations }) {
               ) : null}
             </div>
             <div className="text-sm text-tremor-content-subtle dark:text-dark-tremor-content-subtle">
-              {filteredOperations.length.toLocaleString()} of{' '}
-              {operationsWithinRange.length.toLocaleString()} requests in range visible
+              {visibleRequests.toLocaleString()} of{' '}
+              {rangeTotalRequests.toLocaleString()} requests in range visible
             </div>
             {operationsWithinRange.length !== operations.length ? (
               <div className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content-subtle">
@@ -880,6 +1090,14 @@ export default function TableMode({ operations }) {
         {!hasValidRange ? (
           <div className="mt-6 rounded border border-dashed border-rose-500/60 bg-rose-50 py-6 text-center text-sm text-rose-700 dark:border-rose-500/70 dark:bg-rose-900/20 dark:text-rose-200">
             Adjust the date range to view request trends.
+          </div>
+        ) : chartState.loading ? (
+          <div className="mt-8 rounded border border-dashed border-tremor-border bg-white py-12 text-center text-sm text-tremor-content-subtle dark:border-dark-tremor-border dark:bg-dark-tremor-background">
+            Loading chart data…
+          </div>
+        ) : chartState.error ? (
+          <div className="mt-8 rounded border border-dashed border-rose-500/60 bg-rose-50 py-12 text-center text-sm text-rose-700 dark:border-rose-500/70 dark:bg-rose-900/20 dark:text-rose-200">
+            {chartState.error}
           </div>
         ) : barChartData.length > 0 ? (
           <BarChart
