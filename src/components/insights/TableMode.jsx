@@ -191,11 +191,14 @@ const buildChartSeriesFromBuckets = (buckets, categories, defaultValues, interva
 };
 
 const DURATION_BUCKETS = [
-  { key: 'lt-100', label: '< 100 ms', min: 0, max: 100 },
-  { key: '100-250', label: '100 – 250 ms', min: 100, max: 250 },
-  { key: '250-500', label: '250 – 500 ms', min: 250, max: 500 },
-  { key: '500-1000', label: '0.5 – 1 s', min: 500, max: 1000 },
-  { key: '1000-3000', label: '1 – 3 s', min: 1000, max: 3000 },
+  { key: 'lt-10', label: '< 10 ms', min: 0, max: 10 },
+  { key: '10-20', label: '10 - 20 ms', min: 10, max: 20 },
+  { key: '20-50', label: '20 - 50 ms', min: 20, max: 50 },
+  { key: '50-100', label: '50 - 100 ms', min: 50, max: 100 },
+  { key: '100-250', label: '100 – 250 ms', min: 100, max: 250 },
+  { key: '250-500', label: '250 – 500 ms', min: 250, max: 500 },
+  { key: '500-1000', label: '0.5 – 1 s', min: 500, max: 1000 },
+  { key: '1000-3000', label: '1 – 3 s', min: 1000, max: 3000 },
   { key: 'gte-3000', label: '> 3 s', min: 3000, max: null }
 ];
 const UNKNOWN_DURATION_BUCKET = { key: 'unknown', label: 'Unknown duration' };
@@ -499,34 +502,47 @@ export default function TableMode({ operations }) {
           sortDirection: 'desc'
         };
 
-        if (statusFilterValues.length === 1) {
-          query.status = statusFilterValues[0];
-        } else if (statusFilterValues.length > 1) {
-          query.statuses = statusFilterValues;
+        // Reuse the same filter builder used by charts/facets
+        const filters = buildStatsQueryFilters.get(undefined);
+        if (filters.status) {
+          if (Array.isArray(filters.status)) {
+            if (filters.status.length === 1) query.status = filters.status[0];
+            else query.statuses = filters.status;
+          } else {
+            query.status = filters.status;
+          }
         }
-
-        if (methodFilterValues.length === 1) {
-          query.method = methodFilterValues[0];
-        } else if (methodFilterValues.length > 1) {
-          query.methods = methodFilterValues;
+        if (filters.method) {
+          if (Array.isArray(filters.method)) {
+            if (filters.method.length === 1) query.method = filters.method[0];
+            else query.methods = filters.method;
+          } else {
+            query.method = filters.method;
+          }
         }
-
-        if (hostFilterValues.length === 1) {
-          query.host = hostFilterValues[0];
-        } else if (hostFilterValues.length > 1) {
-          query.hosts = hostFilterValues;
+        if (filters.host) {
+          if (Array.isArray(filters.host)) {
+            if (filters.host.length === 1) query.host = filters.host[0];
+            else query.hosts = filters.host;
+          } else {
+            query.host = filters.host;
+          }
         }
-
-        if (pathFilterValues.length === 1) {
-          query.path = pathFilterValues[0];
-        } else if (pathFilterValues.length > 1) {
-          query.paths = pathFilterValues;
+        if (filters.path) {
+          if (Array.isArray(filters.path)) {
+            if (filters.path.length === 1) query.path = filters.path[0];
+            else query.paths = filters.path;
+          } else {
+            query.path = filters.path;
+          }
         }
-
-        if (tagFilterValues.length === 1) {
-          query.tag = tagFilterValues[0];
-        } else if (tagFilterValues.length > 1) {
-          query.tagsAny = tagFilterValues;
+        if (filters.tag) {
+          if (Array.isArray(filters.tag)) {
+            if (filters.tag.length === 1) query.tag = filters.tag[0];
+            else query.tagsAny = filters.tag; // match charts behavior: any of the selected tags
+          } else {
+            query.tag = filters.tag;
+          }
         }
 
         const hasUnknownDuration = selectedDurationBuckets.some(
