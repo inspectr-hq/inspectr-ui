@@ -1,10 +1,75 @@
 // src/components/tracing/TraceOperationDetail.jsx
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Badge, Text, Title } from '@tremor/react';
+import Editor from '@monaco-editor/react';
 import StatusBadge from '../insights/StatusBadge.jsx';
 import { formatDuration, formatTimestamp } from '../../utils/formatters.js';
 import { extractGenericTraceEntries, extractMetaEntries, toDisplayString } from './traceUtils.js';
+import MethodBadge from '../insights/MethodBadge.jsx';
+import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
+
+const normalizeHeaders = (headers) => {
+  if (!headers) return [];
+  if (Array.isArray(headers)) {
+    return headers.map((header) => ({
+      name: header.name ?? header.key ?? '',
+      value: header.value
+    }));
+  }
+  if (typeof headers === 'object') {
+    if ('name' in headers && 'value' in headers) {
+      return [{ name: headers.name, value: headers.value }];
+    }
+    return Object.entries(headers).map(([name, value]) => ({ name, value }));
+  }
+  return [];
+};
+
+const extractContentType = (headers) => {
+  const normalized = normalizeHeaders(headers);
+  const raw = normalized.find(
+    (header) => header.name?.toLowerCase() === 'content-type'
+  )?.value;
+  if (!raw || typeof raw !== 'string') return null;
+  return raw.split(';')[0].trim().toLowerCase();
+};
+
+const getEditorLanguage = (contentType) => {
+  if (!contentType) return 'json';
+  if (contentType.includes('json')) return 'json';
+  if (contentType.includes('html')) return 'html';
+  if (contentType.includes('xml')) return 'xml';
+  if (contentType.includes('javascript')) return 'javascript';
+  if (contentType.includes('css')) return 'css';
+  if (contentType.includes('yaml') || contentType.includes('yml')) return 'yaml';
+  if (contentType.includes('sql')) return 'sql';
+  if (contentType.startsWith('text/')) return 'plaintext';
+  return 'plaintext';
+};
+
+const formatPayload = (payload, contentType) => {
+  if (payload === null || payload === undefined) return '';
+  if (typeof payload === 'string') {
+    if (contentType?.includes('json')) {
+      try {
+        const parsed = JSON.parse(payload);
+        return JSON.stringify(parsed, null, 2);
+      } catch {
+        return payload;
+      }
+    }
+    return payload;
+  }
+  if (typeof payload === 'object') {
+    try {
+      return JSON.stringify(payload, null, 2);
+    } catch {
+      return String(payload);
+    }
+  }
+  return String(payload);
+};
 
 export default function TraceOperationDetail({ operation, isLoading }) {
   if (!operation) {
@@ -23,8 +88,9 @@ export default function TraceOperationDetail({ operation, isLoading }) {
     <div className="flex h-full flex-col">
       <div className="flex items-start justify-between gap-3">
         <div>
+          <MethodBadge method={operation.method} />
           <Title className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong">
-            {`${operation.method} ${operation.path}`}
+            {`${operation.path}`}
           </Title>
           <Text className="mt-1 text-sm text-tremor-content dark:text-dark-tremor-content">
             {operation.host || operation.request?.server || 'Unspecified host'}
