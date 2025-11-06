@@ -61,6 +61,19 @@ export default function SettingsMcpInfo() {
                 {mcp?.url && <CopyButton textToCopy={mcp.url} showLabel={false} />}
               </div>
             </ListItem>
+            {mcp?.public_url && (
+              <ListItem className="py-3 flex justify-between">
+                <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  Public URL
+                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-tremor-content dark:text-dark-tremor-content break-all">
+                    {mcp?.public_url || '-'}
+                  </span>
+                  {mcp?.public_url && <CopyButton textToCopy={mcp.public_url} showLabel={false} />}
+                </div>
+              </ListItem>
+            )}
             <ListItem className="py-3 flex justify-between">
               <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
                 Protocol

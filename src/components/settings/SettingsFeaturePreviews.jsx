@@ -41,7 +41,7 @@ const FUTURE_FEATURES = [
   },
   {
     slug: 'feat_rules_ui',
-    title: 'Rules Experience',
+    title: 'Rules',
     description: 'Toggle access to the Rules engine.',
     image: undefined,
     defaultEnabled: false,
