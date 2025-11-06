@@ -445,7 +445,7 @@ export default function TraceTimelineMode({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-      <Card className="rounded-tremor-small border border-tremor-border p-6 dark:border-dark-tremor-border">
+      <Card className="w-full rounded-tremor-small border border-tremor-border p-6 dark:border-dark-tremor-border">
         <Flex justifyContent="between" alignItems="start">
           <div>
             <Title className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong">
@@ -460,10 +460,10 @@ export default function TraceTimelineMode({
           </Badge>
         </Flex>
 
-        <div className="mt-6 flex flex-col gap-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-2">
-              <div>
+        <div className="mt-6 flex flex-col gap-4 min-w-0">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
                   Trace
                 </Text>
@@ -472,7 +472,7 @@ export default function TraceTimelineMode({
                 </Text>
               </div>
               {traceSources?.length ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 sm:justify-end">
                   {traceSources.map((source) => (
                     <Badge key={source} color="blue">
                       {source}
@@ -480,30 +480,30 @@ export default function TraceTimelineMode({
                   ))}
                 </div>
               ) : null}
-              <div className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-                {traceSummary?.first_seen ? (
-                  <div>First seen: {formatTimestamp(traceSummary.first_seen)}</div>
-                ) : null}
-                {traceSummary?.last_seen ? (
-                  <div>Last seen: {formatTimestamp(traceSummary.last_seen)}</div>
-                ) : null}
-                {traceDurationMs != null ? (
-                  <div>Observed duration: {formatDuration(traceDurationMs)}</div>
-                ) : null}
-              </div>
             </div>
-            <Select
-              className="w-full sm:w-72 [&>button]:rounded-tremor-small"
-              enableClear={false}
-              value={selectedTraceId ?? traceSummary?.trace_id ?? ''}
-              onValueChange={setSelectedTraceId}
-            >
-              {traceList.map((trace) => (
-                <SelectItem key={trace.trace_id} value={trace.trace_id}>
-                  {formatTraceLabel(trace)}
-                </SelectItem>
-              ))}
-            </Select>
+            <div className="w-full flex flex-wrap items-center justify-between gap-4 text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+              {traceSummary?.first_seen ? (
+                <div>First step: {formatTimestamp(traceSummary.first_seen)}</div>
+              ) : null}
+              {traceSummary?.last_seen ? (
+                <div>Last step: {formatTimestamp(traceSummary.last_seen)}</div>
+              ) : null}
+              {traceDurationMs != null ? (
+                <div>Observed duration: {formatDuration(traceDurationMs)}</div>
+              ) : null}
+            </div>
+            {/*<Select*/}
+            {/*  className="w-full sm:w-72 [&>button]:rounded-tremor-small"*/}
+            {/*  enableClear={false}*/}
+            {/*  value={selectedTraceId ?? traceSummary?.trace_id ?? ''}*/}
+            {/*  onValueChange={setSelectedTraceId}*/}
+            {/*>*/}
+            {/*  {traceList.map((trace) => (*/}
+            {/*    <SelectItem key={trace.trace_id} value={trace.trace_id}>*/}
+            {/*      {formatTraceLabel(trace)}*/}
+            {/*    </SelectItem>*/}
+            {/*  ))}*/}
+            {/*</Select>*/}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-tremor-content-subtle dark:text-dark-tremor-content">

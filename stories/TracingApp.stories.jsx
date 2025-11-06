@@ -73,7 +73,7 @@ const traceDetailResponses = {
           headers_size: 141,
           query_params: null,
           cookies: null,
-          body: '',
+          body: '{"message":"Simulated Cloudflare trace headers set on response"}',
           body_size: 0,
           timestamp: '2025-11-06T21:32:26.751729Z'
         },

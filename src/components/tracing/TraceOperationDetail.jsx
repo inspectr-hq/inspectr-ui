@@ -5,9 +5,10 @@ import { Badge, Text, Title } from '@tremor/react';
 import Editor from '@monaco-editor/react';
 import StatusBadge from '../insights/StatusBadge.jsx';
 import { formatDuration, formatTimestamp } from '../../utils/formatters.js';
-import { extractGenericTraceEntries, extractMetaEntries, toDisplayString } from './traceUtils.js';
+import { extractGenericTraceEntries, extractMetaEntries } from './traceUtils.js';
 import MethodBadge from '../insights/MethodBadge.jsx';
 import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
+import { formatXML } from '../../utils/formatXml.js';
 
 const normalizeHeaders = (headers) => {
   if (!headers) return [];
@@ -59,6 +60,13 @@ const formatPayload = (payload, contentType) => {
         return payload;
       }
     }
+    if (contentType?.includes('xml')) {
+      try {
+        return formatXML(payload);
+      } catch {
+        return payload;
+      }
+    }
     return payload;
   }
   if (typeof payload === 'object') {
@@ -83,15 +91,37 @@ export default function TraceOperationDetail({ operation, isLoading }) {
   const metaEntries = extractMetaEntries(operation);
   const genericTraceEntries = extractGenericTraceEntries(operation);
   const tags = Array.isArray(operation.tags) ? operation.tags : [];
+  const requestContentType = extractContentType(operation.request?.headers);
+  const responseContentType = extractContentType(operation.response?.headers);
+  const requestBodyValue = formatPayload(operation.request?.body, requestContentType);
+  const responseBodyValue = formatPayload(operation.response?.body, responseContentType);
+  const hasRequestBody = requestBodyValue.trim().length > 0;
+  const hasResponseBody = responseBodyValue.trim().length > 0;
+  const requestEditorLanguage = getEditorLanguage(requestContentType);
+  const responseEditorLanguage = getEditorLanguage(responseContentType);
+  const editorOptions = useMemo(
+    () => ({
+      readOnly: true,
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      wordWrap: 'on',
+      fontSize: 12,
+      lineNumbers: 'off',
+      folding: false
+    }),
+    []
+  );
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <MethodBadge method={operation.method} />
-          <Title className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong">
-            {`${operation.path}`}
-          </Title>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <MethodBadge method={operation.method} />
+            <Title className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong">
+              {`${operation.path}`}
+            </Title>
+          </div>
           <Text className="mt-1 text-sm text-tremor-content dark:text-dark-tremor-content">
             {operation.host || operation.request?.server || 'Unspecified host'}
           </Text>
@@ -120,12 +150,12 @@ export default function TraceOperationDetail({ operation, isLoading }) {
                 {operation.id}
               </dd>
             </div>
-            <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">Correlation ID</dt>
-              <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
-                {operation.correlationId || '—'}
-              </dd>
-            </div>
+            {/*<div className="flex items-center justify-between gap-3 py-2">*/}
+            {/*  <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">Correlation ID</dt>*/}
+            {/*  <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">*/}
+            {/*    {operation.correlationId || '—'}*/}
+            {/*  </dd>*/}
+            {/*</div>*/}
             <div className="flex items-center justify-between gap-3 py-2">
               <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">Trace ID</dt>
               <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
@@ -138,13 +168,67 @@ export default function TraceOperationDetail({ operation, isLoading }) {
                 {operation.traceInfo?.source || '—'}
               </dd>
             </div>
-            <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">Client</dt>
-              <dd className="text-right text-tremor-content dark:text-dark-tremor-content">
-                {operation.request?.client_ip || '—'}
-              </dd>
-            </div>
+            {/*<div className="flex items-center justify-between gap-3 py-2">*/}
+            {/*  <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">Client</dt>*/}
+            {/*  <dd className="text-right text-tremor-content dark:text-dark-tremor-content">*/}
+            {/*    {operation.request?.client_ip || '—'}*/}
+            {/*  </dd>*/}
+            {/*</div>*/}
           </dl>
+        </div>
+
+        <div>
+          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+            Request body
+          </Text>
+          {hasRequestBody ? (
+            <div className="mt-2 h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+              <Editor
+                value={requestBodyValue}
+                language={requestEditorLanguage}
+                theme={getMonacoTheme()}
+                beforeMount={defineMonacoThemes}
+                options={editorOptions}
+                height="100%"
+              />
+            </div>
+          ) : (
+            <div className="mt-2 h-10 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+              <Editor
+                value={`No request body`}
+                language={requestEditorLanguage}
+                theme={getMonacoTheme()}
+                beforeMount={defineMonacoThemes}
+                options={editorOptions}
+                height="100%"
+              />
+            </div>
+            // <p className="mt-2 text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
+            //   No request body captured.
+            // </p>
+          )}
+        </div>
+
+        <div>
+          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+            Response body
+          </Text>
+          {hasResponseBody ? (
+            <div className="mt-2 h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+              <Editor
+                value={responseBodyValue}
+                language={responseEditorLanguage}
+                theme={getMonacoTheme()}
+                beforeMount={defineMonacoThemes}
+                options={editorOptions}
+                height="100%"
+              />
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
+              No response body captured.
+            </p>
+          )}
         </div>
 
         {operation.traceInfo?.generic && genericTraceEntries.length ? (
@@ -205,16 +289,6 @@ export default function TraceOperationDetail({ operation, isLoading }) {
           </div>
         ) : null}
 
-        {operation.response?.body ? (
-          <div>
-            <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-              Response body
-            </Text>
-            <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap rounded-tremor-small bg-gray-900 px-3 py-2 text-xs text-gray-100 dark:bg-gray-800 dark:text-gray-100">
-              {toDisplayString(operation.response.body)}
-            </pre>
-          </div>
-        ) : null}
       </div>
     </div>
   );
