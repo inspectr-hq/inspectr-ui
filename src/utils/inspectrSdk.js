@@ -51,6 +51,7 @@ class InspectrClient {
     this.service = new ServiceClient(this);
     this.stats = new StatsClient(this);
     this.mock = new MockClient(this);
+    this.mcp = new McpSettingsClient(this);
     this.rules = new RulesClient(this);
     this.traces = new TracesClient(this);
     this.connectors = new ConnectorsClient(this);
@@ -150,6 +151,52 @@ class authClient {
     });
     if (!res.ok) throw new Error(`Update authentication settings failed (${res.status})`);
     return await res.json();
+  }
+}
+
+/**
+ * mcpSettingsClient - Handles MCP server settings
+ * @private
+ */
+class McpSettingsClient {
+  constructor(client) {
+    this.client = client;
+  }
+  /**
+   * Get MCP server settings
+   * @returns {Promise<Object>} - MCP server settings
+   */
+  async getMCPServerSettings() {
+    const res = await fetch(`${this.client.apiEndpoint}/mcp/settings`, {
+      headers: this.client.defaultHeaders
+    });
+    if (!res.ok) throw new Error(`MCP Server settings failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Update MCP server settings
+   * @param {Object} body - { public: boolean }
+   * @returns {Promise<Object>} - Updated MCP server settings
+   */
+  async updateMCPServerSettings(body) {
+    const res = await fetch(`${this.client.apiEndpoint}/mcp/settings`, {
+      method: 'PATCH',
+      headers: this.client.jsonHeaders,
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(`Update MCP Server settings failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * @deprecated Use updateMCPServerSettings instead.
+   */
+  async updateAuthenticationSettings(body) {
+    console.warn(
+      '[Inspectr SDK] mcp.updateAuthenticationSettings is deprecated. Use updateMCPServerSettings instead.'
+    );
+    return this.updateMCPServerSettings(body);
   }
 }
 

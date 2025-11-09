@@ -53,7 +53,11 @@ const Logo = (props) => (
 );
 
 export default function Workspace() {
-  const [workspaceFeatureEnabled] = useFeaturePreview('feat_insights_display', false);
+  const [workspaceFeatureEnabled] = useFeaturePreview('feat_insights_display', false, true);
+
+  // Deprecate old features
+  useFeaturePreview('feat_export_mcp_server', false, true);
+  useFeaturePreview('feat_rules_ui', false, true);
 
   const navigation = useMemo(() => {
     let items = BASE_NAVIGATION;
