@@ -4,7 +4,8 @@ import RulesListPanel from '../src/components/rules/RulesListPanel.jsx';
 import {
   mockEvents,
   mockRules,
-  mockOperatorLabelMap
+  mockOperatorLabelMap,
+  mockRulesLicenseUsage
 } from './rulesMocks.js';
 
 export default {
@@ -73,6 +74,7 @@ Default.args = {
     limit: 20,
     total_pages: 3
   },
+  licenseUsage: mockRulesLicenseUsage,
   paginationAlwaysShow: false
 };
 
@@ -128,5 +130,14 @@ ManyPages.args = {
     page: 2,
     limit: 20,
     total_pages: 5
+  }
+};
+
+export const LicenseLimitReached = Template.bind({});
+LicenseLimitReached.args = {
+  ...Default.args,
+  licenseUsage: {
+    used: 50,
+    limit: 50
   }
 };
