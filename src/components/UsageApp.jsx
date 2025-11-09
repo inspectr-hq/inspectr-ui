@@ -21,7 +21,8 @@ const UsageApp = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
-  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [showMcpUpgrade, setShowMcpUpgrade] = useState(false);
+  const [showRulesUpgrade, setShowRulesUpgrade] = useState(false);
   const [showLicenseDialog, setShowLicenseDialog] = useState(false);
   const [showLicenseInfo, setShowLicenseInfo] = useState(false);
 
@@ -97,7 +98,6 @@ const UsageApp = () => {
     if (typeof m.default_limit === 'number') return m.default_limit;
     return null;
   })();
-  const usageLimit = licenseLimit;
   const licenseMcp = license?.features?.mcp;
   const usageMcp = license?.usage?.features?.mcp;
   const licenseWindowText = (() => {
@@ -126,7 +126,7 @@ const UsageApp = () => {
       : typeof mcpTotals.requests === 'number'
         ? mcpTotals.requests
         : 0;
-  const mcpPercent = usageLimit ? Math.min(100, (mcpUsed / usageLimit) * 100) : 0;
+  const mcpPercent = licenseLimit ? Math.min(100, (mcpUsed / licenseLimit) * 100) : 0;
 
   // Rules License & usage derived data
   const licenseRules = license?.features?.rules;
@@ -198,15 +198,27 @@ const UsageApp = () => {
     });
   })();
 
-  // Keep hooks above early returns to satisfy React's Rules of Hooks
+  // Check if MCP usage is near limit
   const shouldShowMcpUpgrade =
-    planKey === 'open_source' || (typeof usageLimit === 'number' && mcpPercent >= 90);
+    (planKey === 'open_source' && mcpUsed > 0) ||
+    (typeof licenseLimit === 'number' && mcpPercent >= 90);
+
+  // Check if Rules usage is near limit
+  const shouldShowRulesUpgrade =
+    (planKey === 'open_source' && rulesUsed > 0) ||
+    (typeof rulesLimit === 'number' && rulesPercent >= 90);
 
   useEffect(() => {
-    // Show upgrade box only when on Open Source plan or near MCP limit; allow dismiss for this session
+    // Show upgrade box only when on Open Source plan or near MCP  limit; allow dismiss for this session
     if (!metrics) return;
-    setShowUpgrade(shouldShowMcpUpgrade);
+    setShowMcpUpgrade(shouldShowMcpUpgrade);
   }, [shouldShowMcpUpgrade, metrics]);
+
+  useEffect(() => {
+    // Show upgrade box only when on Open Source plan or near or Rules limit; allow dismiss for this session
+    if (!metrics) return;
+    setShowRulesUpgrade(shouldShowRulesUpgrade);
+  }, [shouldShowRulesUpgrade, metrics]);
 
   if (loading) {
     return (
@@ -482,15 +494,41 @@ const UsageApp = () => {
             Overview of Rules definitions and actions usage.
           </Text>
 
+          {showRulesUpgrade && shouldShowRulesUpgrade && (
+            <div className="mt-4 rounded-md bg-gray-50 p-6 ring-1 ring-inset ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
+                Want more rules?
+              </h4>
+              <p className="mt-2 text-sm/6 text-gray-500 dark:text-gray-500">
+                Elevate your workspace and boost productivity with premium features. See our pro
+                plans and upgrade today.
+              </p>
+              <div className="mt-6 flex items-center space-x-2">
+                <a
+                  href="https://inspectr.dev/pricing"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-blue-500 dark:outline-blue-500 border-transparent text-white dark:text-white bg-blue-500 dark:bg-blue-500 hover:bg-blue-600 dark:hover:bg-blue-600 disabled:bg-blue-300 disabled:text-white disabled:dark:bg-blue-800 disabled:dark:text-blue-400"
+                >
+                  Plans
+                </a>
+                <button
+                  type="button"
+                  className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-blue-500 dark:outline-blue-500 border-gray-300 dark:border-gray-800 text-gray-900 dark:text-gray-50 bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900/60 disabled:text-gray-400 disabled:dark:text-gray-600"
+                  onClick={() => setShowRulesUpgrade(false)}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+
           {rulesLimit !== null && (
             <div className="mt-6">
               <Text className="mb-2">Definitions usage</Text>
               <ProgressBar value={rulesPercent} color="indigo" />
               <Text className="mt-2">
                 {rulesUsed} of {rulesLimit} rules defined
-              </Text>
-              <Text className="mt-1 text-gray-500">
-                Limit is the maximum number of rule definitions. No monthly reset.
               </Text>
             </div>
           )}
@@ -564,7 +602,7 @@ const UsageApp = () => {
             Overview of Model Context Protocol (MCP) activity on the Inspectr MCP server, including
             usage across tools, resources, and prompts.
           </Text>
-          {showUpgrade && shouldShowMcpUpgrade && (
+          {showMcpUpgrade && shouldShowMcpUpgrade && (
             <div className="mt-4 rounded-md bg-gray-50 p-6 ring-1 ring-inset ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
               <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
                 Want to upgrade?
@@ -585,7 +623,7 @@ const UsageApp = () => {
                 <button
                   type="button"
                   className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-blue-500 dark:outline-blue-500 border-gray-300 dark:border-gray-800 text-gray-900 dark:text-gray-50 bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900/60 disabled:text-gray-400 disabled:dark:text-gray-600"
-                  onClick={() => setShowUpgrade(false)}
+                  onClick={() => setShowMcpUpgrade(false)}
                 >
                   Dismiss
                 </button>
@@ -593,12 +631,12 @@ const UsageApp = () => {
             </div>
           )}
 
-          {usageLimit && (
+          {licenseLimit && (
             <div className="mt-6">
               <Text className="mb-2">Remaining usage</Text>
               <ProgressBar value={mcpPercent} color="blue" />
               <Text className="mt-2">
-                {mcpUsed} of {usageLimit} uses
+                {mcpUsed} of {licenseLimit} uses
               </Text>
               {(licenseWindowText || licensePeriodText || licensePeriodEndText) && (
                 <Text className="mt-1 text-gray-500">
