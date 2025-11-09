@@ -304,7 +304,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
   };
 
   return (
-    <div className="mb-4 p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded shadow dark:shadow-dark-tremor-shadow relative">
+    <div className="mb-4 p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded shadow dark:shadow-dark-tremor-shadow relative [container-type:inline-size] [container-name:requestdetail] ">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <h2 className="font-bold text-2xl text-tremor-content-strong dark:text-dark-tremor-content-strong">
@@ -320,7 +320,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
             >
               <button type="button" onClick={handleViewTrace} className={traceButtonClasses}>
                 <TraceIcon />
-                <span className="text-xs hidden sm:inline">View trace</span>
+                <span className="text-xs hidden [@container(min-width:500px)]:inline">View trace</span>
               </button>
             </Tooltip>
           ) : null}
@@ -349,7 +349,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
                 />
               </svg>
             )}
-            <span className="text-xs hidden sm:inline">{copiedCurl ? 'Copied cURL' : 'Copy as cURL'}</span>
+            <span className="text-xs hidden [@container(min-width:500px)]:inline">{copiedCurl ? 'Copied cURL' : 'Copy as cURL'}</span>
           </button>
           {/* Replay Button */}
           <button onClick={handleReplay} className={buttonClasses}>
@@ -371,7 +371,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
                 />
               </svg>
             )}
-            <span className="text-xs hidden sm:inline">{replayed ? 'Replayed' : 'Replay'}</span>
+            <span className="text-xs hidden [@container(min-width:500px)]:inline">{replayed ? 'Replayed' : 'Replay'}</span>
           </button>
         </div>
       </div>

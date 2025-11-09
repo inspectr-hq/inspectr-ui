@@ -55,7 +55,7 @@ const RequestListItem = ({
         handleSelect(operation);
       }}
     >
-      <div className="flex items-center p-2 w-full">
+      <div className="flex items-center p-2 w-full [container-type:inline-size] [container-name:requestlist]">
         <div className="w-16 flex justify-center">
           <span
             className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(
@@ -83,7 +83,7 @@ const RequestListItem = ({
             fullPath
           )}
         </div>
-        <div className="w-20 text-gray-900 dark:text-dark-tremor-content text-center text-xs">
+        <div className="w-20 text-gray-900 dark:text-dark-tremor-content text-center text-xs hidden [@container(min-width:440px)]:inline">
           {operation?.request?.timestamp ? formatTime(operation.request.timestamp) : 'N/A'}
         </div>
         {/*<div className="flex flex-col text-left">*/}
@@ -94,7 +94,7 @@ const RequestListItem = ({
         {/*    {operation?.request?.timestamp ? formatTime(operation.request.timestamp) : 'N/A'}*/}
         {/*  </div>*/}
         {/*</div>*/}
-        <div className="w-16 text-gray-500 dark:text-dark-tremor-content text-center text-xs hidden sm:inline">
+        <div className="w-16 text-gray-500 dark:text-dark-tremor-content text-center text-xs hidden [@container(min-width:520px)]:inline">
           {formatDuration(operation?.timing?.duration)}
         </div>
         <button
