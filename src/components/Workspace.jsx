@@ -53,22 +53,17 @@ const Logo = (props) => (
 );
 
 export default function Workspace() {
-  const [rulesFeatureEnabled] = useFeaturePreview('feat_rules_ui', false);
   const [workspaceFeatureEnabled] = useFeaturePreview('feat_insights_display', false);
 
   const navigation = useMemo(() => {
     let items = BASE_NAVIGATION;
-
-    if (rulesFeatureEnabled !== true) {
-      items = items.filter((item) => item.slug !== 'rules');
-    }
 
     if (workspaceFeatureEnabled !== true) {
       items = items.filter((item) => item.slug !== 'insights');
     }
 
     return items;
-  }, [rulesFeatureEnabled, workspaceFeatureEnabled]);
+  }, [workspaceFeatureEnabled]);
 
   const [currentTab, setCurrentTab] = useState(() => navigation[0]);
   const { route, currentNav, handleTabClick } = useHashRouter(navigation);

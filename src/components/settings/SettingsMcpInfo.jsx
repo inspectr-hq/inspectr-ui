@@ -8,14 +8,12 @@ import CopyButton from '../CopyButton.jsx';
 
 export default function SettingsMcpInfo() {
   const { client } = useInspectr();
-  const [mcpFeatureEnabled] = useFeaturePreview('feat_export_mcp_server');
   const [info, setInfo] = useState(null);
   const [error, setError] = useState(null);
   const [showToken, setShowToken] = useState(false);
 
   useEffect(() => {
     const load = async () => {
-      if (!mcpFeatureEnabled) return;
       try {
         setError(null);
         const data = await client.service.getInfo();
@@ -26,9 +24,8 @@ export default function SettingsMcpInfo() {
       }
     };
     load();
-  }, [client, mcpFeatureEnabled]);
+  }, [client]);
 
-  if (!mcpFeatureEnabled) return null;
 
   const mcp = info?.mcp || {};
   const mcpAuth = mcp?.auth || {};

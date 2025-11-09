@@ -21,13 +21,13 @@ const PREVIEWS = [
       'Export your API operations as a Postman collection. The Postman collection contains all requests based on the Inspectr Operations history.',
     image: 'https://inspectr.dev/preview/export-postman.png'
   },
-  {
-    slug: 'feat_export_mcp_server',
-    title: 'MCP Server',
-    description:
-      "Enable Inspectr's MCP Server to expose operations and data via the Model Context Protocol for compatible AI Agents like Claude, ChatGPT, and more.",
-    image: undefined
-  }
+  // {
+  //   slug: 'feat_export_mcp_server',
+  //   title: 'MCP Server',
+  //   description:
+  //     "Enable Inspectr's MCP Server to expose operations and data via the Model Context Protocol for compatible AI Agents like Claude, ChatGPT, and more.",
+  //   image: undefined
+  // }
 ];
 
 const FUTURE_FEATURES = [
@@ -39,14 +39,14 @@ const FUTURE_FEATURES = [
     defaultEnabled: false,
     removeWhenFalse: true
   },
-  {
-    slug: 'feat_rules_ui',
-    title: 'Rules',
-    description: 'Toggle access to the Rules engine.',
-    image: undefined,
-    defaultEnabled: false,
-    removeWhenFalse: true
-  },
+  // {
+  //   slug: 'feat_rules_ui',
+  //   title: 'Rules',
+  //   description: 'Toggle access to the Rules engine.',
+  //   image: undefined,
+  //   defaultEnabled: false,
+  //   removeWhenFalse: true
+  // },
   {
     slug: 'feat_insights_display',
     title: 'Insights Display',
