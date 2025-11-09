@@ -94,7 +94,7 @@ const RequestListItem = ({
         {/*    {operation?.request?.timestamp ? formatTime(operation.request.timestamp) : 'N/A'}*/}
         {/*  </div>*/}
         {/*</div>*/}
-        <div className="w-16 text-gray-500 dark:text-dark-tremor-content text-center text-xs">
+        <div className="w-16 text-gray-500 dark:text-dark-tremor-content text-center text-xs hidden sm:inline">
           {formatDuration(operation?.timing?.duration)}
         </div>
         <button

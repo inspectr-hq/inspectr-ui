@@ -181,7 +181,7 @@ const RequestList = ({
           </button>
         </div>
         <div className="w-20 text-center">Timestamp</div>
-        <div className="w-16 text-right">Duration</div>
+        <div className="w-16 text-right hidden sm:inline">Duration</div>
         <div className="w-10"></div>
       </div>
 
