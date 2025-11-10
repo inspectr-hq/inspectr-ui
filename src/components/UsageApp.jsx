@@ -506,7 +506,7 @@ const UsageApp = () => {
                 rel="noreferrer noopener"
                 className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-yellow-500 dark:outline-blue-500 border-transparent text-white dark:text-white bg-yellow-500 dark:bg-yellow-500 hover:bg-yellow-600 dark:hover:bg-yellow-600 disabled:bg-blue-300 disabled:text-white disabled:dark:bg-blue-800 disabled:dark:text-blue-400"
               >
-                Plans
+                Discover Plans
               </a>
               <button
                 type="button"
@@ -612,7 +612,7 @@ const UsageApp = () => {
                 rel="noreferrer noopener"
                 className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-yellow-500 dark:outline-yellow-500 border-transparent text-white dark:text-white bg-yellow-500 dark:bg-yellow-500 hover:bg-yellow-600 dark:hover:bg-yellow-600 disabled:bg-blue-300 disabled:text-white disabled:dark:bg-blue-800 disabled:dark:text-blue-400"
               >
-                Plans
+                Explore Plans
               </a>
               <button
                 type="button"

@@ -139,7 +139,7 @@ export default function SettingsMcpInfo() {
                     />
                   </Switch>
                   <span className="text-sm font-medium text-tremor-content dark:text-dark-tremor-content">
-                    {publicMcpEnabled ? 'Public' : 'Local only'}
+                    {publicMcpEnabled ? 'Enabled' : 'Local only'}
                   </span>
                   {saving && (
                     <span className="text-xs text-gray-500 dark:text-gray-400">Saving…</span>
