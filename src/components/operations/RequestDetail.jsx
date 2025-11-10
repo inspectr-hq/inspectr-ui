@@ -320,7 +320,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
             >
               <button type="button" onClick={handleViewTrace} className={traceButtonClasses}>
                 <TraceIcon />
-                <span className="text-xs hidden [@container(min-width:500px)]:inline">View trace</span>
+                <span className="text-xs hidden [@container(min-width:520px)]:inline">View trace</span>
               </button>
             </Tooltip>
           ) : null}
@@ -349,7 +349,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
                 />
               </svg>
             )}
-            <span className="text-xs hidden [@container(min-width:500px)]:inline">{copiedCurl ? 'Copied cURL' : 'Copy as cURL'}</span>
+            <span className="text-xs hidden [@container(min-width:520px)]:inline">{copiedCurl ? 'Copied cURL' : 'Copy as cURL'}</span>
           </button>
           {/* Replay Button */}
           <button onClick={handleReplay} className={buttonClasses}>
@@ -371,7 +371,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
                 />
               </svg>
             )}
-            <span className="text-xs hidden [@container(min-width:500px)]:inline">{replayed ? 'Replayed' : 'Replay'}</span>
+            <span className="text-xs hidden [@container(min-width:520px)]:inline">{replayed ? 'Replayed' : 'Replay'}</span>
           </button>
         </div>
       </div>
