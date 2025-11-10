@@ -94,21 +94,17 @@ export const useTraceExplorer = ({
   }, [supportsTraces, client, listLimit, isActive]);
 
   useEffect(() => {
-    if (!traceList.length) {
-      if (selectedTraceId !== null) {
-        setSelectedTraceId(null);
-      }
+    if (!traceList.length) return;
+
+    if (selectedTraceId) {
       return;
     }
 
-    if (selectedTraceId && traceList.some((trace) => trace.trace_id === selectedTraceId)) {
-      return;
-    }
+    const initialExists =
+      initialTraceId && traceList.some((trace) => trace.trace_id === initialTraceId);
+    const fallbackTraceId = initialExists ? initialTraceId : traceList[0]?.trace_id ?? null;
 
-    const initialExists = initialTraceId && traceList.some((trace) => trace.trace_id === initialTraceId);
-    const fallbackTraceId = initialExists ? initialTraceId : traceList[0].trace_id;
-
-    if (fallbackTraceId !== selectedTraceId) {
+    if (fallbackTraceId && fallbackTraceId !== selectedTraceId) {
       setSelectedTraceId(fallbackTraceId);
     }
   }, [traceList, selectedTraceId, initialTraceId]);

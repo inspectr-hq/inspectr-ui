@@ -126,25 +126,7 @@ export default function TraceTimelineMode({
       .sort((a, b) => (a.startMs ?? 0) - (b.startMs ?? 0));
   }, [normalizedOperations]);
 
-  const activeGroupId = useMemo(() => {
-    if (!allGroups.length) return null;
-    if (selectedOperation?.correlationId) {
-      const match = allGroups.find((group) => group.operations.some((op) => op.correlationId === selectedOperation.correlationId));
-      if (match) return match.id;
-    }
-    if (selectedOperation) {
-      const match = allGroups.find((group) => group.operations.some((op) => op.id === selectedOperation.id));
-      if (match) return match.id;
-    }
-    return allGroups[0].id;
-  }, [allGroups, selectedOperation]);
-
-  const groups = useMemo(() => {
-    if (!allGroups.length) return [];
-    if (!activeGroupId) return [allGroups[0]];
-    const match = allGroups.find((group) => group.id === activeGroupId);
-    return match ? [match] : [allGroups[0]];
-  }, [allGroups, activeGroupId]);
+  const groups = allGroups;
 
   const [expandedGroups, setExpandedGroups] = useState(() => new Set());
 
