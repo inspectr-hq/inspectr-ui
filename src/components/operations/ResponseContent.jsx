@@ -1,5 +1,5 @@
 // src/components/operations/ResponseContent.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import CopyButton from '../CopyButton.jsx';
 import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
@@ -9,6 +9,7 @@ import SseFramesViewer from './SseFramesViewer.jsx';
 const ResponseContent = ({ operation }) => {
   const [showResponseHeaders, setShowResponseHeaders] = useState(false);
   const [viewMode, setViewMode] = useState('source');
+  const currentOperationId = operation?.id;
 
   const normalizeHeaders = (headers) => {
     if (!headers) return [];
@@ -38,12 +39,26 @@ const ResponseContent = ({ operation }) => {
       </tr>
     ));
 
-  // Check if the response body has content
-  const payload = operation.response.body;
-  const isEmptyPayload =
-    !payload ||
-    (typeof payload === 'object' && Object.keys(payload).length === 0) ||
-    (typeof payload === 'string' && (payload.trim() === '' || payload.trim() === '{}'));
+  // Raw and encoded response payload variants provided by backend
+  const responseBody = operation?.response?.body;
+  const responseBodyBase64 = operation?.response?.body_base64;
+  const responseBodyEncoding = operation?.response?.body_encoding;
+  const normalizedBodyEncoding =
+    typeof responseBodyEncoding === 'string' ? responseBodyEncoding.toLowerCase() : '';
+
+  // We only treat the base64 payload as preferred when backend marks it explicitly
+  const hasBase64Body =
+    typeof responseBodyBase64 === 'string' && responseBodyBase64.trim().length > 0;
+  const prefersBase64Payload = normalizedBodyEncoding === 'base64' && hasBase64Body;
+
+  // Source view always uses the raw body, preview may switch to base64 for binaries
+  const sourcePayload = responseBody;
+  const previewPayload = prefersBase64Payload ? responseBodyBase64 : responseBody;
+  const isEmptySourcePayload =
+    !sourcePayload ||
+    (typeof sourcePayload === 'object' && Object.keys(sourcePayload).length === 0) ||
+    (typeof sourcePayload === 'string' &&
+      (sourcePayload.trim() === '' || sourcePayload.trim() === '{}'));
 
   const formatPayload = (payload, type) => {
     if (typeof payload !== 'string') return payload;
@@ -72,6 +87,7 @@ const ResponseContent = ({ operation }) => {
 
   // Detect content type
   const contentType = getContentType();
+  const normalizedContentType = contentType || 'application/octet-stream';
 
   // Check if content is HTML
   const isHTMLContent = typeof contentType === 'string' && contentType.includes('text/html');
@@ -110,6 +126,25 @@ const ResponseContent = ({ operation }) => {
 
   // Check if can be previewed
   const supportsPreview = isHTMLContent || isImageContent || hasEvents;
+  // Auto-switch preview on for image/binary payloads so users don't stare at gibberish
+  const isLikelyBinaryContent = isImageContent || prefersBase64Payload;
+  const shouldDefaultToPreview = supportsPreview && isLikelyBinaryContent;
+
+  useEffect(() => {
+    if (!currentOperationId) return;
+    setViewMode(shouldDefaultToPreview ? 'preview' : 'source');
+  }, [currentOperationId, shouldDefaultToPreview]);
+  // Ensure we only try rendering when we actually have binary-safe data in hand
+  const canRenderImagePreview =
+    typeof previewPayload === 'string' &&
+    previewPayload.trim().length > 0 &&
+    (prefersBase64Payload || previewPayload.startsWith('data:'));
+  const imagePreviewSrc =
+    isImageContent && canRenderImagePreview
+      ? previewPayload.startsWith('data:')
+        ? previewPayload
+        : `data:${normalizedContentType};base64,${previewPayload}`
+      : '';
 
   return (
     <div className="flex flex-col h-full">
@@ -173,18 +208,18 @@ const ResponseContent = ({ operation }) => {
           )}
           <CopyButton
             textToCopy={
-              isHTMLContent || isImageContent || isSseContent
-                ? payload
-                : formatPayload(payload, contentType)
+              (isHTMLContent || isImageContent || isSseContent
+                ? sourcePayload ?? ''
+                : formatPayload(sourcePayload, contentType)) ?? ''
             }
           />
         </div>
         {hasEvents && viewMode === 'events' ? (
-          <SseFramesViewer frames={availableSseFrames} raw={payload} />
+          <SseFramesViewer frames={availableSseFrames} raw={sourcePayload ?? ''} />
         ) : isSseContent ? (
           viewMode === 'events' ? (
-            <SseFramesViewer frames={availableSseFrames} raw={payload} />
-          ) : isEmptyPayload ? (
+            <SseFramesViewer frames={availableSseFrames} raw={sourcePayload ?? ''} />
+          ) : isEmptySourcePayload ? (
             <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
               No payload
             </div>
@@ -193,7 +228,7 @@ const ResponseContent = ({ operation }) => {
               height="100%"
               className="flex-1"
               language="plaintext"
-              value={payload}
+              value={sourcePayload ?? ''}
               theme={getMonacoTheme()}
               beforeMount={defineMonacoThemes}
               options={{
@@ -207,29 +242,37 @@ const ResponseContent = ({ operation }) => {
               }}
             />
           )
-        ) : isEmptyPayload ? (
+        ) : isEmptySourcePayload ? (
           <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
             No payload
           </div>
         ) : viewMode === 'preview' && isHTMLContent ? (
           <iframe
             title="HTML Preview"
-            srcDoc={payload}
+            srcDoc={sourcePayload ?? ''}
             className="flex-1 w-full h-full border-none"
           />
         ) : viewMode === 'preview' && isImageContent ? (
-          <img
-            alt="Response Preview"
-            src={payload.startsWith('data:') ? payload : `data:${contentType};base64,${payload}`}
-            className="flex-1 w-full h-full object-contain"
-          />
+          imagePreviewSrc ? (
+            <div className="flex-1 w-full h-full overflow-auto bg-white dark:bg-dark-tremor-background-subtle">
+              <img
+                alt="Response Preview"
+                src={imagePreviewSrc}
+                className="max-w-none"
+              />
+            </div>
+          ) : (
+            <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
+              Unable to render image preview
+            </div>
+          )
         ) : (
           <Editor
             height="100%"
             className="flex-1"
             // defaultLanguage="json"
             language={editorLanguage}
-            value={formatPayload(payload, contentType)}
+            value={formatPayload(sourcePayload, contentType) ?? ''}
             theme={getMonacoTheme()}
             beforeMount={defineMonacoThemes}
             options={{
