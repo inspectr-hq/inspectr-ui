@@ -6,6 +6,30 @@ import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
 import { formatXML } from '../../utils/formatXml.js';
 import SseFramesViewer from './SseFramesViewer.jsx';
 
+// Decode base64 payloads in a browser-safe way so Source view can show raw bytes
+const decodeBase64ToBinaryString = (value) => {
+  if (typeof value !== 'string' || value.trim() === '') return '';
+  const trimmed = value.trim();
+
+  try {
+    if (typeof globalThis !== 'undefined' && typeof globalThis.atob === 'function') {
+      return globalThis.atob(trimmed);
+    }
+  } catch {
+    // Ignore decode errors and try Buffer fallback
+  }
+
+  try {
+    if (typeof Buffer !== 'undefined') {
+      return Buffer.from(trimmed, 'base64').toString('binary');
+    }
+  } catch {
+    // Ignore—no usable fallback in this environment
+  }
+
+  return '';
+};
+
 const ResponseContent = ({ operation }) => {
   const [showResponseHeaders, setShowResponseHeaders] = useState(false);
   const [viewMode, setViewMode] = useState('source');
@@ -39,21 +63,26 @@ const ResponseContent = ({ operation }) => {
       </tr>
     ));
 
-  // Raw and encoded response payload variants provided by backend
-  const responseBody = operation?.response?.body;
-  const responseBodyBase64 = operation?.response?.body_base64;
+  // Raw response payload provided by backend (may be base64-encoded)
+  const responseBody =
+    typeof operation?.response?.body === 'string' ? operation.response.body : undefined;
   const responseBodyEncoding = operation?.response?.body_encoding;
   const normalizedBodyEncoding =
-    typeof responseBodyEncoding === 'string' ? responseBodyEncoding.toLowerCase() : '';
+    typeof responseBodyEncoding === 'string'
+      ? responseBodyEncoding.toLowerCase()
+      : 'utf8';
 
-  // We only treat the base64 payload as preferred when backend marks it explicitly
-  const hasBase64Body =
-    typeof responseBodyBase64 === 'string' && responseBodyBase64.trim().length > 0;
-  const prefersBase64Payload = normalizedBodyEncoding === 'base64' && hasBase64Body;
+  // We only treat the payload as base64 when backend marks it explicitly
+  const isBase64Body = normalizedBodyEncoding === 'base64';
 
-  // Source view always uses the raw body, preview may switch to base64 for binaries
-  const sourcePayload = responseBody;
-  const previewPayload = prefersBase64Payload ? responseBodyBase64 : responseBody;
+  // Source view uses decoded bytes, preview uses the body as delivered
+  const decodedPayload =
+    isBase64Body && typeof responseBody === 'string'
+      ? decodeBase64ToBinaryString(responseBody)
+      : responseBody;
+  const sourcePayload =
+    typeof decodedPayload === 'string' && decodedPayload !== '' ? decodedPayload : responseBody;
+  const previewPayload = responseBody;
   const isEmptySourcePayload =
     !sourcePayload ||
     (typeof sourcePayload === 'object' && Object.keys(sourcePayload).length === 0) ||
@@ -127,7 +156,7 @@ const ResponseContent = ({ operation }) => {
   // Check if can be previewed
   const supportsPreview = isHTMLContent || isImageContent || hasEvents;
   // Auto-switch preview on for image/binary payloads so users don't stare at gibberish
-  const isLikelyBinaryContent = isImageContent || prefersBase64Payload;
+  const isLikelyBinaryContent = isImageContent || isBase64Body;
   const shouldDefaultToPreview = supportsPreview && isLikelyBinaryContent;
 
   useEffect(() => {
@@ -135,15 +164,15 @@ const ResponseContent = ({ operation }) => {
     setViewMode(shouldDefaultToPreview ? 'preview' : 'source');
   }, [currentOperationId, shouldDefaultToPreview]);
   // Ensure we only try rendering when we actually have binary-safe data in hand
-  const canRenderImagePreview =
-    typeof previewPayload === 'string' &&
-    previewPayload.trim().length > 0 &&
-    (prefersBase64Payload || previewPayload.startsWith('data:'));
+  const previewPayloadString = typeof previewPayload === 'string' ? previewPayload : '';
+  const trimmedPreviewPayload = previewPayloadString.trim();
   const imagePreviewSrc =
-    isImageContent && canRenderImagePreview
-      ? previewPayload.startsWith('data:')
-        ? previewPayload
-        : `data:${normalizedContentType};base64,${previewPayload}`
+    isImageContent && trimmedPreviewPayload
+      ? trimmedPreviewPayload.startsWith('data:')
+        ? previewPayloadString
+        : isBase64Body
+          ? `data:${normalizedContentType};base64,${previewPayloadString}`
+          : `data:${normalizedContentType};charset=utf-8,${encodeURIComponent(previewPayloadString)}`
       : '';
 
   return (

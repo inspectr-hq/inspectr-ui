@@ -180,7 +180,7 @@ const RequestList = ({
             <RiExpandWidthFill className="w-4 h-4" />
           </button>
         </div>
-        <div className="w-20 text-center hidden [@container(min-width:450px)]:inline">Timestamp</div>
+        <div className="w-20 text-center hidden [@container(min-width:450px)]:inline">Time</div>
         <div className="w-16 text-right hidden [@container(min-width:530px)]:inline">Duration</div>
         <div className="w-10"></div>
       </div>
