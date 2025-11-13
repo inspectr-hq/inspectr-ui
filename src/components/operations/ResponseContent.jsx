@@ -30,6 +30,16 @@ const decodeBase64ToBinaryString = (value) => {
   return '';
 };
 
+// Convert binary string to Uint8Array for Blob downloads
+const binaryStringToUint8Array = (binaryString) => {
+  const length = binaryString.length;
+  const bytes = new Uint8Array(length);
+  for (let i = 0; i < length; i += 1) {
+    bytes[i] = binaryString.charCodeAt(i) & 0xff;
+  }
+  return bytes;
+};
+
 const ResponseContent = ({ operation }) => {
   const [showResponseHeaders, setShowResponseHeaders] = useState(false);
   const [viewMode, setViewMode] = useState('source');
@@ -175,6 +185,67 @@ const ResponseContent = ({ operation }) => {
           : `data:${normalizedContentType};charset=utf-8,${encodeURIComponent(previewPayloadString)}`
       : '';
 
+  const getDownloadFilename = () => {
+    const hdrs = normalizeHeaders(operation?.response?.headers);
+    const disposition = hdrs.find(
+      (h) =>
+        h.name?.toLowerCase() === 'content-disposition' ||
+        h.key?.toLowerCase() === 'content-disposition'
+    )?.value;
+
+    if (typeof disposition === 'string') {
+      const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      if (utf8Match && utf8Match[1]) {
+        try {
+          return decodeURIComponent(utf8Match[1]);
+        } catch {
+          return utf8Match[1];
+        }
+      }
+      const simpleMatch = disposition.match(/filename=\"?([^\";]+)\"?/i);
+      if (simpleMatch && simpleMatch[1]) {
+        return simpleMatch[1];
+      }
+    }
+
+    const idPart = operation?.id ? String(operation.id) : Date.now().toString();
+    return `operation-response-${idPart}`;
+  };
+
+  const getDownloadBlob = () => {
+    if (typeof responseBody !== 'string' || responseBody === '') {
+      return null;
+    }
+
+    if (isBase64Body) {
+      const binaryString = decodeBase64ToBinaryString(responseBody);
+      if (!binaryString) return null;
+      const bytes = binaryStringToUint8Array(binaryString);
+      return new Blob([bytes], { type: normalizedContentType });
+    }
+
+    return new Blob([responseBody], { type: `${normalizedContentType};charset=utf-8` });
+  };
+
+  const handleDownloadResponse = () => {
+    if (typeof document === 'undefined') return;
+    const blob = getDownloadBlob();
+    if (!blob) return;
+
+    const url = URL.createObjectURL(blob);
+    const filename = getDownloadFilename();
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const shouldShowDownloadButton =
+    !supportsPreview && typeof responseBody === 'string' && responseBody.trim().length > 0;
+
   return (
     <div className="flex flex-col h-full">
       {/* Response Headers Section */}
@@ -210,38 +281,48 @@ const ResponseContent = ({ operation }) => {
           <button className="p-2 text-left font-bold flex-grow dark:text-dark-tremor-content-strong">
             Response Body
           </button>
-          {supportsPreview && (
-            <div className="flex space-x-1 mr-2">
+          <div className="flex items-center space-x-2 mr-2">
+            {supportsPreview && (
+              <div className="flex space-x-1">
+                <button
+                  onClick={() => setViewMode('source')}
+                  className={`px-2 py-1 text-xs rounded ${viewMode === 'source' ? 'bg-blue-600 dark:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+                >
+                  Source
+                </button>
+                {hasEvents ? (
+                  <button
+                    onClick={() => setViewMode('events')}
+                    className={`px-2 py-1 text-xs rounded ${viewMode === 'events' ? 'bg-blue-600 dark:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+                  >
+                    Events
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setViewMode('preview')}
+                    className={`px-2 py-1 text-xs rounded ${viewMode === 'preview' ? 'bg-blue-600 dark:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+                  >
+                    Preview
+                  </button>
+                )}
+              </div>
+            )}
+            {shouldShowDownloadButton && (
               <button
-                onClick={() => setViewMode('source')}
-                className={`px-2 py-1 text-xs rounded ${viewMode === 'source' ? 'bg-blue-600 dark:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+                onClick={handleDownloadResponse}
+                className="px-2 py-1 text-xs rounded bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-600"
               >
-                Source
+                Download
               </button>
-              {hasEvents ? (
-                <button
-                  onClick={() => setViewMode('events')}
-                  className={`px-2 py-1 text-xs rounded ${viewMode === 'events' ? 'bg-blue-600 dark:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
-                >
-                  Events
-                </button>
-              ) : (
-                <button
-                  onClick={() => setViewMode('preview')}
-                  className={`px-2 py-1 text-xs rounded ${viewMode === 'preview' ? 'bg-blue-600 dark:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
-                >
-                  Preview
-                </button>
-              )}
-            </div>
-          )}
-          <CopyButton
-            textToCopy={
-              (isHTMLContent || isImageContent || isSseContent
-                ? sourcePayload ?? ''
-                : formatPayload(sourcePayload, contentType)) ?? ''
-            }
-          />
+            )}
+            <CopyButton
+              textToCopy={
+                (isHTMLContent || isImageContent || isSseContent
+                  ? sourcePayload ?? ''
+                  : formatPayload(sourcePayload, contentType)) ?? ''
+              }
+            />
+          </div>
         </div>
         {hasEvents && viewMode === 'events' ? (
           <SseFramesViewer frames={availableSseFrames} raw={sourcePayload ?? ''} />
