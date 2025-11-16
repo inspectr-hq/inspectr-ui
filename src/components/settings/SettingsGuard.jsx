@@ -56,7 +56,7 @@ export default function SettingsGuard() {
       console.error('Security save error', err);
       setAuthError(err.message);
     } finally {
-    setSaving(false);
+      setSaving(false);
     }
   };
 

@@ -8,10 +8,11 @@ export default function JsonPathInput({ id, descriptor, value, onChange, readOnl
   const label = descriptor.label || descriptor.name;
   const helpText = descriptor.help || descriptor.description;
   const placeholder = descriptor.placeholder || '$.request.path';
-  const browseLabel = descriptor.meta?.browseLabel || descriptor.meta?.browse_label || 'Browse paths';
+  const browseLabel =
+    descriptor.meta?.browseLabel || descriptor.meta?.browse_label || 'Browse paths';
   const isDisabled = readOnly ?? Boolean(descriptor.readonly);
 
-  const normalizedValue = typeof value === 'string' ? value : value ?? '';
+  const normalizedValue = typeof value === 'string' ? value : (value ?? '');
 
   return (
     <div className="space-y-1">
@@ -32,4 +33,3 @@ export default function JsonPathInput({ id, descriptor, value, onChange, readOnl
     </div>
   );
 }
-

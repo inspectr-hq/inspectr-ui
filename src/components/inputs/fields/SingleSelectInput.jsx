@@ -10,8 +10,9 @@ export default function SingleSelectInput({ id, descriptor, value, onChange, pro
   const inputClass =
     'block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-blue-700 dark:focus:ring-blue-700/30';
 
-  const list = (descriptor.choices || [])
-    .filter((choice) => !choice.group || !provider || choice.group === provider);
+  const list = (descriptor.choices || []).filter(
+    (choice) => !choice.group || !provider || choice.group === provider
+  );
 
   return (
     <div className="space-y-1">
@@ -22,7 +23,7 @@ export default function SingleSelectInput({ id, descriptor, value, onChange, pro
       <select
         id={id}
         disabled={isReadOnly}
-        value={typeof value === 'string' ? value : value ?? ''}
+        value={typeof value === 'string' ? value : (value ?? '')}
         onChange={(e) => onChange(e.target.value)}
         className={inputClass}
       >
@@ -32,9 +33,7 @@ export default function SingleSelectInput({ id, descriptor, value, onChange, pro
           </option>
         ))}
       </select>
-      {helpText && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">{helpText}</p>
-      )}
+      {helpText && <p className="text-xs text-gray-500 dark:text-gray-400">{helpText}</p>}
     </div>
   );
 }

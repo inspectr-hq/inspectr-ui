@@ -102,7 +102,7 @@ export const useTraceExplorer = ({
 
     const initialExists =
       initialTraceId && traceList.some((trace) => trace.trace_id === initialTraceId);
-    const fallbackTraceId = initialExists ? initialTraceId : traceList[0]?.trace_id ?? null;
+    const fallbackTraceId = initialExists ? initialTraceId : (traceList[0]?.trace_id ?? null);
 
     if (fallbackTraceId && fallbackTraceId !== selectedTraceId) {
       setSelectedTraceId(fallbackTraceId);
@@ -177,9 +177,7 @@ export const useTraceExplorer = ({
     const initialExists =
       initialOperationId &&
       normalizedOperations.some((operation) => operation.id === initialOperationId);
-    const fallbackOperationId = initialExists
-      ? initialOperationId
-      : normalizedOperations[0].id;
+    const fallbackOperationId = initialExists ? initialOperationId : normalizedOperations[0].id;
 
     if (fallbackOperationId !== selectedOperationId) {
       setSelectedOperationId(fallbackOperationId);
@@ -188,9 +186,7 @@ export const useTraceExplorer = ({
 
   const selectedOperation = useMemo(() => {
     if (!selectedOperationId) return null;
-    return (
-      normalizedOperations.find((operation) => operation.id === selectedOperationId) || null
-    );
+    return normalizedOperations.find((operation) => operation.id === selectedOperationId) || null;
   }, [normalizedOperations, selectedOperationId]);
 
   const traceSummary = useMemo(() => {

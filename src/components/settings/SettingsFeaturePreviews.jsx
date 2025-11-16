@@ -20,7 +20,7 @@ const PREVIEWS = [
     description:
       'Export your API operations as a Postman collection. The Postman collection contains all requests based on the Inspectr Operations history.',
     image: 'https://inspectr.dev/preview/export-postman.png'
-  },
+  }
   // {
   //   slug: 'feat_export_mcp_server',
   //   title: 'MCP Server',
@@ -50,7 +50,8 @@ const FUTURE_FEATURES = [
   {
     slug: 'feat_insights_display',
     title: 'Insights Display',
-    description: 'Show the insights explorer navigation with Endpoint, List, Table, and Timeline modes.',
+    description:
+      'Show the insights explorer navigation with Endpoint, List, Table, and Timeline modes.',
     image: undefined,
     defaultEnabled: false,
     removeWhenFalse: true

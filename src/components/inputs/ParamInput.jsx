@@ -18,14 +18,23 @@ import JsonPathInput from './fields/JsonPathInput.jsx';
  * - input: string | boolean | number | object | single_select | multi_select | password
  * - choices, variants (variants are handled by parent containers), placeholder, help, required, hidden, readonly
  */
-export default function ParamInput({ id, descriptor, value, onChange, provider, className = '', readOnly }) {
+export default function ParamInput({
+  id,
+  descriptor,
+  value,
+  onChange,
+  provider,
+  className = '',
+  readOnly
+}) {
   if (!descriptor || descriptor.hidden) return null;
 
   const isBoolean = descriptor.type === 'boolean' || descriptor.input === 'boolean';
   const isArray = typeof descriptor.type === 'string' && descriptor.type.startsWith('array');
   const isSingleSelect = descriptor.input === 'single_select' && Array.isArray(descriptor.choices);
   const isMultiSelect = descriptor.input === 'multi_select' && Array.isArray(descriptor.choices);
-  const isNumber = descriptor.type === 'integer' || descriptor.type === 'number' || descriptor.input === 'number';
+  const isNumber =
+    descriptor.type === 'integer' || descriptor.type === 'number' || descriptor.input === 'number';
   const isObject = descriptor.type === 'object' || descriptor.input === 'object';
   const isPassword = descriptor.input === 'password';
   const isJsonPath = descriptor.input === 'json_path';

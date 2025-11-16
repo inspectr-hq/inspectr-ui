@@ -228,7 +228,11 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
       stroke="currentColor"
       className="h-4 w-4"
     >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12h13.5m0 0-5.25-5.25M18 12l-5.25 5.25" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4.5 12h13.5m0 0-5.25-5.25M18 12l-5.25 5.25"
+      />
     </svg>
   );
 
@@ -320,12 +324,18 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
             >
               <button type="button" onClick={handleViewTrace} className={traceButtonClasses}>
                 <TraceIcon />
-                <span className="text-xs hidden [@container(min-width:520px)]:inline">View trace</span>
+                <span className="text-xs hidden [@container(min-width:520px)]:inline">
+                  View trace
+                </span>
               </button>
             </Tooltip>
           ) : null}
           {/* Export JSON Button */}
-          <button onClick={handleDownloadOperation} className={buttonClasses} aria-label="Export as JSON">
+          <button
+            onClick={handleDownloadOperation}
+            className={buttonClasses}
+            aria-label="Export as JSON"
+          >
             <DownloadIcon />
             {/*<span className="text-xs">Export JSON</span>*/}
           </button>
@@ -349,7 +359,9 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
                 />
               </svg>
             )}
-            <span className="text-xs hidden [@container(min-width:520px)]:inline">{copiedCurl ? 'Copied cURL' : 'Copy as cURL'}</span>
+            <span className="text-xs hidden [@container(min-width:520px)]:inline">
+              {copiedCurl ? 'Copied cURL' : 'Copy as cURL'}
+            </span>
           </button>
           {/* Replay Button */}
           <button onClick={handleReplay} className={buttonClasses}>
@@ -371,7 +383,9 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
                 />
               </svg>
             )}
-            <span className="text-xs hidden [@container(min-width:520px)]:inline">{replayed ? 'Replayed' : 'Replay'}</span>
+            <span className="text-xs hidden [@container(min-width:520px)]:inline">
+              {replayed ? 'Replayed' : 'Replay'}
+            </span>
           </button>
         </div>
       </div>

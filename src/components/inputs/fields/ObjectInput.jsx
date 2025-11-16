@@ -27,9 +27,7 @@ export default function ObjectInput({ id, descriptor, value, onChange, readOnly 
         placeholder={placeholder}
         className={inputClass}
       />
-      {helpText && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">{helpText}</p>
-      )}
+      {helpText && <p className="text-xs text-gray-500 dark:text-gray-400">{helpText}</p>}
     </div>
   );
 }

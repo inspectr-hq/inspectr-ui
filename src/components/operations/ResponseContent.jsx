@@ -78,9 +78,7 @@ const ResponseContent = ({ operation }) => {
     typeof operation?.response?.body === 'string' ? operation.response.body : undefined;
   const responseBodyEncoding = operation?.response?.body_encoding;
   const normalizedBodyEncoding =
-    typeof responseBodyEncoding === 'string'
-      ? responseBodyEncoding.toLowerCase()
-      : 'utf8';
+    typeof responseBodyEncoding === 'string' ? responseBodyEncoding.toLowerCase() : 'utf8';
 
   // We only treat the payload as base64 when backend marks it explicitly
   const isBase64Body = normalizedBodyEncoding === 'base64';
@@ -318,7 +316,7 @@ const ResponseContent = ({ operation }) => {
             <CopyButton
               textToCopy={
                 (isHTMLContent || isImageContent || isSseContent
-                  ? sourcePayload ?? ''
+                  ? (sourcePayload ?? '')
                   : formatPayload(sourcePayload, contentType)) ?? ''
               }
             />
@@ -365,11 +363,7 @@ const ResponseContent = ({ operation }) => {
         ) : viewMode === 'preview' && isImageContent ? (
           imagePreviewSrc ? (
             <div className="flex-1 w-full h-full overflow-auto bg-white dark:bg-dark-tremor-background-subtle">
-              <img
-                alt="Response Preview"
-                src={imagePreviewSrc}
-                className="max-w-none"
-              />
+              <img alt="Response Preview" src={imagePreviewSrc} className="max-w-none" />
             </div>
           ) : (
             <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">

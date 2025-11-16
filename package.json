@@ -28,7 +28,7 @@
     "watch": "vite build --watch",
     "storybook": "storybook dev --ci -p 6006",
     "build-storybook": "storybook build",
-    "format": "npx prettier --write src//**/*.{js,jsx,css} --config ./.prettierrc",
+    "format": "npx prettier --write \"src/**/*.{js,jsx,css}\" --config ./.prettierrc",
     "test": "echo 'test completed'",
     "release": "npm run build && npx np --branch main"
   },

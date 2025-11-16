@@ -19,14 +19,12 @@ export default function PasswordInput({ id, descriptor, value, onChange, readOnl
         id={id}
         type="password"
         disabled={isReadOnly}
-        value={typeof value === 'string' ? value : value ?? ''}
+        value={typeof value === 'string' ? value : (value ?? '')}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={inputClass}
       />
-      {helpText && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">{helpText}</p>
-      )}
+      {helpText && <p className="text-xs text-gray-500 dark:text-gray-400">{helpText}</p>}
     </div>
   );
 }

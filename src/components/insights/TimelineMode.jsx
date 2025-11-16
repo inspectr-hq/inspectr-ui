@@ -62,7 +62,11 @@ const TICK_INTERVALS_MS = [
   90 * DAY_IN_MS
 ];
 
-const formatterTime = new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit', hour12: false });
+const formatterTime = new Intl.DateTimeFormat([], {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false
+});
 const formatterTimeWithSeconds = new Intl.DateTimeFormat([], {
   hour: '2-digit',
   minute: '2-digit',
@@ -314,7 +318,12 @@ export default function TimelineMode({ operations }) {
     });
   }, [filteredOperations, groupByTags]);
 
-  const { ticks: timelineTicks, daySegments, startLabel, endLabel } = useMemo(() => {
+  const {
+    ticks: timelineTicks,
+    daySegments,
+    startLabel,
+    endLabel
+  } = useMemo(() => {
     if (!hasValidRange) {
       return { ticks: [], daySegments: [], startLabel: '', endLabel: '' };
     }
@@ -485,10 +494,7 @@ export default function TimelineMode({ operations }) {
                     <div className="relative h-full overflow-hidden rounded-tremor-small border border-tremor-border bg-tremor-background-subtle dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
                       {daySegments.map((segment, index) => {
                         const left = clampPercent(segment.leftPercent);
-                        const cappedWidth = Math.min(
-                          Math.max(segment.widthPercent, 0),
-                          100 - left
-                        );
+                        const cappedWidth = Math.min(Math.max(segment.widthPercent, 0), 100 - left);
                         const width =
                           segment.widthPercent > 0 && cappedWidth < 0.3
                             ? Math.min(0.3, 100 - left)

@@ -247,16 +247,24 @@ const RulesListPanel = ({
       </div>
 
       <div className="px-4 py-4">
-
         {/*{limitReached ? (*/}
-        <div
-          className="my-2 flex items-center justify-between gap-3 rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700 ring-1 ring-inset ring-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:ring-gray-800">
+        <div className="my-2 flex items-center justify-between gap-3 rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700 ring-1 ring-inset ring-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:ring-gray-800">
           {/* Left: icon + stacked text */}
           <div className="flex items-center gap-3">
-            <span
-              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-400 dark:bg-gray-400">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="white" className="size-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+            <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-400 dark:bg-gray-400">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="white"
+                className="size-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"
+                />
               </svg>
             </span>
             <div className="flex flex-col">
@@ -264,20 +272,21 @@ const RulesListPanel = ({
                 Rules limit reached
               </p>
               <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                You have used all available rules within your plan. View available plans to unlock more capacity.
+                You have used all available rules within your plan. View available plans to unlock
+                more capacity.
               </p>
             </div>
           </div>
 
-            <a
-              href="https://inspectr.dev/pricing"
-              target="_blank"
-              rel="noreferrer noopener"
-              className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-blue-500 dark:outline-blue-500 border-transparent text-white dark:text-white bg-yellow-500 dark:bg-yellow-500 hover:bg-yellow-600 dark:hover:bg-blue-600 disabled:bg-blue-300 disabled:text-white disabled:dark:bg-blue-800 disabled:dark:text-blue-400"
-            >
-              Discover Plans
-            </a>
-          </div>
+          <a
+            href="https://inspectr.dev/pricing"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-blue-500 dark:outline-blue-500 border-transparent text-white dark:text-white bg-yellow-500 dark:bg-yellow-500 hover:bg-yellow-600 dark:hover:bg-blue-600 disabled:bg-blue-300 disabled:text-white disabled:dark:bg-blue-800 disabled:dark:text-blue-400"
+          >
+            Discover Plans
+          </a>
+        </div>
         {/*) : null}*/}
 
         {loading ? (

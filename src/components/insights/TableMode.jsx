@@ -19,7 +19,16 @@ import DateRangeButtons from '../DateRangeButtons.jsx';
 import { findPresetByLabel, getEndOfDay, getStartOfDay } from '../../utils/timeRange.js';
 import { useInspectr } from '../../context/InspectrContext.jsx';
 
-const STATUS_COLOR_PALETTE = ['emerald', 'blue', 'violet', 'amber', 'rose', 'cyan', 'slate', 'stone'];
+const STATUS_COLOR_PALETTE = [
+  'emerald',
+  'blue',
+  'violet',
+  'amber',
+  'rose',
+  'cyan',
+  'slate',
+  'stone'
+];
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_PANEL_HEIGHT = 480;
 const TABLE_PAGE_SIZE = 50;
@@ -239,14 +248,7 @@ const buildDurationCountItems = (operations) => {
     .sort((a, b) => {
       if (a.value === UNKNOWN_DURATION_BUCKET.key) return 1;
       if (b.value === UNKNOWN_DURATION_BUCKET.key) return -1;
-      const order = [
-        'lt-100',
-        '100-250',
-        '250-500',
-        '500-1000',
-        '1000-3000',
-        'gte-3000'
-      ];
+      const order = ['lt-100', '100-250', '250-500', '500-1000', '1000-3000', 'gte-3000'];
       return order.indexOf(a.value) - order.indexOf(b.value);
     });
 };
@@ -449,9 +451,7 @@ export default function TableMode({ operations }) {
   }, [tableData]);
 
   const rawTablePage = tableMeta?.page ?? tablePage;
-  const normalizedPage = Number.isFinite(Number(rawTablePage))
-    ? Number(rawTablePage)
-    : tablePage;
+  const normalizedPage = Number.isFinite(Number(rawTablePage)) ? Number(rawTablePage) : tablePage;
   const tableCurrentPage = normalizedPage >= 1 ? normalizedPage : 1;
   const rawTableLimit = tableMeta?.limit ?? tableMeta?.per_page ?? TABLE_PAGE_SIZE;
   const tableLimit = Number.isFinite(Number(rawTableLimit))
@@ -726,8 +726,7 @@ export default function TableMode({ operations }) {
             );
             return { key: config.key, items, total, error: null };
           } catch (error) {
-            const message =
-              error instanceof Error ? error.message : 'Failed to load facet data';
+            const message = error instanceof Error ? error.message : 'Failed to load facet data';
             return { key: config.key, items: [], total: 0, error: message };
           }
         })
@@ -813,9 +812,7 @@ export default function TableMode({ operations }) {
   }, [statusFilterValues, topStatusValues]);
   const remainingStatuses = useMemo(() => {
     const prioritySet = new Set(prioritizedStatuses);
-    return statusItems
-      .map((item) => item.value)
-      .filter((status) => !prioritySet.has(status));
+    return statusItems.map((item) => item.value).filter((status) => !prioritySet.has(status));
   }, [prioritizedStatuses, statusItems]);
   const chartCategories = useMemo(() => {
     const categories = [...prioritizedStatuses];
@@ -826,9 +823,7 @@ export default function TableMode({ operations }) {
   }, [prioritizedStatuses, remainingStatuses]);
   const chartColors = useMemo(
     () =>
-      chartCategories.map(
-        (_, index) => STATUS_COLOR_PALETTE[index % STATUS_COLOR_PALETTE.length]
-      ),
+      chartCategories.map((_, index) => STATUS_COLOR_PALETTE[index % STATUS_COLOR_PALETTE.length]),
     [chartCategories]
   );
 
@@ -960,7 +955,10 @@ export default function TableMode({ operations }) {
     const { startMs: barStart, endMs: barEnd, categoryClicked } = value;
     const shouldUpdateRange = value.eventType === 'bar';
     const hasRange =
-      shouldUpdateRange && Number.isFinite(barStart) && Number.isFinite(barEnd) && barEnd >= barStart;
+      shouldUpdateRange &&
+      Number.isFinite(barStart) &&
+      Number.isFinite(barEnd) &&
+      barEnd >= barStart;
 
     if (hasRange) {
       setStart(new Date(barStart).toISOString());
@@ -1093,8 +1091,8 @@ export default function TableMode({ operations }) {
               ) : null}
             </div>
             <div className="text-sm text-tremor-content-subtle dark:text-dark-tremor-content-subtle">
-              {visibleRequests.toLocaleString()} of{' '}
-              {rangeTotalRequests.toLocaleString()} requests in range visible
+              {visibleRequests.toLocaleString()} of {rangeTotalRequests.toLocaleString()} requests
+              in range visible
             </div>
             {operationsWithinRange.length !== operations.length ? (
               <div className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content-subtle">
@@ -1208,9 +1206,7 @@ export default function TableMode({ operations }) {
                   }`}
               {activeFilterCount > 0 && <span> • Filters active</span>}
               {tableError && !tableLoading && (
-                <span className="ml-2 text-rose-500 dark:text-rose-400">
-                  {tableError}
-                </span>
+                <span className="ml-2 text-rose-500 dark:text-rose-400">{tableError}</span>
               )}
             </p>
           </div>
@@ -1275,7 +1271,9 @@ export default function TableMode({ operations }) {
                             <StatusBadge status={operation.status} />
                           </TableCell>
                           <TableCell>
-                            <span className={`font-semibold ${getMethodTextClass(operation.method)}`}>
+                            <span
+                              className={`font-semibold ${getMethodTextClass(operation.method)}`}
+                            >
                               {operation.method}
                             </span>
                           </TableCell>

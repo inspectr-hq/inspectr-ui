@@ -120,7 +120,9 @@ export default function TraceTimelineMode({
         label: deriveGroupLabel(group.operations),
         subtitle: deriveGroupSubtitle(group.operations),
         durationMs:
-          group.startMs != null && group.endMs != null ? Math.max(group.endMs - group.startMs, 0) : 0,
+          group.startMs != null && group.endMs != null
+            ? Math.max(group.endMs - group.startMs, 0)
+            : 0,
         maxStatus: deriveGroupStatus(group.operations)
       }))
       .sort((a, b) => (a.startMs ?? 0) - (b.startMs ?? 0));
@@ -184,7 +186,9 @@ export default function TraceTimelineMode({
 
   const renderBar = ({ start, duration, status, total = baseDuration, variant = 'status' }) => {
     if (!Number.isFinite(total) || total <= 0) {
-      return <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-dark-tremor-background-subtle" />;
+      return (
+        <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-dark-tremor-background-subtle" />
+      );
     }
     // Use `total` (not baseDuration) and compute right edge to avoid 0px widths at ~100% offsets
     const denom = Number.isFinite(total) && total > 0 ? total : baseDuration;
@@ -264,7 +268,10 @@ export default function TraceTimelineMode({
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 20 20"
                   fill="currentColor"
-                  className={classNames('h-3.5 w-3.5 transition-transform', isExpanded ? 'rotate-180' : 'rotate-0')}
+                  className={classNames(
+                    'h-3.5 w-3.5 transition-transform',
+                    isExpanded ? 'rotate-180' : 'rotate-0'
+                  )}
                 >
                   <path
                     fillRule="evenodd"
@@ -387,7 +394,10 @@ export default function TraceTimelineMode({
             const offset = Math.min(Math.max(rawOffset, 0), 100);
             const widthRaw = (duration / baseDuration) * 100;
             const width = Math.min(
-              Math.max(Number.isFinite(widthRaw) ? widthRaw : MIN_BAR_WIDTH_PERCENT, MIN_BAR_WIDTH_PERCENT),
+              Math.max(
+                Number.isFinite(widthRaw) ? widthRaw : MIN_BAR_WIDTH_PERCENT,
+                MIN_BAR_WIDTH_PERCENT
+              ),
               100 - offset
             );
             return (
@@ -434,7 +444,8 @@ export default function TraceTimelineMode({
               Trace timeline
             </Title>
             <Text className="mt-1 text-sm text-tremor-content dark:text-dark-tremor-content">
-              Review trace spans as a nested timeline, grouped by correlation across the conversation.
+              Review trace spans as a nested timeline, grouped by correlation across the
+              conversation.
             </Text>
           </div>
           <Badge color={traceDetailError ? 'rose' : 'slate'}>

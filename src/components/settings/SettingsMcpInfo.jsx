@@ -10,8 +10,6 @@ import { Tooltip } from '../ToolTip.jsx';
 import { cx } from '../../utils/cx.js';
 import { TooltipInfoButton } from '../TooltipInfoButton.jsx';
 
-
-
 export default function SettingsMcpInfo() {
   const { client } = useInspectr();
   const [info, setInfo] = useState(null);

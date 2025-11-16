@@ -19,14 +19,12 @@ export default function ArrayInput({ id, descriptor, value, onChange, readOnly }
         id={id}
         type="text"
         disabled={isReadOnly}
-        value={Array.isArray(value) ? value.join(', ') : value ?? ''}
+        value={Array.isArray(value) ? value.join(', ') : (value ?? '')}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={inputClass}
       />
-      {helpText && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">{helpText}</p>
-      )}
+      {helpText && <p className="text-xs text-gray-500 dark:text-gray-400">{helpText}</p>}
     </div>
   );
 }

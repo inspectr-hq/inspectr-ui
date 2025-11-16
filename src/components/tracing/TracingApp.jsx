@@ -50,8 +50,7 @@ export default function TracingApp({ route }) {
 
   useEffect(() => {
     const prev = previousRouteRef.current;
-    const routeChanged =
-      initialTraceId !== prev.traceId || initialOperationId !== prev.operationId;
+    const routeChanged = initialTraceId !== prev.traceId || initialOperationId !== prev.operationId;
 
     if (routeChanged) {
       previousRouteRef.current = { traceId: initialTraceId, operationId: initialOperationId };
@@ -103,10 +102,7 @@ export default function TracingApp({ route }) {
 
   const traceSummaryLabel = useMemo(() => currentTraceId || '—', [currentTraceId]);
   const backOperationId =
-    originOperationIdRef.current ||
-    initialOperationId ||
-    operationRef.current ||
-    '';
+    originOperationIdRef.current || initialOperationId || operationRef.current || '';
   const backHref = backOperationId ? `#inspectr/${backOperationId}/request` : '#inspectr';
 
   return (

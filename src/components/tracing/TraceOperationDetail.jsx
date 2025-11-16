@@ -29,9 +29,7 @@ const normalizeHeaders = (headers) => {
 
 const extractContentType = (headers) => {
   const normalized = normalizeHeaders(headers);
-  const raw = normalized.find(
-    (header) => header.name?.toLowerCase() === 'content-type'
-  )?.value;
+  const raw = normalized.find((header) => header.name?.toLowerCase() === 'content-type')?.value;
   if (!raw || typeof raw !== 'string') return null;
   return raw.split(';')[0].trim().toLowerCase();
 };
@@ -81,31 +79,21 @@ const formatPayload = (payload, contentType) => {
 
 export default function TraceOperationDetail({ operation, isLoading }) {
   const [showAdvancedMeta, setShowAdvancedMeta] = useState(false);
-  if (!operation) {
-    return (
-      <div className="flex h-full items-center justify-center text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
-        {isLoading ? 'Loading trace details…' : 'Select a span to inspect its details.'}
-      </div>
-    );
-  }
 
   const metaEntries = extractMetaEntries(operation);
-  const ADVANCED_META_KEYS = useMemo(
-    () => new Set(['proxy', 'ingress', 'inspectr']),
-    []
-  );
+  const ADVANCED_META_KEYS = useMemo(() => new Set(['proxy', 'ingress', 'inspectr']), []);
   const basicMetaEntries = metaEntries.filter((entry) => !ADVANCED_META_KEYS.has(entry.key));
   const advancedMetaEntries = metaEntries.filter((entry) => ADVANCED_META_KEYS.has(entry.key));
   const genericTraceEntries = extractGenericTraceEntries(operation);
-  const tags = Array.isArray(operation.tags) ? operation.tags : [];
-  const requestHeaders = normalizeHeaders(operation.request?.headers);
-  const responseHeaders = normalizeHeaders(operation.response?.headers);
-  const requestContentType = extractContentType(operation.request?.headers);
-  const responseContentType = extractContentType(operation.response?.headers);
-  const requestBodyValue = formatPayload(operation.request?.body, requestContentType);
-  const responseBodyValue = formatPayload(operation.response?.body, responseContentType);
-  const hasRequestBody = requestBodyValue.trim().length > 0;
-  const hasResponseBody = responseBodyValue.trim().length > 0;
+  const tags = Array.isArray(operation?.tags) ? operation.tags : [];
+  const requestHeaders = normalizeHeaders(operation?.request?.headers);
+  const responseHeaders = normalizeHeaders(operation?.response?.headers);
+  const requestContentType = extractContentType(operation?.request?.headers);
+  const responseContentType = extractContentType(operation?.response?.headers);
+  const requestBodyValue = formatPayload(operation?.request?.body, requestContentType);
+  const responseBodyValue = formatPayload(operation?.response?.body, responseContentType);
+  const hasRequestBody = (requestBodyValue || '').trim().length > 0;
+  const hasResponseBody = (responseBodyValue || '').trim().length > 0;
   const requestEditorLanguage = getEditorLanguage(requestContentType);
   const responseEditorLanguage = getEditorLanguage(responseContentType);
   const editorOptions = useMemo(
@@ -121,6 +109,14 @@ export default function TraceOperationDetail({ operation, isLoading }) {
     []
   );
 
+  if (!operation) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
+        {isLoading ? 'Loading trace details…' : 'Select a span to inspect its details.'}
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-start justify-between gap-3">
@@ -128,7 +124,7 @@ export default function TraceOperationDetail({ operation, isLoading }) {
           <div className="flex items-center gap-2">
             <MethodBadge method={operation.method} />
             <Title className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong">
-              {`${operation.path}`}
+              {`${operation.path || operation.url || 'Operation'}`}
             </Title>
           </div>
           <Text className="mt-1 text-sm text-tremor-content dark:text-dark-tremor-content">
@@ -148,19 +144,25 @@ export default function TraceOperationDetail({ operation, isLoading }) {
           </Text>
           <dl className="mt-3 divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
             <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">Request time</dt>
+              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
+                Request time
+              </dt>
               <dd className="text-right text-tremor-content dark:text-dark-tremor-content">
                 {formatTimestamp(operation.timestamp)}
               </dd>
             </div>
             <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">Operation ID</dt>
+              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
+                Operation ID
+              </dt>
               <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
                 {operation.id}
               </dd>
             </div>
             <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">Correlation ID</dt>
+              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
+                Correlation ID
+              </dt>
               <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
                 {operation.correlationId || '—'}
               </dd>
@@ -172,7 +174,9 @@ export default function TraceOperationDetail({ operation, isLoading }) {
               </dd>
             </div>
             <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">Trace source</dt>
+              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
+                Trace source
+              </dt>
               <dd className="text-right text-tremor-content dark:text-dark-tremor-content">
                 {operation.traceInfo?.source || '—'}
               </dd>
@@ -385,7 +389,6 @@ export default function TraceOperationDetail({ operation, isLoading }) {
             ) : null}
           </div>
         ) : null}
-
       </div>
     </div>
   );

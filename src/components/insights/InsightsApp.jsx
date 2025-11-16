@@ -31,7 +31,14 @@ import { MAX_CHART_POINTS } from './constants.js';
 const TRACE_CLASSIC_VIEW = 'trace';
 const TRACE_TIMELINE_VIEW = 'trace-timeline';
 
-const INSIGHTS_TABS = ['endpoint', 'list', 'table', 'timeline', TRACE_CLASSIC_VIEW, TRACE_TIMELINE_VIEW];
+const INSIGHTS_TABS = [
+  'endpoint',
+  'list',
+  'table',
+  'timeline',
+  TRACE_CLASSIC_VIEW,
+  TRACE_TIMELINE_VIEW
+];
 const TRACE_CLASSIC_TAB_INDEX = INSIGHTS_TABS.indexOf(TRACE_CLASSIC_VIEW);
 const TRACE_TIMELINE_TAB_INDEX = INSIGHTS_TABS.indexOf(TRACE_TIMELINE_VIEW);
 
@@ -148,8 +155,8 @@ export default function InsightsApp() {
     const isTraceView = viewKey === TRACE_CLASSIC_VIEW || viewKey === TRACE_TIMELINE_VIEW;
     updateInsightsHash({
       view: viewKey,
-      trace: isTraceView ? traceSelection.traceId ?? null : null,
-      traceOp: isTraceView ? traceSelection.operationId ?? null : null
+      trace: isTraceView ? (traceSelection.traceId ?? null) : null,
+      traceOp: isTraceView ? (traceSelection.operationId ?? null) : null
     });
   };
 
@@ -168,7 +175,8 @@ export default function InsightsApp() {
     setTraceSelection(nextState);
 
     const currentViewKey = INSIGHTS_TABS[tabIndex];
-    const isTraceView = currentViewKey === TRACE_CLASSIC_VIEW || currentViewKey === TRACE_TIMELINE_VIEW;
+    const isTraceView =
+      currentViewKey === TRACE_CLASSIC_VIEW || currentViewKey === TRACE_TIMELINE_VIEW;
     const targetViewKey = isTraceView ? currentViewKey : TRACE_TIMELINE_VIEW;
 
     updateInsightsHash({
@@ -196,7 +204,8 @@ export default function InsightsApp() {
     setTraceSelection(nextState);
 
     const currentViewKey = INSIGHTS_TABS[tabIndex];
-    const isTraceView = currentViewKey === TRACE_CLASSIC_VIEW || currentViewKey === TRACE_TIMELINE_VIEW;
+    const isTraceView =
+      currentViewKey === TRACE_CLASSIC_VIEW || currentViewKey === TRACE_TIMELINE_VIEW;
     const targetViewKey = isTraceView ? currentViewKey : TRACE_TIMELINE_VIEW;
 
     updateInsightsHash({
@@ -323,7 +332,8 @@ export default function InsightsApp() {
               Insights Explorer
             </Title>
             <Text className="mt-1 text-sm text-tremor-content dark:text-dark-tremor-content">
-              Get more insights into the operations by grouping them by endpoint, as time line view, as rich cards, or in a compact table
+              Get more insights into the operations by grouping them by endpoint, as time line view,
+              as rich cards, or in a compact table
             </Text>
           </div>
           <Badge color={summaryError ? 'rose' : 'slate'}>

@@ -16,7 +16,7 @@ export const safeParseUrl = (value) => {
 export const parseTimestamp = (value, fallback) => {
   if (!value) return fallback ?? null;
   const parsed = Date.parse(value);
-  return Number.isFinite(parsed) ? parsed : fallback ?? null;
+  return Number.isFinite(parsed) ? parsed : (fallback ?? null);
 };
 
 export const toDisplayString = (value) => {
@@ -44,11 +44,7 @@ export const normalizeTraceOperation = (operation, index = 0) => {
   const url = request.url || '';
   const parsedUrl = safeParseUrl(url);
   const timestamp =
-    request.timestamp ||
-    response.timestamp ||
-    meta.timestamp ||
-    operation.timestamp ||
-    null;
+    request.timestamp || response.timestamp || meta.timestamp || operation.timestamp || null;
   const timestampMs = parseTimestamp(timestamp, index);
   const durationValue = Number.isFinite(Number(timing.duration))
     ? Number(timing.duration)
