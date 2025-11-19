@@ -55,15 +55,15 @@ const FUTURE_FEATURES = [
     image: undefined,
     defaultEnabled: false,
     removeWhenFalse: true
-  },
-  {
-    slug: 'feat_statistics_compare',
-    title: 'Statistics Compare Mode',
-    description: 'Enable the Compare tab and navigation within Inspectr statistics.',
-    image: undefined,
-    defaultEnabled: false,
-    removeWhenFalse: true
   }
+  // {
+  //   slug: 'feat_statistics_compare',
+  //   title: 'Statistics Compare Mode',
+  //   description: 'Enable the Compare tab and navigation within Inspectr statistics.',
+  //   image: undefined,
+  //   defaultEnabled: false,
+  //   removeWhenFalse: true
+  // }
 ];
 
 export default function SettingsFeaturePreviews() {

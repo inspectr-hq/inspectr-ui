@@ -256,8 +256,8 @@ function ComparisonColumn({ label, tag, stats, intervalData, loading }) {
 export default function DashBoardApp() {
   const { client } = useInspectr();
 
-  // Feature
-  const [compareFeatureEnabled] = useFeaturePreview('feat_statistics_compare', false);
+  // Deprecate old features
+  useFeaturePreview('feat_statistics_compare', false, true);
 
   // Stats payload
   const [stats, setStats] = useState(null);
@@ -600,19 +600,17 @@ export default function DashBoardApp() {
             <div className="flex flex-wrap items-center gap-2">
               <TabList className="w-auto">
                 <Tab>Overview</Tab>
-                {compareFeatureEnabled && <Tab>Compare</Tab>}
+                <Tab>Compare</Tab>
               </TabList>
               {viewMode === 'overview' ? (
-                compareFeatureEnabled && (
-                  <TagFilterDropdown
-                    tags={availableTags}
-                    selectedTag={selectedTag}
-                    onSelect={setSelectedTag}
-                    disabled={currentLoading}
-                    loading={tagsLoading}
-                    error={tagsError}
-                  />
-                )
+                <TagFilterDropdown
+                  tags={availableTags}
+                  selectedTag={selectedTag}
+                  onSelect={setSelectedTag}
+                  disabled={currentLoading}
+                  loading={tagsLoading}
+                  error={tagsError}
+                />
               ) : (
                 <div className="flex flex-wrap items-end gap-3">
                   <div className="flex flex-row gap-1 items-center">
