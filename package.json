@@ -25,6 +25,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:debug": "vite build --mode development --sourcemap --minify=false",
     "watch": "vite build --watch",
     "storybook": "storybook dev --ci -p 6006",
     "build-storybook": "storybook build",
