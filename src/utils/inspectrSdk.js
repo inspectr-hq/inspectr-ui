@@ -760,6 +760,19 @@ class ServiceClient {
   }
 
   /**
+   * Get version information from the API
+   * @returns {Promise<Object>} - Version response
+   */
+  async getVersion() {
+    const res = await fetch(`${this.client.apiEndpoint}/version`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Version check failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
    * Ping a specific service component
    * @param {string} component - backend | mock | catch
    * @returns {Promise<Object>} - Ping result
