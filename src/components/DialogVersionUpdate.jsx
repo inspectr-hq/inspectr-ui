@@ -6,7 +6,7 @@ import useLocalStorage from '../hooks/useLocalStorage.jsx';
 import { useInspectr } from '../context/InspectrContext.jsx';
 
 const VERSION_CHECK_STORAGE_KEY = 'inspectrVersionMuteUntil';
-const VERSION_CHECK_DELAY_MS = 24 * 60 * 60 * 1000; // one day
+const VERSION_CHECK_DELAY_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 
 export default function DialogVersionUpdate() {
   const { client } = useInspectr();
