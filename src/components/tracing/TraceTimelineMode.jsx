@@ -68,7 +68,8 @@ export default function TraceTimelineMode({
     timeline,
     selectedOperationId,
     setSelectedOperationId,
-    selectedOperation
+    selectedOperation,
+    refreshTraceList
   } = useTraceExplorer({
     initialTraceId,
     initialOperationId,
@@ -131,6 +132,12 @@ export default function TraceTimelineMode({
   const groups = allGroups;
 
   const [expandedGroups, setExpandedGroups] = useState(() => new Set());
+
+  const isRefreshingTrace = isTraceDetailLoading || isTraceListLoading;
+
+  const handleRefresh = () => {
+    refreshTraceList();
+  };
 
   useEffect(() => {
     if (!groups.length) {
@@ -448,9 +455,20 @@ export default function TraceTimelineMode({
               conversation.
             </Text>
           </div>
-          <Badge color={traceDetailError ? 'rose' : 'slate'}>
-            {`${operationCount} ${operationCount === 1 ? 'step' : 'steps'}`}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={isRefreshingTrace}
+              title="Refresh trace"
+              className="inline-flex items-center gap-1 rounded-tremor-small border border-tremor-border px-3 py-1.5 text-sm font-medium text-tremor-content-strong shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-dark-tremor-border dark:text-dark-tremor-content-strong dark:hover:bg-dark-tremor-background-subtle"
+            >
+              {isRefreshingTrace ? 'Refreshing…' : 'Refresh'}
+            </button>
+            <Badge color={traceDetailError ? 'rose' : 'slate'}>
+              {`${operationCount} ${operationCount === 1 ? 'step' : 'steps'}`}
+            </Badge>
+          </div>
         </Flex>
 
         <div className="mt-6 flex flex-col gap-4 min-w-0">

@@ -36,6 +36,8 @@ export const useTraceExplorer = ({
   const [isTraceDetailLoading, setIsTraceDetailLoading] = useState(false);
   const [traceDetailError, setTraceDetailError] = useState(null);
 
+  const [traceListRefreshKey, setTraceListRefreshKey] = useState(0);
+
   const [selectedOperationId, setSelectedOperationId] = useState(initialOperationId ?? null);
 
   const traceChangeCallbackRef = useRef(onTraceChange);
@@ -91,7 +93,7 @@ export const useTraceExplorer = ({
     return () => {
       alive = false;
     };
-  }, [supportsTraces, client, listLimit, isActive]);
+  }, [supportsTraces, client, listLimit, isActive, traceListRefreshKey]);
 
   useEffect(() => {
     if (!traceList.length) return;
@@ -238,6 +240,7 @@ export const useTraceExplorer = ({
     setSelectedOperationId(operationId);
   };
 
+  const refreshTraceList = () => setTraceListRefreshKey((value) => value + 1);
   return {
     supportsTraces,
     traceList,
@@ -257,7 +260,8 @@ export const useTraceExplorer = ({
     timeline,
     selectedOperationId,
     setSelectedOperationId: selectOperation,
-    selectedOperation
+    selectedOperation,
+    refreshTraceList
   };
 };
 
