@@ -34,6 +34,169 @@ const getTimelineStatusColor = (status) => {
 
 const clampPercent = (value) => Math.min(Math.max(value, 0), 100);
 
+const SECOND_IN_MS = 1000;
+const MINUTE_IN_MS = 60 * SECOND_IN_MS;
+const HOUR_IN_MS = 60 * MINUTE_IN_MS;
+const DAY_IN_MS = 24 * HOUR_IN_MS;
+const TARGET_TICK_COUNT = 7;
+const TICK_INTERVALS_MS = [
+  1000,
+  2000,
+  5000,
+  15000,
+  30000,
+  MINUTE_IN_MS,
+  5 * MINUTE_IN_MS,
+  15 * MINUTE_IN_MS,
+  30 * MINUTE_IN_MS,
+  HOUR_IN_MS,
+  2 * HOUR_IN_MS,
+  3 * HOUR_IN_MS,
+  6 * HOUR_IN_MS,
+  12 * HOUR_IN_MS,
+  DAY_IN_MS,
+  2 * DAY_IN_MS,
+  7 * DAY_IN_MS,
+  14 * DAY_IN_MS,
+  30 * DAY_IN_MS,
+  90 * DAY_IN_MS
+];
+
+const formatterTime = new Intl.DateTimeFormat([], {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false
+});
+const formatterTimeWithSeconds = new Intl.DateTimeFormat([], {
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false
+});
+const formatterDay = new Intl.DateTimeFormat([], { month: 'short', day: 'numeric' });
+const formatterDayWithWeekday = new Intl.DateTimeFormat([], {
+  weekday: 'short',
+  month: 'short',
+  day: 'numeric'
+});
+const formatterDayWithYear = new Intl.DateTimeFormat([], {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric'
+});
+const formatterDayTime = new Intl.DateTimeFormat([], {
+  month: 'short',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false
+});
+
+const formatTickLabel = (timestampMs, interval, totalDuration) => {
+  const date = new Date(timestampMs);
+  if (interval >= DAY_IN_MS) {
+    if (totalDuration > 180 * DAY_IN_MS) {
+      return formatterDayWithYear.format(date);
+    }
+    return formatterDay.format(date);
+  }
+  if (interval >= HOUR_IN_MS) {
+    if (totalDuration > 2 * DAY_IN_MS) {
+      return formatterDayTime.format(date);
+    }
+    return formatterTime.format(date);
+  }
+  if (interval >= MINUTE_IN_MS) {
+    if (totalDuration > DAY_IN_MS) {
+      return formatterDayTime.format(date);
+    }
+    return formatterTime.format(date);
+  }
+  return formatterTimeWithSeconds.format(date);
+};
+
+const formatDaySegmentLabel = (timestampMs, totalDuration) => {
+  const date = new Date(timestampMs);
+  if (totalDuration > 180 * DAY_IN_MS) {
+    return formatterDayWithYear.format(date);
+  }
+  if (totalDuration > 14 * DAY_IN_MS) {
+    return formatterDay.format(date);
+  }
+  return formatterDayWithWeekday.format(date);
+};
+
+const generateTimelineScale = (startMs, endMs) => {
+  const duration = endMs - startMs;
+  if (!Number.isFinite(duration) || duration <= 0) {
+    return {
+      interval: null,
+      ticks: [],
+      daySegments: [],
+      startLabel: formatAxisTimestamp(startMs),
+      endLabel: formatAxisTimestamp(endMs)
+    };
+  }
+
+  const interval =
+    TICK_INTERVALS_MS.find((candidate) => duration / candidate <= TARGET_TICK_COUNT) ??
+    TICK_INTERVALS_MS[TICK_INTERVALS_MS.length - 1];
+
+  const ticks = [];
+  const firstTick = Math.ceil(startMs / interval) * interval;
+  for (let current = firstTick; current < endMs; current += interval) {
+    if (current <= startMs || current >= endMs) {
+      continue;
+    }
+    const percent = clampPercent(((current - startMs) / duration) * 100);
+    ticks.push({
+      key: `tick-${current}`,
+      value: current,
+      percent,
+      label: formatTickLabel(current, interval, duration)
+    });
+  }
+
+  const daySegments = [];
+  let cursor = startMs;
+  let safety = 0;
+  while (cursor < endMs && safety < 730) {
+    const nextBoundaryDate = new Date(cursor);
+    nextBoundaryDate.setHours(24, 0, 0, 0);
+    const nextBoundary = nextBoundaryDate.getTime();
+    const segmentEnd = Math.min(endMs, nextBoundary);
+    const leftPercent = clampPercent(((cursor - startMs) / duration) * 100);
+    const rawWidthPercent = ((segmentEnd - cursor) / duration) * 100;
+    const cappedWidth = Math.min(Math.max(rawWidthPercent, 0), 100 - leftPercent);
+    const widthPercent =
+      rawWidthPercent > 0 && cappedWidth < 0.3 ? Math.min(0.3, 100 - leftPercent) : cappedWidth;
+
+    daySegments.push({
+      key: `segment-${cursor}`,
+      start: cursor,
+      end: segmentEnd,
+      leftPercent,
+      widthPercent,
+      label: formatDaySegmentLabel(cursor, duration)
+    });
+
+    if (segmentEnd === cursor) {
+      break;
+    }
+
+    cursor = segmentEnd;
+    safety += 1;
+  }
+
+  return {
+    interval,
+    ticks,
+    daySegments,
+    startLabel: formatAxisTimestamp(startMs),
+    endLabel: formatAxisTimestamp(endMs)
+  };
+};
+
 export default function TimelineMode({ operations }) {
   const referenceDate = useMemo(() => new Date(), []);
   const defaultPreset = useMemo(() => findPresetByLabel('Today', referenceDate), [referenceDate]);
@@ -155,20 +318,17 @@ export default function TimelineMode({ operations }) {
     });
   }, [filteredOperations, groupByTags]);
 
-  const ticks = useMemo(() => {
-    if (!hasValidRange) return [];
-    const segments = 4;
-    const labels = [];
-    for (let i = 0; i <= segments; i += 1) {
-      const ratio = i / segments;
-      labels.push({
-        key: i,
-        percent: ratio * 100,
-        label: formatAxisTimestamp(startMs + ratio * rangeDuration)
-      });
+  const {
+    ticks: timelineTicks,
+    daySegments,
+    startLabel,
+    endLabel
+  } = useMemo(() => {
+    if (!hasValidRange) {
+      return { ticks: [], daySegments: [], startLabel: '', endLabel: '' };
     }
-    return labels;
-  }, [hasValidRange, startMs, rangeDuration]);
+    return generateTimelineScale(startMs, endMs);
+  }, [hasValidRange, startMs, endMs]);
 
   const handlePresetSelect = (item) => {
     setSelectedRange(item.label);
@@ -329,17 +489,51 @@ export default function TimelineMode({ operations }) {
             <div className="flex flex-col md:flex-row md:items-center md:gap-4">
               <div className="hidden md:block md:w-1/3 lg:w-1/5" />
               <div className="w-full md:w-2/3 lg:w-4/5">
-                <div className="relative h-12">
-                  <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-dashed border-tremor-border dark:border-dark-tremor-border" />
-                  {ticks.map((tick) => (
-                    <div
-                      key={tick.key}
-                      className="absolute -translate-x-1/2 whitespace-nowrap text-[11px] font-medium text-tremor-content-subtle dark:text-dark-tremor-content"
-                      style={{ left: `${clampPercent(tick.percent)}%` }}
-                    >
-                      {tick.label}
+                <div className="relative h-20">
+                  <div className="absolute inset-x-0 top-0 h-7">
+                    <div className="relative h-full overflow-hidden rounded-tremor-small border border-tremor-border bg-tremor-background-subtle dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
+                      {daySegments.map((segment, index) => {
+                        const left = clampPercent(segment.leftPercent);
+                        const cappedWidth = Math.min(Math.max(segment.widthPercent, 0), 100 - left);
+                        const width =
+                          segment.widthPercent > 0 && cappedWidth < 0.3
+                            ? Math.min(0.3, 100 - left)
+                            : cappedWidth;
+                        return (
+                          <div
+                            key={segment.key}
+                            className={`absolute flex h-full items-center justify-center px-2 text-[10px] font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content-subtle ${
+                              index > 0
+                                ? 'border-l border-tremor-border dark:border-dark-tremor-border'
+                                : ''
+                            }`}
+                            style={{ left: `${left}%`, width: `${width}%` }}
+                          >
+                            <span className="pointer-events-none truncate">{segment.label}</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
+                  </div>
+                  <div className="absolute inset-x-0 bottom-6">
+                    <div className="relative h-8">
+                      <div className="absolute inset-x-0 bottom-0 border-t border-dashed border-tremor-border dark:border-dark-tremor-border" />
+                      {timelineTicks.map((tick) => (
+                        <div
+                          key={tick.key}
+                          className="absolute bottom-0 flex -translate-x-1/2 flex-col items-center text-[11px] font-medium text-tremor-content-subtle dark:text-dark-tremor-content"
+                          style={{ left: `${clampPercent(tick.percent)}%` }}
+                        >
+                          <span className="mb-1 whitespace-nowrap">{tick.label}</span>
+                          <span className="block h-2 border-l border-tremor-border dark:border-dark-tremor-border" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 flex justify-between text-[10px] text-tremor-content-subtle dark:text-dark-tremor-content">
+                    <span>{startLabel || formatAxisTimestamp(startMs)}</span>
+                    <span>{endLabel || formatAxisTimestamp(endMs)}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -409,9 +603,27 @@ export default function TimelineMode({ operations }) {
                           </div>
 
                           <div className="w-full md:w-2/3 lg:w-4/5">
-                            <div className="relative h-10 rounded-tremor-small border border-dashed border-tremor-border bg-tremor-background-subtle dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
+                            <div className="relative h-10 overflow-hidden rounded-tremor-small border border-dashed border-tremor-border bg-tremor-background-subtle dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
+                              <div className="absolute inset-0 pointer-events-none">
+                                {daySegments.slice(1).map((segment) => (
+                                  <div
+                                    key={`day-boundary-${segment.key}`}
+                                    className="absolute top-0 bottom-0 border-l border-tremor-border dark:border-dark-tremor-border"
+                                    style={{ left: `${segment.leftPercent}%` }}
+                                  />
+                                ))}
+                                {timelineTicks
+                                  .filter((tick) => tick.percent > 0 && tick.percent < 100)
+                                  .map((tick) => (
+                                    <div
+                                      key={`grid-${tick.key}`}
+                                      className="absolute top-1 bottom-1 border-l border-tremor-border opacity-40 dark:border-dark-tremor-border dark:opacity-50"
+                                      style={{ left: `${clampPercent(tick.percent)}%` }}
+                                    />
+                                  ))}
+                              </div>
                               <div
-                                className={`absolute inset-y-1 flex items-center overflow-hidden rounded ${colorClass} text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm`}
+                                className={`absolute inset-y-1 z-10 flex items-center overflow-hidden rounded ${colorClass} text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm`}
                                 style={{ left: `${left}%`, width: widthValue, transform }}
                                 title={tooltip}
                               >

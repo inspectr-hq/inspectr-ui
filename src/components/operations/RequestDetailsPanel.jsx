@@ -37,6 +37,10 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   const guardHeaders = extractHeaders(operation?.meta?.inspectr?.guard);
   const directiveHeaders = extractHeaders(operation?.meta?.inspectr?.directives);
   const hasInfo = guardHeaders.length > 0 || directiveHeaders.length > 0;
+  const hasTags = Array.isArray(operation?.meta?.tags) && operation.meta.tags.length > 0;
+  const contentMaxHeight = hasTags
+    ? 'calc(100vh - 270px - 64px - 48px)'
+    : 'calc(100vh - 270px - 64px)';
 
   useEffect(() => {
     if (!hasInfo && currentTab === 'meta') {
@@ -104,7 +108,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   }
 
   return (
-    <div className="flex flex-col h-full" style={isLoaded ? fadeInStyle : hiddenStyle}>
+    <div className="flex flex-col h-full min-h-0" style={isLoaded ? fadeInStyle : hiddenStyle}>
       <RequestDetail operation={operation} setCurrentTab={setCurrentTab} />
 
       {/* Tabs for Request, Response */}
@@ -145,10 +149,10 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
 
       {/* Tab Content */}
       <div
-        className="p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded-b shadow dark:shadow-dark-tremor-shadow flex-grow overflow-y-auto"
+        className="p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded-b shadow dark:shadow-dark-tremor-shadow flex-1 min-h-0 overflow-y-auto"
         style={{
           ...(isLoaded ? fadeInStyle : hiddenStyle),
-          maxHeight: 'calc(100vh - 270px - 64px)'
+          maxHeight: contentMaxHeight
         }}
       >
         {currentTab === 'request' ? (

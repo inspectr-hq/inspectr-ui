@@ -256,8 +256,8 @@ function ComparisonColumn({ label, tag, stats, intervalData, loading }) {
 export default function DashBoardApp() {
   const { client } = useInspectr();
 
-  // Feature
-  const [compareFeatureEnabled] = useFeaturePreview('feat_statistics_compare', false);
+  // Deprecate old features
+  useFeaturePreview('feat_statistics_compare', false, true);
 
   // Stats payload
   const [stats, setStats] = useState(null);
@@ -296,16 +296,113 @@ export default function DashBoardApp() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const fetchStatsForTag = (tag) =>
-    client.stats.getOperations({
-      group,
-      start,
-      end,
+  const fetchStatsForTag = async (tag) => {
+    const common = {
+      from: start,
+      to: end,
+      interval: group,
       tag: tag || undefined
+    };
+
+    const [overview, buckets, byMethod, byStatus, topAll, topError, topFastest, topSlowest] =
+      await Promise.all([
+        client.stats.getOverview(common),
+        client.stats.getBuckets(common),
+        client.stats.aggregateBy('method', { ...common, order: '-count', metrics: ['count'] }),
+        client.stats.aggregateBy('status', { ...common, order: '-count', metrics: ['count'] }),
+        client.stats.aggregateBy('path', {
+          ...common,
+          order: '-count',
+          metrics: ['count'],
+          limit: 10
+        }),
+        client.stats.aggregateBy('path', {
+          ...common,
+          statusClass: ['4xx', '5xx'],
+          order: '-count',
+          metrics: ['count'],
+          limit: 10
+        }),
+        client.stats.aggregateBy('path', {
+          ...common,
+          order: '+p95_ms',
+          metrics: ['count', 'p95_ms'],
+          limit: 10
+        }),
+        client.stats.aggregateBy('path', {
+          ...common,
+          order: '-p95_ms',
+          metrics: ['count', 'p95_ms'],
+          limit: 10
+        })
+      ]);
+
+    const overall = overview?.data ?? overview?.overall ?? overview ?? null;
+
+    const by_interval = (buckets?.data ?? []).map((it) => {
+      const series = it?.series ?? {};
+      const twoXX = Number(series['2xx'] ?? 0);
+      const threeXX = Number(series['3xx'] ?? 0);
+      const fourXX = Number(series['4xx'] ?? 0);
+      const fiveXX = Number(series['5xx'] ?? 0);
+
+      const total_requests =
+        (typeof it.requests === 'number' ? it.requests : it.total_requests) ??
+        twoXX + threeXX + fourXX + fiveXX;
+
+      const success = (typeof it.success === 'number' ? it.success : undefined) ?? twoXX + threeXX;
+
+      const errors = (typeof it.errors === 'number' ? it.errors : undefined) ?? fourXX + fiveXX;
+
+      return {
+        date: it.timestamp || it.date,
+        total_requests,
+        success,
+        errors,
+        '2xx': twoXX,
+        '4xx': fourXX,
+        '5xx': fiveXX,
+        average_response_time: it.avg_ms ?? it.average_response_time,
+        min_response_time: it.min_ms ?? it.min_response_time,
+        max_response_time: it.max_ms ?? it.max_response_time,
+        median_response_time: it.p50_ms ?? it.median_response_time,
+        p90_response_time: it.p90_ms ?? it.p90_response_time,
+        p95_response_time: it.p95_ms ?? it.p95_response_time,
+        p99_response_time: it.p99_ms ?? it.p99_response_time
+      };
     });
 
+    const totals = {
+      method: Object.fromEntries((byMethod?.data?.rows ?? []).map((r) => [r.method, r.count])),
+      status: Object.fromEntries(
+        (byStatus?.data?.rows ?? []).map((r) => [String(r.status), r.count])
+      )
+    };
+
+    const mapPaths = (rows) =>
+      (rows ?? []).map((r) => ({
+        path: r.path,
+        count: r.count,
+        p95_response_time: r.p95_ms ?? r.p95_response_time
+      }));
+
+    const top_endpoints = {
+      all: mapPaths(topAll?.data?.rows),
+      error: mapPaths(topError?.data?.rows),
+      fastest: mapPaths(topFastest?.data?.rows),
+      slowest: mapPaths(topSlowest?.data?.rows)
+    };
+
+    return {
+      overall,
+      by_interval,
+      totals,
+      top_endpoints
+    };
+  };
+
   const loadPrimaryStats = async () => {
-    if (!client?.stats?.getOperations) return;
+    if (!client?.stats?.getOverview) return;
     setPrimaryLoading(true);
     setPrimaryError(null);
     try {
@@ -320,7 +417,7 @@ export default function DashBoardApp() {
   };
 
   const loadCompareStats = async () => {
-    if (!client?.stats?.getOperations) return;
+    if (!client?.stats?.getOverview) return;
     if (compareRightTag === undefined) return;
 
     setCompareLoading(true);
@@ -503,19 +600,17 @@ export default function DashBoardApp() {
             <div className="flex flex-wrap items-center gap-2">
               <TabList className="w-auto">
                 <Tab>Overview</Tab>
-                {compareFeatureEnabled && <Tab>Compare</Tab>}
+                <Tab>Compare</Tab>
               </TabList>
               {viewMode === 'overview' ? (
-                compareFeatureEnabled && (
-                  <TagFilterDropdown
-                    tags={availableTags}
-                    selectedTag={selectedTag}
-                    onSelect={setSelectedTag}
-                    disabled={currentLoading}
-                    loading={tagsLoading}
-                    error={tagsError}
-                  />
-                )
+                <TagFilterDropdown
+                  tags={availableTags}
+                  selectedTag={selectedTag}
+                  onSelect={setSelectedTag}
+                  disabled={currentLoading}
+                  loading={tagsLoading}
+                  error={tagsError}
+                />
               ) : (
                 <div className="flex flex-wrap items-end gap-3">
                   <div className="flex flex-row gap-1 items-center">

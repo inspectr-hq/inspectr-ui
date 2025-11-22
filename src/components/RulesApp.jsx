@@ -1,5 +1,5 @@
 // src/components/RulesApp.jsx
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useInspectr } from '../context/InspectrContext';
 import RulesListPanel from './rules/RulesListPanel.jsx';
 import RulesBuilderPanel from './rules/RulesBuilderPanel.jsx';
@@ -94,6 +94,7 @@ export default function RulesApp() {
   const [exportRule, setExportRule] = useState(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [tagOptions, setTagOptions] = useState([]);
+  const [rulesLicenseUsage, setRulesLicenseUsage] = useState(null);
 
   const applyRulesPayload = (payload, fallbackPage = 1) => {
     const rulesList = Array.isArray(payload?.rules) ? payload.rules : [];
@@ -108,6 +109,13 @@ export default function RulesApp() {
       setRulesMeta(null);
     }
   };
+
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const fetchRules = async (pageNumber = 1) => {
     if (!client?.rules) return null;
@@ -137,6 +145,36 @@ export default function RulesApp() {
 
   const [form, setForm] = useState(() => createInitialForm([], [], defaultOperatorValue));
   const [formErrors, setFormErrors] = useState([]);
+
+  const fetchLicenseInfo = useCallback(async () => {
+    if (!client?.service?.getLicense) {
+      if (mountedRef.current) {
+        setRulesLicenseUsage(null);
+      }
+      return null;
+    }
+    try {
+      const licenseResponse = await client.service.getLicense();
+      if (!mountedRef.current) return licenseResponse;
+      const rulesFeature = licenseResponse?.features?.rules;
+      const rulesUsage = licenseResponse?.usage?.features?.rules;
+      const effectiveLimit =
+        typeof rulesFeature?.effective_limit === 'number' ? rulesFeature.effective_limit : null;
+      const usedCount = typeof rulesUsage?.used === 'number' ? rulesUsage.used : null;
+      setRulesLicenseUsage({ limit: effectiveLimit, used: usedCount });
+      return licenseResponse;
+    } catch (err) {
+      console.error('Failed to load license info', err);
+      if (mountedRef.current) {
+        setRulesLicenseUsage(null);
+      }
+      return null;
+    }
+  }, [client]);
+
+  useEffect(() => {
+    fetchLicenseInfo();
+  }, [fetchLicenseInfo]);
 
   useEffect(() => {
     if (!client?.rules) return;
@@ -228,6 +266,10 @@ export default function RulesApp() {
       setRefreshing(false);
     }
     return response;
+  };
+
+  const handleRefreshAll = async (page = rulesMeta?.page || 1) => {
+    await Promise.all([refreshRules(page), fetchLicenseInfo()]);
   };
 
   const handleRulesPageChange = async (page) => {
@@ -1028,7 +1070,7 @@ export default function RulesApp() {
             isRefreshing={refreshing}
             openRuleId={openRuleId}
             onToggleRule={setOpenRuleId}
-            onRefresh={refreshRules}
+            onRefresh={handleRefreshAll}
             onEditRule={handleEditRule}
             onDeleteRule={handleRequestDeleteRule}
             onCreateRule={handleCreateRule}
@@ -1039,6 +1081,7 @@ export default function RulesApp() {
             onExportRule={handleExportRule}
             onImportRule={handleOpenImport}
             meta={rulesMeta}
+            licenseUsage={rulesLicenseUsage}
             onPageChange={handleRulesPageChange}
             paginationAlwaysShow={false}
             operatorLabelMap={operatorLabelMap}
@@ -1063,6 +1106,11 @@ export default function RulesApp() {
         title={builderTitle}
         description={builderDescription}
         onClose={closeBuilder}
+        showFooter
+        onReset={handleBuilderReset}
+        formId="rules-builder-form"
+        saving={saving}
+        isEditing={Boolean(editingRuleId)}
       >
         <RulesBuilderPanel
           form={form}
@@ -1074,6 +1122,8 @@ export default function RulesApp() {
           formErrors={formErrors}
           onSubmit={handleSubmit}
           onReset={handleBuilderReset}
+          formId="rules-builder-form"
+          hideFooter
           onFieldChange={handleFieldChange}
           onConditionChange={handleConditionChange}
           onAddCondition={handleAddCondition}

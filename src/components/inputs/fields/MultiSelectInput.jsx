@@ -54,55 +54,56 @@ export default function MultiSelectInput({ id, descriptor, value, onChange, prov
             return v ?? '';
           })();
 
-        return (
-          <div key={choice.value} className="rounded-md border border-gray-200 p-2 dark:border-gray-800">
-            <label className="flex items-start gap-2 text-sm">
-              <input
-                type="checkbox"
-                disabled={isReadOnly}
-                checked={checked}
-                onChange={(e) => handleToggle(key, e.target.checked)}
-                className="mt-1 size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900"
-              />
-              <span className="flex-1">
-                <span className="font-medium text-gray-800 dark:text-gray-200">
-                  {choice.label || choice.value}
+          return (
+            <div
+              key={choice.value}
+              className="rounded-md border border-gray-200 p-2 dark:border-gray-800"
+            >
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  disabled={isReadOnly}
+                  checked={checked}
+                  onChange={(e) => handleToggle(key, e.target.checked)}
+                  className="mt-1 size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900"
+                />
+                <span className="flex-1">
+                  <span className="font-medium text-gray-800 dark:text-gray-200">
+                    {choice.label || choice.value}
+                  </span>
+                  {choice.description && (
+                    <p className="text-xs text-gray-500 dark:text-gray-500">{choice.description}</p>
+                  )}
                 </span>
-                {choice.description && (
-                  <p className="text-xs text-gray-500 dark:text-gray-500">{choice.description}</p>
-                )}
-              </span>
-            </label>
-            {checked && (
-              <div className="mt-2">
-                {metaType === 'object' ? (
-                  <textarea
-                    rows={3}
-                    disabled={isReadOnly}
-                    value={valueForInput}
-                    onChange={(e) => handleValueChange(key, e.target.value)}
-                    placeholder={choice.label}
-                    className={inputClass}
-                  />
-                ) : (
-                  <input
-                    type={metaType === 'integer' || metaType === 'number' ? 'number' : 'text'}
-                    disabled={isReadOnly}
-                    value={valueForInput}
-                    onChange={(e) => handleValueChange(key, e.target.value)}
-                    placeholder={choice.label}
-                    className={inputClass}
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        );
+              </label>
+              {checked && (
+                <div className="mt-2">
+                  {metaType === 'object' ? (
+                    <textarea
+                      rows={3}
+                      disabled={isReadOnly}
+                      value={valueForInput}
+                      onChange={(e) => handleValueChange(key, e.target.value)}
+                      placeholder={choice.label}
+                      className={inputClass}
+                    />
+                  ) : (
+                    <input
+                      type={metaType === 'integer' || metaType === 'number' ? 'number' : 'text'}
+                      disabled={isReadOnly}
+                      value={valueForInput}
+                      onChange={(e) => handleValueChange(key, e.target.value)}
+                      placeholder={choice.label}
+                      className={inputClass}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          );
         })}
       </div>
-      {helpText && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">{helpText}</p>
-      )}
+      {helpText && <p className="text-xs text-gray-500 dark:text-gray-400">{helpText}</p>}
     </div>
   );
 }

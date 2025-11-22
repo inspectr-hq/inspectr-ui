@@ -5,6 +5,7 @@ import DashBoardApp from './DashBoardApp.jsx';
 import InspectrApp from './InspectrApp.jsx';
 import SettingsApp from './SettingsApp.jsx';
 import InsightsApp from './insights/InsightsApp.jsx';
+import TracingApp from './tracing/TracingApp.jsx';
 import UsageApp from './UsageApp.jsx';
 import RulesApp from './RulesApp.jsx';
 import useHashRouter from '../hooks/useHashRouter.jsx';
@@ -19,6 +20,8 @@ import eventDB from '../utils/eventDB.js';
 import NotificationBadge from './NotificationBadge.jsx';
 import useLocalStorage from '../hooks/useLocalStorage.jsx';
 import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
+import { normalizeTimestamp, isTimestampAfter } from '../utils/timestampUtils.js';
+import DialogVersionUpdate from './DialogVersionUpdate.jsx';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -26,6 +29,7 @@ function classNames(...classes) {
 
 const BASE_NAVIGATION = [
   { name: 'Request History', slug: 'inspectr', component: InspectrApp },
+  { name: 'Trace Explorer', slug: 'traces', component: TracingApp, hidden: true },
   { name: 'Insights', slug: 'insights', component: InsightsApp },
   { name: 'Statistics', slug: 'statistics', component: DashBoardApp },
   { name: 'Usage', slug: 'usage', component: UsageApp },
@@ -50,25 +54,25 @@ const Logo = (props) => (
 );
 
 export default function Workspace() {
-  const [rulesFeatureEnabled] = useFeaturePreview('feat_rules_ui', false);
-  const [workspaceFeatureEnabled] = useFeaturePreview('feat_insights_display', false);
+  const [workspaceFeatureEnabled] = useFeaturePreview('feat_insights_display', false, true);
+
+  // Deprecate old features
+  useFeaturePreview('feat_export_mcp_server', false, true);
+  useFeaturePreview('feat_rules_ui', false, true);
 
   const navigation = useMemo(() => {
     let items = BASE_NAVIGATION;
-
-    if (rulesFeatureEnabled !== true) {
-      items = items.filter((item) => item.slug !== 'rules');
-    }
 
     if (workspaceFeatureEnabled !== true) {
       items = items.filter((item) => item.slug !== 'insights');
     }
 
     return items;
-  }, [rulesFeatureEnabled, workspaceFeatureEnabled]);
+  }, [workspaceFeatureEnabled]);
 
   const [currentTab, setCurrentTab] = useState(() => navigation[0]);
   const { route, currentNav, handleTabClick } = useHashRouter(navigation);
+  const visibleNavigation = useMemo(() => navigation.filter((item) => !item.hidden), [navigation]);
   const ActiveComponent = currentNav.component;
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -93,6 +97,7 @@ export default function Workspace() {
   return (
     <InspectrProvider>
       <DialogMockLaunch />
+      <DialogVersionUpdate />
 
       <div className="flex flex-col min-h-screen">
         <div className="border-b border-tremor-border dark:border-dark-tremor-border relative h-full overflow-hidden bg-gray-50 dark:bg-dark-tremor-background-subtle">
@@ -107,7 +112,7 @@ export default function Workspace() {
                 </a>
               </div>
               <nav className="flex-1 -mb-px flex space-x-6" aria-label="Tabs">
-                {navigation.map((navItem) =>
+                {visibleNavigation.map((navItem) =>
                   navItem.slug === 'inspectr' ? (
                     <InspectrNavButton
                       key={navItem.slug}
@@ -182,13 +187,15 @@ export default function Workspace() {
 
         {/* ——— Content Area ——— */}
         <div className="flex-grow overflow-auto">
-          {['insights', 'statistics', 'settings', 'usage', 'rules'].includes(currentNav.slug) ? (
+          {['insights', 'statistics', 'settings', 'usage', 'rules', 'traces'].includes(
+            currentNav.slug
+          ) ? (
             <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-950">
-              <ActiveComponent key={currentNav.slug} />
+              <ActiveComponent key={currentNav.slug} route={route} />
             </div>
           ) : (
             // InspectrApp takes care of its own layout now
-            <InspectrApp key="inspectr" />
+            <InspectrApp key="inspectr" route={route} />
           )}
         </div>
 
@@ -239,6 +246,7 @@ const ToastNotificationFromContext = () => {
 const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
   const { connectionStatus } = useInspectr();
   const [lastSeenAt, setLastSeenAt] = useLocalStorage('inspectrLastSeenAt', null);
+  const [trackedLastSeenAt, setTrackedLastSeenAt] = useState(() => normalizeTimestamp(lastSeenAt));
 
   // Latest event time in Dexie
   const latestEventTime = useLiveQuery(async () => {
@@ -250,29 +258,33 @@ const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
     }
   }, []);
 
-  // Initialize lastSeenAt on first run to avoid counting backlog as unread
-  useEffect(() => {
-    if (!lastSeenAt && latestEventTime) {
-      setLastSeenAt(latestEventTime);
-    }
-  }, [latestEventTime]);
-
-  // When the Inspectr tab is active, mark all as seen up to the latest event
-  useEffect(() => {
-    if (isActive && latestEventTime) {
-      setLastSeenAt(latestEventTime);
-    }
-  }, [isActive, latestEventTime]);
-
   // Count unread events newer than lastSeenAt
   const unreadCount = useLiveQuery(async () => {
-    if (!lastSeenAt) return 0;
+    if (!trackedLastSeenAt) return 0;
     try {
-      return await eventDB.db.events.where('time').above(lastSeenAt).count();
+      return await eventDB.db.events.where('time').above(trackedLastSeenAt).count();
     } catch (e) {
       return 0;
     }
-  }, [lastSeenAt]);
+  }, [trackedLastSeenAt]);
+
+  useEffect(() => {
+    const normalizedLast = normalizeTimestamp(lastSeenAt);
+    setTrackedLastSeenAt((prev) => {
+      const normalizedPrev = normalizeTimestamp(prev);
+      if (!normalizedLast) return normalizedPrev ? prev : null;
+      if (isActive) {
+        return normalizedLast;
+      }
+      if (!normalizedPrev) {
+        return normalizedLast;
+      }
+      if (isTimestampAfter(normalizedLast, normalizedPrev)) {
+        return normalizedPrev;
+      }
+      return normalizedLast;
+    });
+  }, [lastSeenAt, isActive]);
 
   const color =
     connectionStatus === 'connected'
@@ -282,9 +294,14 @@ const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
         : 'orange';
 
   const handleClick = () => {
+    const normalizedLatest = normalizeTimestamp(latestEventTime) || new Date().toISOString();
     // Reset unread counter immediately when navigating to Request History
-    const ts = latestEventTime || new Date().toISOString();
-    setLastSeenAt(ts);
+    setLastSeenAt((prev) => {
+      const normalizedPrev = normalizeTimestamp(prev);
+      const shouldUpdate = !normalizedPrev || isTimestampAfter(normalizedLatest, normalizedPrev);
+      return shouldUpdate ? normalizedLatest : normalizedPrev;
+    });
+    setTrackedLastSeenAt(normalizedLatest);
     if (onClick) onClick();
   };
 

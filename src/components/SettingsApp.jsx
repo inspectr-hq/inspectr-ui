@@ -15,6 +15,7 @@ const navItems = [
   { slug: 'mock', label: 'Mock' },
   { slug: 'guard', label: 'Authentication Guard' },
   { slug: 'connectors', label: 'Connectors' },
+  { slug: 'mcp-server', label: 'MCP Server' },
   { slug: 'previews', label: 'Feature Previews' }
 ];
 
@@ -69,12 +70,12 @@ export default function SettingsApp() {
           <>
             <SettingsApiEndpoint />
             <SettingsInspectr />
-            <SettingsMcpInfo />
           </>
         )}
         {current === 'connectors' && connectorsFeatureEnabled && <SettingsConnector />}
         {current === 'mock' && <SettingsMock />}
         {current === 'guard' && <SettingsGuard />}
+        {current === 'mcp-server' && <SettingsMcpInfo />}
         {current === 'previews' && <SettingsFeaturePreviews />}
       </div>
     </div>

@@ -1,9 +1,13 @@
 // src/components/settings/SettingsGuard.jsx
 import React, { useEffect, useState } from 'react';
 import { Divider, List, ListItem } from '@tremor/react';
+import { Switch } from '@headlessui/react';
 import { useInspectr } from '../../context/InspectrContext';
 import DialogAuthConfig from './DialogAuthConfig.jsx';
 import CopyButton from '../CopyButton.jsx';
+import { cx } from '../../utils/cx.js';
+import { Tooltip } from '../ToolTip.jsx';
+import { TooltipInfoButton } from '../TooltipInfoButton.jsx';
 
 export default function SettingsGuard() {
   const { apiEndpoint, client } = useInspectr();
@@ -13,6 +17,8 @@ export default function SettingsGuard() {
   const [authEnabled, setAuthEnabled] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const loading = authInfo === null && !authError;
 
   const fetchAuthInfo = async () => {
     try {
@@ -34,6 +40,7 @@ export default function SettingsGuard() {
     enabled = authEnabled
   ) => {
     try {
+      setSaving(true);
       const body = {
         enabled,
         secret,
@@ -48,6 +55,8 @@ export default function SettingsGuard() {
     } catch (err) {
       console.error('Security save error', err);
       setAuthError(err.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -80,27 +89,51 @@ export default function SettingsGuard() {
           </div>
         </div>
         <div className="sm:max-w-3xl md:col-span-2 space-y-4">
-          <div className="flex items-center space-x-3">
-            <input
-              id="auth-enabled"
-              type="checkbox"
-              checked={authEnabled}
-              onChange={(e) => {
-                const checked = e.target.checked;
-                setAuthEnabled(checked);
-                handleSaveAuthentication(authSecretInput, authTtlInput, checked);
-              }}
-              className="h-5 w-5 rounded border-gray-300 text-tremor-brand focus:ring-tremor-brand"
-            />
-            <label
-              htmlFor="auth-enabled"
-              className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong"
-            >
-              Authentication Guard Enabled
-            </label>
-          </div>
           {authInfo && (
             <List className="mt-4 divide-y divide-tremor-border dark:divide-dark-tremor-border">
+              <ListItem className="py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                    Guard Protection
+                  </span>
+                  <TooltipInfoButton
+                    label="Authentication Guard"
+                    tooltip="Enable API key authentication on all requests."
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={authEnabled}
+                    onChange={async (checked) => {
+                      setAuthEnabled(checked);
+                      await handleSaveAuthentication(authSecretInput, authTtlInput, checked);
+                    }}
+                    disabled={saving || loading}
+                    className={cx(
+                      'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-tremor-brand focus-visible:ring-offset-2',
+                      authEnabled
+                        ? 'bg-tremor-brand dark:bg-dark-tremor-brand'
+                        : 'bg-gray-200 dark:bg-gray-700',
+                      saving || loading ? 'opacity-60 cursor-not-allowed' : ''
+                    )}
+                  >
+                    <span className="sr-only">Toggle Authentication Guard</span>
+                    <span
+                      aria-hidden="true"
+                      className={cx(
+                        'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out',
+                        authEnabled ? 'translate-x-4' : 'translate-x-0'
+                      )}
+                    />
+                  </Switch>
+                  <span className="text-sm font-medium text-tremor-content dark:text-dark-tremor-content">
+                    {authEnabled ? 'Enabled' : 'Disabled'}
+                  </span>
+                  {saving && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Saving…</span>
+                  )}
+                </div>
+              </ListItem>
               <ListItem className="py-3 flex justify-between">
                 <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong min-w-10">
                   inspectr-auth-key

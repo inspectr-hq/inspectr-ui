@@ -9,12 +9,14 @@ import useInspectrRouter from '../hooks/useInspectrRouter.jsx';
 import useLocalStorage from '../hooks/useLocalStorage.jsx';
 import useSessionStorage from '../hooks/useSessionStorage.jsx';
 import { useInspectr } from '../context/InspectrContext';
+import { parseHash } from '../hooks/useHashRouter.jsx';
+import { normalizeTimestamp, isTimestampAfter } from '../utils/timestampUtils.js';
 
 const FILTER_STORAGE_KEY = 'requestFilters';
 const DEFAULT_FILTERS = Object.freeze({});
 const SESSION_FILTER_OPTIONS = Object.freeze({ resetOnReload: true });
 
-const InspectrApp = () => {
+const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
   // Get all the shared state from context
   const { toast, setToast, client } = useInspectr();
 
@@ -30,6 +32,7 @@ const InspectrApp = () => {
     'leftPanelWidth',
     LEFT_PANEL_WIDTH
   );
+  const [, setLastSeenAt] = useLocalStorage('inspectrLastSeenAt', null);
   const leftPanelWidth = parseFloat(leftPanelWidthValue || LEFT_PANEL_WIDTH);
   const isResizingRef = useRef(false);
 
@@ -59,6 +62,36 @@ const InspectrApp = () => {
   const tagOptions =
     useLiveQuery(() => eventDB.getAllTagOptions(), [], [], { throttle: 300 }) || [];
 
+  // Count unread events newer than lastSeenAt
+  const latestEventTime =
+    useLiveQuery(async () => {
+      try {
+        const last = await eventDB.db.events.orderBy('time').last();
+        return last?.time || null;
+      } catch (error) {
+        return null;
+      }
+    }, []) || null;
+
+  const routeSlug = route?.slug || null;
+  const isInspectrRoute = routeSlug === 'inspectr';
+
+  // When the Inspectr tab is active, mark all as seen up to the latest event
+  useEffect(() => {
+    if (!isInspectrRoute) {
+      return;
+    }
+    const normalizedLatest = normalizeTimestamp(latestEventTime);
+    if (!normalizedLatest) {
+      return;
+    }
+    setLastSeenAt((prev) => {
+      const normalizedPrev = normalizeTimestamp(prev);
+      const shouldUpdate = !normalizedPrev || isTimestampAfter(normalizedLatest, normalizedPrev);
+      return shouldUpdate ? normalizedLatest : normalizedPrev;
+    });
+  }, [isInspectrRoute, latestEventTime, setLastSeenAt]);
+
   // Paginate
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
 
@@ -81,12 +114,23 @@ const InspectrApp = () => {
     const currentExists =
       selectedOperation && operations.some((op) => op.id === selectedOperation.id);
 
-    if (!currentExists) {
-      if (operations.length > 0) {
-        handleSelect(operations[0]);
-      } else {
-        clearSelection();
+    if (currentExists) return;
+
+    const { slug, operationId } = parseHash();
+    const hasRouteSelection = slug === 'inspectr' && operationId;
+
+    if (hasRouteSelection) {
+      const match = operations.find((op) => String(op.id) === operationId);
+      if (match) {
+        handleSelect(match);
       }
+      return;
+    }
+
+    if (operations.length > 0) {
+      handleSelect(operations[0]);
+    } else {
+      clearSelection();
     }
   }, [operations, selectedOperation]);
 

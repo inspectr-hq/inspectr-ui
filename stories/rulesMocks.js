@@ -233,6 +233,11 @@ export const mockRules = [
   }
 ];
 
+export const mockRulesLicenseUsage = {
+  used: 48,
+  limit: 50
+};
+
 export const createMockBuilderForm = () => ({
   name: 'Escalate high-value card payments',
   description: 'Tag and notify the team when a card payment exceeds $1,000.',

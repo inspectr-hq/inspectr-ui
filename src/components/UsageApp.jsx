@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import opsIcon from '../assets/icons/operations.svg';
 import connIcon from '../assets/icons/connections.svg';
+import boltIcon from '../assets/icons/bolt.svg';
 import mcpIcon from '../assets/icons/mcp.svg';
 import toolsIcon from '../assets/icons/tools.svg';
 import resourcesIcon from '../assets/icons/resources.svg';
@@ -14,14 +15,13 @@ import DialogLicenseInfo from './usage/DialogLicenseInfo.jsx';
 
 const UsageApp = () => {
   const { client, setToast } = useInspectr();
-  const [mcpFeatureEnabled] = useFeaturePreview('feat_export_mcp_server');
-  const [rulesFeatureEnabled] = useFeaturePreview('feat_rules_ui', false);
   const [metrics, setMetrics] = useState(null);
   const [license, setLicense] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
-  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [showMcpUpgrade, setShowMcpUpgrade] = useState(false);
+  const [showRulesUpgrade, setShowRulesUpgrade] = useState(false);
   const [showLicenseDialog, setShowLicenseDialog] = useState(false);
   const [showLicenseInfo, setShowLicenseInfo] = useState(false);
 
@@ -97,7 +97,6 @@ const UsageApp = () => {
     if (typeof m.default_limit === 'number') return m.default_limit;
     return null;
   })();
-  const usageLimit = licenseLimit;
   const licenseMcp = license?.features?.mcp;
   const usageMcp = license?.usage?.features?.mcp;
   const licenseWindowText = (() => {
@@ -126,7 +125,7 @@ const UsageApp = () => {
       : typeof mcpTotals.requests === 'number'
         ? mcpTotals.requests
         : 0;
-  const mcpPercent = usageLimit ? Math.min(100, (mcpUsed / usageLimit) * 100) : 0;
+  const mcpPercent = licenseLimit ? Math.min(100, (mcpUsed / licenseLimit) * 100) : 0;
 
   // Rules License & usage derived data
   const licenseRules = license?.features?.rules;
@@ -198,15 +197,27 @@ const UsageApp = () => {
     });
   })();
 
-  // Keep hooks above early returns to satisfy React's Rules of Hooks
+  // Check if MCP usage is near limit
   const shouldShowMcpUpgrade =
-    planKey === 'open_source' || (typeof usageLimit === 'number' && mcpPercent >= 90);
+    (planKey === 'open_source' && mcpUsed > 0) ||
+    (typeof licenseLimit === 'number' && mcpPercent >= 90);
+
+  // Check if Rules usage is near limit
+  const shouldShowRulesUpgrade =
+    (planKey === 'open_source' && rulesUsed > 0) ||
+    (typeof rulesLimit === 'number' && rulesPercent >= 90);
 
   useEffect(() => {
-    // Show upgrade box only when on Open Source plan or near MCP limit; allow dismiss for this session
+    // Show upgrade box only when on Open Source plan or near MCP  limit; allow dismiss for this session
     if (!metrics) return;
-    setShowUpgrade(shouldShowMcpUpgrade);
+    setShowMcpUpgrade(shouldShowMcpUpgrade);
   }, [shouldShowMcpUpgrade, metrics]);
+
+  useEffect(() => {
+    // Show upgrade box only when on Open Source plan or near or Rules limit; allow dismiss for this session
+    if (!metrics) return;
+    setShowRulesUpgrade(shouldShowRulesUpgrade);
+  }, [shouldShowRulesUpgrade, metrics]);
 
   if (loading) {
     return (
@@ -464,233 +475,253 @@ const UsageApp = () => {
         </div>
       </Card>
 
-      {rulesFeatureEnabled && (
-        <Card className="p-6">
-          <div className="flex items-center gap-2">
-            <img
-              src={toolsIcon}
-              width={24}
-              height={24}
-              alt=""
-              aria-hidden="true"
-              className="inline-block"
-            />
-            <Title className="!mb-0">Rules</Title>
+      <Card className="p-6">
+        <div className="flex items-center gap-2">
+          <img
+            src={boltIcon}
+            width={24}
+            height={24}
+            alt=""
+            aria-hidden="true"
+            className="inline-block"
+          />
+          <Title className="!mb-0">Rules</Title>
+        </div>
+
+        <Text className="mt-1 text-gray-500">Overview of Rules definitions and actions usage.</Text>
+
+        {showRulesUpgrade && shouldShowRulesUpgrade && (
+          <div className="mt-4 rounded-md bg-gray-50 p-6 ring-1 ring-inset ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
+              Want more rules?
+            </h4>
+            <p className="mt-2 text-sm/6 text-gray-500 dark:text-gray-500">
+              Elevate your workspace and boost productivity with premium features. See our pro plans
+              and upgrade today.
+            </p>
+            <div className="mt-6 flex items-center space-x-2">
+              <a
+                href="https://inspectr.dev/pricing"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-yellow-500 dark:outline-blue-500 border-transparent text-white dark:text-white bg-yellow-500 dark:bg-yellow-500 hover:bg-yellow-600 dark:hover:bg-yellow-600 disabled:bg-blue-300 disabled:text-white disabled:dark:bg-blue-800 disabled:dark:text-blue-400"
+              >
+                Discover Plans
+              </a>
+              <button
+                type="button"
+                className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-blue-500 dark:outline-blue-500 border-gray-300 dark:border-gray-800 text-gray-900 dark:text-gray-50 bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900/60 disabled:text-gray-400 disabled:dark:text-gray-600"
+                onClick={() => setShowRulesUpgrade(false)}
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
+        )}
 
-          <Text className="mt-1 text-gray-500">
-            Overview of Rules definitions and actions usage.
-          </Text>
+        {rulesLimit !== null && (
+          <div className="mt-6">
+            <Text className="mb-2">Definitions usage</Text>
+            <ProgressBar value={rulesPercent} color="indigo" />
+            <Text className="mt-2">
+              {rulesUsed} of {rulesLimit} rules defined
+            </Text>
+          </div>
+        )}
 
-          {rulesLimit !== null && (
-            <div className="mt-6">
-              <Text className="mb-2">Definitions usage</Text>
-              <ProgressBar value={rulesPercent} color="indigo" />
-              <Text className="mt-2">
-                {rulesUsed} of {rulesLimit} rules defined
-              </Text>
-              <Text className="mt-1 text-gray-500">
-                Limit is the maximum number of rule definitions. No monthly reset.
-              </Text>
-            </div>
-          )}
-
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                  Rules executed
-                </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                  {rulesTotals.actions_executed ?? rulesMetrics.actions_executed ?? 0}
-                </p>
-              </div>
-              <div>
-                <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                  Actions triggered
-                </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                  {rulesTotals.actions_triggered ?? 0}
-                </p>
-              </div>
-              <div>
-                <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                  Historically operations processed
-                </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                  {rulesTotals.apply_processed ?? 0}
-                </p>
-              </div>
-              <div>
-                <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                  Historically operations updated
-                </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                  {rulesTotals.apply_updated ?? 0}
-                </p>
-              </div>
-            </div>
-
-            {/* Right column: Actions by type */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong mb-2">
-                Actions by type
-              </h4>
-              <BarList
-                data={Object.entries(rulesMetrics.actions_by_type || {}).map(([name, value]) => ({
-                  name,
-                  value
-                }))}
-              />
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {mcpFeatureEnabled && (
-        <Card className="p-6">
-          <div className="flex items-center gap-2">
-            <img
-              src={mcpIcon}
-              width={24}
-              height={24}
-              alt=""
-              aria-hidden="true"
-              className="inline-block"
-            />
-            <Title className="!mb-0">Inspectr MCP Server</Title>
-          </div>
-          <Text className="mt-1 text-gray-500">
-            Overview of Model Context Protocol (MCP) activity on the Inspectr MCP server, including
-            usage across tools, resources, and prompts.
-          </Text>
-          {showUpgrade && shouldShowMcpUpgrade && (
-            <div className="mt-4 rounded-md bg-gray-50 p-6 ring-1 ring-inset ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
-                Want to upgrade?
-              </h4>
-              <p className="mt-2 text-sm/6 text-gray-500 dark:text-gray-500">
-                Elevate your workspace and boost productivity with premium features. See our pro
-                plans and upgrade today.
+              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                Rules executed
               </p>
-              <div className="mt-6 flex items-center space-x-2">
-                <a
-                  href="https://inspectr.dev/pricing"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-blue-500 dark:outline-blue-500 border-transparent text-white dark:text-white bg-blue-500 dark:bg-blue-500 hover:bg-blue-600 dark:hover:bg-blue-600 disabled:bg-blue-300 disabled:text-white disabled:dark:bg-blue-800 disabled:dark:text-blue-400"
-                >
-                  Plans
-                </a>
-                <button
-                  type="button"
-                  className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-blue-500 dark:outline-blue-500 border-gray-300 dark:border-gray-800 text-gray-900 dark:text-gray-50 bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900/60 disabled:text-gray-400 disabled:dark:text-gray-600"
-                  onClick={() => setShowUpgrade(false)}
-                >
-                  Dismiss
-                </button>
-              </div>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {rulesTotals.actions_executed ?? rulesMetrics.actions_executed ?? 0}
+              </p>
             </div>
-          )}
-
-          {usageLimit && (
-            <div className="mt-6">
-              <Text className="mb-2">Remaining usage</Text>
-              <ProgressBar value={mcpPercent} color="blue" />
-              <Text className="mt-2">
-                {mcpUsed} of {usageLimit} uses
-              </Text>
-              {(licenseWindowText || licensePeriodText || licensePeriodEndText) && (
-                <Text className="mt-1 text-gray-500">
-                  {licenseWindowText ? `${licenseWindowText} window` : 'Usage window'}
-                  {licensePeriodText ? ` since ${licensePeriodText}` : ''}
-                  {licensePeriodEndText ? ` — resets on ${licensePeriodEndText}` : ''}
-                </Text>
-              )}
+            <div>
+              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                Actions triggered
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {rulesTotals.actions_triggered ?? 0}
+              </p>
             </div>
-          )}
-
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Group 1 (left): Artifacts */}
-            <div className="grid grid-cols-1 gap-4">
-              <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                Usage
-              </h4>
-              <div>
-                <p className="flex items-center text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                  <img
-                    src={toolsIcon}
-                    width={16}
-                    height={16}
-                    alt=""
-                    aria-hidden="true"
-                    className="w-4 h-4 mr-2"
-                  />
-                  Total tools
-                </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                  {mcpTotals.tools ?? 0}
-                </p>
-              </div>
-              <div>
-                <p className="flex items-center text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                  <img
-                    src={resourcesIcon}
-                    width={16}
-                    height={16}
-                    alt=""
-                    aria-hidden="true"
-                    className="w-4 h-4 mr-2"
-                  />
-                  Total resources
-                </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                  {mcpTotals.resources ?? 0}
-                </p>
-              </div>
-              <div>
-                <p className="flex items-center text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                  <img
-                    src={promptsIcon}
-                    width={16}
-                    height={16}
-                    alt=""
-                    aria-hidden="true"
-                    className="w-4 h-4 mr-2"
-                  />
-                  Total prompts
-                </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                  {mcpTotals.prompts ?? 0}
-                </p>
-              </div>
+            <div>
+              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                Historically operations processed
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {rulesTotals.apply_processed ?? 0}
+              </p>
             </div>
-
-            {/* Group 2 (right): Traffic */}
-            <div className="grid grid-cols-1 gap-4">
-              <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                Traffic
-              </h4>
-              <div>
-                <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                  Total requests
-                </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                  {mcpTotals.requests ?? 0}
-                </p>
-              </div>
-              <div>
-                <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
-                  Total responses
-                </p>
-                <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                  {mcpTotals.responses ?? 0}
-                </p>
-              </div>
+            <div>
+              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                Historically operations updated
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {rulesTotals.apply_updated ?? 0}
+              </p>
             </div>
           </div>
-        </Card>
-      )}
+
+          {/* Right column: Actions by type */}
+          <div>
+            <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong mb-2">
+              Actions by type
+            </h4>
+            <BarList
+              data={Object.entries(rulesMetrics.actions_by_type || {}).map(([name, value]) => ({
+                name,
+                value
+              }))}
+            />
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <div className="flex items-center gap-2">
+          <img
+            src={mcpIcon}
+            width={24}
+            height={24}
+            alt=""
+            aria-hidden="true"
+            className="inline-block"
+          />
+          <Title className="!mb-0">Inspectr MCP Server</Title>
+        </div>
+        <Text className="mt-1 text-gray-500">
+          Overview of Model Context Protocol (MCP) activity on the Inspectr MCP server, including
+          usage across tools, resources, and prompts.
+        </Text>
+        {showMcpUpgrade && shouldShowMcpUpgrade && (
+          <div className="mt-4 rounded-md bg-gray-50 p-6 ring-1 ring-inset ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
+              Want to upgrade?
+            </h4>
+            <p className="mt-2 text-sm/6 text-gray-500 dark:text-gray-500">
+              Elevate your workspace and boost productivity with premium features. See our pro plans
+              and upgrade today.
+            </p>
+            <div className="mt-6 flex items-center space-x-2">
+              <a
+                href="https://inspectr.dev/pricing"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-yellow-500 dark:outline-yellow-500 border-transparent text-white dark:text-white bg-yellow-500 dark:bg-yellow-500 hover:bg-yellow-600 dark:hover:bg-yellow-600 disabled:bg-blue-300 disabled:text-white disabled:dark:bg-blue-800 disabled:dark:text-blue-400"
+              >
+                Explore Plans
+              </a>
+              <button
+                type="button"
+                className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out disabled:pointer-events-none disabled:shadow-none outline outline-offset-2 outline-0 focus-visible:outline-2 outline-blue-500 dark:outline-blue-500 border-gray-300 dark:border-gray-800 text-gray-900 dark:text-gray-50 bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900/60 disabled:text-gray-400 disabled:dark:text-gray-600"
+                onClick={() => setShowMcpUpgrade(false)}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
+        {licenseLimit && (
+          <div className="mt-6">
+            <Text className="mb-2">Remaining usage</Text>
+            <ProgressBar value={mcpPercent} color="blue" />
+            <Text className="mt-2">
+              {mcpUsed} of {licenseLimit} uses
+            </Text>
+            {(licenseWindowText || licensePeriodText || licensePeriodEndText) && (
+              <Text className="mt-1 text-gray-500">
+                {licenseWindowText ? `${licenseWindowText} window` : 'Usage window'}
+                {licensePeriodText ? ` since ${licensePeriodText}` : ''}
+                {licensePeriodEndText ? ` — resets on ${licensePeriodEndText}` : ''}
+              </Text>
+            )}
+          </div>
+        )}
+
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Group 1 (left): Artifacts */}
+          <div className="grid grid-cols-1 gap-4">
+            <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+              Usage
+            </h4>
+            <div>
+              <p className="flex items-center text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                <img
+                  src={toolsIcon}
+                  width={16}
+                  height={16}
+                  alt=""
+                  aria-hidden="true"
+                  className="w-4 h-4 mr-2"
+                />
+                Total tools
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {mcpTotals.tools ?? 0}
+              </p>
+            </div>
+            <div>
+              <p className="flex items-center text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                <img
+                  src={resourcesIcon}
+                  width={16}
+                  height={16}
+                  alt=""
+                  aria-hidden="true"
+                  className="w-4 h-4 mr-2"
+                />
+                Total resources
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {mcpTotals.resources ?? 0}
+              </p>
+            </div>
+            <div>
+              <p className="flex items-center text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                <img
+                  src={promptsIcon}
+                  width={16}
+                  height={16}
+                  alt=""
+                  aria-hidden="true"
+                  className="w-4 h-4 mr-2"
+                />
+                Total prompts
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {mcpTotals.prompts ?? 0}
+              </p>
+            </div>
+          </div>
+
+          {/* Group 2 (right): Traffic */}
+          <div className="grid grid-cols-1 gap-4">
+            <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+              Traffic
+            </h4>
+            <div>
+              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                Total requests
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {mcpTotals.requests ?? 0}
+              </p>
+            </div>
+            <div>
+              <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content">
+                Total responses
+              </p>
+              <p className="font-semibold text-tremor-metric text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                {mcpTotals.responses ?? 0}
+              </p>
+            </div>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 };

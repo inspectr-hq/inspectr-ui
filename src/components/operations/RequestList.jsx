@@ -155,7 +155,7 @@ const RequestList = ({
 
       {/* Table Header */}
       <div
-        className="flex items-center bg-gray-200 dark:bg-dark-tremor-background-subtle p-2 border-b border-gray-300 dark:border-dark-tremor-border text-sm font-bold text-tremor-content-strong dark:text-dark-tremor-content-strong cursor-pointer"
+        className="flex items-center bg-gray-200 dark:bg-dark-tremor-background-subtle p-2 border-b border-gray-300 dark:border-dark-tremor-border text-sm font-bold text-tremor-content-strong dark:text-dark-tremor-content-strong cursor-pointer [container-type:inline-size] [container-name:requestlist]"
         onClick={() => setIsSidePanelOpen(true)}
       >
         <div className="w-16 text-center">Status</div>
@@ -180,8 +180,8 @@ const RequestList = ({
             <RiExpandWidthFill className="w-4 h-4" />
           </button>
         </div>
-        <div className="w-20 text-center">Timestamp</div>
-        <div className="w-16 text-right">Duration</div>
+        <div className="w-20 text-center hidden [@container(min-width:450px)]:inline">Time</div>
+        <div className="w-16 text-right hidden [@container(min-width:530px)]:inline">Duration</div>
         <div className="w-10"></div>
       </div>
 

@@ -51,7 +51,9 @@ class InspectrClient {
     this.service = new ServiceClient(this);
     this.stats = new StatsClient(this);
     this.mock = new MockClient(this);
+    this.mcp = new McpSettingsClient(this);
     this.rules = new RulesClient(this);
+    this.traces = new TracesClient(this);
     this.connectors = new ConnectorsClient(this);
   }
 
@@ -149,6 +151,52 @@ class authClient {
     });
     if (!res.ok) throw new Error(`Update authentication settings failed (${res.status})`);
     return await res.json();
+  }
+}
+
+/**
+ * mcpSettingsClient - Handles MCP server settings
+ * @private
+ */
+class McpSettingsClient {
+  constructor(client) {
+    this.client = client;
+  }
+  /**
+   * Get MCP server settings
+   * @returns {Promise<Object>} - MCP server settings
+   */
+  async getMCPServerSettings() {
+    const res = await fetch(`${this.client.apiEndpoint}/mcp/settings`, {
+      headers: this.client.defaultHeaders
+    });
+    if (!res.ok) throw new Error(`MCP Server settings failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Update MCP server settings
+   * @param {Object} body - { public: boolean }
+   * @returns {Promise<Object>} - Updated MCP server settings
+   */
+  async updateMCPServerSettings(body) {
+    const res = await fetch(`${this.client.apiEndpoint}/mcp/settings`, {
+      method: 'PATCH',
+      headers: this.client.jsonHeaders,
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(`Update MCP Server settings failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * @deprecated Use updateMCPServerSettings instead.
+   */
+  async updateAuthenticationSettings(body) {
+    console.warn(
+      '[Inspectr SDK] mcp.updateAuthenticationSettings is deprecated. Use updateMCPServerSettings instead.'
+    );
+    return this.updateMCPServerSettings(body);
   }
 }
 
@@ -333,18 +381,18 @@ class OperationsClient {
     setParam('until', options.until);
     setParam('sort_field', options.sortField);
     setParam('sort_direction', options.sortDirection);
-    setParam('status', options.status);
-    setParam('statuses', options.statuses);
-    setParam('path', options.path);
-    setParam('host', options.host);
-    setParam('method', options.method);
-    setParam('methods', options.methods);
+    setParam('filter[status]', options.status);
+    setParam('filter[statuses]', options.statuses);
+    setParam('filter[path]', options.path);
+    setParam('filter[host]', options.host);
+    setParam('filter[method]', options.method);
+    setParam('filter[methods]', options.methods);
     setParam('min_duration', options.minDuration);
     setParam('max_duration', options.maxDuration);
-    setParam('tag', options.tag);
-    setParam('tags', options.tags);
-    setParam('tag_any', options.tagAny);
-    setParam('tags_any', options.tagsAny);
+    setParam('filter[tag]', options.tag);
+    setParam('filter[tags]', options.tags);
+    setParam('filter[tag_any]', options.tagAny);
+    setParam('filter[tags_any]', options.tagsAny);
 
     const query = qs.toString();
     const url = `${this.client.apiEndpoint}/operations/summary${query ? `?${query}` : ''}`;
@@ -434,6 +482,81 @@ class OperationsClient {
       headers: this.client.defaultHeaders
     });
     if (!res.ok) throw new Error(`List tags failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * List compact operations with pagination support.
+   * Server endpoint: GET /operations/compact
+   * @param {Object} [options]
+   * @param {string} [options.operationId]
+   * @param {string|Date} [options.since]
+   * @param {string|Date} [options.until]
+   * @param {string} [options.sortField]
+   * @param {string} [options.sortDirection]
+   * @param {number} [options.page]
+   * @param {number} [options.limit]
+   * @param {string|number} [options.status]
+   * @param {Array<string|number>} [options.statuses]
+   * @param {string} [options.method]
+   * @param {string[]} [options.methods]
+   * @param {string} [options.path]
+   * @param {string} [options.host]
+   * @param {number} [options.minDuration]
+   * @param {number} [options.maxDuration]
+   * @param {string} [options.tag]
+   * @param {string[]} [options.tags]
+   * @param {string} [options.tagAny]
+   * @param {string[]} [options.tagsAny]
+   * @returns {Promise<Object>} Compact operations response
+   */
+  async listCompact(options = {}) {
+    const qs = new URLSearchParams();
+
+    const toISOString = (value) => {
+      if (value === undefined || value === null || value === '') return undefined;
+      if (value instanceof Date) return value.toISOString();
+      return String(value);
+    };
+
+    const setParam = (key, value) => {
+      if (value === undefined || value === null || value === '') return;
+      if (Array.isArray(value)) {
+        if (!value.length) return;
+        qs.set(key, value.map((item) => String(item)).join(','));
+        return;
+      }
+      qs.set(key, String(value));
+    };
+
+    setParam('operation_id', options.operationId);
+    setParam('since', toISOString(options.since));
+    setParam('until', toISOString(options.until));
+    setParam('sort_field', options.sortField);
+    setParam('sort_direction', options.sortDirection);
+    setParam('page', options.page);
+    setParam('limit', options.limit);
+    setParam('filter[status]', options.status);
+    setParam('filter[statuses]', options.statuses);
+    setParam('filter[method]', options.method);
+    setParam('filter[methods]', options.methods);
+    setParam('filter[path]', options.path);
+    setParam('filter[paths]', options.paths);
+    setParam('filter[host]', options.host);
+    setParam('filter[hosts]', options.hosts);
+    setParam('min_duration', options.minDuration);
+    setParam('max_duration', options.maxDuration);
+    setParam('filter[tag]', options.tag);
+    setParam('filter[tags]', options.tags);
+    setParam('filter[tag_any]', options.tagAny);
+    setParam('filter[tags_any]', options.tagsAny);
+
+    const query = qs.toString();
+    const url = `${this.client.apiEndpoint}/operations/compact${query ? `?${query}` : ''}`;
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+    if (!res.ok) throw new Error(`List compact operations failed (${res.status})`);
     return await res.json();
   }
 
@@ -637,6 +760,19 @@ class ServiceClient {
   }
 
   /**
+   * Get version information from the API
+   * @returns {Promise<Object>} - Version response
+   */
+  async getVersion() {
+    const res = await fetch(`${this.client.apiEndpoint}/version`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Version check failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
    * Ping a specific service component
    * @param {string} component - backend | mock | catch
    * @returns {Promise<Object>} - Ping result
@@ -755,6 +891,169 @@ class StatsClient {
   }
 
   /**
+   * Overview KPIs for a time window (totals, rates, Apdex).
+   * Server endpoint: GET /stats/operations/overview
+   * @param {Object} [options]
+   * @param {string|Date} [options.from]
+   * @param {string|Date} [options.to]
+   * @param {string} [options.interval] - hour|day|week|month (server-specific)
+   * @param {string} [options.tag]
+   * @returns {Promise<Object>} Overview envelope
+   */
+  async getOverview(options = {}) {
+    const toISOString = (v) => {
+      if (v === undefined || v === null || v === '') return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return String(v);
+    };
+    const params = new URLSearchParams();
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '') return;
+      params.set(k, String(v));
+    };
+
+    add('from', toISOString(options.from));
+    add('to', toISOString(options.to));
+    add('interval', options.interval);
+    add('tag', options.tag);
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/stats/operations/overview${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Stats overview failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Time-bucketed statistics suitable for charting.
+   * Server endpoint: GET /stats/operations/buckets
+   * @param {Object} [options]
+   * @param {string|Date} [options.from]
+   * @param {string|Date} [options.to]
+   * @param {string} [options.interval] - hour|day|week|month
+   * @param {string} [options.group] - optional grouping hint (e.g., status_class)
+   * @param {string} [options.tag]
+   * @returns {Promise<Object>} Buckets envelope
+   */
+  async getBuckets(options = {}) {
+    const toISOString = (v) => {
+      if (v === undefined || v === null || v === '') return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return String(v);
+    };
+    const params = new URLSearchParams();
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '') return;
+      params.set(k, String(v));
+    };
+    const addCsv = (k, v) => {
+      if (v === undefined || v === null) return;
+      if (Array.isArray(v)) {
+        if (!v.length) return;
+        params.set(k, v.map((x) => String(x)).join(','));
+      } else {
+        params.set(k, String(v));
+      }
+    };
+
+    add('from', toISOString(options.from));
+    add('to', toISOString(options.to));
+    add('interval', options.interval);
+    add('group', options.group);
+    addCsv('filter[method]', options.method);
+    addCsv('filter[status]', options.status);
+    addCsv('filter[status_class]', options.statusClass);
+    addCsv('filter[tag]', options.tag);
+    addCsv('filter[path]', options.path);
+    add('path_prefix', options.pathPrefix);
+    addCsv('filter[host]', options.host);
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/stats/operations/buckets${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Stats buckets failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Aggregate statistics grouped by a dimension.
+   * Server endpoint: GET /stats/operations/aggregate/{dimension}
+   * @param {('path'|'method'|'host'|'status_class'|'status'|'tag')} dimension - Required group-by dimension
+   * @param {Object} [options]
+   * @param {string|Date} [options.from]
+   * @param {string|Date} [options.to]
+   * @param {string|string[]} [options.metrics] - e.g., 'count', 'avg_ms', 'p95_ms', 'error_rate'
+   * @param {number} [options.limit]
+   * @param {string} [options.order] - e.g., '-count', '+avg_ms'
+   * @param {string|string[]} [options.method]
+   * @param {string|string[]} [options.status]
+   * @param {string|string[]} [options.statusClass]
+   * @param {string} [options.path]
+   * @param {string} [options.pathPrefix]
+   * @param {string} [options.host]
+   * @param {string|string[]} [options.tag]
+   * @returns {Promise<Object>} Aggregate envelope
+   */
+  async aggregateBy(dimension, options = {}) {
+    const allowed = ['path', 'method', 'host', 'status_class', 'status', 'tag'];
+    if (!allowed.includes(dimension)) {
+      throw new Error(`Invalid dimension: ${dimension}. Allowed: ${allowed.join(', ')}`);
+    }
+
+    const toISOString = (v) => {
+      if (v === undefined || v === null || v === '') return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return String(v);
+    };
+    const params = new URLSearchParams();
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '') return;
+      params.set(k, String(v));
+    };
+    const addCsv = (k, v) => {
+      if (v === undefined || v === null) return;
+      if (Array.isArray(v)) {
+        if (!v.length) return;
+        params.set(k, v.map((x) => String(x)).join(','));
+      } else {
+        params.set(k, String(v));
+      }
+    };
+
+    add('from', toISOString(options.from));
+    add('to', toISOString(options.to));
+    addCsv('metrics', options.metrics);
+    if (typeof options.limit === 'number') add('limit', options.limit);
+    add('order', options.order);
+
+    addCsv('method', options.method);
+    addCsv('status', options.status);
+    addCsv('status_class', options.statusClass);
+    add('path', options.path);
+    add('path_prefix', options.pathPrefix);
+    add('host', options.host);
+    addCsv('tag', options.tag);
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/stats/operations/aggregate/${encodeURIComponent(dimension)}${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Stats aggregate failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
    * Delete All operation statistics
    * @returns {Promise<void>}
    */
@@ -768,6 +1067,79 @@ class StatsClient {
       return;
     }
     throw new Error(`Delete stats operations failed (${res.status})`);
+  }
+}
+
+/**
+ * TracesClient - Handles trace exploration
+ * @private
+ */
+class TracesClient {
+  constructor(client) {
+    this.client = client;
+  }
+
+  /**
+   * List traces with optional pagination
+   * @param {Object} [options]
+   * @param {number} [options.page]
+   * @param {number} [options.limit]
+   * @param {string} [options.source]
+   * @param {string} [options.search]
+   * @returns {Promise<Object>} Trace collection response
+   */
+  async list(options = {}) {
+    const params = new URLSearchParams();
+    const { page, limit, source, search } = options;
+
+    if (page !== undefined && page !== null) params.set('page', String(page));
+    if (limit !== undefined && limit !== null) params.set('limit', String(limit));
+    if (source) params.set('source', source);
+    if (search) params.set('search', search);
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/traces${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: {
+        ...this.client.defaultHeaders,
+        Accept: 'application/json'
+      }
+    });
+
+    if (!res.ok) throw new Error(`Trace list failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Fetch a single trace with operations
+   * @param {string} traceId
+   * @param {Object} [options]
+   * @param {number} [options.page]
+   * @param {number} [options.limit]
+   * @returns {Promise<Object>} Trace detail response
+   */
+  async get(traceId, options = {}) {
+    if (!traceId) throw new Error('Trace ID is required');
+
+    const params = new URLSearchParams();
+    const { page, limit } = options;
+
+    if (page !== undefined && page !== null) params.set('page', String(page));
+    if (limit !== undefined && limit !== null) params.set('limit', String(limit));
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/traces/${encodeURIComponent(traceId)}${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: {
+        ...this.client.defaultHeaders,
+        Accept: 'application/json'
+      }
+    });
+
+    if (!res.ok) throw new Error(`Trace detail failed (${res.status})`);
+    return await res.json();
   }
 }
 
