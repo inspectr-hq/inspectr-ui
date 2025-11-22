@@ -1106,6 +1106,11 @@ export default function RulesApp() {
         title={builderTitle}
         description={builderDescription}
         onClose={closeBuilder}
+        showFooter
+        onReset={handleBuilderReset}
+        formId="rules-builder-form"
+        saving={saving}
+        isEditing={Boolean(editingRuleId)}
       >
         <RulesBuilderPanel
           form={form}
@@ -1117,6 +1122,8 @@ export default function RulesApp() {
           formErrors={formErrors}
           onSubmit={handleSubmit}
           onReset={handleBuilderReset}
+          formId="rules-builder-form"
+          hideFooter
           onFieldChange={handleFieldChange}
           onConditionChange={handleConditionChange}
           onAddCondition={handleAddCondition}

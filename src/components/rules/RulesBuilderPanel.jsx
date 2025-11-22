@@ -74,7 +74,9 @@ const RulesBuilderPanel = ({
   onAddAction,
   onRemoveAction,
   onMoveAction,
-  operatorOptions
+  operatorOptions,
+  formId,
+  hideFooter = false
 }) => {
   const canMoveCondition = form.conditions.length > 1;
   const canMoveAction = form.actions.length > 1;
@@ -82,6 +84,7 @@ const RulesBuilderPanel = ({
 
   return (
     <form
+      id={formId}
       className="space-y-6 rounded-lg border border-gray-200 bg-gray-50 p-4 shadow-sm dark:border-gray-800 dark:bg-[#090E1A]/60 sm:p-6"
       onSubmit={onSubmit}
     >
@@ -752,22 +755,24 @@ const RulesBuilderPanel = ({
         </div>
       )}
 
-      <div className="flex items-center justify-end gap-3">
-        <button
-          type="button"
-          onClick={onReset}
-          className="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900"
-        >
-          {isEditing ? 'Cancel edit' : 'Reset'}
-        </button>
-        <button
-          type="submit"
-          disabled={saving}
-          className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-blue-500 dark:hover:bg-blue-400"
-        >
-          {saving ? 'Saving…' : isEditing ? 'Update Rule' : 'Save Rule'}
-        </button>
-      </div>
+      {!hideFooter && (
+        <div className="sticky bottom-0 z-10 -mx-4 -mb-4 flex items-center justify-end gap-3 border-t border-gray-200 bg-gray-50/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:backdrop-blur dark:border-gray-800 dark:bg-[#090E1A]/95 sm:-mx-6 sm:px-6">
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900"
+          >
+            {isEditing ? 'Cancel edit' : 'Reset'}
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-blue-500 dark:hover:bg-blue-400"
+          >
+            {saving ? 'Saving…' : isEditing ? 'Update Rule' : 'Save Rule'}
+          </button>
+        </div>
+      )}
     </form>
   );
 };
