@@ -9,6 +9,7 @@ import CopyButton from '../CopyButton.jsx';
 import { useInspectr } from '../../context/InspectrContext';
 import { Tooltip } from '../ToolTip.jsx';
 import AuthIndicator from './AuthIndicator.jsx';
+import McpIndicator from './McpIndicator.jsx';
 import { normalizeTags, normalizeTag } from '../../utils/normalizeTags.js';
 import DialogDeleteConfirm from '../DialogDeleteConfirm.jsx';
 import TagPill from '../TagPill.jsx';
@@ -202,6 +203,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
   const traceInfo = operation?.meta?.trace || null;
   const traceId = traceInfo?.trace_id || null;
   const traceSource = traceInfo?.source || null;
+  const mcpMeta = operation?.meta?.mcp || null;
   const hasTrace = Boolean(traceId);
   const traceButtonClasses =
     'flex items-center space-x-2 px-2 py-1 border border-purple-500 text-purple-600 dark:text-purple-200 bg-purple-50 dark:bg-purple-900/30 rounded focus:outline-none cursor-pointer transition-transform duration-150 ease-in-out active:scale-95 hover:bg-purple-100 dark:hover:bg-purple-800/50 active:ring active:ring-purple-200 dark:active:ring-purple-400';
@@ -307,6 +309,12 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
     }
   };
 
+  const handleOpenMcp = () => {
+    if (typeof setCurrentTab === 'function') {
+      setCurrentTab('mcp');
+    }
+  };
+
   return (
     <div className="mb-4 p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded shadow dark:shadow-dark-tremor-shadow relative [container-type:inline-size] [container-name:requestdetail] ">
       <div className="flex items-center justify-between mb-2">
@@ -315,6 +323,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
             Request Details
           </h2>
           <AuthIndicator operation={operation} onClick={handleAuthIndicatorClick} />
+          <McpIndicator mcp={mcpMeta} showCategory={true} onClick={handleOpenMcp} />
         </div>
         <div className="flex space-x-2">
           {hasTrace ? (
