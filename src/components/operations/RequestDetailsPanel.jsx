@@ -4,6 +4,7 @@ import RequestDetail from './RequestDetail';
 import RequestContent from './RequestContent';
 import ResponseContent from './ResponseContent';
 import MetaContent from './MetaContent.jsx';
+import McpContent from './McpContent.jsx';
 import Terminal from '../Terminal';
 import { RiExternalLinkLine } from '@remixicon/react';
 import useLocalStorage from '../../hooks/useLocalStorage.jsx';
@@ -37,6 +38,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   const guardHeaders = extractHeaders(operation?.meta?.inspectr?.guard);
   const directiveHeaders = extractHeaders(operation?.meta?.inspectr?.directives);
   const hasInfo = guardHeaders.length > 0 || directiveHeaders.length > 0;
+  const hasMcp = Boolean(operation?.meta?.mcp);
   const hasTags = Array.isArray(operation?.meta?.tags) && operation.meta.tags.length > 0;
   const contentMaxHeight = hasTags
     ? 'calc(100vh - 270px - 64px - 48px)'
@@ -47,6 +49,12 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
       setCurrentTab('request');
     }
   }, [hasInfo, currentTab, setCurrentTab]);
+
+  useEffect(() => {
+    if (!hasMcp && currentTab === 'mcp') {
+      setCurrentTab('request');
+    }
+  }, [hasMcp, currentTab, setCurrentTab]);
 
   useEffect(() => {
     // Set isLoaded to true after a short delay to ensure CSS transitions work properly
@@ -145,6 +153,18 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
             Info
           </button>
         )}
+        {hasMcp && (
+          <button
+            className={`px-4 py-2 rounded-t ${
+              currentTab === 'mcp'
+                ? 'bg-sky-500 dark:bg-sky-800 text-white'
+                : 'bg-gray-200 dark:bg-dark-tremor-background-subtle text-gray-700 dark:text-dark-tremor-content'
+            }`}
+            onClick={() => setCurrentTab('mcp')}
+          >
+            MCP
+          </button>
+        )}
       </div>
 
       {/* Tab Content */}
@@ -159,8 +179,10 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
           <RequestContent operation={operation} />
         ) : currentTab === 'response' ? (
           <ResponseContent operation={operation} />
-        ) : hasInfo ? (
+        ) : currentTab === 'meta' && hasInfo ? (
           <MetaContent operation={operation} />
+        ) : currentTab === 'mcp' ? (
+          <McpContent operation={operation} />
         ) : null}
       </div>
     </div>
