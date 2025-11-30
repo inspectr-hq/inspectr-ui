@@ -28,6 +28,8 @@ export { default as TagsInput } from './TagsInput.jsx';
 export { default as Terminal } from './Terminal.jsx';
 export { default as ToastNotification } from './ToastNotification.jsx';
 export { default as NotificationBadge } from './NotificationBadge.jsx';
+export { default as BadgeIndicator } from './BadgeIndicator.jsx';
+export { default as NoDataPlaceholder } from './NoDataPlaceholder.jsx';
 export { default as Workspace } from './Workspace.jsx';
 export { default as InsightsApp } from './insights/InsightsApp.jsx';
 export { default as ServiceStatus } from './settings/ServiceStatus.jsx';
