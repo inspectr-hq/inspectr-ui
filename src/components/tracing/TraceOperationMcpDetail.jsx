@@ -31,6 +31,74 @@ const renderBadge = (condition, label, color = 'slate') =>
     </Badge>
   ) : null;
 
+const renderMarkdownPreview = (text) => {
+  if (!text) return null;
+  const lines = text.split('\n');
+  const blocks = [];
+  let listBuffer = [];
+
+  const flushList = () => {
+    if (!listBuffer.length) return;
+    blocks.push(
+      <ul key={`list-${blocks.length}`} className="list-disc space-y-1 pl-5 text-sm">
+        {listBuffer.map((item, idx) => (
+          <li key={idx}>{item}</li>
+        ))}
+      </ul>
+    );
+    listBuffer = [];
+  };
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      flushList();
+      return;
+    }
+    if (trimmed.startsWith('#')) {
+      flushList();
+      const depth = Math.min(trimmed.match(/^#+/)?.[0]?.length || 1, 6);
+      const content = trimmed.replace(/^#+\s*/, '') || trimmed;
+      blocks.push(
+        <div
+          key={`h-${blocks.length}`}
+          className={`font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong ${
+            depth <= 2 ? 'text-base' : 'text-sm'
+          }`}
+        >
+          {content}
+        </div>
+      );
+      return;
+    }
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      listBuffer.push(trimmed.slice(2));
+      return;
+    }
+    flushList();
+    blocks.push(
+      <p key={`p-${blocks.length}`} className="text-sm">
+        {trimmed}
+      </p>
+    );
+  });
+  flushList();
+  return (
+    <div className="space-y-1 text-tremor-content dark:text-dark-tremor-content">{blocks}</div>
+  );
+};
+
+const htmlTextPreview = (html) => {
+  if (typeof window === 'undefined' || typeof DOMParser === 'undefined') return html || '';
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html || '', 'text/html');
+    return doc.body.textContent || html || '';
+  } catch {
+    return html || '';
+  }
+};
+
 const ToolCard = ({ tool }) => {
   const { total, required } = summarizeSchema(tool.inputSchema);
   const props = Object.entries(tool.inputSchema?.properties || {});
@@ -390,7 +458,8 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                           Arguments
                         </Text>
                         <ArgumentsTable args={mcpRequest?.params?.arguments} />
-                        {callSchema && (callValidation.missing.length || callValidation.extra.length) ? (
+                        {callSchema &&
+                        (callValidation.missing.length || callValidation.extra.length) ? (
                           <div className="space-y-1 text-[11px] text-amber-700 dark:text-amber-200">
                             {callValidation.missing.length ? (
                               <div>Missing required: {callValidation.missing.join(', ')}</div>
@@ -558,14 +627,35 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                     Resource content
                   </Text>
                   {typeof resourceRead?.text === 'string' ? (
-                    <Editor
-                      value={resourceRead.text}
-                      language={getMimeLanguage(resourceMime)}
-                      theme={getMonacoTheme()}
-                      beforeMount={defineMonacoThemes}
-                      options={editorOptions}
-                      height="240px"
-                    />
+                    <>
+                      {(resourceMime || '').includes('markdown') ? (
+                        <div className="rounded-tremor-small border border-slate-200 bg-tremor-background-subtle p-3 text-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
+                          {renderMarkdownPreview(resourceRead.text) || (
+                            <div className="text-tremor-content-subtle dark:text-dark-tremor-content">
+                              Unable to render markdown preview.
+                            </div>
+                          )}
+                        </div>
+                      ) : null}
+                      {(resourceMime || '').includes('html') ? (
+                        <div className="rounded-tremor-small border border-slate-200 bg-tremor-background-subtle p-3 text-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
+                          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                            HTML (text-only preview)
+                          </Text>
+                          <p className="mt-1 text-sm text-tremor-content dark:text-dark-tremor-content">
+                            {htmlTextPreview(resourceRead.text)}
+                          </p>
+                        </div>
+                      ) : null}
+                      <Editor
+                        value={resourceRead.text}
+                        language={getMimeLanguage(resourceMime)}
+                        theme={getMonacoTheme()}
+                        beforeMount={defineMonacoThemes}
+                        options={editorOptions}
+                        height="240px"
+                      />
+                    </>
                   ) : (
                     <StructuredBlock data={resourceRead} />
                   )}
