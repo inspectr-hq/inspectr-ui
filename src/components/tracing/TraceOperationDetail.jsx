@@ -79,6 +79,8 @@ const formatPayload = (payload, contentType) => {
 
 export default function TraceOperationDetail({ operation, isLoading }) {
   const [showAdvancedMeta, setShowAdvancedMeta] = useState(false);
+  const [showRequestHeaders, setShowRequestHeaders] = useState(false);
+  const [showResponseHeaders, setShowResponseHeaders] = useState(false);
 
   const metaEntries = extractMetaEntries(operation);
   const ADVANCED_META_KEYS = useMemo(() => new Set(['proxy', 'ingress', 'inspectr']), []);
@@ -118,7 +120,7 @@ export default function TraceOperationDetail({ operation, isLoading }) {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col overflow-hidden">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -137,7 +139,7 @@ export default function TraceOperationDetail({ operation, isLoading }) {
         </div>
       </div>
 
-      <div className="mt-6 space-y-5 overflow-y-auto">
+      <div className="mt-6 flex-1 space-y-5 overflow-y-auto pr-1">
         <div>
           <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
             Properties
@@ -191,24 +193,49 @@ export default function TraceOperationDetail({ operation, isLoading }) {
         </div>
 
         <div>
-          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-            Request headers
-          </Text>
+          <button
+            type="button"
+            onClick={() => setShowRequestHeaders((prev) => !prev)}
+            aria-expanded={showRequestHeaders}
+            className="flex w-full items-center justify-between text-left"
+          >
+            <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+              Request headers
+            </Text>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className={`h-4 w-4 text-tremor-content transition-transform dark:text-dark-tremor-content ${showRequestHeaders ? 'rotate-180' : 'rotate-0'}`}
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
           {requestHeaders.length ? (
-            <div className="mt-2 max-h-60 overflow-auto rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-              <dl className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
-                {requestHeaders.map((header, index) => (
-                  <div key={`${header.name}-${index}`} className="flex items-start gap-3 px-3 py-2">
-                    <dt className="w-40 shrink-0 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-                      {header.name}
-                    </dt>
-                    <dd className="flex-1 text-sm text-tremor-content dark:text-dark-tremor-content">
-                      {header.value || '—'}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
+            showRequestHeaders ? (
+              <div className="mt-2 max-h-60 overflow-auto rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+                <dl className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
+                  {requestHeaders.map((header, index) => (
+                    <div
+                      key={`${header.name}-${index}`}
+                      className="flex items-start gap-3 px-3 py-2"
+                    >
+                      <dt className="w-40 shrink-0 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                        {header.name}
+                      </dt>
+                      <dd className="flex-1 text-sm text-tremor-content dark:text-dark-tremor-content">
+                        {header.value || '—'}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            ) : null
           ) : (
             <Text className="mt-2 text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
               No headers captured.
@@ -268,24 +295,49 @@ export default function TraceOperationDetail({ operation, isLoading }) {
         </div>
 
         <div>
-          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-            Response headers
-          </Text>
+          <button
+            type="button"
+            onClick={() => setShowResponseHeaders((prev) => !prev)}
+            aria-expanded={showResponseHeaders}
+            className="flex w-full items-center justify-between text-left"
+          >
+            <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+              Response headers
+            </Text>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className={`h-4 w-4 text-tremor-content transition-transform dark:text-dark-tremor-content ${showResponseHeaders ? 'rotate-180' : 'rotate-0'}`}
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
           {responseHeaders.length ? (
-            <div className="mt-2 max-h-60 overflow-auto rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-              <dl className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
-                {responseHeaders.map((header, index) => (
-                  <div key={`${header.name}-${index}`} className="flex items-start gap-3 px-3 py-2">
-                    <dt className="w-40 shrink-0 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-                      {header.name}
-                    </dt>
-                    <dd className="flex-1 text-sm text-tremor-content dark:text-dark-tremor-content">
-                      {header.value || '—'}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
+            showResponseHeaders ? (
+              <div className="mt-2 max-h-60 overflow-auto rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+                <dl className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
+                  {responseHeaders.map((header, index) => (
+                    <div
+                      key={`${header.name}-${index}`}
+                      className="flex items-start gap-3 px-3 py-2"
+                    >
+                      <dt className="w-40 shrink-0 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                        {header.name}
+                      </dt>
+                      <dd className="flex-1 text-sm text-tremor-content dark:text-dark-tremor-content">
+                        {header.value || '—'}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            ) : null
           ) : (
             <Text className="mt-2 text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
               No headers captured.
