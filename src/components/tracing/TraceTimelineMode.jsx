@@ -444,6 +444,20 @@ export default function TraceTimelineMode({
   };
 
   const PANEL_MAX_HEIGHT = 'calc(100vh - 220px)';
+  const isMcpOperation = (op) => {
+    if (!op) return false;
+    const meta = op.meta || {};
+    const tags = op.tags || meta.tags || [];
+    const hasMcpTag = Array.isArray(tags)
+      ? tags.some((tag) => {
+          if (typeof tag === 'string') return tag.toLowerCase().includes('mcp');
+          if (tag?.token) return String(tag.token).toLowerCase().includes('mcp');
+          if (tag?.display) return String(tag.display).toLowerCase().includes('mcp');
+          return false;
+        })
+      : false;
+    return Boolean(meta.mcp || meta.protocol === 'mcp' || hasMcpTag);
+  };
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
@@ -571,7 +585,7 @@ export default function TraceTimelineMode({
         className="rounded-tremor-small border border-tremor-border p-6 dark:border-dark-tremor-border"
         style={{ maxHeight: PANEL_MAX_HEIGHT }}
       >
-        {selectedOperation?.meta?.mcp ? (
+        {isMcpOperation(selectedOperation) ? (
           <TraceOperationMcpDetail operation={selectedOperation} isLoading={isTraceDetailLoading} />
         ) : (
           <TraceOperationDetail operation={selectedOperation} isLoading={isTraceDetailLoading} />

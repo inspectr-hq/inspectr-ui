@@ -8,13 +8,33 @@ import MethodBadge from '../insights/MethodBadge.jsx';
 import { formatDuration, formatTimestamp } from '../../utils/formatters.js';
 import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
 
-const parseJson = (value) => {
-  if (!value) return null;
+const tryParse = (text) => {
   try {
-    return typeof value === 'string' ? JSON.parse(value) : value;
+    return JSON.parse(text);
   } catch {
     return null;
   }
+};
+
+const parseJson = (value) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'object') return value;
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  // Direct JSON parse
+  const direct = tryParse(trimmed);
+  if (direct) return direct;
+
+  // Handle SSE-style bodies: look for the first data: { ... } payload
+  const dataMatch = trimmed.match(/data:\s*(\{[\s\S]*\})/);
+  if (dataMatch && dataMatch[1]) {
+    const parsed = tryParse(dataMatch[1].trim());
+    if (parsed) return parsed;
+  }
+
+  return null;
 };
 
 const summarizeSchema = (schema) => {
@@ -235,8 +255,20 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
     setShowRaw(false);
   }, [operation?.id]);
   const mcpMeta = operation?.meta?.mcp || operation?.meta?.trace?.mcp || {};
-  const mcpRequest = parseJson(operation?.request?.body);
-  const mcpResponse = parseJson(operation?.response?.body);
+  const rawRequestBody =
+    typeof operation?.request?.body === 'string'
+      ? operation.request.body
+      : operation?.request?.body
+        ? JSON.stringify(operation.request.body)
+        : '';
+  const rawResponseBody =
+    typeof operation?.response?.body === 'string'
+      ? operation.response.body
+      : operation?.response?.body
+        ? JSON.stringify(operation.response.body)
+        : '';
+  const mcpRequest = parseJson(rawRequestBody);
+  const mcpResponse = parseJson(rawResponseBody);
   const mcpMethod = mcpMeta.method || mcpRequest?.method || '';
   const mcpCategory = mcpMeta.category || '';
   const tools = mcpResponse?.result?.tools || mcpResponse?.tools || [];
@@ -262,8 +294,12 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
   const resourceRead = mcpResponse?.result;
   const resourceMime = resourceRead?.mimeType || resourceRead?.resource?.mimeType || '';
 
-  const requestBodyValue = mcpRequest ? JSON.stringify(mcpRequest, null, 2) : '';
-  const responseBodyValue = mcpResponse ? JSON.stringify(mcpResponse, null, 2) : '';
+  const requestBodyValue = mcpRequest
+    ? JSON.stringify(mcpRequest, null, 2)
+    : rawRequestBody || 'No request body';
+  const responseBodyValue = mcpResponse
+    ? JSON.stringify(mcpResponse, null, 2)
+    : rawResponseBody || 'No response body';
   const editorOptions = useMemo(
     () => ({
       readOnly: true,
