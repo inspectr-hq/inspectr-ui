@@ -120,7 +120,7 @@ export default function TraceOperationDetail({ operation, isLoading }) {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="flex h-full flex-col">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -139,7 +139,7 @@ export default function TraceOperationDetail({ operation, isLoading }) {
         </div>
       </div>
 
-      <div className="mt-6 flex-1 space-y-5 overflow-y-auto pr-1">
+      <div className="mt-6 space-y-5 overflow-y-auto">
         <div>
           <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
             Properties
