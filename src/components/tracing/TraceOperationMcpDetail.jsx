@@ -1,6 +1,6 @@
 // src/components/tracing/TraceOperationMcpDetail.jsx
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { Badge, Card, Text, Title } from '@tremor/react';
 import Editor from '@monaco-editor/react';
 import StatusBadge from '../insights/StatusBadge.jsx';
@@ -99,7 +99,12 @@ const ToolCard = ({ tool }) => {
 
 const ArgumentsTable = ({ args }) => {
   const entries = Object.entries(args || {});
-  if (!entries.length) return <Text className="text-sm text-tremor-content-subtle dark:text-dark-tremor-content">No arguments provided.</Text>;
+  if (!entries.length)
+    return (
+      <Text className="text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
+        No arguments provided.
+      </Text>
+    );
   return (
     <div className="space-y-1">
       {entries.map(([key, value]) => (
@@ -107,7 +112,9 @@ const ArgumentsTable = ({ args }) => {
           key={key}
           className="flex items-start gap-2 rounded-tremor-small bg-tremor-background-subtle px-2 py-1 text-xs dark:bg-dark-tremor-background-subtle"
         >
-          <span className="font-mono text-tremor-content-strong dark:text-dark-tremor-content-strong">{key}</span>
+          <span className="font-mono text-tremor-content-strong dark:text-dark-tremor-content-strong">
+            {key}
+          </span>
           <span className="flex-1 text-tremor-content dark:text-dark-tremor-content">
             {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
           </span>
@@ -130,8 +137,35 @@ const StructuredBlock = ({ data, title }) => (
   </div>
 );
 
+const getMimeLanguage = (mimeType = '') => {
+  const lower = mimeType.toLowerCase();
+  if (lower.includes('json')) return 'json';
+  if (lower.includes('xml')) return 'xml';
+  if (lower.includes('html')) return 'html';
+  if (lower.includes('javascript')) return 'javascript';
+  if (lower.includes('css')) return 'css';
+  if (lower.includes('yaml') || lower.includes('yml')) return 'yaml';
+  if (lower.includes('sql')) return 'sql';
+  if (lower.startsWith('text/')) return 'plaintext';
+  return 'json';
+};
+
+const validateArgsAgainstSchema = (args = {}, schema) => {
+  if (!schema || typeof schema !== 'object') return { missing: [], extra: [] };
+  const requiredList = new Set(schema.required || []);
+  const props = new Set(Object.keys(schema.properties || {}));
+  const argKeys = Object.keys(args);
+  const missing = Array.from(requiredList).filter((key) => !argKeys.includes(key));
+  const extra = argKeys.filter((key) => !props.has(key));
+  return { missing, extra };
+};
+
 export default function TraceOperationMcpDetail({ operation, isLoading }) {
   const [showRaw, setShowRaw] = useState(false);
+  const toolCacheRef = useRef([]);
+  useEffect(() => {
+    setShowRaw(false);
+  }, [operation?.id]);
   const mcpMeta = operation?.meta?.mcp || operation?.meta?.trace?.mcp || {};
   const mcpRequest = parseJson(operation?.request?.body);
   const mcpResponse = parseJson(operation?.response?.body);
@@ -144,6 +178,21 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
   const isPromptsGet = mcpMethod === 'prompts/get';
   const isResourcesList = mcpMethod === 'resources/list';
   const isResourcesRead = mcpMethod === 'resources/read';
+  if (isToolsList && tools.length) {
+    toolCacheRef.current = tools;
+  }
+  const cachedTools = toolCacheRef.current || [];
+  const matchedToolFromCache = cachedTools.find((t) => t.name === mcpRequest?.params?.name);
+  const callSchema =
+    mcpResponse?.result?.tool?.inputSchema ||
+    matchedToolFromCache?.inputSchema ||
+    (Array.isArray(tools) && tools.find((t) => t.name === mcpRequest?.params?.name)?.inputSchema) ||
+    null;
+  const callValidation = isToolsCall
+    ? validateArgsAgainstSchema(mcpRequest?.params?.arguments || {}, callSchema)
+    : { missing: [], extra: [] };
+  const resourceRead = mcpResponse?.result;
+  const resourceMime = resourceRead?.mimeType || resourceRead?.resource?.mimeType || '';
 
   const requestBodyValue = mcpRequest ? JSON.stringify(mcpRequest, null, 2) : '';
   const responseBodyValue = mcpResponse ? JSON.stringify(mcpResponse, null, 2) : '';
@@ -341,13 +390,26 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                           Arguments
                         </Text>
                         <ArgumentsTable args={mcpRequest?.params?.arguments} />
+                        {callSchema && (callValidation.missing.length || callValidation.extra.length) ? (
+                          <div className="space-y-1 text-[11px] text-amber-700 dark:text-amber-200">
+                            {callValidation.missing.length ? (
+                              <div>Missing required: {callValidation.missing.join(', ')}</div>
+                            ) : null}
+                            {callValidation.extra.length ? (
+                              <div>Unknown fields: {callValidation.extra.join(', ')}</div>
+                            ) : null}
+                          </div>
+                        ) : null}
                       </div>
                       <div className="space-y-1">
                         <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
                           Result
                         </Text>
                         {mcpResponse?.result?.structuredContent ? (
-                          <StructuredBlock data={mcpResponse.result.structuredContent} title="Structured content" />
+                          <StructuredBlock
+                            data={mcpResponse.result.structuredContent}
+                            title="Structured content"
+                          />
                         ) : null}
                         {Array.isArray(mcpResponse?.result?.content) ? (
                           <div className="space-y-1 rounded-tremor-small bg-tremor-background-subtle p-2 text-xs text-tremor-content dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content">
@@ -393,7 +455,8 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                               ) : null}
                             </div>
                             <Badge color="slate" size="xs">
-                              {args.length} args{requiredCount ? ` (${requiredCount} required)` : ''}
+                              {args.length} args
+                              {requiredCount ? ` (${requiredCount} required)` : ''}
                             </Badge>
                           </div>
                           {args.length ? (
@@ -441,7 +504,9 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                           }`}
                         >
                           {Array.isArray(message.content)
-                            ? message.content.map((c, i) => <div key={i}>{c.text || '[content]'}</div>)
+                            ? message.content.map((c, i) => (
+                                <div key={i}>{c.text || '[content]'}</div>
+                              ))
                             : message.content?.text || '[content]'}
                         </div>
                       </div>
@@ -492,7 +557,18 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                   <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
                     Resource content
                   </Text>
-                  <StructuredBlock data={mcpResponse.result} />
+                  {typeof resourceRead?.text === 'string' ? (
+                    <Editor
+                      value={resourceRead.text}
+                      language={getMimeLanguage(resourceMime)}
+                      theme={getMonacoTheme()}
+                      beforeMount={defineMonacoThemes}
+                      options={editorOptions}
+                      height="240px"
+                    />
+                  ) : (
+                    <StructuredBlock data={resourceRead} />
+                  )}
                 </div>
               ) : null}
 
