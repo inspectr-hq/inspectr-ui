@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Badge, Card, Flex, Select, SelectItem, Text, Title } from '@tremor/react';
 import EmptyState from '../insights/EmptyState.jsx';
 import TraceOperationDetail from './TraceOperationDetail.jsx';
+import TraceOperationMcpDetail from './TraceOperationMcpDetail.jsx';
 import StatusBadge from '../insights/StatusBadge.jsx';
 import MethodBadge from '../insights/MethodBadge.jsx';
 import { formatDuration, formatTimestamp } from '../../utils/formatters.js';
@@ -570,7 +571,11 @@ export default function TraceTimelineMode({
         className="rounded-tremor-small border border-tremor-border p-6 dark:border-dark-tremor-border"
         style={{ maxHeight: PANEL_MAX_HEIGHT }}
       >
-        <TraceOperationDetail operation={selectedOperation} isLoading={isTraceDetailLoading} />
+        {selectedOperation?.meta?.mcp ? (
+          <TraceOperationMcpDetail operation={selectedOperation} isLoading={isTraceDetailLoading} />
+        ) : (
+          <TraceOperationDetail operation={selectedOperation} isLoading={isTraceDetailLoading} />
+        )}
       </Card>
     </div>
   );
