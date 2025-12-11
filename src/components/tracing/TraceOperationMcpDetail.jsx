@@ -275,18 +275,27 @@ const validateArgsAgainstSchema = (args = {}, schema) => {
 };
 
 export default function TraceOperationMcpDetail({ operation, isLoading }) {
+  console.log('OP', operation);
+
   const [showRaw, setShowRaw] = useState(false);
   const [resultTab, setResultTab] = useState('structured');
   const [showRawRequest, setShowRawRequest] = useState(false);
   const [showRawResponse, setShowRawResponse] = useState(false);
+  const [showProperties, setShowProperties] = useState(true);
   const toolCacheRef = useRef([]);
   useEffect(() => {
     setShowRaw(false);
     setResultTab('structured');
     setShowRawRequest(false);
     setShowRawResponse(false);
+    setShowProperties(true);
   }, [operation?.id]);
-  const mcpMeta = operation?.meta?.mcp || operation?.meta?.trace?.mcp || {};
+  const mcpMeta =
+    operation?.meta?.mcp ||
+    operation?.raw?.meta?.mcp ||
+    operation?.meta?.trace?.mcp ||
+    operation?.raw?.meta?.trace?.mcp ||
+    {};
   const rawRequestBody =
     typeof operation?.request?.body === 'string'
       ? operation.request.body
@@ -387,50 +396,79 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
       </div>
 
       <div className="mt-6 flex-1 space-y-5 pr-1">
-        <div>
-          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-            Properties
-          </Text>
-          <dl className="mt-3 divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
-            <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                Request time
-              </dt>
-              <dd className="text-right text-tremor-content dark:text-dark-tremor-content">
-                {formatTimestamp(operation.timestamp)}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                Operation ID
-              </dt>
-              <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
-                {operation.id}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                Correlation ID
-              </dt>
-              <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
-                {operation.correlationId || '—'}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">Trace ID</dt>
-              <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
-                {operation.traceInfo?.trace_id || '—'}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                Trace source
-              </dt>
-              <dd className="text-right text-tremor-content dark:text-dark-tremor-content">
-                {operation.traceInfo?.source || '—'}
-              </dd>
-            </div>
-          </dl>
+        <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+          <button
+            type="button"
+            onClick={() => setShowProperties((prev) => !prev)}
+            className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
+          >
+            <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+              Properties
+            </Text>
+            <ChevronIcon open={showProperties} />
+          </button>
+          {showProperties ? (
+            <dl className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
+              <div className="flex items-center justify-between gap-3 px-3 py-2">
+                <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
+                  Request time
+                </dt>
+                <dd className="text-right text-tremor-content dark:text-dark-tremor-content">
+                  {formatTimestamp(operation.timestamp)}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 px-3 py-2">
+                <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
+                  Operation ID
+                </dt>
+                <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
+                  {operation.id}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 px-3 py-2">
+                <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
+                  Correlation ID
+                </dt>
+                <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
+                  {operation.correlationId || '—'}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 px-3 py-2">
+                <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
+                  Trace ID
+                </dt>
+                <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
+                  {operation.traceInfo?.trace_id || '—'}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 px-3 py-2">
+                <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
+                  Trace source
+                </dt>
+                <dd className="text-right text-tremor-content dark:text-dark-tremor-content">
+                  {operation.traceInfo?.source || '—'}
+                </dd>
+              </div>
+              {mcpMeta?.tokens ? (
+                <div className="flex items-center justify-between gap-3 px-3 py-2">
+                  <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
+                    Tokens
+                  </dt>
+                  <dd className="flex items-center gap-2 text-right text-tremor-content dark:text-dark-tremor-content">
+                    <Badge color="indigo" size="xs">
+                      Req {mcpMeta.tokens.request ?? '—'}
+                    </Badge>
+                    <Badge color="indigo" size="xs">
+                      Res {mcpMeta.tokens.response ?? '—'}
+                    </Badge>
+                    <Badge color="indigo" size="xs">
+                      Total {mcpMeta.tokens.total ?? '—'}
+                    </Badge>
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+          ) : null}
         </div>
 
         <div className="space-y-3">
@@ -454,20 +492,6 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
               ) : null}
             </div>
           </div>
-
-          {mcpMeta?.tokens ? (
-            <div className="flex flex-wrap items-center gap-1 text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-              <Badge color="indigo" size="xs">
-                Req {mcpMeta.tokens.request ?? '—'}
-              </Badge>
-              <Badge color="indigo" size="xs">
-                Res {mcpMeta.tokens.response ?? '—'}
-              </Badge>
-              <Badge color="indigo" size="xs">
-                Total {mcpMeta.tokens.total ?? '—'}
-              </Badge>
-            </div>
-          ) : null}
 
           <TabGroup index={showRaw ? 1 : 0} onIndexChange={(idx) => setShowRaw(idx === 1)}>
             <TabList>
