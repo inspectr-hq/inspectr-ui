@@ -805,7 +805,7 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                 <div className="space-y-3">
                   <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
                     <div className="border-b border-tremor-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
-                      MCP Request (JSON-RPC)
+                      HTTP Request
                     </div>
                     <Editor
                       value={requestBodyValue || '—'}
@@ -818,7 +818,7 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                   </div>
                   <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
                     <div className="border-b border-tremor-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
-                      MCP Response (JSON-RPC)
+                      HTTP Response
                     </div>
                     <Editor
                       value={responseBodyValue || '—'}
@@ -833,63 +833,6 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
               </TabPanel>
             </TabPanels>
           </TabGroup>
-        </div>
-
-        <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-          <button
-            type="button"
-            onClick={() => setShowRawHttp((prev) => !prev)}
-            className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
-          >
-            <span>Raw Request/Response</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className={`h-4 w-4 transition-transform ${showRawHttp ? 'rotate-180' : 'rotate-0'}`}
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-          {showRawHttp ? (
-            <div className="space-y-4 border-t border-tremor-border px-3 py-3 dark:border-dark-tremor-border">
-              <div>
-                <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-                  Raw HTTP Request body
-                </Text>
-                <div className="mt-2 h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-                  <Editor
-                    value={requestBodyValue || 'No request body'}
-                    language="json"
-                    theme={getMonacoTheme()}
-                    beforeMount={defineMonacoThemes}
-                    options={editorOptions}
-                    height="100%"
-                  />
-                </div>
-              </div>
-              <div>
-                <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-                  Raw HTTP Response body
-                </Text>
-                <div className="mt-2 h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-                  <Editor
-                    value={responseBodyValue || 'No response body'}
-                    language="json"
-                    theme={getMonacoTheme()}
-                    beforeMount={defineMonacoThemes}
-                    options={editorOptions}
-                    height="100%"
-                  />
-                </div>
-              </div>
-            </div>
-          ) : null}
         </div>
       </div>
     </div>
