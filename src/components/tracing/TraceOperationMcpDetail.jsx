@@ -499,12 +499,15 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                       {/*</Text>*/}
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                            tool
+                          <span className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+                            Tool:
                           </span>
                           <Badge color="blue" size="xs">
                             {mcpRequest?.params?.name || 'Unknown tool'}
                           </Badge>
+                          <span className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+                            Result:
+                          </span>
                           {mcpResponse?.error ? (
                             <Badge color="rose" size="xs">
                               Error
@@ -555,13 +558,13 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                                       title="Structured content"
                                     />
                                   ) : null}
-                                  {Array.isArray(mcpResponse?.result?.content) ? (
-                                    <div className="space-y-1 rounded-tremor-small bg-tremor-background-subtle p-2 text-xs text-tremor-content dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content">
-                                      {mcpResponse.result.content.map((block, idx) => (
-                                        <div key={idx}>{block?.text || '[non-text content]'}</div>
-                                      ))}
-                                    </div>
-                                  ) : null}
+                                  {/*{Array.isArray(mcpResponse?.result?.content) ? (*/}
+                                  {/*  <div className="space-y-1 rounded-tremor-small bg-tremor-background-subtle p-2 text-xs text-tremor-content dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content">*/}
+                                  {/*    {mcpResponse.result.content.map((block, idx) => (*/}
+                                  {/*      <div key={idx}>{block?.text || '[non-text content]'}</div>*/}
+                                  {/*    ))}*/}
+                                  {/*  </div>*/}
+                                  {/*) : null}*/}
                                   {!mcpResponse?.result && !mcpResponse?.error ? (
                                     <Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
                                       No result returned.
@@ -571,6 +574,7 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                                 <TabPanel>
                                   <StructuredBlock
                                     data={mcpResponse?.result ?? mcpResponse ?? {}}
+                                    title="Raw Output"
                                   />
                                 </TabPanel>
                               </TabPanels>
