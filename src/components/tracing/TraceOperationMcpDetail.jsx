@@ -827,12 +827,14 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                       onClick={() => setShowRawRequest((prev) => !prev)}
                       className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
                     >
-                      <span>HTTP Request</span>
+                      <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                        HTTP Request
+                      </Text>
                       <ChevronIcon open={showRawRequest} />
                     </button>
                     {showRawRequest ? (
-                      <div className="border-t border-tremor-border px-3 py-3 dark:border-dark-tremor-border">
-                        <div className="h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+                      <div className="border-t border-tremor-border">
+                        <div className="h-60 overflow-hidden">
                           <Editor
                             value={requestBodyValue || 'No request body'}
                             language="json"
@@ -851,12 +853,14 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                       onClick={() => setShowRawResponse((prev) => !prev)}
                       className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
                     >
-                      <span>HTTP Response</span>
+                      <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                        HTTP Response
+                      </Text>
                       <ChevronIcon open={showRawResponse} />
                     </button>
                     {showRawResponse ? (
-                      <div className="border-t border-tremor-border px-3 py-3 dark:border-dark-tremor-border">
-                        <div className="h-120 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+                      <div className="border-t border-tremor-border">
+                        <div className="h-[320px] overflow-hidden">
                           <Editor
                             value={responseBodyValue || 'No response body'}
                             language="json"

@@ -331,7 +331,7 @@ export default function TraceOperationDetail({ operation, isLoading }) {
             type="button"
             onClick={() => setShowResponseHeaders((prev) => !prev)}
             aria-expanded={showResponseHeaders}
-            className="flex w-full items-center justify-between px-3 py-1 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
+            className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
           >
             <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
               Response headers ({responseHeaders.length})
