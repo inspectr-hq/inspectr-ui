@@ -94,11 +94,17 @@ const formatPayload = (payload, contentType) => {
 };
 
 export default function TraceOperationDetail({ operation, isLoading }) {
+  const debugMode = typeof window !== 'undefined' && localStorage.getItem('debug') === 'true';
+  if (debugMode) {
+    console.log('OP', operation);
+  }
+
   const [showAdvancedMeta, setShowAdvancedMeta] = useState(false);
   const [showRequestHeaders, setShowRequestHeaders] = useState(false);
   const [showResponseHeaders, setShowResponseHeaders] = useState(false);
   const [showRequestBody, setShowRequestBody] = useState(false);
   const [showResponseBody, setShowResponseBody] = useState(false);
+  const [showBasicMeta, setShowBasicMeta] = useState(false);
 
   const metaEntries = extractMetaEntries(operation);
   const ADVANCED_META_KEYS = useMemo(() => new Set(['proxy', 'ingress', 'inspectr']), []);
@@ -158,6 +164,7 @@ export default function TraceOperationDetail({ operation, isLoading }) {
       </div>
 
       <div className="mt-6 space-y-5">
+        {/* Properties */}
         <div>
           <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
             Properties
@@ -210,6 +217,7 @@ export default function TraceOperationDetail({ operation, isLoading }) {
           </dl>
         </div>
 
+        {/* Request headers */}
         <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
           <button
             type="button"
@@ -222,9 +230,9 @@ export default function TraceOperationDetail({ operation, isLoading }) {
             </Text>
             <ChevronIcon open={showRequestHeaders} />
           </button>
-          {requestHeaders.length ? (
-            showRequestHeaders ? (
-              <div className="border-t border-tremor-border">
+          {showRequestHeaders ? (
+            <div className="border-t border-tremor-border">
+              {requestHeaders.length ? (
                 <div className="max-h-60 overflow-auto">
                   <dl className="divide-y divide-tremor-border dark:divide-dark-tremor-border">
                     {requestHeaders.map((header, index) => (
@@ -242,15 +250,16 @@ export default function TraceOperationDetail({ operation, isLoading }) {
                     ))}
                   </dl>
                 </div>
-              </div>
-            ) : null
-          ) : (
-            <Text className="border-t border-tremor-border px-3 py-2 text-sm text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
-              No headers
-            </Text>
-          )}
+              ) : (
+                <Text className="px-3 py-2 text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
+                  No headers
+                </Text>
+              )}
+            </div>
+          ) : null}
         </div>
 
+        {/* Request body */}
         <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
           <button
             type="button"
@@ -292,6 +301,7 @@ export default function TraceOperationDetail({ operation, isLoading }) {
           ) : null}
         </div>
 
+        {/* Response body */}
         <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
           <button
             type="button"
@@ -325,7 +335,7 @@ export default function TraceOperationDetail({ operation, isLoading }) {
             </div>
           ) : null}
         </div>
-
+        {/* Response headers */}
         <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
           <button
             type="button"
@@ -338,9 +348,10 @@ export default function TraceOperationDetail({ operation, isLoading }) {
             </Text>
             <ChevronIcon open={showResponseHeaders} />
           </button>
-          {responseHeaders.length ? (
-            showResponseHeaders ? (
-              <div className="border-t border-tremor-border">
+
+          {showResponseHeaders ? (
+            <div className="border-t border-tremor-border">
+              {responseHeaders.length ? (
                 <div className="max-h-60 overflow-auto">
                   <dl className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
                     {responseHeaders.map((header, index) => (
@@ -358,15 +369,16 @@ export default function TraceOperationDetail({ operation, isLoading }) {
                     ))}
                   </dl>
                 </div>
-              </div>
-            ) : null
-          ) : (
-            <Text className="border-t border-tremor-border px-3 py-2 text-sm text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
-              No headers
-            </Text>
-          )}
+              ) : (
+                <Text className="px-3 py-2 text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
+                  No headers
+                </Text>
+              )}
+            </div>
+          ) : null}
         </div>
 
+        {/* Tags */}
         {tags.length ? (
           <div>
             <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
@@ -385,23 +397,36 @@ export default function TraceOperationDetail({ operation, isLoading }) {
           </div>
         ) : null}
 
+        {/* Basic metadata */}
         {basicMetaEntries.length ? (
-          <div>
-            <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-              Metadata
-            </Text>
-            <div className="mt-2 space-y-3">
-              {basicMetaEntries.map((entry) => (
-                <div key={entry.key}>
-                  <Text className="text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    {entry.key}
-                  </Text>
-                  <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-tremor-small bg-gray-900 px-3 py-2 text-xs text-gray-100 dark:bg-gray-800 dark:text-gray-100">
-                    {entry.value}
-                  </pre>
+          <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+            <button
+              type="button"
+              onClick={() => setShowBasicMeta((prev) => !prev)}
+              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-tremor-content-strong dark:text-dark-tremor-content-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            >
+              <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                Metadata
+              </Text>
+              <ChevronIcon open={showBasicMeta} />
+            </button>
+
+            {showBasicMeta ? (
+              <div className="px-3 py-2">
+                <div className="mt-2 space-y-3">
+                  {basicMetaEntries.map((entry) => (
+                    <div key={entry.key}>
+                      <Text className="text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                        {entry.key}
+                      </Text>
+                      <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-tremor-small bg-gray-900 px-3 py-2 text-xs text-gray-100 dark:bg-gray-800 dark:text-gray-100">
+                        {entry.value}
+                      </pre>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
 

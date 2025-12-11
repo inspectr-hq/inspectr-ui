@@ -275,7 +275,10 @@ const validateArgsAgainstSchema = (args = {}, schema) => {
 };
 
 export default function TraceOperationMcpDetail({ operation, isLoading }) {
-  console.log('OP', operation);
+  const debugMode = typeof window !== 'undefined' && localStorage.getItem('debug') === 'true';
+  if (debugMode) {
+    console.log('OP', operation);
+  }
 
   const [showRaw, setShowRaw] = useState(false);
   const [resultTab, setResultTab] = useState('structured');
@@ -456,10 +459,10 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                   </dt>
                   <dd className="flex items-center gap-2 text-right text-tremor-content dark:text-dark-tremor-content">
                     <Badge color="indigo" size="xs">
-                      Req {mcpMeta.tokens.request ?? '—'}
+                      Request {mcpMeta.tokens.request ?? '—'}
                     </Badge>
                     <Badge color="indigo" size="xs">
-                      Res {mcpMeta.tokens.response ?? '—'}
+                      Response {mcpMeta.tokens.response ?? '—'}
                     </Badge>
                     <Badge color="indigo" size="xs">
                       Total {mcpMeta.tokens.total ?? '—'}
