@@ -122,7 +122,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
       {/* Tabs for Request, Response */}
       <div className="flex space-x-2">
         <button
-          className={`px-4 py-2 rounded-t ${
+          className={`px-4 py-1 rounded-t ${
             currentTab === 'request'
               ? 'bg-blue-600 dark:bg-blue-700 text-white'
               : 'bg-gray-200 dark:bg-dark-tremor-background-subtle text-gray-700 dark:text-dark-tremor-content'
@@ -132,7 +132,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
           Request
         </button>
         <button
-          className={`px-4 py-2 rounded-t ${
+          className={`px-4 py-1 rounded-t ${
             currentTab === 'response'
               ? 'bg-blue-600 dark:bg-blue-700 text-white'
               : 'bg-gray-200 dark:bg-dark-tremor-background-subtle text-gray-700 dark:text-dark-tremor-content'
@@ -143,7 +143,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
         </button>
         {hasInfo && (
           <button
-            className={`px-4 py-2 rounded-t ${
+            className={`px-4 py-1 rounded-t ${
               currentTab === 'meta'
                 ? 'bg-teal-600 dark:bg-teal-700 text-white'
                 : 'bg-gray-200 dark:bg-dark-tremor-background-subtle text-gray-700 dark:text-dark-tremor-content'
@@ -155,7 +155,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
         )}
         {hasMcp && (
           <button
-            className={`px-4 py-2 rounded-t ${
+            className={`px-4 py-1 rounded-t ${
               currentTab === 'mcp'
                 ? 'bg-sky-500 dark:bg-sky-800 text-white'
                 : 'bg-gray-200 dark:bg-dark-tremor-background-subtle text-gray-700 dark:text-dark-tremor-content'
