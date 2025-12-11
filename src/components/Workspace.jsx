@@ -190,7 +190,7 @@ export default function Workspace() {
           {['insights', 'statistics', 'settings', 'usage', 'rules', 'traces'].includes(
             currentNav.slug
           ) ? (
-            <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-950">
+            <div className="p-4 bg-gray-50 dark:bg-gray-950">
               <ActiveComponent key={currentNav.slug} route={route} />
             </div>
           ) : (

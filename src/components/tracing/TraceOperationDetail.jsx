@@ -139,7 +139,7 @@ export default function TraceOperationDetail({ operation, isLoading }) {
         </div>
       </div>
 
-      <div className="mt-6 space-y-5 overflow-y-auto">
+      <div className="mt-6 space-y-5">
         <div>
           <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
             Properties
@@ -192,7 +192,7 @@ export default function TraceOperationDetail({ operation, isLoading }) {
           </dl>
         </div>
 
-        <div>
+        <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
           <button
             type="button"
             onClick={() => setShowRequestHeaders((prev) => !prev)}
@@ -294,7 +294,7 @@ export default function TraceOperationDetail({ operation, isLoading }) {
           )}
         </div>
 
-        <div>
+        <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
           <button
             type="button"
             onClick={() => setShowResponseHeaders((prev) => !prev)}

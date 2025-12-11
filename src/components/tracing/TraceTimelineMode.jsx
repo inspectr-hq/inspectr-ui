@@ -443,7 +443,7 @@ export default function TraceTimelineMode({
     );
   };
 
-  const PANEL_MAX_HEIGHT = 'calc(100vh - 220px)';
+  const PANEL_MAX_HEIGHT = 'calc(100vh - 64px)';
   const isMcpOperation = (op) => {
     if (!op) return false;
     const meta = op.meta || {};
@@ -463,7 +463,9 @@ export default function TraceTimelineMode({
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       <Card
         id="trace-timeline"
-        className="w-full rounded-tremor-small border border-tremor-border p-6 dark:border-dark-tremor-border"
+        // className="w-full rounded-tremor-small border border-tremor-border p-6 dark:border-dark-tremor-border"
+        className="w-full rounded-tremor-small border border-tremor-border p-6
+             dark:border-dark-tremor-border overflow-y-auto"
         style={{ maxHeight: PANEL_MAX_HEIGHT }}
       >
         <Flex justifyContent="between" alignItems="start">
@@ -582,7 +584,7 @@ export default function TraceTimelineMode({
 
       <Card
         id="trace-details"
-        className="rounded-tremor-small border border-tremor-border p-6 dark:border-dark-tremor-border"
+        className="rounded-tremor-small border border-tremor-border dark:border-dark-tremor-border overflow-y-auto"
         style={{ maxHeight: PANEL_MAX_HEIGHT }}
       >
         {isMcpOperation(selectedOperation) ? (

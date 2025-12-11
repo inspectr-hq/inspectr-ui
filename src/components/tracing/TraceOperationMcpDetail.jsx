@@ -1,7 +1,17 @@
 // src/components/tracing/TraceOperationMcpDetail.jsx
 
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { Badge, Card, Text, Title } from '@tremor/react';
+import {
+  Badge,
+  Card,
+  Tab,
+  TabGroup,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Text,
+  Title
+} from '@tremor/react';
 import Editor from '@monaco-editor/react';
 import StatusBadge from '../insights/StatusBadge.jsx';
 import MethodBadge from '../insights/MethodBadge.jsx';
@@ -250,9 +260,13 @@ const validateArgsAgainstSchema = (args = {}, schema) => {
 
 export default function TraceOperationMcpDetail({ operation, isLoading }) {
   const [showRaw, setShowRaw] = useState(false);
+  const [resultTab, setResultTab] = useState('structured');
+  const [showRawHttp, setShowRawHttp] = useState(false);
   const toolCacheRef = useRef([]);
   useEffect(() => {
     setShowRaw(false);
+    setResultTab('structured');
+    setShowRawHttp(false);
   }, [operation?.id]);
   const mcpMeta = operation?.meta?.mcp || operation?.meta?.trace?.mcp || {};
   const rawRequestBody =
@@ -273,7 +287,10 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
   const mcpCategory = mcpMeta.category || '';
   const tools = mcpResponse?.result?.tools || mcpResponse?.tools || [];
   const isToolsList = mcpMethod === 'tools/list' && Array.isArray(tools);
-  const isToolsCall = mcpMethod === 'tools/call' || mcpMethod === 'tool/call';
+  const hasToolTag =
+    Array.isArray(operation?.meta?.tags) &&
+    operation.meta.tags.some((tag) => typeof tag === 'string' && tag.startsWith('mcp.tool.'));
+  const isToolsCall = mcpMethod === 'tools/call' || mcpMethod === 'tool/call' || hasToolTag;
   const isPromptsList = mcpMethod === 'prompts/list';
   const isPromptsGet = mcpMethod === 'prompts/get';
   const isResourcesList = mcpMethod === 'resources/list';
@@ -313,6 +330,16 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
     []
   );
 
+  const getMainTabLabel = () => {
+    if (isToolsCall) return 'Tool call';
+    if (isToolsList) return 'Tools list';
+    if (isPromptsList) return 'Prompts list';
+    if (isPromptsGet) return 'Prompt';
+    if (isResourcesList) return 'Resources list';
+    if (isResourcesRead) return 'Resource';
+    return 'Typed view';
+  };
+
   if (!operation) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
@@ -322,7 +349,7 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="flex h-full flex-col">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -341,7 +368,7 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
         </div>
       </div>
 
-      <div className="mt-6 flex-1 space-y-5 overflow-y-auto pr-1">
+      <div className="mt-6 flex-1 space-y-5 pr-1">
         <div>
           <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
             Properties
@@ -410,367 +437,459 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-            {mcpMeta?.tokens ? (
-              <>
-                <Badge color="indigo" size="xs">
-                  Req {mcpMeta.tokens.request ?? '—'}
-                </Badge>
-                <Badge color="indigo" size="xs">
-                  Res {mcpMeta.tokens.response ?? '—'}
-                </Badge>
-                <Badge color="indigo" size="xs">
-                  Total {mcpMeta.tokens.total ?? '—'}
-                </Badge>
-              </>
-            ) : null}
-          </div>
+          {mcpMeta?.tokens ? (
+            <div className="flex flex-wrap items-center gap-1 text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+              <Badge color="indigo" size="xs">
+                Req {mcpMeta.tokens.request ?? '—'}
+              </Badge>
+              <Badge color="indigo" size="xs">
+                Res {mcpMeta.tokens.response ?? '—'}
+              </Badge>
+              <Badge color="indigo" size="xs">
+                Total {mcpMeta.tokens.total ?? '—'}
+              </Badge>
+            </div>
+          ) : null}
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowRaw(false)}
-              className={`rounded-tremor-small px-3 py-1 text-xs font-semibold ${
-                !showRaw
-                  ? 'bg-tremor-brand-faint text-tremor-content-strong'
-                  : 'text-tremor-content-subtle hover:text-tremor-content'
-              }`}
-            >
-              Typed view
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowRaw(true)}
-              className={`rounded-tremor-small px-3 py-1 text-xs font-semibold ${
-                showRaw
-                  ? 'bg-tremor-brand-faint text-tremor-content-strong'
-                  : 'text-tremor-content-subtle hover:text-tremor-content'
-              }`}
-            >
-              Raw JSON
-            </button>
-          </div>
-
-          {!showRaw ? (
-            <div className="space-y-3">
-              {isToolsList && tools.length ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                      Tools ({tools.length})
-                    </Text>
-                  </div>
-                  <div className="space-y-2">
-                    {tools.map((tool) => (
-                      <ToolCard key={tool.name} tool={tool} />
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {isToolsCall ? (
-                <div className="space-y-2">
-                  <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    Tool call
-                  </Text>
-                  <Card className="space-y-2 rounded-tremor-small border border-tremor-border p-3 shadow-sm dark:border-dark-tremor-border">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge color="blue" size="xs">
-                        {mcpRequest?.params?.name || 'Unknown tool'}
-                      </Badge>
-                      {mcpResponse?.error ? (
-                        <Badge color="rose" size="xs">
-                          Error
-                        </Badge>
-                      ) : (
-                        <Badge color="emerald" size="xs">
-                          Success
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <div className="space-y-1">
-                        <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-                          Arguments
+          <TabGroup index={showRaw ? 1 : 0} onIndexChange={(idx) => setShowRaw(idx === 1)}>
+            <TabList>
+              <Tab>{getMainTabLabel()}</Tab>
+              <Tab>Raw</Tab>
+            </TabList>
+            <TabPanels>
+              <TabPanel>
+                <div className="space-y-3">
+                  {isToolsList && tools.length ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                          Tools ({tools.length})
                         </Text>
-                        <ArgumentsTable args={mcpRequest?.params?.arguments} />
-                        {callSchema &&
-                        (callValidation.missing.length || callValidation.extra.length) ? (
-                          <div className="space-y-1 text-[11px] text-amber-700 dark:text-amber-200">
-                            {callValidation.missing.length ? (
-                              <div>Missing required: {callValidation.missing.join(', ')}</div>
-                            ) : null}
-                            {callValidation.extra.length ? (
-                              <div>Unknown fields: {callValidation.extra.join(', ')}</div>
-                            ) : null}
-                          </div>
-                        ) : null}
                       </div>
-                      <div className="space-y-1">
-                        <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-                          Result
-                        </Text>
-                        {mcpResponse?.result?.structuredContent ? (
-                          <StructuredBlock
-                            data={mcpResponse.result.structuredContent}
-                            title="Structured content"
-                          />
-                        ) : null}
-                        {Array.isArray(mcpResponse?.result?.content) ? (
-                          <div className="space-y-1 rounded-tremor-small bg-tremor-background-subtle p-2 text-xs text-tremor-content dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content">
-                            {mcpResponse.result.content.map((block, idx) => (
-                              <div key={idx}>{block?.text || '[non-text content]'}</div>
-                            ))}
-                          </div>
-                        ) : null}
-                        {!mcpResponse?.result && !mcpResponse?.error ? (
-                          <Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-                            No result returned.
-                          </Text>
-                        ) : null}
+                      <div className="space-y-2">
+                        {tools.map((tool) => (
+                          <ToolCard key={tool.name} tool={tool} />
+                        ))}
                       </div>
                     </div>
-                  </Card>
-                </div>
-              ) : null}
+                  ) : null}
 
-              {isPromptsList && Array.isArray(mcpResponse?.result?.prompts) ? (
-                <div className="space-y-2">
-                  <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    Prompts ({mcpResponse.result.prompts.length})
-                  </Text>
-                  <div className="space-y-2">
-                    {mcpResponse.result.prompts.map((prompt) => {
-                      const args = prompt.arguments || [];
-                      const requiredCount = args.filter((a) => a.required).length;
-                      return (
-                        <Card
-                          key={prompt.name}
-                          className="space-y-1 rounded-tremor-small border border-tremor-border p-3 shadow-sm dark:border-dark-tremor-border"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                                {prompt.title || prompt.name}
-                              </Text>
-                              {prompt.description ? (
-                                <Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-                                  {prompt.description}
-                                </Text>
-                              ) : null}
-                            </div>
-                            <Badge color="slate" size="xs">
-                              {args.length} args
-                              {requiredCount ? ` (${requiredCount} required)` : ''}
+                  {isToolsCall ? (
+                    <div className="space-y-2">
+                      {/*<Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">*/}
+                      {/*  Tool call*/}
+                      {/*</Text>*/}
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-tremor-content-subtle dark:text-dark-tremor-content">
+                            tool
+                          </span>
+                          <Badge color="blue" size="xs">
+                            {mcpRequest?.params?.name || 'Unknown tool'}
+                          </Badge>
+                          {mcpResponse?.error ? (
+                            <Badge color="rose" size="xs">
+                              Error
                             </Badge>
-                          </div>
-                          {args.length ? (
-                            <div className="space-y-1">
-                              {args.map((arg) => (
-                                <div key={arg.name} className="flex items-start gap-2 text-xs">
-                                  <span className="font-mono text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                                    {arg.name}
-                                  </span>
-                                  <span className="flex-1 text-tremor-content dark:text-dark-tremor-content">
-                                    {arg.description || 'No description'}
-                                  </span>
-                                  {arg.required ? (
-                                    <Badge color="rose" size="xs">
-                                      required
-                                    </Badge>
-                                  ) : null}
-                                </div>
-                              ))}
-                            </div>
-                          ) : null}
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-
-              {isPromptsGet && Array.isArray(mcpResponse?.result?.messages) ? (
-                <div className="space-y-2">
-                  <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    Prompt preview
-                  </Text>
-                  <div className="space-y-2">
-                    {mcpResponse.result.messages.map((message, idx) => (
-                      <div
-                        key={idx}
-                        className={`flex ${message.role === 'assistant' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-xl rounded-tremor-small px-3 py-2 text-sm ${
-                            message.role === 'assistant'
-                              ? 'bg-tremor-brand-faint text-tremor-content-strong'
-                              : 'bg-tremor-background-subtle text-tremor-content dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content'
-                          }`}
-                        >
-                          {Array.isArray(message.content)
-                            ? message.content.map((c, i) => (
-                                <div key={i}>{c.text || '[content]'}</div>
-                              ))
-                            : message.content?.text || '[content]'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {isResourcesList && Array.isArray(mcpResponse?.result?.resources) ? (
-                <div className="space-y-2">
-                  <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    Resources ({mcpResponse.result.resources.length})
-                  </Text>
-                  <div className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
-                    {mcpResponse.result.resources.map((res) => (
-                      <div key={res.uri} className="flex flex-wrap items-center gap-2 py-2">
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                            {res.title || res.name || res.uri}
-                          </div>
-                          <div className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-                            {res.uri}
-                          </div>
-                          {res.description ? (
-                            <div className="text-xs text-tremor-content dark:text-dark-tremor-content">
-                              {res.description}
-                            </div>
-                          ) : null}
-                        </div>
-                        {res.mimeType ? (
-                          <Badge color="slate" size="xs">
-                            {res.mimeType}
-                          </Badge>
-                        ) : null}
-                        {res.size ? (
-                          <Badge color="slate" size="xs">
-                            {`${(res.size / 1024).toFixed(1)} KB`}
-                          </Badge>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {isResourcesRead && mcpResponse?.result ? (
-                <div className="space-y-2">
-                  <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    Resource content
-                  </Text>
-                  {typeof resourceRead?.text === 'string' ? (
-                    <>
-                      {(resourceMime || '').includes('markdown') ? (
-                        <div className="rounded-tremor-small border border-slate-200 bg-tremor-background-subtle p-3 text-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
-                          {renderMarkdownPreview(resourceRead.text) || (
-                            <div className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                              Unable to render markdown preview.
-                            </div>
+                          ) : (
+                            <Badge color="emerald" size="xs">
+                              Success
+                            </Badge>
                           )}
                         </div>
-                      ) : null}
-                      {(resourceMime || '').includes('html') ? (
-                        <div className="rounded-tremor-small border border-slate-200 bg-tremor-background-subtle p-3 text-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
-                          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-                            HTML (text-only preview)
-                          </Text>
-                          <p className="mt-1 text-sm text-tremor-content dark:text-dark-tremor-content">
-                            {htmlTextPreview(resourceRead.text)}
-                          </p>
+                        <div className="grid gap-3 md:grid-cols-1">
+                          <Card className="space-y-2 rounded-tremor-small border border-tremor-border p-3 dark:border-dark-tremor-border">
+                            <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                              Input
+                            </Text>
+                            <ArgumentsTable args={mcpRequest?.params?.arguments} />
+                            {callSchema &&
+                            (callValidation.missing.length || callValidation.extra.length) ? (
+                              <div className="space-y-1 text-[11px] text-amber-700 dark:text-amber-200">
+                                {callValidation.missing.length ? (
+                                  <div>Missing required: {callValidation.missing.join(', ')}</div>
+                                ) : null}
+                                {callValidation.extra.length ? (
+                                  <div>Unknown fields: {callValidation.extra.join(', ')}</div>
+                                ) : null}
+                              </div>
+                            ) : null}
+                          </Card>
+                          <Card className="space-y-2 rounded-tremor-small border border-tremor-border p-3 dark:border-dark-tremor-border">
+                            <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                              Output
+                            </Text>
+                            <TabGroup
+                              index={resultTab === 'structured' ? 0 : 1}
+                              onIndexChange={(idx) =>
+                                setResultTab(idx === 0 ? 'structured' : 'raw')
+                              }
+                            >
+                              <TabList>
+                                <Tab>Structured content</Tab>
+                                <Tab>Raw content</Tab>
+                              </TabList>
+                              <TabPanels>
+                                <TabPanel>
+                                  {mcpResponse?.result?.structuredContent ? (
+                                    <StructuredBlock
+                                      data={mcpResponse.result.structuredContent}
+                                      title="Structured content"
+                                    />
+                                  ) : null}
+                                  {Array.isArray(mcpResponse?.result?.content) ? (
+                                    <div className="space-y-1 rounded-tremor-small bg-tremor-background-subtle p-2 text-xs text-tremor-content dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content">
+                                      {mcpResponse.result.content.map((block, idx) => (
+                                        <div key={idx}>{block?.text || '[non-text content]'}</div>
+                                      ))}
+                                    </div>
+                                  ) : null}
+                                  {!mcpResponse?.result && !mcpResponse?.error ? (
+                                    <Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+                                      No result returned.
+                                    </Text>
+                                  ) : null}
+                                </TabPanel>
+                                <TabPanel>
+                                  <StructuredBlock
+                                    data={mcpResponse?.result ?? mcpResponse ?? {}}
+                                  />
+                                </TabPanel>
+                              </TabPanels>
+                            </TabGroup>
+                          </Card>
                         </div>
-                      ) : null}
-                      <Editor
-                        value={resourceRead.text}
-                        language={getMimeLanguage(resourceMime)}
-                        theme={getMonacoTheme()}
-                        beforeMount={defineMonacoThemes}
-                        options={editorOptions}
-                        height="240px"
-                      />
-                    </>
-                  ) : (
-                    <StructuredBlock data={resourceRead} />
-                  )}
-                </div>
-              ) : null}
+                      </div>
+                    </div>
+                  ) : null}
 
-              {!isToolsList &&
-              !isToolsCall &&
-              !isPromptsList &&
-              !isPromptsGet &&
-              !isResourcesList &&
-              !isResourcesRead ? (
-                <Text className="text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
-                  No typed MCP view available for this method. Switch to Raw JSON to inspect.
+                  {isPromptsList && Array.isArray(mcpResponse?.result?.prompts) ? (
+                    <div className="space-y-2">
+                      <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                        Prompts ({mcpResponse.result.prompts.length})
+                      </Text>
+                      <div className="space-y-2">
+                        {mcpResponse.result.prompts.map((prompt) => {
+                          const args = prompt.arguments || [];
+                          const requiredCount = args.filter((a) => a.required).length;
+                          return (
+                            <Card
+                              key={prompt.name}
+                              className="space-y-1 rounded-tremor-small border border-tremor-border p-3 shadow-sm dark:border-dark-tremor-border"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                  <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                                    {prompt.title || prompt.name}
+                                  </Text>
+                                  {prompt.description ? (
+                                    <Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+                                      {prompt.description}
+                                    </Text>
+                                  ) : null}
+                                </div>
+                                <Badge color="slate" size="xs">
+                                  {args.length} args
+                                  {requiredCount ? ` (${requiredCount} required)` : ''}
+                                </Badge>
+                              </div>
+                              {args.length ? (
+                                <div className="space-y-1">
+                                  {args.map((arg) => (
+                                    <div key={arg.name} className="flex items-start gap-2 text-xs">
+                                      <span className="font-mono text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                                        {arg.name}
+                                      </span>
+                                      <span className="flex-1 text-tremor-content dark:text-dark-tremor-content">
+                                        {arg.description || 'No description'}
+                                      </span>
+                                      {arg.required ? (
+                                        <Badge color="rose" size="xs">
+                                          required
+                                        </Badge>
+                                      ) : null}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {isPromptsGet && Array.isArray(mcpResponse?.result?.messages) ? (
+                    <div className="space-y-2">
+                      {/*<Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">*/}
+                      {/*  Prompt*/}
+                      {/*</Text>*/}
+                      <div className="grid gap-3">
+                        <div className="space-y-2">
+                          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                            Input
+                          </Text>
+                          <div className="space-y-1 text-xs text-tremor-content dark:text-dark-tremor-content">
+                            <div className="flex items-start gap-2">
+                              <span className="font-mono text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                                name
+                              </span>
+                              <span className="flex-1">
+                                {mcpRequest?.params?.name || mcpResponse?.result?.name || '—'}
+                              </span>
+                            </div>
+                            {Array.isArray(mcpRequest?.params?.arguments)
+                              ? mcpRequest.params.arguments.map((arg, idx) => (
+                                  <div key={idx} className="flex items-start gap-2">
+                                    <span className="font-mono text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                                      arg {idx + 1}
+                                    </span>
+                                    <span className="flex-1">{JSON.stringify(arg)}</span>
+                                  </div>
+                                ))
+                              : null}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                            Output
+                          </Text>
+                          <div className="space-y-2">
+                            {mcpResponse.result.messages.map((message, idx) => (
+                              <div
+                                key={idx}
+                                className={`flex ${message.role === 'assistant' ? 'justify-end' : 'justify-start'}`}
+                              >
+                                <div
+                                  className={`max-w-xl rounded-tremor-small px-3 py-2 text-sm ${
+                                    message.role === 'assistant'
+                                      ? 'bg-tremor-brand-faint text-tremor-content-strong'
+                                      : 'bg-tremor-background-subtle text-tremor-content dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content'
+                                  }`}
+                                >
+                                  {Array.isArray(message.content)
+                                    ? message.content.map((c, i) => (
+                                        <div key={i}>{c.text || '[content]'}</div>
+                                      ))
+                                    : message.content?.text || '[content]'}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {isResourcesList && Array.isArray(mcpResponse?.result?.resources) ? (
+                    <div className="space-y-2">
+                      <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                        Resources ({mcpResponse.result.resources.length})
+                      </Text>
+                      <div className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
+                        {mcpResponse.result.resources.map((res) => (
+                          <div key={res.uri} className="flex flex-wrap items-center gap-2 py-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                                {res.title || res.name || res.uri}
+                              </div>
+                              <div className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+                                {res.uri}
+                              </div>
+                              {res.description ? (
+                                <div className="text-xs text-tremor-content dark:text-dark-tremor-content">
+                                  {res.description}
+                                </div>
+                              ) : null}
+                            </div>
+                            {res.mimeType ? (
+                              <Badge color="slate" size="xs">
+                                {res.mimeType}
+                              </Badge>
+                            ) : null}
+                            {res.size ? (
+                              <Badge color="slate" size="xs">
+                                {`${(res.size / 1024).toFixed(1)} KB`}
+                              </Badge>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {isResourcesRead && mcpResponse?.result ? (
+                    <div className="space-y-2">
+                      {/*<Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">*/}
+                      {/*  Resource*/}
+                      {/*</Text>*/}
+                      <div className="grid gap-3">
+                        <div className="space-y-2">
+                          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                            Input
+                          </Text>
+                          <div className="space-y-1 text-xs text-tremor-content dark:text-dark-tremor-content">
+                            <div className="flex items-start gap-2">
+                              <span className="font-mono text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                                uri
+                              </span>
+                              <span className="flex-1">
+                                {mcpRequest?.params?.uri || resourceRead?.uri || '—'}
+                              </span>
+                            </div>
+                            {resourceMime ? (
+                              <div className="flex items-start gap-2">
+                                <span className="font-mono text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                                  mime
+                                </span>
+                                <span className="flex-1">{resourceMime}</span>
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                            Output
+                          </Text>
+                          {typeof resourceRead?.text === 'string' ? (
+                            <>
+                              {(resourceMime || '').includes('markdown') ? (
+                                <div className="rounded-tremor-small border border-slate-200 bg-tremor-background-subtle p-3 text-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
+                                  {renderMarkdownPreview(resourceRead.text) || (
+                                    <div className="text-tremor-content-subtle dark:text-dark-tremor-content">
+                                      Unable to render markdown preview.
+                                    </div>
+                                  )}
+                                </div>
+                              ) : null}
+                              {(resourceMime || '').includes('html') ? (
+                                <div className="rounded-tremor-small border border-slate-200 bg-tremor-background-subtle p-3 text-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
+                                  <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                                    HTML (text-only preview)
+                                  </Text>
+                                  <p className="mt-1 text-sm text-tremor-content dark:text-dark-tremor-content">
+                                    {htmlTextPreview(resourceRead.text)}
+                                  </p>
+                                </div>
+                              ) : null}
+                              <Editor
+                                value={resourceRead.text}
+                                language={getMimeLanguage(resourceMime)}
+                                theme={getMonacoTheme()}
+                                beforeMount={defineMonacoThemes}
+                                options={editorOptions}
+                                height="240px"
+                              />
+                            </>
+                          ) : (
+                            <StructuredBlock data={resourceRead} />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {!isToolsList &&
+                  !isToolsCall &&
+                  !isPromptsList &&
+                  !isPromptsGet &&
+                  !isResourcesList &&
+                  !isResourcesRead ? (
+                    <Text className="text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
+                      No typed MCP view available for this method. Switch to Raw JSON to inspect.
+                    </Text>
+                  ) : null}
+                </div>
+              </TabPanel>
+              <TabPanel>
+                <div className="space-y-3">
+                  <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+                    <div className="border-b border-tremor-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
+                      MCP Request (JSON-RPC)
+                    </div>
+                    <Editor
+                      value={requestBodyValue || '—'}
+                      language="json"
+                      theme={getMonacoTheme()}
+                      beforeMount={defineMonacoThemes}
+                      options={editorOptions}
+                      height="200px"
+                    />
+                  </div>
+                  <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+                    <div className="border-b border-tremor-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
+                      MCP Response (JSON-RPC)
+                    </div>
+                    <Editor
+                      value={responseBodyValue || '—'}
+                      language="json"
+                      theme={getMonacoTheme()}
+                      beforeMount={defineMonacoThemes}
+                      options={editorOptions}
+                      height="200px"
+                    />
+                  </div>
+                </div>
+              </TabPanel>
+            </TabPanels>
+          </TabGroup>
+        </div>
+
+        <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+          <button
+            type="button"
+            onClick={() => setShowRawHttp((prev) => !prev)}
+            className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
+          >
+            <span>Raw Request/Response</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className={`h-4 w-4 transition-transform ${showRawHttp ? 'rotate-180' : 'rotate-0'}`}
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+          {showRawHttp ? (
+            <div className="space-y-4 border-t border-tremor-border px-3 py-3 dark:border-dark-tremor-border">
+              <div>
+                <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                  Raw HTTP Request body
                 </Text>
-              ) : null}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-                <div className="border-b border-tremor-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
-                  MCP Request (JSON-RPC)
+                <div className="mt-2 h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+                  <Editor
+                    value={requestBodyValue || 'No request body'}
+                    language="json"
+                    theme={getMonacoTheme()}
+                    beforeMount={defineMonacoThemes}
+                    options={editorOptions}
+                    height="100%"
+                  />
                 </div>
-                <Editor
-                  value={requestBodyValue || '—'}
-                  language="json"
-                  theme={getMonacoTheme()}
-                  beforeMount={defineMonacoThemes}
-                  options={editorOptions}
-                  height="200px"
-                />
               </div>
-              <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-                <div className="border-b border-tremor-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
-                  MCP Response (JSON-RPC)
+              <div>
+                <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                  Raw HTTP Response body
+                </Text>
+                <div className="mt-2 h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+                  <Editor
+                    value={responseBodyValue || 'No response body'}
+                    language="json"
+                    theme={getMonacoTheme()}
+                    beforeMount={defineMonacoThemes}
+                    options={editorOptions}
+                    height="100%"
+                  />
                 </div>
-                <Editor
-                  value={responseBodyValue || '—'}
-                  language="json"
-                  theme={getMonacoTheme()}
-                  beforeMount={defineMonacoThemes}
-                  options={editorOptions}
-                  height="200px"
-                />
               </div>
             </div>
-          )}
-        </div>
-
-        <div>
-          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-            Raw HTTP Request body
-          </Text>
-          <div className="mt-2 h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-            <Editor
-              value={requestBodyValue || 'No request body'}
-              language="json"
-              theme={getMonacoTheme()}
-              beforeMount={defineMonacoThemes}
-              options={editorOptions}
-              height="100%"
-            />
-          </div>
-        </div>
-
-        <div>
-          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-            Raw HTTP Response body
-          </Text>
-          <div className="mt-2 h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-            <Editor
-              value={responseBodyValue || 'No response body'}
-              language="json"
-              theme={getMonacoTheme()}
-              beforeMount={defineMonacoThemes}
-              options={editorOptions}
-              height="100%"
-            />
-          </div>
+          ) : null}
         </div>
       </div>
     </div>
