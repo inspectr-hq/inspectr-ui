@@ -235,6 +235,22 @@ const StructuredBlock = ({ data, title }) => (
   </div>
 );
 
+const ChevronIcon = ({ open, className = '' }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+    className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : 'rotate-0'} ${className}`}
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
 const getMimeLanguage = (mimeType = '') => {
   const lower = mimeType.toLowerCase();
   if (lower.includes('json')) return 'json';
@@ -261,12 +277,14 @@ const validateArgsAgainstSchema = (args = {}, schema) => {
 export default function TraceOperationMcpDetail({ operation, isLoading }) {
   const [showRaw, setShowRaw] = useState(false);
   const [resultTab, setResultTab] = useState('structured');
-  const [showRawHttp, setShowRawHttp] = useState(false);
+  const [showRawRequest, setShowRawRequest] = useState(false);
+  const [showRawResponse, setShowRawResponse] = useState(false);
   const toolCacheRef = useRef([]);
   useEffect(() => {
     setShowRaw(false);
     setResultTab('structured');
-    setShowRawHttp(false);
+    setShowRawRequest(false);
+    setShowRawResponse(false);
   }, [operation?.id]);
   const mcpMeta = operation?.meta?.mcp || operation?.meta?.trace?.mcp || {};
   const rawRequestBody =
@@ -804,30 +822,52 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
               <TabPanel>
                 <div className="space-y-3">
                   <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-                    <div className="border-b border-tremor-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
-                      HTTP Request
-                    </div>
-                    <Editor
-                      value={requestBodyValue || '—'}
-                      language="json"
-                      theme={getMonacoTheme()}
-                      beforeMount={defineMonacoThemes}
-                      options={editorOptions}
-                      height="200px"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRawRequest((prev) => !prev)}
+                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
+                    >
+                      <span>HTTP Request</span>
+                      <ChevronIcon open={showRawRequest} />
+                    </button>
+                    {showRawRequest ? (
+                      <div className="border-t border-tremor-border px-3 py-3 dark:border-dark-tremor-border">
+                        <div className="h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+                          <Editor
+                            value={requestBodyValue || 'No request body'}
+                            language="json"
+                            theme={getMonacoTheme()}
+                            beforeMount={defineMonacoThemes}
+                            options={editorOptions}
+                            height="100%"
+                          />
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                   <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-                    <div className="border-b border-tremor-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
-                      HTTP Response
-                    </div>
-                    <Editor
-                      value={responseBodyValue || '—'}
-                      language="json"
-                      theme={getMonacoTheme()}
-                      beforeMount={defineMonacoThemes}
-                      options={editorOptions}
-                      height="200px"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRawResponse((prev) => !prev)}
+                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
+                    >
+                      <span>HTTP Response</span>
+                      <ChevronIcon open={showRawResponse} />
+                    </button>
+                    {showRawResponse ? (
+                      <div className="border-t border-tremor-border px-3 py-3 dark:border-dark-tremor-border">
+                        <div className="h-120 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+                          <Editor
+                            value={responseBodyValue || 'No response body'}
+                            language="json"
+                            theme={getMonacoTheme()}
+                            beforeMount={defineMonacoThemes}
+                            options={editorOptions}
+                            height="100%"
+                          />
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </TabPanel>

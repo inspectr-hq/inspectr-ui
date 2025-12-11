@@ -10,6 +10,22 @@ import MethodBadge from '../insights/MethodBadge.jsx';
 import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
 import { formatXML } from '../../utils/formatXml.js';
 
+const ChevronIcon = ({ open, className = '' }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+    className={`h-4 w-4 text-tremor-content transition-transform dark:text-dark-tremor-content ${open ? 'rotate-180' : 'rotate-0'} ${className}`}
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
 const normalizeHeaders = (headers) => {
   if (!headers) return [];
   if (Array.isArray(headers)) {
@@ -81,6 +97,8 @@ export default function TraceOperationDetail({ operation, isLoading }) {
   const [showAdvancedMeta, setShowAdvancedMeta] = useState(false);
   const [showRequestHeaders, setShowRequestHeaders] = useState(false);
   const [showResponseHeaders, setShowResponseHeaders] = useState(false);
+  const [showRequestBody, setShowRequestBody] = useState(false);
+  const [showResponseBody, setShowResponseBody] = useState(false);
 
   const metaEntries = extractMetaEntries(operation);
   const ADVANCED_META_KEYS = useMemo(() => new Set(['proxy', 'ingress', 'inspectr']), []);
@@ -197,101 +215,115 @@ export default function TraceOperationDetail({ operation, isLoading }) {
             type="button"
             onClick={() => setShowRequestHeaders((prev) => !prev)}
             aria-expanded={showRequestHeaders}
-            className="flex w-full items-center justify-between text-left"
+            className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
           >
             <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-              Request headers
+              Request headers ({requestHeaders.length})
             </Text>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className={`h-4 w-4 text-tremor-content transition-transform dark:text-dark-tremor-content ${showRequestHeaders ? 'rotate-180' : 'rotate-0'}`}
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <ChevronIcon open={showRequestHeaders} />
           </button>
           {requestHeaders.length ? (
             showRequestHeaders ? (
-              <div className="mt-2 max-h-60 overflow-auto rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-                <dl className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
-                  {requestHeaders.map((header, index) => (
-                    <div
-                      key={`${header.name}-${index}`}
-                      className="flex items-start gap-3 px-3 py-2"
-                    >
-                      <dt className="w-40 shrink-0 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-                        {header.name}
-                      </dt>
-                      <dd className="flex-1 text-sm text-tremor-content dark:text-dark-tremor-content">
-                        {header.value || '—'}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
+              <div className="border-t border-tremor-border">
+                <div className="max-h-60 overflow-auto">
+                  <dl className="divide-y divide-tremor-border dark:divide-dark-tremor-border">
+                    {requestHeaders.map((header, index) => (
+                      <div
+                        key={`${header.name}-${index}`}
+                        className="flex items-start gap-3 px-3 py-1"
+                      >
+                        <dt className="w-40 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                          {header.name}
+                        </dt>
+                        <dd className="flex-1 text-[10px] text-tremor-content dark:text-dark-tremor-content">
+                          {header.value || '—'}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
               </div>
             ) : null
           ) : (
-            <Text className="mt-2 text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
-              No headers captured.
+            <Text className="border-t border-tremor-border px-3 py-2 text-sm text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
+              No headers
             </Text>
           )}
         </div>
 
-        <div>
-          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-            Request body
-          </Text>
-          {hasRequestBody ? (
-            <div className="mt-2 h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-              <Editor
-                value={requestBodyValue}
-                language={requestEditorLanguage}
-                theme={getMonacoTheme()}
-                beforeMount={defineMonacoThemes}
-                options={editorOptions}
-                height="100%"
-              />
+        <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+          <button
+            type="button"
+            onClick={() => setShowRequestBody((prev) => !prev)}
+            className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
+          >
+            <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+              Request body
+            </Text>
+            <ChevronIcon open={showRequestBody} />
+          </button>
+          {showRequestBody ? (
+            <div className="border-t border-tremor-border">
+              {/*{hasRequestBody ? (*/}
+              {/*  <div className="h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">*/}
+              <div className="h-60 overflow-hidden">
+                <Editor
+                  value={requestBodyValue || 'No request body'}
+                  language={requestEditorLanguage}
+                  theme={getMonacoTheme()}
+                  beforeMount={defineMonacoThemes}
+                  options={editorOptions}
+                  height="100%"
+                />
+              </div>
+              {/*) : (*/}
+              {/*  <div className="h-10 overflow-hidden">*/}
+              {/*    <Editor*/}
+              {/*      value="No request body"*/}
+              {/*      language={requestEditorLanguage}*/}
+              {/*      theme={getMonacoTheme()}*/}
+              {/*      beforeMount={defineMonacoThemes}*/}
+              {/*      options={editorOptions}*/}
+              {/*      height="100%"*/}
+              {/*    />*/}
+              {/*  </div>*/}
+              {/*)}*/}
             </div>
-          ) : (
-            <div className="mt-2 h-10 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-              <Editor
-                value="No request body"
-                language={requestEditorLanguage}
-                theme={getMonacoTheme()}
-                beforeMount={defineMonacoThemes}
-                options={editorOptions}
-                height="100%"
-              />
-            </div>
-          )}
+          ) : null}
         </div>
 
-        <div>
-          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-            Response body
-          </Text>
-          {hasResponseBody ? (
-            <div className="mt-2 h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-              <Editor
-                value={responseBodyValue}
-                language={responseEditorLanguage}
-                theme={getMonacoTheme()}
-                beforeMount={defineMonacoThemes}
-                options={editorOptions}
-                height="100%"
-              />
+        <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
+          <button
+            type="button"
+            onClick={() => setShowResponseBody((prev) => !prev)}
+            className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
+          >
+            <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+              Response body
+            </Text>
+            <ChevronIcon open={showResponseBody} />
+          </button>
+          {showResponseBody ? (
+            <div className="border-t border-tremor-border">
+              {/*{hasResponseBody ? (*/}
+              {/*  <div className="h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">*/}
+              <div className="h-[320px] overflow-hidden">
+                <Editor
+                  value={responseBodyValue || 'No response body'}
+                  language={responseEditorLanguage}
+                  theme={getMonacoTheme()}
+                  beforeMount={defineMonacoThemes}
+                  options={editorOptions}
+                  height="100%"
+                />
+              </div>
+              {/*) : (*/}
+              {/*  <p className="px-3 py-2 text-sm text-tremor-content-subtle dark:text-dark-tremor-content">*/}
+              {/*    No response body*/}
+              {/*  </p>*/}
+              {/*)}*/}
             </div>
-          ) : (
-            <p className="mt-2 text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
-              No response body captured.
-            </p>
-          )}
+          ) : null}
         </div>
 
         <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
@@ -299,71 +331,41 @@ export default function TraceOperationDetail({ operation, isLoading }) {
             type="button"
             onClick={() => setShowResponseHeaders((prev) => !prev)}
             aria-expanded={showResponseHeaders}
-            className="flex w-full items-center justify-between text-left"
+            className="flex w-full items-center justify-between px-3 py-1 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
           >
             <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-              Response headers
+              Response headers ({responseHeaders.length})
             </Text>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className={`h-4 w-4 text-tremor-content transition-transform dark:text-dark-tremor-content ${showResponseHeaders ? 'rotate-180' : 'rotate-0'}`}
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <ChevronIcon open={showResponseHeaders} />
           </button>
           {responseHeaders.length ? (
             showResponseHeaders ? (
-              <div className="mt-2 max-h-60 overflow-auto rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-                <dl className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
-                  {responseHeaders.map((header, index) => (
-                    <div
-                      key={`${header.name}-${index}`}
-                      className="flex items-start gap-3 px-3 py-2"
-                    >
-                      <dt className="w-40 shrink-0 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-                        {header.name}
-                      </dt>
-                      <dd className="flex-1 text-sm text-tremor-content dark:text-dark-tremor-content">
-                        {header.value || '—'}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
+              <div className="border-t border-tremor-border">
+                <div className="max-h-60 overflow-auto">
+                  <dl className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
+                    {responseHeaders.map((header, index) => (
+                      <div
+                        key={`${header.name}-${index}`}
+                        className="flex items-start gap-3 px-3 py-1"
+                      >
+                        <dt className="w-40 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                          {header.name}
+                        </dt>
+                        <dd className="flex-1 text-[10px] text-tremor-content dark:text-dark-tremor-content">
+                          {header.value || '—'}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
               </div>
             ) : null
           ) : (
-            <Text className="mt-2 text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
-              No headers captured.
+            <Text className="border-t border-tremor-border px-3 py-2 text-sm text-tremor-content-subtle dark:border-dark-tremor-border dark:text-dark-tremor-content">
+              No headers
             </Text>
           )}
         </div>
-
-        {operation.traceInfo?.generic && genericTraceEntries.length ? (
-          <div>
-            <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-              Trace metadata
-            </Text>
-            <div className="mt-2 space-y-3">
-              {genericTraceEntries.map((entry) => (
-                <div key={entry.key}>
-                  <Text className="text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    {entry.key}
-                  </Text>
-                  <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-tremor-small bg-gray-900 px-3 py-2 text-xs text-gray-100 dark:bg-gray-800 dark:text-gray-100">
-                    {entry.value}
-                  </pre>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
 
         {tags.length ? (
           <div>
@@ -403,30 +405,39 @@ export default function TraceOperationDetail({ operation, isLoading }) {
           </div>
         ) : null}
 
-        {advancedMetaEntries.length ? (
+        {advancedMetaEntries.length || genericTraceEntries.length ? (
           <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
             <button
               type="button"
               onClick={() => setShowAdvancedMeta((prev) => !prev)}
-              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-tremor-content-strong dark:text-dark-tremor-content-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
             >
-              <span>Advanced metadata</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                className={`h-4 w-4 transition-transform ${showAdvancedMeta ? 'rotate-180' : 'rotate-0'}`}
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                Advanced metadata
+              </Text>
+              <ChevronIcon open={showAdvancedMeta} />
             </button>
             {showAdvancedMeta ? (
               <div className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
+                {operation.traceInfo?.generic && genericTraceEntries.length ? (
+                  <div className="px-3 py-2">
+                    <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                      Trace metadata
+                    </Text>
+                    <div className="mt-2 space-y-3">
+                      {genericTraceEntries.map((entry) => (
+                        <div key={entry.key}>
+                          <Text className="text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                            {entry.key}
+                          </Text>
+                          <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-tremor-small bg-gray-900 px-3 py-2 text-xs text-gray-100 dark:bg-gray-800 dark:text-gray-100">
+                            {entry.value}
+                          </pre>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
                 {advancedMetaEntries.map((entry) => (
                   <div key={entry.key} className="px-3 py-2">
                     <Text className="text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
