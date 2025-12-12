@@ -29,6 +29,7 @@ import { formatDuration } from '../../utils/formatters.js';
 import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
 import {
   deriveMcpView,
+  getSseJsonPayload,
   getMcpMethodColor,
   parseJson,
   validateArgsAgainstSchema
@@ -65,8 +66,11 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
       : operation?.response?.body
         ? JSON.stringify(operation.response.body)
         : '';
+  const ssePayload = getSseJsonPayload(operation?.response?.event_frames);
+  const effectiveResponseBody = rawResponseBody || ssePayload || '';
+
   const mcpRequest = parseJson(rawRequestBody);
-  const mcpResponse = parseJson(rawResponseBody);
+  const mcpResponse = parseJson(effectiveResponseBody);
   const mcpMethod = mcpMeta.method || mcpRequest?.method || '';
   const mcpCategory = mcpMeta.category || '';
   const tools = mcpResponse?.result?.tools || mcpResponse?.tools || [];

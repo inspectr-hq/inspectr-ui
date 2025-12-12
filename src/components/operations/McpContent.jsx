@@ -4,7 +4,7 @@ import ArgumentsTable from '../mcp/ArgumentsTable.jsx';
 import McpInputCard from '../mcp/McpInputCard.jsx';
 import McpOutputCard from '../mcp/McpOutputCard.jsx';
 import StructuredBlock from '../mcp/StructuredBlock.jsx';
-import { deriveMcpView, getMcpMethodColor, parseJson } from '../../utils/mcp.js';
+import { deriveMcpView, getMcpMethodColor, getSseJsonPayload, parseJson } from '../../utils/mcp.js';
 import McpBadge from '../mcp/McpBadge.jsx';
 import McpIndicator from './McpIndicator.jsx';
 import ToolCard from '../mcp/ToolCard.jsx';
@@ -52,8 +52,10 @@ const McpContent = ({ operation }) => {
       : operation?.response?.body
         ? JSON.stringify(operation.response.body)
         : '';
+  const ssePayload = getSseJsonPayload(operation?.response?.event_frames);
+  const effectiveResponseBody = rawResponseBody || ssePayload || '';
   const mcpRequest = parseJson(rawRequestBody);
-  const mcpResponse = parseJson(rawResponseBody);
+  const mcpResponse = parseJson(effectiveResponseBody);
   const hasInputArgs = Boolean(
     mcpRequest?.params?.arguments && Object.keys(mcpRequest.params.arguments).length
   );

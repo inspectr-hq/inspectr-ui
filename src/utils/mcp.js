@@ -94,3 +94,12 @@ export const deriveMcpView = (method = '', response) => {
 
   return { type: 'raw', raw };
 };
+
+export const getSseJsonPayload = (eventFrames = []) => {
+  if (!Array.isArray(eventFrames) || !eventFrames.length) return null;
+  const messages = eventFrames.filter(
+    (frame) => frame?.data && frame.event && frame.event.toLowerCase() === 'message'
+  );
+  if (!messages.length) return null;
+  return messages.map((m) => m.data).join('\n');
+};
