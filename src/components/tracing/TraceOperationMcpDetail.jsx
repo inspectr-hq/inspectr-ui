@@ -171,11 +171,6 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                   {mcpCategory}
                 </Badge>
               ) : null}
-              {mcpMeta?.session_id ? (
-                <Badge color="slate" size="xs">
-                  {mcpMeta.session_id}
-                </Badge>
-              ) : null}
             </div>
           </div>
 

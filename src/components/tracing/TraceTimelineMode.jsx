@@ -1,6 +1,6 @@
 // src/components/tracing/TraceTimelineMode.jsx
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Card, Flex, Select, SelectItem, Text, Title } from '@tremor/react';
 import EmptyState from '../insights/EmptyState.jsx';
 import TraceOperationDetail from './TraceOperationDetail.jsx';
@@ -18,9 +18,14 @@ import {
 } from './traceUtils.js';
 import { useTraceExplorer } from './useTraceExplorer.js';
 import McpBadge from '../mcp/McpBadge.jsx';
+import useLocalStorage from '../../hooks/useLocalStorage.jsx';
 
 const MIN_BAR_WIDTH_PERCENT = 3;
 const TIMELINE_TICK_COUNT = 4;
+const DEFAULT_TIMELINE_WIDTH = 56;
+const MIN_TIMELINE_WIDTH = 30;
+const MAX_TIMELINE_WIDTH = 75;
+const TIMELINE_WIDTH_STORAGE_KEY = 'traceTimelineWidth';
 
 const deriveGroupLabel = (operations) => {
   if (!operations.length) return 'Trace group';
@@ -80,6 +85,21 @@ export default function TraceTimelineMode({
     isActive
   });
 
+  const [expandedGroups, setExpandedGroups] = useState(() => new Set());
+  const [timelineWidthRaw, setTimelineWidthRaw] = useLocalStorage(
+    TIMELINE_WIDTH_STORAGE_KEY,
+    String(DEFAULT_TIMELINE_WIDTH)
+  );
+  const timelineWidth = useMemo(() => {
+    const parsed = Number(timelineWidthRaw);
+    if (Number.isFinite(parsed) && parsed >= MIN_TIMELINE_WIDTH && parsed <= MAX_TIMELINE_WIDTH) {
+      return parsed;
+    }
+    return DEFAULT_TIMELINE_WIDTH;
+  }, [timelineWidthRaw]);
+  const isResizingRef = useRef(false);
+  const panelContainerRef = useRef(null);
+
   const baseStart = timeline.start;
   const baseDuration = timeline.duration;
 
@@ -133,8 +153,6 @@ export default function TraceTimelineMode({
 
   const groups = allGroups;
 
-  const [expandedGroups, setExpandedGroups] = useState(() => new Set());
-
   const isRefreshingTrace = isTraceDetailLoading || isTraceListLoading;
 
   const handleRefresh = () => {
@@ -148,6 +166,31 @@ export default function TraceTimelineMode({
     }
     setExpandedGroups(new Set(groups.map((group) => group.id)));
   }, [selectedTraceId, groups]);
+
+  const stopResizing = useCallback(() => {
+    isResizingRef.current = false;
+  }, []);
+
+  const handleMouseMove = useCallback(
+    (event) => {
+      if (!isResizingRef.current || !panelContainerRef.current) return;
+      const rect = panelContainerRef.current.getBoundingClientRect();
+      if (!rect.width) return;
+      const rawPercent = ((event.clientX - rect.left) / rect.width) * 100;
+      const clamped = Math.min(Math.max(rawPercent, MIN_TIMELINE_WIDTH), MAX_TIMELINE_WIDTH);
+      setTimelineWidthRaw(String(clamped));
+    },
+    [setTimelineWidthRaw]
+  );
+
+  useEffect(() => {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', stopResizing);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', stopResizing);
+    };
+  }, [handleMouseMove, stopResizing]);
 
   if (!supportsTraces) {
     return (
@@ -261,7 +304,14 @@ export default function TraceTimelineMode({
           onClick={() => handleToggleGroup(group.id)}
           className="flex w-full items-center gap-3 px-3 py-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
         >
-          <div className="grid w-full items-center gap-3 pl-2 sm:grid-cols-[1.5rem_minmax(0,1fr)_70%]">
+          <div
+            className={classNames(
+              'grid w-full items-center gap-2 pl-0',
+              timelineWidth < 45
+                ? 'sm:grid-cols-[1.5rem_minmax(0,1fr)]'
+                : 'sm:grid-cols-[1.5rem_minmax(0,1fr)_65%]'
+            )}
+          >
             {/* Column 0: caret/icon */}
             <div className="flex justify-center">
               <span
@@ -306,7 +356,12 @@ export default function TraceTimelineMode({
             </div>
 
             {/* Column 2: duration + bar (flex-1) + badge */}
-            <div className="min-w-0 flex items-center gap-3">
+            <div
+              className={classNames(
+                'min-w-0 items-center gap-3',
+                timelineWidth < 45 ? 'hidden' : 'flex'
+              )}
+            >
               <Text className="w-20 shrink-0 text-right text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
                 {formatDuration(durationMs)}
               </Text>
@@ -352,13 +407,20 @@ export default function TraceTimelineMode({
         type="button"
         onClick={() => setSelectedOperationId(operation.id)}
         className={classNames(
-          'flex w-full items-center gap-3 rounded-tremor-small px-2 py-1.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+          'flex w-full items-center gap-3 rounded-tremor-small px-0 py-1.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
           isSelected
             ? 'bg-tremor-brand-faint text-tremor-content-strong ring-0 dark:bg-tremor-brand-faint/40'
             : 'hover:bg-slate-100 dark:hover:bg-dark-tremor-background-subtle'
         )}
       >
-        <div className="grid w-full items-center gap-3 pl-2 sm:grid-cols-[1.5rem_minmax(0,1fr)_70%]">
+        <div
+          className={classNames(
+            'grid w-full items-center gap-2 pl-0',
+            timelineWidth < 45
+              ? 'sm:grid-cols-[1.5rem_minmax(0,1fr)]'
+              : 'sm:grid-cols-[1.5rem_minmax(0,1fr)_65%]'
+          )}
+        >
           {/* Column 0: status dot */}
           <div className="flex justify-center">
             <span
@@ -377,12 +439,17 @@ export default function TraceTimelineMode({
               {mcpLabel ? <McpBadge method={mcpMeta?.method || ''}>{mcpLabel}</McpBadge> : null}
             </div>
             <Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-              {formatTimestamp(operation.timestamp)}
+              {formatTimestamp(operation.timestamp, { includeMilliseconds: true })}
             </Text>
           </div>
 
           {/* Column 2: duration + bar (flex-1) + status badge */}
-          <div className="min-w-0 flex items-center gap-3">
+          <div
+            className={classNames(
+              'min-w-0 items-center gap-3',
+              timelineWidth < 45 ? 'hidden' : 'flex'
+            )}
+          >
             <Text className="w-20 shrink-0 text-right text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
               {formatDuration(operation.duration)}
             </Text>
@@ -468,23 +535,25 @@ export default function TraceTimelineMode({
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+    <div
+      ref={panelContainerRef}
+      className="flex flex-col gap-4 lg:flex-row"
+      style={{ maxHeight: PANEL_MAX_HEIGHT }}
+    >
       <Card
         id="trace-timeline"
-        // className="w-full rounded-tremor-small border border-tremor-border p-6 dark:border-dark-tremor-border"
-        className="w-full rounded-tremor-small border border-tremor-border p-6
-             dark:border-dark-tremor-border overflow-y-auto"
-        style={{ maxHeight: PANEL_MAX_HEIGHT }}
+        className="w-full overflow-y-auto rounded-tremor-small border border-tremor-border p-6 dark:border-dark-tremor-border"
+        style={{ width: `${timelineWidth}%`, maxHeight: PANEL_MAX_HEIGHT }}
       >
         <Flex justifyContent="between" alignItems="start">
           <div>
             <Title className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong">
               Trace timeline
             </Title>
-            <Text className="mt-1 text-sm text-tremor-content dark:text-dark-tremor-content">
-              Review trace spans as a nested timeline, grouped by correlation across the
-              conversation.
-            </Text>
+            {/*<Text className="mt-1 text-sm text-tremor-content dark:text-dark-tremor-content">*/}
+            {/*  Review trace spans as a nested timeline, grouped by correlation across the*/}
+            {/*  conversation.*/}
+            {/*</Text>*/}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -590,10 +659,42 @@ export default function TraceTimelineMode({
         </div>
       </Card>
 
+      <div
+        className="relative w-px cursor-col-resize bg-gray-300 dark:bg-dark-tremor-border"
+        onMouseDown={() => {
+          isResizingRef.current = true;
+        }}
+      >
+        <button
+          type="button"
+          className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-md border border-gray-300 bg-white/80 px-0 py-2 text-gray-600 shadow-sm backdrop-blur-sm transition hover:bg-white dark:border-dark-tremor-border dark:bg-dark-tremor-background/80 dark:text-dark-tremor-content"
+          title="Drag to resize. Double-click to reset."
+          aria-label="Resize panels"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            isResizingRef.current = true;
+          }}
+          onDoubleClick={(e) => {
+            e.preventDefault();
+            setTimelineWidthRaw(String(DEFAULT_TIMELINE_WIDTH));
+          }}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className="h-4 w-4"
+            aria-hidden
+          >
+            <path d="M8.5 7C9.32843 7 10 6.32843 10 5.5C10 4.67157 9.32843 4 8.5 4C7.67157 4 7 4.67157 7 5.5C7 6.32843 7.67157 7 8.5 7ZM8.5 13.5C9.32843 13.5 10 12.8284 10 12C10 11.1716 9.32843 10.5 8.5 10.5C7.67157 10.5 7 11.1716 7 12C7 12.8284 7.67157 13.5 8.5 13.5ZM10 18.5C10 19.3284 9.32843 20 8.5 20C7.67157 20 7 19.3284 7 18.5C7 17.6716 7.67157 17 8.5 17C9.32843 17 10 17.6716 10 18.5ZM15.5 7C16.3284 7 17 6.32843 17 5.5C17 4.67157 16.3284 4 15.5 4C14.6716 4 14 4.67157 14 5.5C14 6.32843 14.6716 7 15.5 7ZM17 12C17 12.8284 16.3284 13.5 15.5 13.5C14.6716 13.5 14 12.8284 14 12C14 11.1716 14.6716 10.5 15.5 10.5C16.3284 10.5 17 11.1716 17 12ZM15.5 20C16.3284 20 17 19.3284 17 18.5C17 17.6716 16.3284 17 15.5 17C14.6716 17 14 17.6716 14 18.5C14 19.3284 14.6716 20 15.5 20Z" />
+          </svg>
+        </button>
+      </div>
+
       <Card
         id="trace-details"
-        className="rounded-tremor-small border border-tremor-border dark:border-dark-tremor-border overflow-y-auto"
-        style={{ maxHeight: PANEL_MAX_HEIGHT }}
+        className="w-full overflow-y-auto rounded-tremor-small border border-tremor-border dark:border-dark-tremor-border"
+        style={{ width: `${100 - timelineWidth}%`, maxHeight: PANEL_MAX_HEIGHT }}
       >
         {isMcpOperation(selectedOperation) ? (
           <TraceOperationMcpDetail operation={selectedOperation} isLoading={isTraceDetailLoading} />
