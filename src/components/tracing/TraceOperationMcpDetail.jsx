@@ -212,9 +212,9 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                           <span className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
                             Tool:
                           </span>
-                          <Badge color="blue" size="xs">
-                            {mcpRequest?.params?.name || 'Unknown tool'}
-                          </Badge>
+                          <McpBadge method={mcpMethod || ''}>
+                            {mcpRequest?.params?.name || '-'}
+                          </McpBadge>
                           <span className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
                             Result:
                           </span>
@@ -249,12 +249,22 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                                     <StructuredBlock
                                       data={mcpResponse.result.structuredContent}
                                       title="Structured content"
+                                      copyText={JSON.stringify(
+                                        mcpResponse.result.structuredContent,
+                                        null,
+                                        2
+                                      )}
                                     />
                                   </TabPanel>
                                   <TabPanel>
                                     <StructuredBlock
                                       data={mcpResponse?.result ?? mcpResponse ?? {}}
                                       title="Raw Output"
+                                      copyText={JSON.stringify(
+                                        mcpResponse?.result ?? mcpResponse ?? {},
+                                        null,
+                                        2
+                                      )}
                                     />
                                   </TabPanel>
                                 </TabPanels>
@@ -263,6 +273,11 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                               <StructuredBlock
                                 data={mcpResponse?.result ?? mcpResponse ?? {}}
                                 title="Raw Output"
+                                copyText={JSON.stringify(
+                                  mcpResponse?.result ?? mcpResponse ?? {},
+                                  null,
+                                  2
+                                )}
                               />
                             ) : (
                               <Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
