@@ -149,7 +149,9 @@ export default function TraceOperationDetail({ operation, isLoading }) {
 
       <div className="mt-6 space-y-5">
         {/* Properties */}
-        <PropertiesAccordion operation={operation} mcpMeta={mcpMeta} />
+        <CollapsibleSection title="Properties" resetKey={operation?.id} defaultOpen>
+          <PropertiesAccordion operation={operation} mcpMeta={mcpMeta} />
+        </CollapsibleSection>
 
         {/* Request headers */}
         <CollapsibleSection

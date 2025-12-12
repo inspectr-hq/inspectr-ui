@@ -137,15 +137,15 @@ const McpContent = ({ operation }) => {
 
       {mcpRequest || mcpResponse ? (
         <div className="grid grid-cols-1 gap-3">
-          <McpInputCard>
-            {hasInputArgs ? (
+          {hasInputArgs ? (
+            <McpInputCard>
               <ArgumentsTable args={mcpRequest.params.arguments} />
-            ) : (
-              <div className="text-sm text-slate-500 dark:text-dark-tremor-content">
-                No MCP input
-              </div>
-            )}
-          </McpInputCard>
+            </McpInputCard>
+          ) : null}
+          {/*<div className="text-sm text-slate-500 dark:text-dark-tremor-content">*/}
+          {/*  No MCP input*/}
+          {/*</div>*/}
+
           <McpOutputCard>
             {mcpResponse ? (
               view.type === 'toolsList' && view.tools?.length ? (

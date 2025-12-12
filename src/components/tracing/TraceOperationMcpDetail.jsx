@@ -155,7 +155,9 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
       </div>
 
       <div className="mt-6 flex-1 space-y-5 pr-1">
-        <PropertiesAccordion operation={operation} mcpMeta={mcpMeta} />
+        <CollapsibleSection title="Properties" resetKey={operation?.id} defaultOpen>
+          <PropertiesAccordion operation={operation} mcpMeta={mcpMeta} />
+        </CollapsibleSection>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -231,38 +233,42 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                             <ArgumentsTable args={mcpRequest?.params?.arguments} />
                           </McpInputCard>
                           <McpOutputCard>
-                            <TabGroup
-                              index={resultTab === 'structured' ? 0 : 1}
-                              onIndexChange={(idx) =>
-                                setResultTab(idx === 0 ? 'structured' : 'raw')
-                              }
-                            >
-                              <TabList>
-                                <Tab>Structured content</Tab>
-                                <Tab>Raw content</Tab>
-                              </TabList>
-                              <TabPanels>
-                                <TabPanel>
-                                  {mcpResponse?.result?.structuredContent ? (
+                            {mcpResponse?.result?.structuredContent ? (
+                              <TabGroup
+                                index={resultTab === 'structured' ? 0 : 1}
+                                onIndexChange={(idx) =>
+                                  setResultTab(idx === 0 ? 'structured' : 'raw')
+                                }
+                              >
+                                <TabList>
+                                  <Tab>Structured content</Tab>
+                                  <Tab>Raw content</Tab>
+                                </TabList>
+                                <TabPanels>
+                                  <TabPanel>
                                     <StructuredBlock
                                       data={mcpResponse.result.structuredContent}
                                       title="Structured content"
                                     />
-                                  ) : null}
-                                  {!mcpResponse?.result && !mcpResponse?.error ? (
-                                    <Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
-                                      No result returned.
-                                    </Text>
-                                  ) : null}
-                                </TabPanel>
-                                <TabPanel>
-                                  <StructuredBlock
-                                    data={mcpResponse?.result ?? mcpResponse ?? {}}
-                                    title="Raw Output"
-                                  />
-                                </TabPanel>
-                              </TabPanels>
-                            </TabGroup>
+                                  </TabPanel>
+                                  <TabPanel>
+                                    <StructuredBlock
+                                      data={mcpResponse?.result ?? mcpResponse ?? {}}
+                                      title="Raw Output"
+                                    />
+                                  </TabPanel>
+                                </TabPanels>
+                              </TabGroup>
+                            ) : mcpResponse ? (
+                              <StructuredBlock
+                                data={mcpResponse?.result ?? mcpResponse ?? {}}
+                                title="Raw Output"
+                              />
+                            ) : (
+                              <Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+                                No result returned.
+                              </Text>
+                            )}
                           </McpOutputCard>
                         </div>
                       </div>
