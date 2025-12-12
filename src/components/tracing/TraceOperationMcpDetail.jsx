@@ -21,27 +21,13 @@ import ResourceOutput from '../mcp/ResourceOutput.jsx';
 import StructuredBlock from '../mcp/StructuredBlock.jsx';
 import ToolCard from '../mcp/ToolCard.jsx';
 import McpBadge from '../mcp/McpBadge.jsx';
+import PropertiesAccordion from '../mcp/PropertiesAccordion.jsx';
+import CollapsibleSection from '../mcp/CollapsibleSection.jsx';
 import StatusBadge from '../insights/StatusBadge.jsx';
 import MethodBadge from '../insights/MethodBadge.jsx';
-import { formatDuration, formatTimestamp } from '../../utils/formatters.js';
+import { formatDuration } from '../../utils/formatters.js';
 import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
 import { getMcpMethodColor, parseJson, validateArgsAgainstSchema } from '../../utils/mcp.js';
-
-const ChevronIcon = ({ open, className = '' }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 20 20"
-    fill="currentColor"
-    className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : 'rotate-0'} ${className}`}
-    aria-hidden="true"
-  >
-    <path
-      fillRule="evenodd"
-      d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
-      clipRule="evenodd"
-    />
-  </svg>
-);
 
 export default function TraceOperationMcpDetail({ operation, isLoading }) {
   const debugMode = typeof window !== 'undefined' && localStorage.getItem('debug') === 'true';
@@ -51,16 +37,10 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
 
   const [showRaw, setShowRaw] = useState(false);
   const [resultTab, setResultTab] = useState('structured');
-  const [showRawRequest, setShowRawRequest] = useState(false);
-  const [showRawResponse, setShowRawResponse] = useState(false);
-  const [showProperties, setShowProperties] = useState(true);
   const toolCacheRef = useRef([]);
   useEffect(() => {
     setShowRaw(false);
     setResultTab('structured');
-    setShowRawRequest(false);
-    setShowRawResponse(false);
-    setShowProperties(true);
   }, [operation?.id]);
   const mcpMeta =
     operation?.meta?.mcp ||
@@ -168,80 +148,7 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
       </div>
 
       <div className="mt-6 flex-1 space-y-5 pr-1">
-        <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-          <button
-            type="button"
-            onClick={() => setShowProperties((prev) => !prev)}
-            className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
-          >
-            <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-              Properties
-            </Text>
-            <ChevronIcon open={showProperties} />
-          </button>
-          {showProperties ? (
-            <dl className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
-              <div className="flex items-center justify-between gap-3 px-3 py-2">
-                <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                  Request time
-                </dt>
-                <dd className="text-right text-tremor-content dark:text-dark-tremor-content">
-                  {formatTimestamp(operation.timestamp)}
-                </dd>
-              </div>
-              <div className="flex items-center justify-between gap-3 px-3 py-2">
-                <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                  Operation ID
-                </dt>
-                <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
-                  {operation.id}
-                </dd>
-              </div>
-              <div className="flex items-center justify-between gap-3 px-3 py-2">
-                <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                  Correlation ID
-                </dt>
-                <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
-                  {operation.correlationId || '—'}
-                </dd>
-              </div>
-              <div className="flex items-center justify-between gap-3 px-3 py-2">
-                <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                  Trace ID
-                </dt>
-                <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
-                  {operation.traceInfo?.trace_id || '—'}
-                </dd>
-              </div>
-              <div className="flex items-center justify-between gap-3 px-3 py-2">
-                <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                  Trace source
-                </dt>
-                <dd className="text-right text-tremor-content dark:text-dark-tremor-content">
-                  {operation.traceInfo?.source || '—'}
-                </dd>
-              </div>
-              {mcpMeta?.tokens ? (
-                <div className="flex items-center justify-between gap-3 px-3 py-2">
-                  <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                    Tokens
-                  </dt>
-                  <dd className="flex items-center gap-2 text-right text-tremor-content dark:text-dark-tremor-content">
-                    <Badge color="indigo" size="xs">
-                      Request {mcpMeta.tokens.request ?? '—'}
-                    </Badge>
-                    <Badge color="indigo" size="xs">
-                      Response {mcpMeta.tokens.response ?? '—'}
-                    </Badge>
-                    <Badge color="indigo" size="xs">
-                      Total {mcpMeta.tokens.total ?? '—'}
-                    </Badge>
-                  </dd>
-                </div>
-              ) : null}
-            </dl>
-          ) : null}
-        </div>
+        <PropertiesAccordion operation={operation} mcpMeta={mcpMeta} />
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -537,58 +444,40 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
               </TabPanel>
               <TabPanel>
                 <div className="space-y-3">
-                  <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-                    <button
-                      type="button"
-                      onClick={() => setShowRawRequest((prev) => !prev)}
-                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
-                    >
-                      <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-                        HTTP Request
-                      </Text>
-                      <ChevronIcon open={showRawRequest} />
-                    </button>
-                    {showRawRequest ? (
-                      <div className="border-t border-tremor-border">
-                        <div className="h-60 overflow-hidden">
-                          <Editor
-                            value={requestBodyValue || 'No request body'}
-                            language="json"
-                            theme={getMonacoTheme()}
-                            beforeMount={defineMonacoThemes}
-                            options={editorOptions}
-                            height="100%"
-                          />
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                  <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-                    <button
-                      type="button"
-                      onClick={() => setShowRawResponse((prev) => !prev)}
-                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
-                    >
-                      <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-                        HTTP Response
-                      </Text>
-                      <ChevronIcon open={showRawResponse} />
-                    </button>
-                    {showRawResponse ? (
-                      <div className="border-t border-tremor-border">
-                        <div className="h-[320px] overflow-hidden">
-                          <Editor
-                            value={responseBodyValue || 'No response body'}
-                            language="json"
-                            theme={getMonacoTheme()}
-                            beforeMount={defineMonacoThemes}
-                            options={editorOptions}
-                            height="100%"
-                          />
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
+                  <CollapsibleSection
+                    title="HTTP Request"
+                    resetKey={operation?.id}
+                    defaultOpen={false}
+                    copyText={requestBodyValue}
+                  >
+                    <div className="h-60 overflow-hidden">
+                      <Editor
+                        value={requestBodyValue || 'No request body'}
+                        language="json"
+                        theme={getMonacoTheme()}
+                        beforeMount={defineMonacoThemes}
+                        options={editorOptions}
+                        height="100%"
+                      />
+                    </div>
+                  </CollapsibleSection>
+                  <CollapsibleSection
+                    title="HTTP Response"
+                    resetKey={operation?.id}
+                    defaultOpen={false}
+                    copyText={responseBodyValue}
+                  >
+                    <div className="h-[320px] overflow-hidden">
+                      <Editor
+                        value={responseBodyValue || 'No response body'}
+                        language="json"
+                        theme={getMonacoTheme()}
+                        beforeMount={defineMonacoThemes}
+                        options={editorOptions}
+                        height="100%"
+                      />
+                    </div>
+                  </CollapsibleSection>
                 </div>
               </TabPanel>
             </TabPanels>
