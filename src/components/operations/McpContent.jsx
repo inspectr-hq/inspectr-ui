@@ -1,18 +1,13 @@
 // src/components/operations/McpContent.jsx
 import React from 'react';
+import ArgumentsTable from '../mcp/ArgumentsTable.jsx';
+import McpInputCard from '../mcp/McpInputCard.jsx';
+import McpOutputCard from '../mcp/McpOutputCard.jsx';
+import StructuredBlock from '../mcp/StructuredBlock.jsx';
+import { getMcpMethodColor, parseJson } from '../../utils/mcp.js';
+import McpBadge from '../mcp/McpBadge.jsx';
 import McpIndicator from './McpIndicator.jsx';
 import { Badge } from '@tremor/react';
-
-const Field = ({ label, value }) => (
-  <div className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
-    <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
-      {label}
-    </div>
-    <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
-      {value ?? '—'}
-    </div>
-  </div>
-);
 
 const TokenChip = ({ label, value }) => (
   <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong">
@@ -43,6 +38,24 @@ const McpContent = ({ operation }) => {
   ].filter((item) => item.value !== undefined);
 
   const isError = Number(operation?.status) >= 400;
+  const methodColor = getMcpMethodColor(mcp?.method);
+  const rawRequestBody =
+    typeof operation?.request?.body === 'string'
+      ? operation.request.body
+      : operation?.request?.body
+        ? JSON.stringify(operation.request.body)
+        : '';
+  const rawResponseBody =
+    typeof operation?.response?.body === 'string'
+      ? operation.response.body
+      : operation?.response?.body
+        ? JSON.stringify(operation.response.body)
+        : '';
+  const mcpRequest = parseJson(rawRequestBody);
+  const mcpResponse = parseJson(rawResponseBody);
+  const hasInputArgs = Boolean(
+    mcpRequest?.params?.arguments && Object.keys(mcpRequest.params.arguments).length
+  );
 
   return (
     <div className="space-y-2">
@@ -64,9 +77,7 @@ const McpContent = ({ operation }) => {
               {mcp.category ?? 'Name'}
             </div>
             <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
-              <Badge color="blue" size="xs">
-                {mcp.name ?? '—'}
-              </Badge>
+              <McpBadge method={mcp.method ?? ''}>{mcp.name ?? '—'}</McpBadge>
             </div>
           </div>
           <div className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
@@ -74,9 +85,7 @@ const McpContent = ({ operation }) => {
               Method
             </div>
             <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
-              <Badge color="blue" size="xs">
-                {mcp.method ?? '—'}
-              </Badge>
+              <McpBadge method={mcp.method ?? ''}>{mcp.method ?? '—'}</McpBadge>
             </div>
           </div>
           <div className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
@@ -84,9 +93,7 @@ const McpContent = ({ operation }) => {
               Category
             </div>
             <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
-              <Badge color="slate" size="xs">
-                {mcp.category ?? '—'}
-              </Badge>
+              <McpBadge color="slate">{mcp.category ?? '—'}</McpBadge>
             </div>
           </div>
         </div>
@@ -121,6 +128,29 @@ const McpContent = ({ operation }) => {
               </div>
             )}
           </div>
+        </div>
+      ) : null}
+
+      {mcpRequest || mcpResponse ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <McpInputCard>
+            {hasInputArgs ? (
+              <ArgumentsTable args={mcpRequest.params.arguments} />
+            ) : (
+              <div className="text-sm text-slate-500 dark:text-dark-tremor-content">
+                No MCP input captured
+              </div>
+            )}
+          </McpInputCard>
+          <McpOutputCard>
+            {mcpResponse ? (
+              <StructuredBlock data={mcpResponse.result ?? mcpResponse} />
+            ) : (
+              <div className="text-sm text-slate-500 dark:text-dark-tremor-content">
+                No MCP output captured
+              </div>
+            )}
+          </McpOutputCard>
         </div>
       ) : null}
     </div>
