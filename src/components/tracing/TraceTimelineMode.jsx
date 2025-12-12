@@ -17,6 +17,7 @@ import {
   pickAgentLabel
 } from './traceUtils.js';
 import { useTraceExplorer } from './useTraceExplorer.js';
+import McpBadge from '../mcp/McpBadge.jsx';
 
 const MIN_BAR_WIDTH_PERCENT = 3;
 const TIMELINE_TICK_COUNT = 4;
@@ -338,6 +339,12 @@ export default function TraceTimelineMode({
   const renderOperationRow = (operation, index) => {
     const { start, duration } = getOperationTiming(operation, index);
     const isSelected = selectedOperationId === operation.id;
+    const mcpMeta =
+      operation?.meta?.mcp ||
+      operation?.raw?.meta?.mcp ||
+      operation?.meta?.trace?.mcp ||
+      operation?.raw?.meta?.trace?.mcp;
+    const mcpLabel = mcpMeta?.name || mcpMeta?.method || null;
 
     return (
       <button
@@ -366,7 +373,8 @@ export default function TraceTimelineMode({
           <div className="min-w-0 flex flex-col">
             <div className="flex items-center gap-2 text-sm font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
               <MethodBadge method={operation.method} />
-              <span className="truncate">{operation.traceInfo?.source || operation.path}</span>
+              <span className="truncate">{operation.path}</span>
+              {mcpLabel ? <McpBadge method={mcpMeta?.method || ''}>{mcpLabel}</McpBadge> : null}
             </div>
             <Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
               {formatTimestamp(operation.timestamp)}
