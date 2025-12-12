@@ -65,3 +65,32 @@ export const getMcpMethodColor = (method = '') => {
   if (value.includes('model')) return 'amber';
   return 'slate';
 };
+
+export const deriveMcpView = (method = '', response) => {
+  if (!response) return { type: 'none', raw: null };
+
+  const lowerMethod = (method || '').toLowerCase();
+  const tools =
+    response?.result?.tools ||
+    response?.tools ||
+    (Array.isArray(response?.result?.tools) ? response.result.tools : []);
+  const prompts = response?.result?.prompts;
+  const resources = response?.result?.resources;
+  const structuredContent = response?.result?.structuredContent;
+  const raw = response?.result ?? response;
+
+  if (lowerMethod === 'tools/list' && Array.isArray(tools)) {
+    return { type: 'toolsList', tools, raw };
+  }
+  if (lowerMethod === 'prompts/list' && Array.isArray(prompts)) {
+    return { type: 'promptsList', prompts, raw };
+  }
+  if (lowerMethod === 'resources/list' && Array.isArray(resources)) {
+    return { type: 'resourcesList', resources, raw };
+  }
+  if (structuredContent) {
+    return { type: 'structured', structuredContent, raw };
+  }
+
+  return { type: 'raw', raw };
+};

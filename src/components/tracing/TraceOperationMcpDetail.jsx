@@ -27,7 +27,12 @@ import StatusBadge from '../insights/StatusBadge.jsx';
 import MethodBadge from '../insights/MethodBadge.jsx';
 import { formatDuration } from '../../utils/formatters.js';
 import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
-import { getMcpMethodColor, parseJson, validateArgsAgainstSchema } from '../../utils/mcp.js';
+import {
+  deriveMcpView,
+  getMcpMethodColor,
+  parseJson,
+  validateArgsAgainstSchema
+} from '../../utils/mcp.js';
 
 export default function TraceOperationMcpDetail({ operation, isLoading }) {
   const debugMode = typeof window !== 'undefined' && localStorage.getItem('debug') === 'true';
@@ -65,24 +70,26 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
   const mcpMethod = mcpMeta.method || mcpRequest?.method || '';
   const mcpCategory = mcpMeta.category || '';
   const tools = mcpResponse?.result?.tools || mcpResponse?.tools || [];
-  const isToolsList = mcpMethod === 'tools/list' && Array.isArray(tools);
   const hasToolTag =
     Array.isArray(operation?.meta?.tags) &&
     operation.meta.tags.some((tag) => typeof tag === 'string' && tag.startsWith('mcp.tool.'));
+  const view = deriveMcpView(mcpMethod, mcpResponse);
+  const isToolsList = view.type === 'toolsList' && Array.isArray(view.tools);
   const isToolsCall = mcpMethod === 'tools/call' || mcpMethod === 'tool/call' || hasToolTag;
-  const isPromptsList = mcpMethod === 'prompts/list';
+  const isPromptsList = view.type === 'promptsList';
   const isPromptsGet = mcpMethod === 'prompts/get';
-  const isResourcesList = mcpMethod === 'resources/list';
+  const isResourcesList = view.type === 'resourcesList';
   const isResourcesRead = mcpMethod === 'resources/read';
-  if (isToolsList && tools.length) {
-    toolCacheRef.current = tools;
+  if (isToolsList && view.tools.length) {
+    toolCacheRef.current = view.tools;
   }
   const cachedTools = toolCacheRef.current || [];
   const matchedToolFromCache = cachedTools.find((t) => t.name === mcpRequest?.params?.name);
   const callSchema =
     mcpResponse?.result?.tool?.inputSchema ||
     matchedToolFromCache?.inputSchema ||
-    (Array.isArray(tools) && tools.find((t) => t.name === mcpRequest?.params?.name)?.inputSchema) ||
+    (Array.isArray(view.tools) &&
+      view.tools.find((t) => t.name === mcpRequest?.params?.name)?.inputSchema) ||
     null;
   const callValidation = isToolsCall
     ? validateArgsAgainstSchema(mcpRequest?.params?.arguments || {}, callSchema)
@@ -178,15 +185,15 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
             <TabPanels>
               <TabPanel>
                 <div className="space-y-3">
-                  {isToolsList && tools.length ? (
+                  {isToolsList && view.tools?.length ? (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                          Tools ({tools.length})
+                          Tools ({view.tools.length})
                         </Text>
                       </div>
                       <div className="space-y-2">
-                        {tools.map((tool) => (
+                        {view.tools.map((tool) => (
                           <ToolCard key={tool.name} tool={tool} />
                         ))}
                       </div>
@@ -262,13 +269,13 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                     </div>
                   ) : null}
 
-                  {isPromptsList && Array.isArray(mcpResponse?.result?.prompts) ? (
+                  {isPromptsList && Array.isArray(view.prompts) ? (
                     <div className="space-y-2">
                       <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                        Prompts ({mcpResponse.result.prompts.length})
+                        Prompts ({view.prompts.length})
                       </Text>
                       <div className="space-y-2">
-                        {mcpResponse.result.prompts.map((prompt) => {
+                        {view.prompts.map((prompt) => {
                           const args = prompt.arguments || [];
                           const requiredCount = args.filter((a) => a.required).length;
                           return (
@@ -368,13 +375,13 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                     </div>
                   ) : null}
 
-                  {isResourcesList && Array.isArray(mcpResponse?.result?.resources) ? (
+                  {isResourcesList && Array.isArray(view.resources) ? (
                     <div className="space-y-2">
                       <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                        Resources ({mcpResponse.result.resources.length})
+                        Resources ({view.resources.length})
                       </Text>
                       <div className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
-                        {mcpResponse.result.resources.map((res) => (
+                        {view.resources.map((res) => (
                           <div key={res.uri} className="flex flex-wrap items-center gap-2 py-2">
                             <div className="min-w-0 flex-1">
                               <div className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
