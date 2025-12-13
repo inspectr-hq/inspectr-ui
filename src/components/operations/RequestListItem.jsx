@@ -16,7 +16,8 @@ const RequestListItem = ({
   onSelect,
   onRemove,
   selected,
-  showQueryParams = false
+  showQueryParams = false,
+  selectedOperationRef
 }) => {
   const handleSelect = (operation) => {
     onSelect(operation);
@@ -50,6 +51,7 @@ const RequestListItem = ({
 
   return (
     <li
+      ref={selected ? selectedOperationRef : null}
       className={`flex items-center cursor-pointer hover:bg-gray-200 dark:hover:bg-dark-tremor-background-subtle ${baseBorderClass} ${selected ? selectedClass : 'border-transparent'}`}
       onClick={() => {
         handleSelect(operation);
