@@ -207,16 +207,11 @@ export default function TraceTimelineMode({
   const isMcpOperation = (op) => {
     if (!op) return false;
     const meta = op.meta || {};
-    const tags = op.tags || meta.tags || [];
-    const hasMcpTag = Array.isArray(tags)
-      ? tags.some((tag) => {
-          if (typeof tag === 'string') return tag.toLowerCase().includes('mcp');
-          if (tag?.token) return String(tag.token).toLowerCase().includes('mcp');
-          if (tag?.display) return String(tag.display).toLowerCase().includes('mcp');
-          return false;
-        })
-      : false;
-    return Boolean(meta.mcp || meta.protocol === 'mcp' || hasMcpTag);
+    const rawMeta = op.raw?.meta || {};
+    const traceMeta = meta.trace || rawMeta.trace || {};
+    const mcpMeta = meta.mcp || rawMeta.mcp || traceMeta.mcp;
+    const hasProtocol = meta.protocol === 'mcp' || rawMeta.protocol === 'mcp';
+    return Boolean((mcpMeta && Object.keys(mcpMeta).length) || hasProtocol);
   };
 
   return (
