@@ -325,7 +325,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
     <div className="mb-4 p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded shadow dark:shadow-dark-tremor-shadow relative [container-type:inline-size] [container-name:requestdetail] ">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <h2 className="font-bold text-2xl text-tremor-content-strong dark:text-dark-tremor-content-strong">
+          <h2 className="font-bold text-xl text-tremor-content-strong dark:text-dark-tremor-content-strong">
             Request Details
           </h2>
           <AuthIndicator operation={operation} onClick={handleAuthIndicatorClick} />
@@ -405,7 +405,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
         </div>
       </div>
       <div className="flex flex-col space-y-1">
-        <div className="flex items-center space-x-2 font-mono text-lg">
+        <div className="flex items-center space-x-2 font-mono text-base">
           <span className={`font-bold ${getMethodTextClass(operation?.request?.method)}`}>
             {operation?.request?.method}
           </span>
