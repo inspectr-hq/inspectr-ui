@@ -3,12 +3,33 @@
 import React from 'react';
 import { Badge, Flex, Title } from '@tremor/react';
 
+const TraceIcon = ({ className = '', ...props }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={`lucide lucide-chart-gantt-icon lucide-chart-gantt ${className}`}
+    aria-hidden="true"
+    {...props}
+  >
+    <path d="M10 6h8" />
+    <path d="M12 16h6" />
+    <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+    <path d="M8 11h7" />
+  </svg>
+);
+
 export default function TraceTimelineHeader({ operationCount, onRefresh, isRefreshing, hasError }) {
   return (
     <Flex justifyContent="between" alignItems="start">
       <div>
-        <Title className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong">
-          Trace timeline
+        <Title className="flex items-center gap-2 text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong">
+          <TraceIcon className="h-4 w-4" />
+          <span>Trace timeline</span>
         </Title>
       </div>
       <div className="flex items-center gap-2">

@@ -227,20 +227,23 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
     </svg>
   );
 
-  const TraceIcon = () => (
+  const TraceIcon = ({ className = '', ...props }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      fill="none"
       viewBox="0 0 24 24"
-      strokeWidth={1.5}
+      fill="none"
       stroke="currentColor"
-      className="h-4 w-4"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`lucide lucide-chart-gantt-icon lucide-chart-gantt ${className}`}
+      aria-hidden="true"
+      {...props}
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4.5 12h13.5m0 0-5.25-5.25M18 12l-5.25 5.25"
-      />
+      <path d="M10 6h8" />
+      <path d="M12 16h6" />
+      <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+      <path d="M8 11h7" />
     </svg>
   );
 
@@ -333,17 +336,12 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
         </div>
         <div className="flex space-x-2">
           {hasTrace ? (
-            <Tooltip
-              content={traceSource ? `View ${traceSource} trace` : 'View trace timeline'}
-              side="bottom"
-            >
-              <button type="button" onClick={handleViewTrace} className={traceButtonClasses}>
-                <TraceIcon />
-                <span className="text-xs hidden [@container(min-width:520px)]:inline">
-                  View trace
-                </span>
-              </button>
-            </Tooltip>
+            <button type="button" onClick={handleViewTrace} className={traceButtonClasses}>
+              <TraceIcon className="h-4 w-4" />
+              <span className="text-xs hidden [@container(min-width:520px)]:inline">
+                View trace
+              </span>
+            </button>
           ) : null}
           {/* Export JSON Button */}
           <button
