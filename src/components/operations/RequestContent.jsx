@@ -29,6 +29,7 @@ const decodeJWT = (token) => {
 };
 
 // Checks whether a string looks like a JWT token.
+
 const isJWT = (token) => {
   if (typeof token !== 'string') return false;
   if (token.startsWith('Bearer ') || token.startsWith('bearer ')) {
@@ -39,9 +40,27 @@ const isJWT = (token) => {
   return jwtRegex.test(token);
 };
 
+// ChevronIcon for expand/collapse indication
+const ChevronIcon = ({ open, className = '' }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+    className={`h-4 w-4 text-tremor-content transition-transform dark:text-dark-tremor-content ${open ? 'rotate-180' : 'rotate-0'} ${className}`}
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
 const RequestContent = ({ operation }) => {
   const [showQueryParams, setShowQueryParams] = useState(false);
   const [showRequestHeaders, setShowRequestHeaders] = useState(false);
+  const [showRequestBody, setShowRequestBody] = useState(true);
   const headersSectionRef = useRef(null);
   useEffect(() => {
     const open = () => {
@@ -209,22 +228,28 @@ const RequestContent = ({ operation }) => {
   return (
     <div className="flex flex-col h-full">
       {/* Query Parameters Section */}
-      <div className="mb-4">
+      <div
+        className={`mb-4 border border-slate-200 dark:border-dark-tremor-border ${
+          showQueryParams ? 'rounded-tremor-small rounded-b-none' : 'rounded-tremor-small'
+        }`}
+      >
         <button
-          className="w-full p-2 text-left font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong cursor-pointer"
+          className="w-full p-2 text-left font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong cursor-pointer flex items-center justify-between"
           onClick={() => setShowQueryParams(!showQueryParams)}
+          type="button"
         >
-          Query Parameters ({(operation?.request?.query_params ?? []).length})
+          <span>Query Parameters ({(operation?.request?.query_params ?? []).length})</span>
+          <ChevronIcon open={showQueryParams} />
         </button>
         {showQueryParams && (
-          <div className="p-0">
+          <div className="p-0 border-t border-tremor-border dark:border-dark-tremor-border">
             <table className="table-fixed w-full border-collapse border border-gray-300 dark:border-dark-tremor-border">
               <thead>
                 <tr className="bg-gray-100 dark:bg-blue-900/30">
-                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 w-1/4 text-left font-semibold text-gray-700 dark:text-white">
+                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 w-1/4 text-sm text-left font-semibold text-gray-700 dark:text-white">
                     Key
                   </th>
-                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white">
+                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 text-sm text-left font-semibold text-gray-700 dark:text-white">
                     Value
                   </th>
                 </tr>
@@ -236,22 +261,29 @@ const RequestContent = ({ operation }) => {
       </div>
 
       {/* Request Headers Section */}
-      <div className="mb-4" ref={headersSectionRef}>
+      <div
+        className={`mb-4 border border-slate-200 dark:border-dark-tremor-border ${
+          showRequestHeaders ? 'rounded-tremor-small rounded-b-none' : 'rounded-tremor-small'
+        }`}
+        ref={headersSectionRef}
+      >
         <button
-          className="w-full p-2 text-left font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong cursor-pointer"
+          className="w-full p-2 text-left font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong cursor-pointer flex items-center justify-between"
           onClick={() => setShowRequestHeaders(!showRequestHeaders)}
+          type="button"
         >
-          Headers ({normalizeHeaders(operation?.request?.headers).length})
+          <span>Headers ({normalizeHeaders(operation?.request?.headers).length})</span>
+          <ChevronIcon open={showRequestHeaders} />
         </button>
         {showRequestHeaders && (
           <div className="p-0">
             <table className="table-fixed w-full border-collapse border border-gray-300 dark:border-dark-tremor-border">
               <thead>
                 <tr className="bg-gray-100 dark:bg-blue-900/30">
-                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 w-1/4 text-left font-semibold text-gray-700 dark:text-white">
+                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 w-1/4 text-left text-sm font-semibold text-gray-700 dark:text-white">
                     Header
                   </th>
-                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white">
+                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 text-left text-sm font-semibold text-gray-700 dark:text-white">
                     Value
                   </th>
                 </tr>
@@ -263,38 +295,52 @@ const RequestContent = ({ operation }) => {
       </div>
 
       {/* Request Body Section */}
-      <div className="flex flex-col flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow overflow-hidden">
-        <div className="flex justify-between items-center bg-gray-200 dark:bg-dark-tremor-background-subtle">
-          <button className="p-2 text-left font-bold flex-grow dark:text-dark-tremor-content-strong">
-            Request Body
-          </button>
-          <CopyButton textToCopy={formatPayload(payload)} />
-        </div>
-        {isEmptyPayload ? (
-          <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
-            No payload
+      <div
+        className={`${
+          showRequestBody ? 'flex flex-col flex-1' : ''
+        } mb-4 border border-slate-200 dark:border-dark-tremor-border ${
+          showRequestBody ? 'rounded-tremor-small rounded-b-none' : 'rounded-tremor-small'
+        } bg-white dark:bg-dark-tremor-background-subtle overflow-hidden`}
+      >
+        <button
+          type="button"
+          onClick={() => setShowRequestBody(!showRequestBody)}
+          className="w-full p-2 text-left font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong cursor-pointer flex items-center justify-between"
+        >
+          <span>Request Body</span>
+          <span className="flex items-center gap-2">
+            <CopyButton textToCopy={formatPayload(payload)} showLabel={true} />
+            <ChevronIcon open={showRequestBody} />
+          </span>
+        </button>
+
+        {showRequestBody ? (
+          <div className="border-t border-tremor-border dark:border-dark-tremor-border flex flex-col flex-1">
+            {isEmptyPayload ? (
+              <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content">
+                No payload
+              </div>
+            ) : (
+              <Editor
+                height="100%"
+                className="flex-1"
+                defaultLanguage="json"
+                value={formatPayload(payload)}
+                theme={getMonacoTheme()}
+                beforeMount={defineMonacoThemes}
+                options={{
+                  readOnly: true,
+                  minimap: { enabled: false },
+                  automaticLayout: true,
+                  fontFamily:
+                    '"Cascadia Code", "Jetbrains Mono", "Fira Code", "Menlo", "Consolas", monospace',
+                  tabSize: 2,
+                  scrollBeyondLastLine: false
+                }}
+              />
+            )}
           </div>
-        ) : (
-          // <div className="bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow p-0">
-          <Editor
-            height="100%"
-            className="flex-1"
-            defaultLanguage="json"
-            value={formatPayload(payload)}
-            theme={getMonacoTheme()}
-            beforeMount={defineMonacoThemes}
-            options={{
-              readOnly: true,
-              minimap: { enabled: false },
-              automaticLayout: true,
-              fontFamily:
-                '"Cascadia Code", "Jetbrains Mono", "Fira Code", "Menlo", "Consolas", monospace',
-              tabSize: 2,
-              scrollBeyondLastLine: false
-            }}
-          />
-          // </div>
-        )}
+        ) : null}
       </div>
 
       {/* JWT Dialog */}

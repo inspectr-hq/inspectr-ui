@@ -51,7 +51,7 @@ export default function SettingsApp() {
     : navItems.filter((item) => item.slug !== 'connectors');
 
   return (
-    <div className="flex flex-col md:flex-row min-h-[calc(100vh-120px)] bg-white dark:bg-gray-950">
+    <div className="flex flex-col md:flex-row min-h-[calc(100vh-100px)] bg-white dark:bg-gray-950">
       <aside className="md:w-56 border-b md:border-b-0 md:border-r border-tremor-border dark:border-dark-tremor-border md:min-h-full">
         <nav className="flex md:flex-col">
           {items.map((item) => (

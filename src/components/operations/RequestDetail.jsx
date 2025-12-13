@@ -9,6 +9,7 @@ import CopyButton from '../CopyButton.jsx';
 import { useInspectr } from '../../context/InspectrContext';
 import { Tooltip } from '../ToolTip.jsx';
 import AuthIndicator from './AuthIndicator.jsx';
+import McpIndicator from './McpIndicator.jsx';
 import { normalizeTags, normalizeTag } from '../../utils/normalizeTags.js';
 import DialogDeleteConfirm from '../DialogDeleteConfirm.jsx';
 import TagPill from '../TagPill.jsx';
@@ -202,6 +203,13 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
   const traceInfo = operation?.meta?.trace || null;
   const traceId = traceInfo?.trace_id || null;
   const traceSource = traceInfo?.source || null;
+  const rawMcpMeta = operation?.meta?.mcp;
+  const mcpMeta =
+    rawMcpMeta &&
+    typeof rawMcpMeta === 'object' &&
+    Object.keys(rawMcpMeta).some((key) => rawMcpMeta[key] !== undefined)
+      ? rawMcpMeta
+      : null;
   const hasTrace = Boolean(traceId);
   const traceButtonClasses =
     'flex items-center space-x-2 px-2 py-1 border border-purple-500 text-purple-600 dark:text-purple-200 bg-purple-50 dark:bg-purple-900/30 rounded focus:outline-none cursor-pointer transition-transform duration-150 ease-in-out active:scale-95 hover:bg-purple-100 dark:hover:bg-purple-800/50 active:ring active:ring-purple-200 dark:active:ring-purple-400';
@@ -219,20 +227,23 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
     </svg>
   );
 
-  const TraceIcon = () => (
+  const TraceIcon = ({ className = '', ...props }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      fill="none"
       viewBox="0 0 24 24"
-      strokeWidth={1.5}
+      fill="none"
       stroke="currentColor"
-      className="h-4 w-4"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`lucide lucide-chart-gantt-icon lucide-chart-gantt ${className}`}
+      aria-hidden="true"
+      {...props}
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4.5 12h13.5m0 0-5.25-5.25M18 12l-5.25 5.25"
-      />
+      <path d="M10 6h8" />
+      <path d="M12 16h6" />
+      <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+      <path d="M8 11h7" />
     </svg>
   );
 
@@ -307,28 +318,30 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
     }
   };
 
+  const handleOpenMcp = () => {
+    if (typeof setCurrentTab === 'function') {
+      setCurrentTab('mcp');
+    }
+  };
+
   return (
     <div className="mb-4 p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded shadow dark:shadow-dark-tremor-shadow relative [container-type:inline-size] [container-name:requestdetail] ">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <h2 className="font-bold text-2xl text-tremor-content-strong dark:text-dark-tremor-content-strong">
+          <h2 className="font-bold text-xl text-tremor-content-strong dark:text-dark-tremor-content-strong">
             Request Details
           </h2>
           <AuthIndicator operation={operation} onClick={handleAuthIndicatorClick} />
+          <McpIndicator mcp={mcpMeta} showCategory={true} onClick={handleOpenMcp} />
         </div>
         <div className="flex space-x-2">
           {hasTrace ? (
-            <Tooltip
-              content={traceSource ? `View ${traceSource} trace` : 'View trace timeline'}
-              side="bottom"
-            >
-              <button type="button" onClick={handleViewTrace} className={traceButtonClasses}>
-                <TraceIcon />
-                <span className="text-xs hidden [@container(min-width:520px)]:inline">
-                  View trace
-                </span>
-              </button>
-            </Tooltip>
+            <button type="button" onClick={handleViewTrace} className={traceButtonClasses}>
+              <TraceIcon className="h-4 w-4" />
+              <span className="text-xs hidden [@container(min-width:520px)]:inline">
+                View trace
+              </span>
+            </button>
           ) : null}
           {/* Export JSON Button */}
           <button
@@ -390,7 +403,7 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
         </div>
       </div>
       <div className="flex flex-col space-y-1">
-        <div className="flex items-center space-x-2 font-mono text-lg">
+        <div className="flex items-center space-x-2 font-mono text-base">
           <span className={`font-bold ${getMethodTextClass(operation?.request?.method)}`}>
             {operation?.request?.method}
           </span>

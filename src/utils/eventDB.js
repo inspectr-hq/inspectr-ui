@@ -77,13 +77,13 @@ class EventDB {
     // Detect whether any filters are active
     const hasFilters = Boolean(
       filters.timestampRange ||
-        (filters.status && filters.status.length) ||
-        (filters.method && filters.method.length) ||
-        filters.path ||
-        filters.durationMin ||
-        filters.durationMax ||
-        filters.host ||
-        (filters.tags && filters.tags.length)
+      (filters.status && filters.status.length) ||
+      (filters.method && filters.method.length) ||
+      filters.path ||
+      filters.durationMin ||
+      filters.durationMax ||
+      filters.host ||
+      (filters.tags && filters.tags.length)
     );
 
     // --- Fast path: no filters → direct index count & page fetch ---

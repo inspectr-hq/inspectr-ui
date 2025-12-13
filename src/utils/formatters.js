@@ -1,5 +1,5 @@
 // Format a timestamp to a human-readable format
-const formatTimestamp = (isoString) => {
+const formatTimestamp = (isoString, options) => {
   if (!isoString) return 'N/A';
   const date = new Date(isoString);
   const formattedDate = date.toLocaleDateString('en-CA', {
@@ -15,7 +15,13 @@ const formatTimestamp = (isoString) => {
     second: '2-digit',
     hour12: false // 24-hour format
   });
-  return `${formattedDate} at ${formattedTime}`;
+
+  const includeMilliseconds = options?.includeMilliseconds === true;
+  const milliseconds = includeMilliseconds
+    ? `.${String(date.getMilliseconds()).padStart(3, '0')}`
+    : '';
+
+  return `${formattedDate} at ${formattedTime}${milliseconds}`;
 };
 
 // Format a duration in milliseconds to a human-readable format (ms, s, or m)

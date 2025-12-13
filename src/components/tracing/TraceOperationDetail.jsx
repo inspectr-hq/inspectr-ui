@@ -1,14 +1,17 @@
 // src/components/tracing/TraceOperationDetail.jsx
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Badge, Text, Title } from '@tremor/react';
 import Editor from '@monaco-editor/react';
 import StatusBadge from '../insights/StatusBadge.jsx';
-import { formatDuration, formatTimestamp } from '../../utils/formatters.js';
+import { formatDuration } from '../../utils/formatters.js';
 import { extractGenericTraceEntries, extractMetaEntries } from './traceUtils.js';
 import MethodBadge from '../insights/MethodBadge.jsx';
 import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
 import { formatXML } from '../../utils/formatXml.js';
+import PropertiesAccordion from '../mcp/PropertiesAccordion.jsx';
+import CollapsibleSection from '../mcp/CollapsibleSection.jsx';
+import HeaderList from '../mcp/HeaderList.jsx';
 
 const normalizeHeaders = (headers) => {
   if (!headers) return [];
@@ -78,7 +81,10 @@ const formatPayload = (payload, contentType) => {
 };
 
 export default function TraceOperationDetail({ operation, isLoading }) {
-  const [showAdvancedMeta, setShowAdvancedMeta] = useState(false);
+  const debugMode = typeof window !== 'undefined' && localStorage.getItem('debug') === 'true';
+  if (debugMode) {
+    console.log('OP', operation);
+  }
 
   const metaEntries = extractMetaEntries(operation);
   const ADVANCED_META_KEYS = useMemo(() => new Set(['proxy', 'ingress', 'inspectr']), []);
@@ -88,12 +94,16 @@ export default function TraceOperationDetail({ operation, isLoading }) {
   const tags = Array.isArray(operation?.tags) ? operation.tags : [];
   const requestHeaders = normalizeHeaders(operation?.request?.headers);
   const responseHeaders = normalizeHeaders(operation?.response?.headers);
+  const mcpMeta =
+    operation?.meta?.mcp ||
+    operation?.raw?.meta?.mcp ||
+    operation?.meta?.trace?.mcp ||
+    operation?.raw?.meta?.trace?.mcp ||
+    {};
   const requestContentType = extractContentType(operation?.request?.headers);
   const responseContentType = extractContentType(operation?.response?.headers);
   const requestBodyValue = formatPayload(operation?.request?.body, requestContentType);
   const responseBodyValue = formatPayload(operation?.response?.body, responseContentType);
-  const hasRequestBody = (requestBodyValue || '').trim().length > 0;
-  const hasResponseBody = (responseBodyValue || '').trim().length > 0;
   const requestEditorLanguage = getEditorLanguage(requestContentType);
   const responseEditorLanguage = getEditorLanguage(responseContentType);
   const editorOptions = useMemo(
@@ -137,182 +147,69 @@ export default function TraceOperationDetail({ operation, isLoading }) {
         </div>
       </div>
 
-      <div className="mt-6 space-y-5 overflow-y-auto">
-        <div>
-          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-            Properties
-          </Text>
-          <dl className="mt-3 divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
-            <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                Request time
-              </dt>
-              <dd className="text-right text-tremor-content dark:text-dark-tremor-content">
-                {formatTimestamp(operation.timestamp)}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                Operation ID
-              </dt>
-              <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
-                {operation.id}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                Correlation ID
-              </dt>
-              <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
-                {operation.correlationId || '—'}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">Trace ID</dt>
-              <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
-                {operation.traceInfo?.trace_id || '—'}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-3 py-2">
-              <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
-                Trace source
-              </dt>
-              <dd className="text-right text-tremor-content dark:text-dark-tremor-content">
-                {operation.traceInfo?.source || '—'}
-              </dd>
-            </div>
-            {/*<div className="flex items-center justify-between gap-3 py-2">*/}
-            {/*  <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">Client</dt>*/}
-            {/*  <dd className="text-right text-tremor-content dark:text-dark-tremor-content">*/}
-            {/*    {operation.request?.client_ip || '—'}*/}
-            {/*  </dd>*/}
-            {/*</div>*/}
-          </dl>
-        </div>
+      <div className="mt-6 space-y-5">
+        {/* Properties */}
+        <CollapsibleSection title="Properties" resetKey={operation?.id} defaultOpen>
+          <PropertiesAccordion operation={operation} mcpMeta={mcpMeta} />
+        </CollapsibleSection>
 
-        <div>
-          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-            Request headers
-          </Text>
-          {requestHeaders.length ? (
-            <div className="mt-2 max-h-60 overflow-auto rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-              <dl className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
-                {requestHeaders.map((header, index) => (
-                  <div key={`${header.name}-${index}`} className="flex items-start gap-3 px-3 py-2">
-                    <dt className="w-40 shrink-0 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-                      {header.name}
-                    </dt>
-                    <dd className="flex-1 text-sm text-tremor-content dark:text-dark-tremor-content">
-                      {header.value || '—'}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          ) : (
-            <Text className="mt-2 text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
-              No headers captured.
-            </Text>
-          )}
-        </div>
+        {/* Request headers */}
+        <CollapsibleSection
+          title={`Request headers (${requestHeaders.length})`}
+          resetKey={operation?.id}
+          defaultOpen={false}
+        >
+          <HeaderList headers={requestHeaders} />
+        </CollapsibleSection>
 
-        <div>
-          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-            Request body
-          </Text>
-          {hasRequestBody ? (
-            <div className="mt-2 h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-              <Editor
-                value={requestBodyValue}
-                language={requestEditorLanguage}
-                theme={getMonacoTheme()}
-                beforeMount={defineMonacoThemes}
-                options={editorOptions}
-                height="100%"
-              />
-            </div>
-          ) : (
-            <div className="mt-2 h-10 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-              <Editor
-                value="No request body"
-                language={requestEditorLanguage}
-                theme={getMonacoTheme()}
-                beforeMount={defineMonacoThemes}
-                options={editorOptions}
-                height="100%"
-              />
-            </div>
-          )}
-        </div>
-
-        <div>
-          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-            Response body
-          </Text>
-          {hasResponseBody ? (
-            <div className="mt-2 h-60 overflow-hidden rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-              <Editor
-                value={responseBodyValue}
-                language={responseEditorLanguage}
-                theme={getMonacoTheme()}
-                beforeMount={defineMonacoThemes}
-                options={editorOptions}
-                height="100%"
-              />
-            </div>
-          ) : (
-            <p className="mt-2 text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
-              No response body captured.
-            </p>
-          )}
-        </div>
-
-        <div>
-          <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-            Response headers
-          </Text>
-          {responseHeaders.length ? (
-            <div className="mt-2 max-h-60 overflow-auto rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-              <dl className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
-                {responseHeaders.map((header, index) => (
-                  <div key={`${header.name}-${index}`} className="flex items-start gap-3 px-3 py-2">
-                    <dt className="w-40 shrink-0 text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-                      {header.name}
-                    </dt>
-                    <dd className="flex-1 text-sm text-tremor-content dark:text-dark-tremor-content">
-                      {header.value || '—'}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          ) : (
-            <Text className="mt-2 text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
-              No headers captured.
-            </Text>
-          )}
-        </div>
-
-        {operation.traceInfo?.generic && genericTraceEntries.length ? (
-          <div>
-            <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-              Trace metadata
-            </Text>
-            <div className="mt-2 space-y-3">
-              {genericTraceEntries.map((entry) => (
-                <div key={entry.key}>
-                  <Text className="text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    {entry.key}
-                  </Text>
-                  <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-tremor-small bg-gray-900 px-3 py-2 text-xs text-gray-100 dark:bg-gray-800 dark:text-gray-100">
-                    {entry.value}
-                  </pre>
-                </div>
-              ))}
-            </div>
+        {/* Request body */}
+        <CollapsibleSection
+          title="Request body"
+          resetKey={operation?.id}
+          defaultOpen={false}
+          copyText={requestBodyValue}
+        >
+          <div className="h-60 overflow-hidden">
+            <Editor
+              value={requestBodyValue || 'No request body'}
+              language={requestEditorLanguage}
+              theme={getMonacoTheme()}
+              beforeMount={defineMonacoThemes}
+              options={editorOptions}
+              height="100%"
+            />
           </div>
-        ) : null}
+        </CollapsibleSection>
 
+        {/* Response body */}
+        <CollapsibleSection
+          title="Response body"
+          resetKey={operation?.id}
+          defaultOpen={false}
+          copyText={responseBodyValue}
+        >
+          <div className="h-[320px] overflow-hidden">
+            <Editor
+              value={responseBodyValue || 'No response body'}
+              language={responseEditorLanguage}
+              theme={getMonacoTheme()}
+              beforeMount={defineMonacoThemes}
+              options={editorOptions}
+              height="100%"
+            />
+          </div>
+        </CollapsibleSection>
+
+        {/* Response headers */}
+        <CollapsibleSection
+          title={`Response headers (${responseHeaders.length})`}
+          resetKey={operation?.id}
+          defaultOpen={false}
+        >
+          <HeaderList headers={responseHeaders} />
+        </CollapsibleSection>
+
+        {/* Tags */}
         {tags.length ? (
           <div>
             <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
@@ -331,52 +228,13 @@ export default function TraceOperationDetail({ operation, isLoading }) {
           </div>
         ) : null}
 
+        {/* Basic metadata */}
         {basicMetaEntries.length ? (
-          <div>
-            <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
-              Metadata
-            </Text>
-            <div className="mt-2 space-y-3">
-              {basicMetaEntries.map((entry) => (
-                <div key={entry.key}>
-                  <Text className="text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    {entry.key}
-                  </Text>
-                  <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-tremor-small bg-gray-900 px-3 py-2 text-xs text-gray-100 dark:bg-gray-800 dark:text-gray-100">
-                    {entry.value}
-                  </pre>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {advancedMetaEntries.length ? (
-          <div className="rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border">
-            <button
-              type="button"
-              onClick={() => setShowAdvancedMeta((prev) => !prev)}
-              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-            >
-              <span>Advanced metadata</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                className={`h-4 w-4 transition-transform ${showAdvancedMeta ? 'rotate-180' : 'rotate-0'}`}
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-            {showAdvancedMeta ? (
-              <div className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
-                {advancedMetaEntries.map((entry) => (
-                  <div key={entry.key} className="px-3 py-2">
+          <CollapsibleSection title="Metadata" resetKey={operation?.id} defaultOpen={false}>
+            <div className="px-3 py-2">
+              <div className="mt-2 space-y-3">
+                {basicMetaEntries.map((entry) => (
+                  <div key={entry.key}>
                     <Text className="text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
                       {entry.key}
                     </Text>
@@ -386,8 +244,48 @@ export default function TraceOperationDetail({ operation, isLoading }) {
                   </div>
                 ))}
               </div>
-            ) : null}
-          </div>
+            </div>
+          </CollapsibleSection>
+        ) : null}
+
+        {advancedMetaEntries.length || genericTraceEntries.length ? (
+          <CollapsibleSection
+            title="Advanced metadata"
+            resetKey={operation?.id}
+            defaultOpen={false}
+          >
+            <div className="divide-y divide-tremor-border text-sm dark:divide-dark-tremor-border">
+              {operation.traceInfo?.generic && genericTraceEntries.length ? (
+                <div className="px-3 py-2">
+                  <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
+                    Trace metadata
+                  </Text>
+                  <div className="mt-2 space-y-3">
+                    {genericTraceEntries.map((entry) => (
+                      <div key={entry.key}>
+                        <Text className="text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                          {entry.key}
+                        </Text>
+                        <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-tremor-small bg-gray-900 px-3 py-2 text-xs text-gray-100 dark:bg-gray-800 dark:text-gray-100">
+                          {entry.value}
+                        </pre>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {advancedMetaEntries.map((entry) => (
+                <div key={entry.key} className="px-3 py-2">
+                  <Text className="text-xs font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                    {entry.key}
+                  </Text>
+                  <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-tremor-small bg-gray-900 px-3 py-2 text-xs text-gray-100 dark:bg-gray-800 dark:text-gray-100">
+                    {entry.value}
+                  </pre>
+                </div>
+              ))}
+            </div>
+          </CollapsibleSection>
         ) : null}
       </div>
     </div>

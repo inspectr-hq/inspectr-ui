@@ -1,5 +1,5 @@
 // src/components/operations/RequestList.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import useLocalStorage from '../../hooks/useLocalStorage.jsx';
 import RequestListItem from './RequestListItem';
 import RequestListSidePanel from './RequestListSidePanel';
@@ -31,6 +31,7 @@ const RequestList = ({
 }) => {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const selectedOperationRef = useRef(null);
 
   const [showQueryParamsValue, setShowQueryParamsValue] = useLocalStorage(
     'showQueryParams',
@@ -75,6 +76,24 @@ const RequestList = ({
   };
 
   const groupedOperations = groupOperationsByDate(operations);
+
+  // Auto-scroll to selected operation
+  useEffect(() => {
+    if (!selectedOperation || !selectedOperationRef.current) return;
+
+    // Use a small timeout to allow the DOM to update
+    const timeoutId = setTimeout(() => {
+      if (selectedOperationRef.current) {
+        selectedOperationRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest'
+        });
+      }
+    }, 150);
+
+    return () => clearTimeout(timeoutId);
+  }, [selectedOperation]);
 
   return (
     <div className="flex flex-col h-full relative">
@@ -210,6 +229,7 @@ const RequestList = ({
                     onRemove={onRemove}
                     selected={selectedOperation && selectedOperation.id === opId}
                     showQueryParams={showQueryParams}
+                    selectedOperationRef={selectedOperationRef}
                   />
                 );
               })}
