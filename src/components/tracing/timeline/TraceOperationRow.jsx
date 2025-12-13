@@ -16,7 +16,8 @@ export default function TraceOperationRow({
   onSelect,
   timelineWidth,
   baseStart,
-  baseDuration
+  baseDuration,
+  selectedOperationRef
 }) {
   const { start, duration } = getOperationTiming(operation, index);
   const mcpMeta =
@@ -28,6 +29,7 @@ export default function TraceOperationRow({
 
   return (
     <button
+      ref={isSelected ? selectedOperationRef : null}
       key={operation.id}
       type="button"
       onClick={onSelect}

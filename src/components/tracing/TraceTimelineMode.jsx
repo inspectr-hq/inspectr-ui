@@ -92,6 +92,7 @@ export default function TraceTimelineMode({
   }, [timelineWidthRaw]);
   const isResizingRef = useRef(false);
   const panelContainerRef = useRef(null);
+  const selectedOperationRef = useRef(null);
 
   const baseStart = timeline.start;
   const baseDuration = timeline.duration;
@@ -147,6 +148,41 @@ export default function TraceTimelineMode({
     }
     setExpandedGroups(new Set(groups.map((group) => group.id)));
   }, [selectedTraceId, groups]);
+
+  // Ensure the group containing the selected operation is expanded
+  useEffect(() => {
+    if (!selectedOperationId || !groups.length) return;
+
+    const groupContainingOperation = groups.find((group) =>
+      group.operations.some((op) => op.id === selectedOperationId)
+    );
+
+    if (groupContainingOperation && !expandedGroups.has(groupContainingOperation.id)) {
+      setExpandedGroups((prev) => {
+        const next = new Set(prev);
+        next.add(groupContainingOperation.id);
+        return next;
+      });
+    }
+  }, [selectedOperationId, groups, expandedGroups]);
+
+  // Auto-scroll to selected operation
+  useEffect(() => {
+    if (!selectedOperationId) return;
+
+    // Use a small timeout to allow the DOM to update after group expansion
+    const timeoutId = setTimeout(() => {
+      if (selectedOperationRef.current) {
+        selectedOperationRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest'
+        });
+      }
+    }, 150);
+
+    return () => clearTimeout(timeoutId);
+  }, [selectedOperationId, expandedGroups]);
 
   const stopResizing = useCallback(() => {
     isResizingRef.current = false;
@@ -276,6 +312,7 @@ export default function TraceTimelineMode({
                   timelineWidth={timelineWidth}
                   baseStart={baseStart}
                   baseDuration={baseDuration}
+                  selectedOperationRef={selectedOperationRef}
                 />
               ))
             ) : (

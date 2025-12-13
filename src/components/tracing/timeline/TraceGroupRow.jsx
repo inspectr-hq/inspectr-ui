@@ -15,7 +15,8 @@ export default function TraceGroupRow({
   onOperationSelect,
   timelineWidth,
   baseStart,
-  baseDuration
+  baseDuration,
+  selectedOperationRef
 }) {
   const isGroupSelected = group.operations.some((op) => op.id === selectedOperationId);
   const { startMs, durationMs } = group;
@@ -126,6 +127,7 @@ export default function TraceGroupRow({
                 timelineWidth={timelineWidth}
                 baseStart={baseStart}
                 baseDuration={baseDuration}
+                selectedOperationRef={selectedOperationRef}
               />
             ))}
           </div>
