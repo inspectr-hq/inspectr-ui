@@ -40,9 +40,28 @@ const binaryStringToUint8Array = (binaryString) => {
   return bytes;
 };
 
+const ChevronIcon = ({ open, className = '' }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+    className={`h-4 w-4 text-tremor-content transition-transform dark:text-dark-tremor-content ${
+      open ? 'rotate-180' : 'rotate-0'
+    } ${className}`}
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
 const ResponseContent = ({ operation }) => {
   const [showResponseHeaders, setShowResponseHeaders] = useState(false);
   const [viewMode, setViewMode] = useState('source');
+  const [showResponseBody, setShowResponseBody] = useState(true);
   const currentOperationId = operation?.id;
 
   const normalizeHeaders = (headers) => {
@@ -241,28 +260,63 @@ const ResponseContent = ({ operation }) => {
     URL.revokeObjectURL(url);
   };
 
-  const shouldShowDownloadButton =
-    !supportsPreview && typeof responseBody === 'string' && responseBody.trim().length > 0;
+  const responseHeaders = normalizeHeaders(operation?.response?.headers);
+  const contentDispositionHeader = responseHeaders.find(
+    (h) => String(h.name ?? h.key ?? '').toLowerCase() === 'content-disposition'
+  )?.value;
+  const contentDisposition =
+    typeof contentDispositionHeader === 'string' ? contentDispositionHeader : '';
+  const hasAttachmentDisposition =
+    /attachment/i.test(contentDisposition) || /filename\*=|filename=/i.test(contentDisposition);
+
+  const hasDownloadableBody = typeof responseBody === 'string' && responseBody.trim().length > 0;
+
+  const ct = typeof contentType === 'string' ? contentType.toLowerCase() : '';
+  const isTextLike =
+    ct.startsWith('text/') ||
+    ct.includes('json') ||
+    ct.includes('xml') ||
+    ct.includes('html') ||
+    ct.includes('javascript') ||
+    ct.includes('css') ||
+    ct.includes('yaml') ||
+    ct.includes('yml') ||
+    ct.includes('sql');
+
+  const isBinaryish =
+    isBase64Body ||
+    isImageContent ||
+    normalizedContentType === 'application/octet-stream' ||
+    hasAttachmentDisposition ||
+    (ct !== '' && !isTextLike);
+
+  const shouldShowDownloadButton = hasDownloadableBody && isBinaryish;
 
   return (
     <div className="flex flex-col h-full">
       {/* Response Headers Section */}
-      <div className="mb-4">
+      <div
+        className={`mb-4 border border-slate-200 dark:border-dark-tremor-border ${
+          showResponseHeaders ? 'rounded-tremor-small rounded-b-none' : 'rounded-tremor-small'
+        }`}
+      >
         <button
-          className="w-full p-2 text-left font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong cursor-pointer"
+          type="button"
+          className="w-full p-2 text-left font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong cursor-pointer flex items-center justify-between"
           onClick={() => setShowResponseHeaders(!showResponseHeaders)}
         >
-          Headers ({normalizeHeaders(operation?.response?.headers).length})
+          <span>Headers ({normalizeHeaders(operation?.response?.headers).length})</span>
+          <ChevronIcon open={showResponseHeaders} />
         </button>
         {showResponseHeaders && (
-          <div className="p-0">
+          <div className="p-0 border-t border-tremor-border dark:border-dark-tremor-border">
             <table className="w-full border-collapse border border-gray-300 dark:border-dark-tremor-border">
               <thead>
                 <tr className="bg-gray-100 dark:bg-blue-900/30">
-                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 w-1/4 text-left font-semibold text-gray-700 dark:text-white">
+                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 w-1/4 text-left text-sm font-semibold text-gray-700 dark:text-white">
                     Header
                   </th>
-                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white">
+                  <th className="border border-slate-200 dark:border-dark-tremor-border px-2 py-1 text-left text-sm font-semibold text-gray-700 dark:text-white">
                     Value
                   </th>
                 </tr>
@@ -274,122 +328,155 @@ const ResponseContent = ({ operation }) => {
       </div>
 
       {/* Response Body Section */}
-      <div className="flex flex-col flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow overflow-hidden">
-        <div className="flex justify-between items-center bg-gray-200 dark:bg-dark-tremor-background-subtle">
-          <button className="p-2 text-left font-bold flex-grow dark:text-dark-tremor-content-strong">
-            Response Body
-          </button>
-          <div className="flex items-center space-x-2 mr-2">
-            {supportsPreview && (
-              <div className="flex space-x-1">
-                <button
-                  onClick={() => setViewMode('source')}
-                  className={`px-2 py-1 text-xs rounded ${viewMode === 'source' ? 'bg-blue-600 dark:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
-                >
-                  Source
-                </button>
-                {hasEvents ? (
+      <div
+        className={`${
+          showResponseBody ? 'flex flex-col flex-1' : ''
+        } border border-slate-200 dark:border-dark-tremor-border ${
+          showResponseBody ? 'rounded-tremor-small rounded-b-none' : 'rounded-tremor-small'
+        } bg-white dark:bg-dark-tremor-background-subtle overflow-hidden`}
+      >
+        <button
+          type="button"
+          onClick={() => setShowResponseBody(!showResponseBody)}
+          className="w-full p-2 text-left font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong cursor-pointer flex items-center justify-between"
+        >
+          <span>Response Body</span>
+          <span className="flex items-center gap-2">
+            <span className="flex items-center" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center space-x-2 mr-2">
+                {supportsPreview && (
+                  <div className="flex space-x-1">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('source')}
+                      className={`px-2 py-1 text-xs rounded ${
+                        viewMode === 'source'
+                          ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                          : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                      }`}
+                    >
+                      Source
+                    </button>
+                    {hasEvents ? (
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('events')}
+                        className={`px-2 py-1 text-xs rounded ${
+                          viewMode === 'events'
+                            ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                            : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                        }`}
+                      >
+                        Events
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('preview')}
+                        className={`px-2 py-1 text-xs rounded ${
+                          viewMode === 'preview'
+                            ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                            : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                        }`}
+                      >
+                        Preview
+                      </button>
+                    )}
+                  </div>
+                )}
+                {shouldShowDownloadButton && (
                   <button
-                    onClick={() => setViewMode('events')}
-                    className={`px-2 py-1 text-xs rounded ${viewMode === 'events' ? 'bg-blue-600 dark:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+                    type="button"
+                    onClick={handleDownloadResponse}
+                    className="px-2 py-1 text-xs rounded bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-600"
                   >
-                    Events
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setViewMode('preview')}
-                    className={`px-2 py-1 text-xs rounded ${viewMode === 'preview' ? 'bg-blue-600 dark:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
-                  >
-                    Preview
+                    Download
                   </button>
                 )}
+                <CopyButton
+                  textToCopy={
+                    (isHTMLContent || isImageContent || isSseContent
+                      ? (sourcePayload ?? '')
+                      : formatPayload(sourcePayload, contentType)) ?? ''
+                  }
+                />
               </div>
+            </span>
+            <ChevronIcon open={showResponseBody} />
+          </span>
+        </button>
+        {showResponseBody ? (
+          <>
+            {hasEvents && viewMode === 'events' ? (
+              <SseFramesViewer frames={availableSseFrames} raw={sourcePayload ?? ''} />
+            ) : isSseContent ? (
+              viewMode === 'events' ? (
+                <SseFramesViewer frames={availableSseFrames} raw={sourcePayload ?? ''} />
+              ) : isEmptySourcePayload ? (
+                <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
+                  No payload
+                </div>
+              ) : (
+                <Editor
+                  height="100%"
+                  className="flex-1"
+                  language="plaintext"
+                  value={sourcePayload ?? ''}
+                  theme={getMonacoTheme()}
+                  beforeMount={defineMonacoThemes}
+                  options={{
+                    readOnly: true,
+                    minimap: { enabled: false },
+                    automaticLayout: true,
+                    fontFamily:
+                      '"Cascadia Code", "Jetbrains Mono", "Fira Code", "Menlo", "Consolas", monospace',
+                    tabSize: 2,
+                    scrollBeyondLastLine: false
+                  }}
+                />
+              )
+            ) : isEmptySourcePayload ? (
+              <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
+                No payload
+              </div>
+            ) : viewMode === 'preview' && isHTMLContent ? (
+              <iframe
+                title="HTML Preview"
+                srcDoc={sourcePayload ?? ''}
+                className="flex-1 w-full h-full border-none"
+              />
+            ) : viewMode === 'preview' && isImageContent ? (
+              imagePreviewSrc ? (
+                <div className="flex-1 w-full h-full overflow-auto bg-white dark:bg-dark-tremor-background-subtle">
+                  <img alt="Response Preview" src={imagePreviewSrc} className="max-w-none" />
+                </div>
+              ) : (
+                <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
+                  Unable to render image preview
+                </div>
+              )
+            ) : (
+              <Editor
+                height="100%"
+                className="flex-1"
+                // defaultLanguage="json"
+                language={editorLanguage}
+                value={formatPayload(sourcePayload, contentType) ?? ''}
+                theme={getMonacoTheme()}
+                beforeMount={defineMonacoThemes}
+                options={{
+                  readOnly: true,
+                  minimap: { enabled: false },
+                  automaticLayout: true,
+                  fontFamily:
+                    '"Cascadia Code", "Jetbrains Mono", "Fira Code", "Menlo", "Consolas", monospace',
+                  tabSize: 2,
+                  scrollBeyondLastLine: false
+                }}
+              />
             )}
-            {shouldShowDownloadButton && (
-              <button
-                onClick={handleDownloadResponse}
-                className="px-2 py-1 text-xs rounded bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-600"
-              >
-                Download
-              </button>
-            )}
-            <CopyButton
-              textToCopy={
-                (isHTMLContent || isImageContent || isSseContent
-                  ? (sourcePayload ?? '')
-                  : formatPayload(sourcePayload, contentType)) ?? ''
-              }
-            />
-          </div>
-        </div>
-        {hasEvents && viewMode === 'events' ? (
-          <SseFramesViewer frames={availableSseFrames} raw={sourcePayload ?? ''} />
-        ) : isSseContent ? (
-          viewMode === 'events' ? (
-            <SseFramesViewer frames={availableSseFrames} raw={sourcePayload ?? ''} />
-          ) : isEmptySourcePayload ? (
-            <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
-              No payload
-            </div>
-          ) : (
-            <Editor
-              height="100%"
-              className="flex-1"
-              language="plaintext"
-              value={sourcePayload ?? ''}
-              theme={getMonacoTheme()}
-              beforeMount={defineMonacoThemes}
-              options={{
-                readOnly: true,
-                minimap: { enabled: false },
-                automaticLayout: true,
-                fontFamily:
-                  '"Cascadia Code", "Jetbrains Mono", "Fira Code", "Menlo", "Consolas", monospace',
-                tabSize: 2,
-                scrollBeyondLastLine: false
-              }}
-            />
-          )
-        ) : isEmptySourcePayload ? (
-          <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
-            No payload
-          </div>
-        ) : viewMode === 'preview' && isHTMLContent ? (
-          <iframe
-            title="HTML Preview"
-            srcDoc={sourcePayload ?? ''}
-            className="flex-1 w-full h-full border-none"
-          />
-        ) : viewMode === 'preview' && isImageContent ? (
-          imagePreviewSrc ? (
-            <div className="flex-1 w-full h-full overflow-auto bg-white dark:bg-dark-tremor-background-subtle">
-              <img alt="Response Preview" src={imagePreviewSrc} className="max-w-none" />
-            </div>
-          ) : (
-            <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
-              Unable to render image preview
-            </div>
-          )
-        ) : (
-          <Editor
-            height="100%"
-            className="flex-1"
-            // defaultLanguage="json"
-            language={editorLanguage}
-            value={formatPayload(sourcePayload, contentType) ?? ''}
-            theme={getMonacoTheme()}
-            beforeMount={defineMonacoThemes}
-            options={{
-              readOnly: true,
-              minimap: { enabled: false },
-              automaticLayout: true,
-              fontFamily:
-                '"Cascadia Code", "Jetbrains Mono", "Fira Code", "Menlo", "Consolas", monospace',
-              tabSize: 2,
-              scrollBeyondLastLine: false
-            }}
-          />
-        )}
+          </>
+        ) : null}
       </div>
     </div>
   );
