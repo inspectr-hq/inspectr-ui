@@ -55,7 +55,7 @@ const RequestListItem = ({
         handleSelect(operation);
       }}
     >
-      <div className="flex items-center p-2 w-full [container-type:inline-size] [container-name:requestlist]">
+      <div className="flex items-center py-1 px-2 w-full [container-type:inline-size] [container-name:requestlist]">
         <div className="w-16 flex justify-center">
           <span
             className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(

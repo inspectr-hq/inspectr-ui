@@ -25,7 +25,9 @@ const McpContent = ({ operation }) => {
     operation?.raw?.meta?.mcp ||
     operation?.meta?.trace?.mcp ||
     operation?.raw?.meta?.trace?.mcp;
-  if (!mcp) {
+  const hasMcp =
+    mcp && typeof mcp === 'object' && Object.keys(mcp).filter((k) => mcp[k] !== undefined).length;
+  if (!hasMcp) {
     return (
       <div className="text-sm text-gray-500 dark:text-dark-tremor-content">No MCP metadata</div>
     );

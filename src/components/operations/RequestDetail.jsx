@@ -203,7 +203,13 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
   const traceInfo = operation?.meta?.trace || null;
   const traceId = traceInfo?.trace_id || null;
   const traceSource = traceInfo?.source || null;
-  const mcpMeta = operation?.meta?.mcp || null;
+  const rawMcpMeta = operation?.meta?.mcp;
+  const mcpMeta =
+    rawMcpMeta &&
+    typeof rawMcpMeta === 'object' &&
+    Object.keys(rawMcpMeta).some((key) => rawMcpMeta[key] !== undefined)
+      ? rawMcpMeta
+      : null;
   const hasTrace = Boolean(traceId);
   const traceButtonClasses =
     'flex items-center space-x-2 px-2 py-1 border border-purple-500 text-purple-600 dark:text-purple-200 bg-purple-50 dark:bg-purple-900/30 rounded focus:outline-none cursor-pointer transition-transform duration-150 ease-in-out active:scale-95 hover:bg-purple-100 dark:hover:bg-purple-800/50 active:ring active:ring-purple-200 dark:active:ring-purple-400';

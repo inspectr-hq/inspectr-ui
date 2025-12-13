@@ -343,7 +343,7 @@ const RulesListPanel = ({
                         <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-50">
                           {rule.name}
                         </p>
-                        <p className="mt-0.5 truncate text-xs text-gray-600 dark:text-gray-400">
+                        <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
                           {rule.description || 'No description provided'}
                         </p>
                       </div>

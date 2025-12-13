@@ -38,7 +38,12 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   const guardHeaders = extractHeaders(operation?.meta?.inspectr?.guard);
   const directiveHeaders = extractHeaders(operation?.meta?.inspectr?.directives);
   const hasInfo = guardHeaders.length > 0 || directiveHeaders.length > 0;
-  const hasMcp = Boolean(operation?.meta?.mcp);
+  const mcp = operation?.meta?.mcp || null;
+  const hasMcp = !!(
+    mcp &&
+    typeof mcp === 'object' &&
+    Object.keys(mcp).some((k) => mcp[k] !== undefined)
+  );
   const hasTags = Array.isArray(operation?.meta?.tags) && operation.meta.tags.length > 0;
   const contentMaxHeight = hasTags
     ? 'calc(100vh - 270px - 64px - 48px)'
@@ -122,7 +127,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
       {/* Tabs for Request, Response */}
       <div className="flex space-x-2">
         <button
-          className={`px-4 py-1 rounded-t ${
+          className={`px-4 py-1 text-base rounded-t ${
             currentTab === 'request'
               ? 'bg-blue-600 dark:bg-blue-700 text-white'
               : 'bg-gray-200 dark:bg-dark-tremor-background-subtle text-gray-700 dark:text-dark-tremor-content'
@@ -132,7 +137,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
           Request
         </button>
         <button
-          className={`px-4 py-1 rounded-t ${
+          className={`px-4 py-1 text-base rounded-t ${
             currentTab === 'response'
               ? 'bg-blue-600 dark:bg-blue-700 text-white'
               : 'bg-gray-200 dark:bg-dark-tremor-background-subtle text-gray-700 dark:text-dark-tremor-content'
@@ -143,7 +148,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
         </button>
         {hasInfo && (
           <button
-            className={`px-4 py-1 rounded-t ${
+            className={`px-4 py-1 text-base rounded-t ${
               currentTab === 'meta'
                 ? 'bg-teal-600 dark:bg-teal-700 text-white'
                 : 'bg-gray-200 dark:bg-dark-tremor-background-subtle text-gray-700 dark:text-dark-tremor-content'
@@ -155,7 +160,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
         )}
         {hasMcp && (
           <button
-            className={`px-4 py-1 rounded-t ${
+            className={`px-4 py-1 text-base rounded-t ${
               currentTab === 'mcp'
                 ? 'bg-sky-500 dark:bg-sky-800 text-white'
                 : 'bg-gray-200 dark:bg-dark-tremor-background-subtle text-gray-700 dark:text-dark-tremor-content'
