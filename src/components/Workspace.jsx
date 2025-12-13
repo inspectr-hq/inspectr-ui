@@ -129,7 +129,7 @@ export default function Workspace() {
                         navItem.slug === currentNav.slug
                           ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
                           : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong dark:text-dark-tremor-content-emphasis hover:dark:border-dark-tremor-content-subtle hover:dark:text-dark-tremor-content-strong',
-                        'inline-flex items-center whitespace-nowrap border-b-2 px-2 pb-2 text-tremor-default font-medium'
+                        'inline-flex items-center whitespace-nowrap border-b-2 px-2 py-2 text-tremor-default font-medium'
                       )}
                       aria-current={navItem.name === currentTab.name ? 'page' : undefined}
                     >
@@ -313,7 +313,7 @@ const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
         isActive
           ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
           : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong dark:text-dark-tremor-content-emphasis hover:dark:border-dark-tremor-content-subtle hover:dark:text-dark-tremor-content-strong',
-        'inline-flex items-center whitespace-nowrap border-b-2 px-2 text-tremor-default font-medium relative'
+        'inline-flex items-center whitespace-nowrap border-b-2 px-2 py-2 text-tremor-default font-medium relative'
       )}
       aria-current={isCurrent ? 'page' : undefined}
     >
