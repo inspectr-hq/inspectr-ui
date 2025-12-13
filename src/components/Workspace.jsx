@@ -97,7 +97,6 @@ export default function Workspace() {
   return (
     <InspectrProvider>
       <DialogMockLaunch />
-      <DialogVersionUpdate />
 
       <div className="flex flex-col min-h-screen">
         <div className="border-b border-tremor-border dark:border-dark-tremor-border relative h-full overflow-hidden bg-gray-50 dark:bg-dark-tremor-background-subtle">
@@ -139,6 +138,7 @@ export default function Workspace() {
                 )}
               </nav>
               <div className="ml-auto flex items-center space-x-2">
+                <DialogVersionUpdate />
                 <button
                   className="px-2 py-1 text-cyan-500 hover:text-white border border-cyan-500 hover:bg-cyan-500 rounded text-xs"
                   onClick={() => setIsExportOpen(true)}
