@@ -11,6 +11,22 @@ import ToolCard from '../mcp/ToolCard.jsx';
 import { Badge, Tab, TabGroup, TabList, TabPanel, TabPanels } from '@tremor/react';
 import McpContentItems from '../mcp/McpContentItems.jsx';
 
+const ChevronIcon = ({ open, className = '' }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+    className={`h-4 w-4 text-tremor-content transition-transform dark:text-dark-tremor-content ${open ? 'rotate-180' : 'rotate-0'} ${className}`}
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
 const TokenChip = ({ label, value }) => (
   <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong">
     <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
@@ -73,6 +89,16 @@ const McpContent = ({ operation }) => {
     () => Array.isArray(view.content) && view.content.length,
     [view.content]
   );
+  const [openSections, setOpenSections] = useState({
+    mcp: true,
+    tokens: true,
+    input: true,
+    output: true
+  });
+
+  const toggleSection = (key) => {
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const tabs = useMemo(() => {
     const result = [];
@@ -98,34 +124,46 @@ const McpContent = ({ operation }) => {
               {isError ? 'Error' : 'Success'}
             </Badge>
           </div>
-          <McpIndicator mcp={mcp} />
-        </div>
-        <div className="mt-1 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
-            <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
-              {mcp.category ?? 'Name'}
-            </div>
-            <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
-              <McpBadge method={mcp.method ?? ''}>{mcp.name ?? '—'}</McpBadge>
-            </div>
-          </div>
-          <div className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
-            <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
-              Method
-            </div>
-            <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
-              <McpBadge method={mcp.method ?? ''}>{mcp.method ?? '—'}</McpBadge>
-            </div>
-          </div>
-          <div className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
-            <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
-              Category
-            </div>
-            <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
-              <McpBadge color="slate">{mcp.category ?? '—'}</McpBadge>
-            </div>
+          <div className="flex items-center gap-2">
+            <McpIndicator mcp={mcp} />
+            <button
+              type="button"
+              onClick={() => toggleSection('mcp')}
+              className="rounded p-1 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300 dark:hover:bg-dark-tremor-background-subtle"
+              aria-label={openSections.mcp ? 'Collapse MCP section' : 'Expand MCP section'}
+            >
+              <ChevronIcon open={openSections.mcp} />
+            </button>
           </div>
         </div>
+        {openSections.mcp ? (
+          <div className="mt-1 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
+              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
+                {mcp.category ?? 'Name'}
+              </div>
+              <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
+                <McpBadge method={mcp.method ?? ''}>{mcp.name ?? '—'}</McpBadge>
+              </div>
+            </div>
+            <div className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
+              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
+                Method
+              </div>
+              <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
+                <McpBadge method={mcp.method ?? ''}>{mcp.method ?? '—'}</McpBadge>
+              </div>
+            </div>
+            <div className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
+              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
+                Category
+              </div>
+              <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
+                <McpBadge color="slate">{mcp.category ?? '—'}</McpBadge>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {tokens ? (
@@ -134,29 +172,28 @@ const McpContent = ({ operation }) => {
             <h3 className="text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong">
               MCP Tokens
             </h3>
-            {/*<div className="text-xs text-slate-500 dark:text-dark-tremor-content">*/}
-            {/*  {tokens.method || tokens.model_assumed ? (*/}
-            {/*    <>*/}
-            {/*      {tokens.method ? <span className="font-semibold">{tokens.method}</span> : null}*/}
-            {/*      {tokens.method && tokens.model_assumed ? <span className="mx-1">•</span> : null}*/}
-            {/*      {tokens.model_assumed ? <span>{tokens.model_assumed}</span> : null}*/}
-            {/*    </>*/}
-            {/*  ) : (*/}
-            {/*    <span>Counts</span>*/}
-            {/*  )}*/}
-            {/*</div>*/}
+            <button
+              type="button"
+              onClick={() => toggleSection('tokens')}
+              className="rounded p-1 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 dark:hover:bg-dark-tremor-background-subtle"
+              aria-label={openSections.tokens ? 'Collapse MCP tokens' : 'Expand MCP tokens'}
+            >
+              <ChevronIcon open={openSections.tokens} />
+            </button>
           </div>
-          <div className="mt-1 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {tokenItems.length > 0 ? (
-              tokenItems.map((item) => (
-                <TokenChip key={item.label} label={item.label} value={item.value} />
-              ))
-            ) : (
-              <div className="text-sm text-slate-500 dark:text-dark-tremor-content">
-                No token counts
-              </div>
-            )}
-          </div>
+          {openSections.tokens ? (
+            <div className="mt-1 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {tokenItems.length > 0 ? (
+                tokenItems.map((item) => (
+                  <TokenChip key={item.label} label={item.label} value={item.value} />
+                ))
+              ) : (
+                <div className="text-sm text-slate-500 dark:text-dark-tremor-content">
+                  No token counts
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
