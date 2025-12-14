@@ -299,7 +299,13 @@ const McpContent = ({ operation }) => {
                               />
                             ) : null}
                             {tab.key === 'content' ? (
-                              <McpContentItems items={view.content} />
+                              <StructuredBlock
+                                data={view.content}
+                                title="Content items"
+                                copyText={JSON.stringify(view.content, null, 2)}
+                              >
+                                <McpContentItems items={view.content} />
+                              </StructuredBlock>
                             ) : null}
                             {tab.key === 'raw' ? (
                               <StructuredBlock data={view.raw} title="Raw Output" />
