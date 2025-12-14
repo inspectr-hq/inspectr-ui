@@ -107,7 +107,8 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
     } else {
       setResultTab('raw');
     }
-  }, [operation?.id, view.structuredContent, hasContentItems]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [operation?.id]);
   if (isToolsList && view.tools.length) {
     toolCacheRef.current = view.tools;
   }
