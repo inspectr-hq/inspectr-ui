@@ -25,6 +25,7 @@ import PropertiesAccordion from '../mcp/PropertiesAccordion.jsx';
 import CollapsibleSection from '../mcp/CollapsibleSection.jsx';
 import StatusBadge from '../insights/StatusBadge.jsx';
 import MethodBadge from '../insights/MethodBadge.jsx';
+import McpContentItems from '../mcp/McpContentItems.jsx';
 import { formatDuration } from '../../utils/formatters.js';
 import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
 import {
@@ -44,10 +45,6 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
   const [showRaw, setShowRaw] = useState(false);
   const [resultTab, setResultTab] = useState('structured');
   const toolCacheRef = useRef([]);
-  useEffect(() => {
-    setShowRaw(false);
-    setResultTab('structured');
-  }, [operation?.id]);
   const mcpMeta =
     operation?.meta?.mcp ||
     operation?.raw?.meta?.mcp ||
@@ -77,13 +74,41 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
   const hasToolTag =
     Array.isArray(operation?.meta?.tags) &&
     operation.meta.tags.some((tag) => typeof tag === 'string' && tag.startsWith('mcp.tool.'));
-  const view = deriveMcpView(mcpMethod, mcpResponse);
+  const view = useMemo(() => deriveMcpView(mcpMethod, mcpResponse), [mcpMethod, mcpResponse]);
   const isToolsList = view.type === 'toolsList' && Array.isArray(view.tools);
   const isToolsCall = mcpMethod === 'tools/call' || mcpMethod === 'tool/call' || hasToolTag;
   const isPromptsList = view.type === 'promptsList';
   const isPromptsGet = mcpMethod === 'prompts/get';
   const isResourcesList = view.type === 'resourcesList';
   const isResourcesRead = mcpMethod === 'resources/read';
+  const hasContentItems = useMemo(
+    () => Array.isArray(view.content) && view.content.length,
+    [view.content]
+  );
+
+  const tabs = useMemo(() => {
+    const result = [];
+    if (view.structuredContent) {
+      result.push({ key: 'structured', label: 'Structured content' });
+    }
+    if (hasContentItems) {
+      result.push({ key: 'content', label: 'Content items' });
+    }
+    result.push({ key: 'raw', label: 'Raw content' });
+    return result;
+  }, [view.structuredContent, hasContentItems]);
+
+  useEffect(() => {
+    setShowRaw(false);
+    if (view.structuredContent) {
+      setResultTab('structured');
+    } else if (hasContentItems) {
+      setResultTab('content');
+    } else {
+      setResultTab('raw');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [operation?.id]);
   if (isToolsList && view.tools.length) {
     toolCacheRef.current = view.tools;
   }
@@ -232,52 +257,60 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
                             <ArgumentsTable args={mcpRequest?.params?.arguments} />
                           </McpInputCard>
                           <McpOutputCard>
-                            {mcpResponse?.result?.structuredContent ? (
-                              <TabGroup
-                                index={resultTab === 'structured' ? 0 : 1}
-                                onIndexChange={(idx) =>
-                                  setResultTab(idx === 0 ? 'structured' : 'raw')
-                                }
-                              >
-                                <TabList>
-                                  <Tab>Structured content</Tab>
-                                  <Tab>Raw content</Tab>
-                                </TabList>
-                                <TabPanels>
-                                  <TabPanel>
-                                    <StructuredBlock
-                                      data={mcpResponse.result.structuredContent}
-                                      title="Structured content"
-                                      copyText={JSON.stringify(
-                                        mcpResponse.result.structuredContent,
-                                        null,
-                                        2
-                                      )}
-                                    />
-                                  </TabPanel>
-                                  <TabPanel>
-                                    <StructuredBlock
-                                      data={mcpResponse?.result ?? mcpResponse ?? {}}
-                                      title="Raw Output"
-                                      copyText={JSON.stringify(
-                                        mcpResponse?.result ?? mcpResponse ?? {},
-                                        null,
-                                        2
-                                      )}
-                                    />
-                                  </TabPanel>
-                                </TabPanels>
-                              </TabGroup>
-                            ) : mcpResponse ? (
-                              <StructuredBlock
-                                data={mcpResponse?.result ?? mcpResponse ?? {}}
-                                title="Raw Output"
-                                copyText={JSON.stringify(
-                                  mcpResponse?.result ?? mcpResponse ?? {},
-                                  null,
-                                  2
-                                )}
-                              />
+                            {mcpResponse ? (
+                              (() => {
+                                const activeKey =
+                                  tabs.find((t) => t.key === resultTab)?.key || tabs[0].key;
+                                const activeIndex = tabs.findIndex((t) => t.key === activeKey);
+                                const rawData = mcpResponse?.result ?? mcpResponse ?? {};
+                                return (
+                                  <TabGroup
+                                    index={activeIndex}
+                                    onIndexChange={(idx) =>
+                                      setResultTab(tabs[idx]?.key || tabs[0].key)
+                                    }
+                                  >
+                                    <TabList>
+                                      {tabs.map((tab) => (
+                                        <Tab key={tab.key}>{tab.label}</Tab>
+                                      ))}
+                                    </TabList>
+                                    <TabPanels>
+                                      {tabs.map((tab) => (
+                                        <TabPanel key={tab.key}>
+                                          {tab.key === 'structured' ? (
+                                            <StructuredBlock
+                                              data={view.structuredContent}
+                                              title="Structured content"
+                                              copyText={JSON.stringify(
+                                                view.structuredContent,
+                                                null,
+                                                2
+                                              )}
+                                            />
+                                          ) : null}
+                                          {tab.key === 'content' ? (
+                                            <StructuredBlock
+                                              data={view.content}
+                                              title="Content items"
+                                              copyText={JSON.stringify(view.content, null, 2)}
+                                            >
+                                              <McpContentItems items={view.content} />
+                                            </StructuredBlock>
+                                          ) : null}
+                                          {tab.key === 'raw' ? (
+                                            <StructuredBlock
+                                              data={rawData}
+                                              title="Raw Output"
+                                              copyText={JSON.stringify(rawData, null, 2)}
+                                            />
+                                          ) : null}
+                                        </TabPanel>
+                                      ))}
+                                    </TabPanels>
+                                  </TabGroup>
+                                );
+                              })()
                             ) : (
                               <Text className="text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
                                 No result returned.

@@ -23,7 +23,13 @@ const TraceIcon = ({ className = '', ...props }) => (
   </svg>
 );
 
-export default function TraceTimelineHeader({ operationCount, onRefresh, isRefreshing, hasError }) {
+export default function TraceTimelineHeader({
+  operationCount,
+  onRefresh,
+  isRefreshing,
+  hasError,
+  traceSources
+}) {
   return (
     <Flex justifyContent="between" alignItems="start">
       <div>
@@ -32,7 +38,7 @@ export default function TraceTimelineHeader({ operationCount, onRefresh, isRefre
           <span>Trace timeline</span>
         </Title>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <button
           type="button"
           onClick={onRefresh}
@@ -42,6 +48,15 @@ export default function TraceTimelineHeader({ operationCount, onRefresh, isRefre
         >
           {isRefreshing ? 'Refreshing…' : 'Refresh'}
         </button>
+        {traceSources?.length ? (
+          <div className="flex flex-wrap gap-2">
+            {traceSources.map((source) => (
+              <Badge key={source} color="blue">
+                {source}
+              </Badge>
+            ))}
+          </div>
+        ) : null}
         <Badge color={hasError ? 'rose' : 'slate'}>
           {`${operationCount} ${operationCount === 1 ? 'step' : 'steps'}`}
         </Badge>

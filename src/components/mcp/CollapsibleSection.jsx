@@ -50,10 +50,17 @@ const CollapsibleSection = ({
     <div
       className={`rounded-tremor-small border border-slate-200 dark:border-dark-tremor-border ${className}`}
     >
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={toggle}
-        className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggle();
+          }
+        }}
+        className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong"
       >
         <Text className="text-xs font-semibold uppercase tracking-wide text-tremor-content-subtle dark:text-dark-tremor-content">
           {title}
@@ -63,7 +70,7 @@ const CollapsibleSection = ({
           {headerRight}
           <ChevronIcon open={open} />
         </span>
-      </button>
+      </div>
       {open ? (
         withBorderTop ? (
           <div className={`border-t border-tremor-border ${contentClassName}`}>{children}</div>

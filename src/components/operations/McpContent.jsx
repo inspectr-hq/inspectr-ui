@@ -1,5 +1,5 @@
 // src/components/operations/McpContent.jsx
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import ArgumentsTable from '../mcp/ArgumentsTable.jsx';
 import McpInputCard from '../mcp/McpInputCard.jsx';
 import McpOutputCard from '../mcp/McpOutputCard.jsx';
@@ -9,14 +9,23 @@ import McpBadge from '../mcp/McpBadge.jsx';
 import McpIndicator from './McpIndicator.jsx';
 import ToolCard from '../mcp/ToolCard.jsx';
 import { Badge, Tab, TabGroup, TabList, TabPanel, TabPanels } from '@tremor/react';
+import McpContentItems from '../mcp/McpContentItems.jsx';
+import McpTokensCard from '../mcp/McpTokensCard.jsx';
 
-const TokenChip = ({ label, value }) => (
-  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong">
-    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
-      {label}
-    </span>
-    <span className="font-mono text-sm">{value ?? '—'}</span>
-  </div>
+const ChevronIcon = ({ open, className = '' }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+    className={`h-4 w-4 text-tremor-content transition-transform dark:text-dark-tremor-content ${open ? 'rotate-180' : 'rotate-0'} ${className}`}
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.084l3.71-3.854a.75.75 0 0 1 1.08 1.04l-4.25 4.417a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z"
+      clipRule="evenodd"
+    />
+  </svg>
 );
 
 const McpContent = ({ operation }) => {
@@ -34,11 +43,6 @@ const McpContent = ({ operation }) => {
   }
 
   const tokens = mcp.tokens;
-  const tokenItems = [
-    { label: 'Request', value: tokens?.request },
-    { label: 'Response', value: tokens?.response },
-    { label: 'Total', value: tokens?.total }
-  ].filter((item) => item.value !== undefined);
 
   const isError = Number(operation?.status) >= 400;
   const methodColor = getMcpMethodColor(mcp?.method);
@@ -63,13 +67,40 @@ const McpContent = ({ operation }) => {
   );
   const [resultTab, setResultTab] = useState('structured');
   const mcpMethod = mcp?.method || mcpRequest?.method;
-  const view = deriveMcpView(mcpMethod, mcpResponse);
+  const view = useMemo(() => deriveMcpView(mcpMethod, mcpResponse), [mcpMethod, mcpResponse]);
+  const hasStructuredContent = useMemo(
+    () => Boolean(view.structuredContent),
+    [view.structuredContent]
+  );
+  const hasContentItems = useMemo(
+    () => Array.isArray(view.content) && view.content.length,
+    [view.content]
+  );
+  const [openSections, setOpenSections] = useState({
+    mcp: true
+  });
+
+  const toggleSection = (key) => {
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const tabs = useMemo(() => {
+    const result = [];
+    if (hasStructuredContent) {
+      result.push({ key: 'structured', label: 'Structured content' });
+    }
+    if (hasContentItems) {
+      result.push({ key: 'content', label: 'Content items' });
+    }
+    result.push({ key: 'raw', label: 'Raw content' });
+    return result;
+  }, [hasStructuredContent, hasContentItems]);
 
   return (
     <div className="space-y-2">
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-2">
             <h3 className="text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong">
               MCP
             </h3>
@@ -77,67 +108,49 @@ const McpContent = ({ operation }) => {
               {isError ? 'Error' : 'Success'}
             </Badge>
           </div>
-          <McpIndicator mcp={mcp} />
-        </div>
-        <div className="mt-1 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
-            <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
-              {mcp.category ?? 'Name'}
-            </div>
-            <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
-              <McpBadge method={mcp.method ?? ''}>{mcp.name ?? '—'}</McpBadge>
-            </div>
-          </div>
-          <div className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
-            <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
-              Method
-            </div>
-            <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
-              <McpBadge method={mcp.method ?? ''}>{mcp.method ?? '—'}</McpBadge>
-            </div>
-          </div>
-          <div className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
-            <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
-              Category
-            </div>
-            <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
-              <McpBadge color="slate">{mcp.category ?? '—'}</McpBadge>
-            </div>
+          <div className="flex items-center gap-2">
+            <McpIndicator mcp={mcp} />
+            <button
+              type="button"
+              onClick={() => toggleSection('mcp')}
+              // className="rounded p-1 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300 dark:hover:bg-dark-tremor-background-subtle"
+              aria-label={openSections.mcp ? 'Collapse MCP section' : 'Expand MCP section'}
+            >
+              <ChevronIcon open={openSections.mcp} />
+            </button>
           </div>
         </div>
+        {openSections.mcp ? (
+          <div className="mt-1 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
+              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
+                {mcp.category ?? 'Name'}
+              </div>
+              <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
+                <McpBadge method={mcp.method ?? ''}>{mcp.name ?? '—'}</McpBadge>
+              </div>
+            </div>
+            <div className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
+              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
+                Method
+              </div>
+              <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
+                <McpBadge method={mcp.method ?? ''}>{mcp.method ?? '—'}</McpBadge>
+              </div>
+            </div>
+            <div className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
+              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
+                Category
+              </div>
+              <div className="mt-1 text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong break-all">
+                <McpBadge color="slate">{mcp.category ?? '—'}</McpBadge>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
 
-      {tokens ? (
-        <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong">
-              MCP Tokens
-            </h3>
-            {/*<div className="text-xs text-slate-500 dark:text-dark-tremor-content">*/}
-            {/*  {tokens.method || tokens.model_assumed ? (*/}
-            {/*    <>*/}
-            {/*      {tokens.method ? <span className="font-semibold">{tokens.method}</span> : null}*/}
-            {/*      {tokens.method && tokens.model_assumed ? <span className="mx-1">•</span> : null}*/}
-            {/*      {tokens.model_assumed ? <span>{tokens.model_assumed}</span> : null}*/}
-            {/*    </>*/}
-            {/*  ) : (*/}
-            {/*    <span>Counts</span>*/}
-            {/*  )}*/}
-            {/*</div>*/}
-          </div>
-          <div className="mt-1 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {tokenItems.length > 0 ? (
-              tokenItems.map((item) => (
-                <TokenChip key={item.label} label={item.label} value={item.value} />
-              ))
-            ) : (
-              <div className="text-sm text-slate-500 dark:text-dark-tremor-content">
-                No token counts
-              </div>
-            )}
-          </div>
-        </div>
-      ) : null}
+      {tokens ? <McpTokensCard tokens={tokens} /> : null}
 
       {mcpRequest || mcpResponse ? (
         <div className="grid grid-cols-1 gap-3">
@@ -254,24 +267,47 @@ const McpContent = ({ operation }) => {
                     ))}
                   </div>
                 </div>
-              ) : view.type === 'structured' ? (
-                <TabGroup
-                  index={resultTab === 'structured' ? 0 : 1}
-                  onIndexChange={(idx) => setResultTab(idx === 0 ? 'structured' : 'raw')}
-                >
-                  <TabList>
-                    <Tab>Structured content</Tab>
-                    <Tab>Raw content</Tab>
-                  </TabList>
-                  <TabPanels>
-                    <TabPanel>
-                      <StructuredBlock data={view.structuredContent} title="Structured content" />
-                    </TabPanel>
-                    <TabPanel>
-                      <StructuredBlock data={view.raw} title="Raw Output" />
-                    </TabPanel>
-                  </TabPanels>
-                </TabGroup>
+              ) : view.type === 'structured' || view.type === 'content' || hasContentItems ? (
+                (() => {
+                  const activeKey = tabs.find((t) => t.key === resultTab)?.key || tabs[0].key;
+                  const activeIndex = tabs.findIndex((t) => t.key === activeKey);
+                  return (
+                    <TabGroup
+                      index={activeIndex}
+                      onIndexChange={(idx) => setResultTab(tabs[idx]?.key || 'raw')}
+                    >
+                      <TabList>
+                        {tabs.map((tab) => (
+                          <Tab key={tab.key}>{tab.label}</Tab>
+                        ))}
+                      </TabList>
+                      <TabPanels>
+                        {tabs.map((tab) => (
+                          <TabPanel key={tab.key}>
+                            {tab.key === 'structured' ? (
+                              <StructuredBlock
+                                data={view.structuredContent}
+                                title="Structured content"
+                              />
+                            ) : null}
+                            {tab.key === 'content' ? (
+                              <StructuredBlock
+                                data={view.content}
+                                title="Content items"
+                                copyText={JSON.stringify(view.content, null, 2)}
+                              >
+                                <McpContentItems items={view.content} />
+                              </StructuredBlock>
+                            ) : null}
+                            {tab.key === 'raw' ? (
+                              <StructuredBlock data={view.raw} title="Raw Output" />
+                            ) : null}
+                          </TabPanel>
+                        ))}
+                      </TabPanels>
+                    </TabGroup>
+                  );
+                })()
               ) : (
                 <StructuredBlock data={view.raw} />
               )

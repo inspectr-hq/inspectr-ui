@@ -77,22 +77,26 @@ export const deriveMcpView = (method = '', response) => {
   const prompts = response?.result?.prompts;
   const resources = response?.result?.resources;
   const structuredContent = response?.result?.structuredContent;
+  const content = response?.result?.content || response?.content || [];
   const raw = response?.result ?? response;
 
   if (lowerMethod === 'tools/list' && Array.isArray(tools)) {
-    return { type: 'toolsList', tools, raw };
+    return { type: 'toolsList', tools, raw, content };
   }
   if (lowerMethod === 'prompts/list' && Array.isArray(prompts)) {
-    return { type: 'promptsList', prompts, raw };
+    return { type: 'promptsList', prompts, raw, content };
   }
   if (lowerMethod === 'resources/list' && Array.isArray(resources)) {
-    return { type: 'resourcesList', resources, raw };
+    return { type: 'resourcesList', resources, raw, content };
   }
   if (structuredContent) {
-    return { type: 'structured', structuredContent, raw };
+    return { type: 'structured', structuredContent, raw, content };
+  }
+  if (Array.isArray(content) && content.length) {
+    return { type: 'content', content, raw };
   }
 
-  return { type: 'raw', raw };
+  return { type: 'raw', raw, content };
 };
 
 export const getSseJsonPayload = (eventFrames = []) => {

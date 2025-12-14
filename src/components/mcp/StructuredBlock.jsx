@@ -4,7 +4,7 @@ import React from 'react';
 
 import CopyButton from '../CopyButton.jsx';
 
-const StructuredBlock = ({ data, title, copyText }) => {
+const StructuredBlock = ({ data, title, copyText, children }) => {
   const textValue = copyText || JSON.stringify(data, null, 2);
 
   return (
@@ -21,9 +21,13 @@ const StructuredBlock = ({ data, title, copyText }) => {
           <CopyButton textToCopy={textValue} showLabel={true} />
         </div>
       )}
-      <pre className="max-h-80 overflow-auto whitespace-pre-wrap px-3 py-2 text-xs text-tremor-content dark:text-dark-tremor-content">
-        {textValue}
-      </pre>
+      {children ? (
+        <div className="max-h-100 overflow-auto px-3 py-2">{children}</div>
+      ) : (
+        <pre className="max-h-100 overflow-auto whitespace-pre-wrap px-3 py-2 text-xs text-tremor-content dark:text-dark-tremor-content">
+          {textValue}
+        </pre>
+      )}
     </div>
   );
 };

@@ -42,6 +42,11 @@ const deriveGroupStatus = (operations) => {
   return operations.reduce((max, op) => Math.max(max, op.status ?? 0), 0);
 };
 
+const toFiniteNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 export default function TraceTimelineMode({
   operations: _legacyOperations = [],
   initialTraceId = null,
@@ -69,7 +74,8 @@ export default function TraceTimelineMode({
     selectedOperationId,
     setSelectedOperationId,
     selectedOperation,
-    refreshTraceList
+    refreshTraceList,
+    refreshTraceDetail
   } = useTraceExplorer({
     initialTraceId,
     initialOperationId,
@@ -139,6 +145,7 @@ export default function TraceTimelineMode({
 
   const handleRefresh = () => {
     refreshTraceList();
+    refreshTraceDetail();
   };
 
   useEffect(() => {
@@ -209,6 +216,55 @@ export default function TraceTimelineMode({
     };
   }, [handleMouseMove, stopResizing]);
 
+  const tokenTotals = useMemo(() => {
+    let requestSum = 0;
+    let responseSum = 0;
+    let totalSum = 0;
+    let hasRequest = false;
+    let hasResponse = false;
+    let hasTotal = false;
+
+    normalizedOperations.forEach((operation) => {
+      if (!operation) return;
+      const meta =
+        operation?.meta?.mcp ||
+        operation?.raw?.meta?.mcp ||
+        operation?.meta?.trace?.mcp ||
+        operation?.raw?.meta?.trace?.mcp;
+      const tokens = meta?.tokens;
+      if (!tokens) return;
+
+      const req = toFiniteNumber(tokens.request);
+      const res = toFiniteNumber(tokens.response);
+      const tot = toFiniteNumber(tokens.total);
+
+      if (req !== null) {
+        hasRequest = true;
+        requestSum += req;
+      }
+      if (res !== null) {
+        hasResponse = true;
+        responseSum += res;
+      }
+      if (tot !== null) {
+        hasTotal = true;
+        totalSum += tot;
+      } else if (req !== null || res !== null) {
+        hasTotal = true;
+        totalSum += (req ?? 0) + (res ?? 0);
+      }
+    });
+
+    const hasAny = hasRequest || hasResponse || hasTotal;
+    if (!hasAny) return null;
+
+    return {
+      request: hasRequest ? requestSum : null,
+      response: hasResponse ? responseSum : null,
+      total: hasTotal ? totalSum : null
+    };
+  }, [normalizedOperations]);
+
   // Check if we should show an empty state
   if (
     !supportsTraces ||
@@ -266,17 +322,18 @@ export default function TraceTimelineMode({
           onRefresh={handleRefresh}
           isRefreshing={isRefreshingTrace}
           hasError={!!traceDetailError}
+          traceSources={traceSources}
         />
 
         <div className="mt-6 flex flex-col gap-4 min-w-0">
           <TraceMetadata
             traceSummary={traceSummary}
-            traceSources={traceSources}
             traceDurationMs={traceDurationMs}
             traceDetailMeta={traceDetailMeta}
             traceListMeta={traceListMeta}
             isTraceDetailLoading={isTraceDetailLoading}
             operationCount={operationCount}
+            tokenTotals={tokenTotals}
           />
 
           {traceDetailError ? (
