@@ -103,7 +103,7 @@ const normalizeColor = (value) => {
   return colorClassMap[normalized] ? normalized : 'blue';
 };
 
-const McpBadge = ({ method, children, color, size = 'xs', showIcon = true }) => {
+const McpBadge = ({ method, children, color, size = 'xs', showIcon = true, copyText }) => {
   const derivedColor = color || getMcpMethodColor(method);
   const kind = getMethodKind(method);
   const rawIcon = showIcon ? iconMap[kind] : null;
@@ -112,10 +112,26 @@ const McpBadge = ({ method, children, color, size = 'xs', showIcon = true }) => 
   const normalizedColor = normalizeColor(derivedColor);
   const colorClasses = colorClassMap[normalizedColor].root;
   const sizeClasses = sizeClassMap[size] || sizeClassMap.xs;
+  const textValue =
+    copyText ??
+    (typeof children === 'string' || typeof children === 'number'
+      ? String(children)
+      : typeof method === 'string'
+        ? method
+        : '');
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    if (!textValue) return;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(textValue).catch(() => {});
+    }
+  };
 
   return (
     <span
-      className={`w-max shrink-0 inline-flex items-center justify-center cursor-default rounded-tremor-small ring-1 ring-inset ${sizeClasses} ${colorClasses}`}
+      className={`w-max shrink-0 inline-flex items-center justify-center cursor-pointer rounded-tremor-small ring-1 ring-inset ${sizeClasses} ${colorClasses}`}
+      onClick={handleClick}
     >
       <span className="inline-flex items-center gap-1 leading-none">
         {icon ? (
