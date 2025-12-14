@@ -16,7 +16,8 @@ const RequestListItem = ({
   onSelect,
   onRemove,
   selected,
-  showQueryParams = false
+  showQueryParams = false,
+  selectedOperationRef
 }) => {
   const handleSelect = (operation) => {
     onSelect(operation);
@@ -50,12 +51,13 @@ const RequestListItem = ({
 
   return (
     <li
+      ref={selected ? selectedOperationRef : null}
       className={`flex items-center cursor-pointer hover:bg-gray-200 dark:hover:bg-dark-tremor-background-subtle ${baseBorderClass} ${selected ? selectedClass : 'border-transparent'}`}
       onClick={() => {
         handleSelect(operation);
       }}
     >
-      <div className="flex items-center p-2 w-full [container-type:inline-size] [container-name:requestlist]">
+      <div className="flex items-center py-1 px-2 w-full [container-type:inline-size] [container-name:requestlist]">
         <div className="w-16 flex justify-center">
           <span
             className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(

@@ -97,7 +97,6 @@ export default function Workspace() {
   return (
     <InspectrProvider>
       <DialogMockLaunch />
-      <DialogVersionUpdate />
 
       <div className="flex flex-col min-h-screen">
         <div className="border-b border-tremor-border dark:border-dark-tremor-border relative h-full overflow-hidden bg-gray-50 dark:bg-dark-tremor-background-subtle">
@@ -129,7 +128,7 @@ export default function Workspace() {
                         navItem.slug === currentNav.slug
                           ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
                           : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong dark:text-dark-tremor-content-emphasis hover:dark:border-dark-tremor-content-subtle hover:dark:text-dark-tremor-content-strong',
-                        'inline-flex items-center whitespace-nowrap border-b-2 px-2 text-tremor-default font-medium'
+                        'inline-flex items-center whitespace-nowrap border-b-2 px-2 py-2 text-tremor-default font-medium'
                       )}
                       aria-current={navItem.name === currentTab.name ? 'page' : undefined}
                     >
@@ -139,6 +138,7 @@ export default function Workspace() {
                 )}
               </nav>
               <div className="ml-auto flex items-center space-x-2">
+                <DialogVersionUpdate />
                 <button
                   className="px-2 py-1 text-cyan-500 hover:text-white border border-cyan-500 hover:bg-cyan-500 rounded text-xs"
                   onClick={() => setIsExportOpen(true)}
@@ -190,7 +190,7 @@ export default function Workspace() {
           {['insights', 'statistics', 'settings', 'usage', 'rules', 'traces'].includes(
             currentNav.slug
           ) ? (
-            <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-950">
+            <div className="p-4 bg-gray-50 dark:bg-gray-950">
               <ActiveComponent key={currentNav.slug} route={route} />
             </div>
           ) : (
@@ -313,7 +313,7 @@ const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
         isActive
           ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
           : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong dark:text-dark-tremor-content-emphasis hover:dark:border-dark-tremor-content-subtle hover:dark:text-dark-tremor-content-strong',
-        'inline-flex items-center whitespace-nowrap border-b-2 px-2 text-tremor-default font-medium relative'
+        'inline-flex items-center whitespace-nowrap border-b-2 px-2 py-2 text-tremor-default font-medium relative'
       )}
       aria-current={isCurrent ? 'page' : undefined}
     >
