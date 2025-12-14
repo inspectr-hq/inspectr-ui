@@ -1,5 +1,5 @@
 // src/components/operations/McpContent.jsx
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import ArgumentsTable from '../mcp/ArgumentsTable.jsx';
 import McpInputCard from '../mcp/McpInputCard.jsx';
 import McpOutputCard from '../mcp/McpOutputCard.jsx';
@@ -9,6 +9,7 @@ import McpBadge from '../mcp/McpBadge.jsx';
 import McpIndicator from './McpIndicator.jsx';
 import ToolCard from '../mcp/ToolCard.jsx';
 import { Badge, Tab, TabGroup, TabList, TabPanel, TabPanels } from '@tremor/react';
+import McpContentItems from '../mcp/McpContentItems.jsx';
 
 const TokenChip = ({ label, value }) => (
   <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong">
@@ -63,7 +64,27 @@ const McpContent = ({ operation }) => {
   );
   const [resultTab, setResultTab] = useState('structured');
   const mcpMethod = mcp?.method || mcpRequest?.method;
-  const view = deriveMcpView(mcpMethod, mcpResponse);
+  const view = useMemo(() => deriveMcpView(mcpMethod, mcpResponse), [mcpMethod, mcpResponse]);
+  const hasStructuredContent = useMemo(
+    () => Boolean(view.structuredContent),
+    [view.structuredContent]
+  );
+  const hasContentItems = useMemo(
+    () => Array.isArray(view.content) && view.content.length,
+    [view.content]
+  );
+
+  const tabs = useMemo(() => {
+    const result = [];
+    if (hasStructuredContent) {
+      result.push({ key: 'structured', label: 'Structured content' });
+    }
+    if (hasContentItems) {
+      result.push({ key: 'content', label: 'Content items' });
+    }
+    result.push({ key: 'raw', label: 'Raw content' });
+    return result;
+  }, [hasStructuredContent, hasContentItems]);
 
   return (
     <div className="space-y-2">
@@ -254,24 +275,41 @@ const McpContent = ({ operation }) => {
                     ))}
                   </div>
                 </div>
-              ) : view.type === 'structured' ? (
-                <TabGroup
-                  index={resultTab === 'structured' ? 0 : 1}
-                  onIndexChange={(idx) => setResultTab(idx === 0 ? 'structured' : 'raw')}
-                >
-                  <TabList>
-                    <Tab>Structured content</Tab>
-                    <Tab>Raw content</Tab>
-                  </TabList>
-                  <TabPanels>
-                    <TabPanel>
-                      <StructuredBlock data={view.structuredContent} title="Structured content" />
-                    </TabPanel>
-                    <TabPanel>
-                      <StructuredBlock data={view.raw} title="Raw Output" />
-                    </TabPanel>
-                  </TabPanels>
-                </TabGroup>
+              ) : view.type === 'structured' || view.type === 'content' || hasContentItems ? (
+                (() => {
+                  const activeKey = tabs.find((t) => t.key === resultTab)?.key || tabs[0].key;
+                  const activeIndex = tabs.findIndex((t) => t.key === activeKey);
+                  return (
+                    <TabGroup
+                      index={activeIndex}
+                      onIndexChange={(idx) => setResultTab(tabs[idx]?.key || 'raw')}
+                    >
+                      <TabList>
+                        {tabs.map((tab) => (
+                          <Tab key={tab.key}>{tab.label}</Tab>
+                        ))}
+                      </TabList>
+                      <TabPanels>
+                        {tabs.map((tab) => (
+                          <TabPanel key={tab.key}>
+                            {tab.key === 'structured' ? (
+                              <StructuredBlock
+                                data={view.structuredContent}
+                                title="Structured content"
+                              />
+                            ) : null}
+                            {tab.key === 'content' ? (
+                              <McpContentItems items={view.content} />
+                            ) : null}
+                            {tab.key === 'raw' ? (
+                              <StructuredBlock data={view.raw} title="Raw Output" />
+                            ) : null}
+                          </TabPanel>
+                        ))}
+                      </TabPanels>
+                    </TabGroup>
+                  );
+                })()
               ) : (
                 <StructuredBlock data={view.raw} />
               )
