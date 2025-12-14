@@ -74,7 +74,8 @@ export default function TraceTimelineMode({
     selectedOperationId,
     setSelectedOperationId,
     selectedOperation,
-    refreshTraceList
+    refreshTraceList,
+    refreshTraceDetail
   } = useTraceExplorer({
     initialTraceId,
     initialOperationId,
@@ -144,6 +145,7 @@ export default function TraceTimelineMode({
 
   const handleRefresh = () => {
     refreshTraceList();
+    refreshTraceDetail();
   };
 
   useEffect(() => {

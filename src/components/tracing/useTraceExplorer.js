@@ -35,6 +35,7 @@ export const useTraceExplorer = ({
   const [traceOperations, setTraceOperations] = useState([]);
   const [isTraceDetailLoading, setIsTraceDetailLoading] = useState(false);
   const [traceDetailError, setTraceDetailError] = useState(null);
+  const [traceDetailRefreshKey, setTraceDetailRefreshKey] = useState(0);
 
   const [traceListRefreshKey, setTraceListRefreshKey] = useState(0);
 
@@ -147,7 +148,7 @@ export const useTraceExplorer = ({
     return () => {
       alive = false;
     };
-  }, [supportsTraces, client, selectedTraceId, detailLimit, isActive]);
+  }, [supportsTraces, client, selectedTraceId, detailLimit, isActive, traceDetailRefreshKey]);
 
   const normalizedOperations = useMemo(() => {
     if (!Array.isArray(traceOperations)) return [];
@@ -241,6 +242,7 @@ export const useTraceExplorer = ({
   };
 
   const refreshTraceList = () => setTraceListRefreshKey((value) => value + 1);
+  const refreshTraceDetail = () => setTraceDetailRefreshKey((value) => value + 1);
   return {
     supportsTraces,
     traceList,
@@ -261,7 +263,8 @@ export const useTraceExplorer = ({
     selectedOperationId,
     setSelectedOperationId: selectOperation,
     selectedOperation,
-    refreshTraceList
+    refreshTraceList,
+    refreshTraceDetail
   };
 };
 
