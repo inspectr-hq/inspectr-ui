@@ -22,9 +22,9 @@ const StructuredBlock = ({ data, title, copyText, children }) => {
         </div>
       )}
       {children ? (
-        <div className="max-h-80 overflow-auto px-3 py-2">{children}</div>
+        <div className="max-h-100 overflow-auto px-3 py-2">{children}</div>
       ) : (
-        <pre className="max-h-80 overflow-auto whitespace-pre-wrap px-3 py-2 text-xs text-tremor-content dark:text-dark-tremor-content">
+        <pre className="max-h-100 overflow-auto whitespace-pre-wrap px-3 py-2 text-xs text-tremor-content dark:text-dark-tremor-content">
           {textValue}
         </pre>
       )}

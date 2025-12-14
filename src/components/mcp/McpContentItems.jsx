@@ -50,7 +50,7 @@ const ContentItem = ({ item, index }) => {
             </div>
             <AnnotationBadges annotations={item.annotations} />
           </div>
-          <pre className="whitespace-pre-wrap break-words text-sm text-slate-800 dark:text-dark-tremor-content">
+          <pre className="whitespace-pre-wrap break-words text-xs text-slate-700 dark:text-dark-tremor-content">
             {item.text || '[empty text]'}
           </pre>
         </div>

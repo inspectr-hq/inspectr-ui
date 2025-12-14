@@ -10,6 +10,7 @@ import McpIndicator from './McpIndicator.jsx';
 import ToolCard from '../mcp/ToolCard.jsx';
 import { Badge, Tab, TabGroup, TabList, TabPanel, TabPanels } from '@tremor/react';
 import McpContentItems from '../mcp/McpContentItems.jsx';
+import McpTokensCard from '../mcp/McpTokensCard.jsx';
 
 const ChevronIcon = ({ open, className = '' }) => (
   <svg
@@ -27,15 +28,6 @@ const ChevronIcon = ({ open, className = '' }) => (
   </svg>
 );
 
-const TokenChip = ({ label, value }) => (
-  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong">
-    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
-      {label}
-    </span>
-    <span className="font-mono text-sm">{value ?? '—'}</span>
-  </div>
-);
-
 const McpContent = ({ operation }) => {
   const mcp =
     operation?.meta?.mcp ||
@@ -51,11 +43,6 @@ const McpContent = ({ operation }) => {
   }
 
   const tokens = mcp.tokens;
-  const tokenItems = [
-    { label: 'Request', value: tokens?.request },
-    { label: 'Response', value: tokens?.response },
-    { label: 'Total', value: tokens?.total }
-  ].filter((item) => item.value !== undefined);
 
   const isError = Number(operation?.status) >= 400;
   const methodColor = getMcpMethodColor(mcp?.method);
@@ -90,10 +77,7 @@ const McpContent = ({ operation }) => {
     [view.content]
   );
   const [openSections, setOpenSections] = useState({
-    mcp: true,
-    tokens: true,
-    input: true,
-    output: true
+    mcp: true
   });
 
   const toggleSection = (key) => {
@@ -116,7 +100,7 @@ const McpContent = ({ operation }) => {
     <div className="space-y-2">
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-2">
             <h3 className="text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong">
               MCP
             </h3>
@@ -129,7 +113,7 @@ const McpContent = ({ operation }) => {
             <button
               type="button"
               onClick={() => toggleSection('mcp')}
-              className="rounded p-1 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300 dark:hover:bg-dark-tremor-background-subtle"
+              // className="rounded p-1 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300 dark:hover:bg-dark-tremor-background-subtle"
               aria-label={openSections.mcp ? 'Collapse MCP section' : 'Expand MCP section'}
             >
               <ChevronIcon open={openSections.mcp} />
@@ -166,36 +150,7 @@ const McpContent = ({ operation }) => {
         ) : null}
       </div>
 
-      {tokens ? (
-        <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-slate-800 dark:text-dark-tremor-content-strong">
-              MCP Tokens
-            </h3>
-            <button
-              type="button"
-              onClick={() => toggleSection('tokens')}
-              className="rounded p-1 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 dark:hover:bg-dark-tremor-background-subtle"
-              aria-label={openSections.tokens ? 'Collapse MCP tokens' : 'Expand MCP tokens'}
-            >
-              <ChevronIcon open={openSections.tokens} />
-            </button>
-          </div>
-          {openSections.tokens ? (
-            <div className="mt-1 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {tokenItems.length > 0 ? (
-                tokenItems.map((item) => (
-                  <TokenChip key={item.label} label={item.label} value={item.value} />
-                ))
-              ) : (
-                <div className="text-sm text-slate-500 dark:text-dark-tremor-content">
-                  No token counts
-                </div>
-              )}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      {tokens ? <McpTokensCard tokens={tokens} /> : null}
 
       {mcpRequest || mcpResponse ? (
         <div className="grid grid-cols-1 gap-3">
