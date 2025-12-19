@@ -77,9 +77,11 @@ const RequestList = ({
 
   const groupedOperations = groupOperationsByDate(operations);
 
+  const selectedOperationId = selectedOperation?.id ?? null;
+
   // Auto-scroll to selected operation
   useEffect(() => {
-    if (!selectedOperation || !selectedOperationRef.current) return;
+    if (!selectedOperationId || !selectedOperationRef.current) return;
 
     // Use a small timeout to allow the DOM to update
     const timeoutId = setTimeout(() => {
@@ -93,7 +95,7 @@ const RequestList = ({
     }, 150);
 
     return () => clearTimeout(timeoutId);
-  }, [selectedOperation]);
+  }, [selectedOperationId]);
 
   return (
     <div className="flex flex-col h-full relative">
