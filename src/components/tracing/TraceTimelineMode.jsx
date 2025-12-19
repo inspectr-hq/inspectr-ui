@@ -99,6 +99,7 @@ export default function TraceTimelineMode({
   const isResizingRef = useRef(false);
   const panelContainerRef = useRef(null);
   const selectedOperationRef = useRef(null);
+  const lastScrolledOperationIdRef = useRef(null);
 
   const baseStart = timeline.start;
   const baseDuration = timeline.duration;
@@ -179,12 +180,16 @@ export default function TraceTimelineMode({
 
     // Use a small timeout to allow the DOM to update after group expansion
     const timeoutId = setTimeout(() => {
-      if (selectedOperationRef.current) {
+      if (
+        selectedOperationRef.current &&
+        lastScrolledOperationIdRef.current !== selectedOperationId
+      ) {
         selectedOperationRef.current.scrollIntoView({
           behavior: 'smooth',
           block: 'center',
           inline: 'nearest'
         });
+        lastScrolledOperationIdRef.current = selectedOperationId;
       }
     }, 150);
 
