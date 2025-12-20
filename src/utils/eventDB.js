@@ -5,7 +5,7 @@ import { normalizeTags, normalizeTagFilters } from './normalizeTags.js';
 const getRecordNormalizedTags = (record) => {
   if (!record) return [];
   if (Array.isArray(record.__normalizedTags)) return record.__normalizedTags;
-  const tags = normalizeTags(record?.raw?.data?.meta?.tags || []);
+  const tags = normalizeTags(record?.tags || []);
   record.__normalizedTags = tags;
   return tags;
 };
@@ -18,6 +18,12 @@ class EventDB {
     this.db.version(1).stores({
       events: 'id, time, operation_id, method, status_code, path, duration, server'
     });
+    this.db
+      .version(2)
+      .stores({
+        events: 'id, time, operation_id, method, status_code, path, duration, server'
+      })
+      .upgrade(() => this.db.events.clear());
   }
 
   // Helper method to transform a raw SSE event into a flattened record.
@@ -33,10 +39,10 @@ class EventDB {
       url: data.request.url,
       server: data.request.server,
       path: data.request.path,
+      query_params: data.request.query_params || [],
       client_ip: data.request.client_ip,
       duration: data.timing.duration,
       status_code: data.response?.status,
-      raw: event,
       tagTokens: normalizedTags.map((tag) => tag.token),
       tags: normalizedTags.map((tag) => tag.display)
     };
@@ -101,11 +107,7 @@ class EventDB {
         .toArray();
 
       const [rawRecords, totalCount] = await Promise.all([pagePromise, totalCountPromise]);
-      const results = rawRecords.map((record) => ({
-        id: record.id,
-        ...record.raw.data
-      }));
-      return { results, totalCount };
+      return { results: rawRecords, totalCount };
     }
 
     // --- Fallback path: filters are present, run full filtering logic ---
@@ -280,10 +282,7 @@ class EventDB {
 
     // --- Transform Results ---
     // Instead of exposing the full stored record, only return the inner raw.data along with the id.
-    const results = pageItems.map((record) => ({
-      id: record.id,
-      ...record.raw.data
-    }));
+    const results = pageItems;
     // console.log('[EventDB] Transformed results:', results);
 
     return { results, totalCount };

@@ -1,5 +1,5 @@
 // src/components/operations/RequestDetailsPanel.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import RequestDetail from './RequestDetail';
 import RequestContent from './RequestContent';
 import ResponseContent from './ResponseContent';
@@ -8,6 +8,7 @@ import McpContent from './McpContent.jsx';
 import Terminal from '../Terminal';
 import { RiExternalLinkLine } from '@remixicon/react';
 import useLocalStorage from '../../hooks/useLocalStorage.jsx';
+import useOperationDetails from '../../hooks/useOperationDetails.jsx';
 
 // CSS for fade-in effect
 const fadeInStyle = {
@@ -28,6 +29,8 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   const [exposeValue] = useLocalStorage('expose', 'false');
   const expose = exposeValue === 'true';
   const [isLoaded, setIsLoaded] = useState(false);
+  const { detailOperation, fetchDetail, isFetching } = useOperationDetails(operation?.id);
+  const [isManualRefresh, setIsManualRefresh] = useState(false);
 
   const extractHeaders = (input) => {
     if (!input) return [];
@@ -35,27 +38,30 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
     return Object.entries(input).map(([name, value]) => ({ name, value }));
   };
 
-  const guardHeaders = extractHeaders(operation?.meta?.inspectr?.guard);
-  const directiveHeaders = extractHeaders(operation?.meta?.inspectr?.directives);
+  const guardHeaders = extractHeaders(detailOperation?.meta?.inspectr?.guard);
+  const directiveHeaders = extractHeaders(detailOperation?.meta?.inspectr?.directives);
   const hasInfo = guardHeaders.length > 0 || directiveHeaders.length > 0;
-  const mcp = operation?.meta?.mcp || null;
+  const mcp = detailOperation?.meta?.mcp || null;
   const hasMcp = !!(
     mcp &&
     typeof mcp === 'object' &&
     Object.keys(mcp).some((k) => mcp[k] !== undefined)
   );
-  const hasTags = Array.isArray(operation?.meta?.tags) && operation.meta.tags.length > 0;
+  const hasTags =
+    Array.isArray(detailOperation?.meta?.tags) && detailOperation.meta.tags.length > 0;
   const contentMaxHeight = hasTags
     ? 'calc(100vh - 270px - 64px - 48px)'
     : 'calc(100vh - 270px - 64px)';
 
   useEffect(() => {
+    if (!detailOperation) return;
     if (!hasInfo && currentTab === 'meta') {
       setCurrentTab('request');
     }
   }, [hasInfo, currentTab, setCurrentTab]);
 
   useEffect(() => {
+    if (!detailOperation) return;
     if (!hasMcp && currentTab === 'mcp') {
       setCurrentTab('request');
     }
@@ -69,6 +75,16 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!isFetching) {
+      setIsManualRefresh(false);
+    }
+  }, [isFetching]);
+
+  useEffect(() => {
+    setIsManualRefresh(false);
+  }, [operation?.id]);
 
   // Apply CSS-based solution to prevent flashing
   if (!operation) {
@@ -120,9 +136,25 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
     );
   }
 
+  if (!detailOperation) {
+    return null;
+  }
+
   return (
-    <div className="flex flex-col h-full min-h-0" style={isLoaded ? fadeInStyle : hiddenStyle}>
-      <RequestDetail operation={operation} setCurrentTab={setCurrentTab} />
+    <div
+      className="relative flex flex-col h-full min-h-0"
+      style={isLoaded ? fadeInStyle : hiddenStyle}
+    >
+      <RequestDetail
+        operation={detailOperation}
+        setCurrentTab={setCurrentTab}
+        onRefresh={() => {
+          if (!operation?.id) return;
+          setIsManualRefresh(true);
+          fetchDetail(operation.id, { force: true });
+        }}
+        isRefreshing={isFetching && isManualRefresh}
+      />
 
       {/* Tabs for Request, Response */}
       <div className="flex space-x-2">
@@ -181,13 +213,13 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
         }}
       >
         {currentTab === 'request' ? (
-          <RequestContent operation={operation} />
+          <RequestContent operation={detailOperation} />
         ) : currentTab === 'response' ? (
-          <ResponseContent operation={operation} />
+          <ResponseContent operation={detailOperation} />
         ) : currentTab === 'meta' && hasInfo ? (
-          <MetaContent operation={operation} />
+          <MetaContent operation={detailOperation} />
         ) : currentTab === 'mcp' ? (
-          <McpContent operation={operation} />
+          <McpContent operation={detailOperation} />
         ) : null}
       </div>
     </div>

@@ -14,7 +14,7 @@ import { normalizeTags, normalizeTag } from '../../utils/normalizeTags.js';
 import DialogDeleteConfirm from '../DialogDeleteConfirm.jsx';
 import TagPill from '../TagPill.jsx';
 
-const RequestDetail = ({ operation, setCurrentTab }) => {
+const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = false }) => {
   // Get the client from context
   const { client, setToast } = useInspectr();
 
@@ -227,6 +227,47 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
     </svg>
   );
 
+  // Replay icon SVG.
+  const ReplayIcon = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className="h-4 w-4"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z"
+      />
+    </svg>
+  );
+
+  // Refresh icon SVG.
+  const RefreshIcon = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className="h-4 w-4"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+      />
+    </svg>
+  );
+
   const TraceIcon = ({ className = '', ...props }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -261,6 +302,23 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"
+      />
+    </svg>
+  );
+
+  const CopyIcon = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth="1.5"
+      stroke="currentColor"
+      className="h-4 w-4"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m6.75 7.5 3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 18V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v12a2.25 2.25 0 0 0 2.25 2.25Z"
       />
     </svg>
   );
@@ -354,51 +412,22 @@ const RequestDetail = ({ operation, setCurrentTab }) => {
           </button>
           {/* Copy as cURL Button */}
           <button onClick={handleCopyCurl} className={buttonClasses}>
-            {copiedCurl ? (
-              <CheckIcon />
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="h-4 w-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="m6.75 7.5 3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 18V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v12a2.25 2.25 0 0 0 2.25 2.25Z"
-                />
-              </svg>
-            )}
+            {copiedCurl ? <CheckIcon /> : <CopyIcon />}
             <span className="text-xs hidden [@container(min-width:520px)]:inline">
               {copiedCurl ? 'Copied cURL' : 'Copy as cURL'}
             </span>
           </button>
           {/* Replay Button */}
           <button onClick={handleReplay} className={buttonClasses}>
-            {replayed ? (
-              <CheckIcon />
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="h-4 w-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-                />
-              </svg>
-            )}
+            {replayed ? <CheckIcon /> : <ReplayIcon />}
             <span className="text-xs hidden [@container(min-width:520px)]:inline">
               {replayed ? 'Replayed' : 'Replay'}
             </span>
+          </button>
+          {/* Refresh Button */}
+          <button onClick={onRefresh} className={buttonClasses} aria-label="Refresh operation">
+            <RefreshIcon />
+            {/*<span className="text-xs">Refresh</span>*/}
           </button>
         </div>
       </div>

@@ -210,6 +210,28 @@ class OperationsClient {
   }
 
   /**
+   * Retrieve a specific operation by ID
+   * @param {string} id - Operation ID to fetch
+   * @returns {Promise<Object>} - Operation payload
+   */
+  async getOperation(id) {
+    const res = await fetch(`${this.client.apiEndpoint}/operations/${id}`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => ({}));
+      const message = errorBody?.error || errorBody?.message || `Get ${id} failed (${res.status})`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.body = errorBody;
+      throw err;
+    }
+
+    return await res.json();
+  }
+
+  /**
    * Delete all operations
    * @returns {Promise<void>}
    */
