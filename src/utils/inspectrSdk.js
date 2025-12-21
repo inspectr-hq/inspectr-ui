@@ -951,6 +951,40 @@ class StatsClient {
   }
 
   /**
+   * MCP operation statistics for a time window.
+   * Server endpoint: GET /stats/operations/mcp
+   * @param {Object} [options]
+   * @param {string|Date} [options.from]
+   * @param {string|Date} [options.to]
+   * @returns {Promise<Object>} MCP stats payload
+   */
+  async getMcpOperations(options = {}) {
+    const toISOString = (v) => {
+      if (v === undefined || v === null || v === '') return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return String(v);
+    };
+    const params = new URLSearchParams();
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '') return;
+      params.set(k, String(v));
+    };
+
+    add('from', toISOString(options.from));
+    add('to', toISOString(options.to));
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/stats/operations/mcp${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Stats MCP operations failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
    * Time-bucketed statistics suitable for charting.
    * Server endpoint: GET /stats/operations/buckets
    * @param {Object} [options]

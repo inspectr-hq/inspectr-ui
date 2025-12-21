@@ -24,6 +24,9 @@ import TagPill from './TagPill.jsx';
 import DateRangeButtons from './DateRangeButtons.jsx';
 import { getStartOfDay, getEndOfDay } from '../utils/timeRange.js';
 import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
+import DashBoardMcpSummary from './dashboards/DashBoardMcpSummary.jsx';
+import DashBoardMcpBarList from './dashboards/DashBoardMcpBarList.jsx';
+import NoDataPlaceholder from './NoDataPlaceholder.jsx';
 
 // Helper: Format date for range display
 function formatDateForDisplay(dateString) {
@@ -219,6 +222,27 @@ function renderStatisticsContent(
   );
 }
 
+function buildMcpGroup(group, limit = 10) {
+  if (!group || typeof group !== 'object') return [];
+
+  return Object.entries(group)
+    .map(([name, stats]) => {
+      const count = Number(stats?.count ?? 0);
+      const requestTokens = Number(stats?.request_tokens ?? 0);
+      const responseTokens = Number(stats?.response_tokens ?? 0);
+      const totalTokens =
+        stats?.total_tokens != null ? Number(stats.total_tokens) : requestTokens + responseTokens;
+
+      return {
+        name,
+        count,
+        totalTokens
+      };
+    })
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
 function ComparisonColumn({ label, tag, stats, intervalData, loading }) {
   const hasData = Boolean(stats);
 
@@ -275,6 +299,9 @@ export default function DashBoardApp() {
   const [compareRightStats, setCompareRightStats] = useState(null);
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareError, setCompareError] = useState(null);
+  const [mcpStats, setMcpStats] = useState(null);
+  const [mcpLoading, setMcpLoading] = useState(false);
+  const [mcpError, setMcpError] = useState(null);
 
   // Date range
   const today = new Date();
@@ -403,16 +430,39 @@ export default function DashBoardApp() {
 
   const loadPrimaryStats = async () => {
     if (!client?.stats?.getOverview) return;
+    const canLoadMcp = Boolean(client?.stats?.getMcpOperations);
     setPrimaryLoading(true);
     setPrimaryError(null);
+    if (canLoadMcp) {
+      setMcpLoading(true);
+      setMcpError(null);
+      setMcpStats(null);
+    }
     try {
-      const data = await fetchStatsForTag(selectedTag);
-      setStats(data);
-    } catch (err) {
-      console.error(err);
-      setPrimaryError(err?.message || 'Failed to load statistics');
+      const statsPromise = fetchStatsForTag(selectedTag);
+      const mcpPromise = canLoadMcp
+        ? client.stats.getMcpOperations({ from: start, to: end })
+        : Promise.resolve(null);
+      const [statsResult, mcpResult] = await Promise.allSettled([statsPromise, mcpPromise]);
+
+      if (statsResult.status === 'fulfilled') {
+        setStats(statsResult.value);
+      } else {
+        console.error(statsResult.reason);
+        setPrimaryError(statsResult.reason?.message || 'Failed to load statistics');
+      }
+
+      if (mcpResult.status === 'fulfilled') {
+        setMcpStats(mcpResult.value);
+      } else {
+        console.error(mcpResult.reason);
+        setMcpError(mcpResult.reason?.message || 'Failed to load MCP statistics');
+      }
     } finally {
       setPrimaryLoading(false);
+      if (canLoadMcp) {
+        setMcpLoading(false);
+      }
     }
   };
 
@@ -533,6 +583,18 @@ export default function DashBoardApp() {
   const formattedIntervalData = useMemo(
     () => formatIntervalData(stats?.by_interval),
     [stats?.by_interval]
+  );
+  const mcpData = mcpStats?.data ?? null;
+  const mcpGroups = useMemo(
+    () => ({
+      byTool: buildMcpGroup(mcpData?.by_tool),
+      byResource: buildMcpGroup(mcpData?.by_resource),
+      byPrompt: buildMcpGroup(mcpData?.by_prompt),
+      byMethod: buildMcpGroup(mcpData?.by_method),
+      byCategory: buildMcpGroup(mcpData?.by_category),
+      bySession: buildMcpGroup(mcpData?.by_session)
+    }),
+    [mcpData]
   );
   const compareLeftIntervalData = useMemo(
     () => formatIntervalData(compareLeftStats?.by_interval),
@@ -745,6 +807,44 @@ export default function DashBoardApp() {
               <p className="mt-4 text-red-600 dark:text-red-400">Error: {primaryError}</p>
             ) : null}
             <main className="mt-6">{renderStatisticsContent(stats, formattedIntervalData)}</main>
+            <section className="mt-10">
+              <div className="flex items-center justify-between gap-3">
+                <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  MCP Usage
+                </h4>
+                {mcpLoading ? (
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Loading MCP stats…
+                  </span>
+                ) : null}
+              </div>
+              {mcpError ? (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                  MCP stats error: {mcpError}
+                </p>
+              ) : null}
+              {!mcpLoading && !mcpError ? (
+                mcpData?.total ? (
+                  <>
+                    <div className="mt-4">
+                      <DashBoardMcpSummary total={mcpData.total} />
+                    </div>
+                    <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                      <DashBoardMcpBarList title="By Tool" items={mcpGroups.byTool} />
+                      <DashBoardMcpBarList title="By Resource" items={mcpGroups.byResource} />
+                      <DashBoardMcpBarList title="By Prompt" items={mcpGroups.byPrompt} />
+                      <DashBoardMcpBarList title="By Method" items={mcpGroups.byMethod} />
+                      <DashBoardMcpBarList title="By Category" items={mcpGroups.byCategory} />
+                      <DashBoardMcpBarList title="By Session" items={mcpGroups.bySession} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="mt-4">
+                    <NoDataPlaceholder className="min-h-[180px]" />
+                  </div>
+                )
+              ) : null}
+            </section>
           </TabPanel>
           <TabPanel>
             {compareError ? (
