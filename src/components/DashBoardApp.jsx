@@ -517,90 +517,94 @@ export default function DashBoardApp() {
     }
     try {
       const statsPromise = fetchStatsForTag(selectedTag);
-      const mcpPromise = canLoadMcpOps
-        ? client.stats.getMcpOperations({ from: start, to: end })
-        : Promise.resolve(null);
-      const mcpBucketsPromise = canLoadMcpBuckets
-        ? client.stats.getMcpBuckets({ from: start, to: end, interval: group })
-        : Promise.resolve(null);
-      const mcpToolBucketsPromise = canLoadMcpBuckets
-        ? client.stats.getMcpBuckets({ from: start, to: end, interval: group, group: 'tool' })
-        : Promise.resolve(null);
-      const mcpPromptBucketsPromise = canLoadMcpBuckets
-        ? client.stats.getMcpBuckets({ from: start, to: end, interval: group, group: 'prompt' })
-        : Promise.resolve(null);
-      const mcpResourceBucketsPromise = canLoadMcpBuckets
-        ? client.stats.getMcpBuckets({ from: start, to: end, interval: group, group: 'resource' })
-        : Promise.resolve(null);
-      const [
-        statsResult,
-        mcpResult,
-        mcpBucketsResult,
-        mcpToolBucketsResult,
-        mcpPromptBucketsResult,
-        mcpResourceBucketsResult
-      ] = await Promise.allSettled([
-        statsPromise,
-        mcpPromise,
-        mcpBucketsPromise,
-        mcpToolBucketsPromise,
-        mcpPromptBucketsPromise,
-        mcpResourceBucketsPromise
-      ]);
 
-      if (statsResult.status === 'fulfilled') {
-        setStats(statsResult.value);
-      } else {
-        console.error(statsResult.reason);
-        setPrimaryError(statsResult.reason?.message || 'Failed to load statistics');
-      }
-
-      if (mcpResult.status === 'fulfilled') {
-        setMcpStats(mcpResult.value);
-      } else {
-        console.error(mcpResult.reason);
-        setMcpError(mcpResult.reason?.message || 'Failed to load MCP statistics');
-      }
-
-      if (mcpBucketsResult.status === 'fulfilled') {
-        setMcpBuckets(mcpBucketsResult.value);
-      } else if (mcpBucketsResult.reason) {
-        console.error(mcpBucketsResult.reason);
-        setMcpError(
-          (prev) => prev || mcpBucketsResult.reason?.message || 'Failed to load MCP trends'
-        );
-      }
-
-      if (
-        mcpToolBucketsResult.status === 'fulfilled' ||
-        mcpPromptBucketsResult.status === 'fulfilled' ||
-        mcpResourceBucketsResult.status === 'fulfilled'
-      ) {
-        setMcpGroupedBuckets({
-          tool: mcpToolBucketsResult.status === 'fulfilled' ? mcpToolBucketsResult.value : null,
-          prompt:
-            mcpPromptBucketsResult.status === 'fulfilled' ? mcpPromptBucketsResult.value : null,
-          resource:
-            mcpResourceBucketsResult.status === 'fulfilled' ? mcpResourceBucketsResult.value : null
-        });
-      }
-      const groupErrors = [
-        mcpToolBucketsResult,
-        mcpPromptBucketsResult,
-        mcpResourceBucketsResult
-      ].filter((result) => result.status === 'rejected');
-      if (groupErrors.length) {
-        const firstError = groupErrors[0]?.reason;
-        if (firstError) {
-          console.error(firstError);
-          setMcpError((prev) => prev || firstError?.message || 'Failed to load MCP group trends');
+      if (shouldLoadMcp) {
+        const mcpRequests = [];
+        if (canLoadMcpOps) {
+          mcpRequests.push({
+            key: 'ops',
+            promise: client.stats.getMcpOperations({ from: start, to: end })
+          });
         }
+        if (canLoadMcpBuckets) {
+          mcpRequests.push({
+            key: 'buckets',
+            promise: client.stats.getMcpBuckets({ from: start, to: end, interval: group })
+          });
+          mcpRequests.push({
+            key: 'tool',
+            promise: client.stats.getMcpBuckets({
+              from: start,
+              to: end,
+              interval: group,
+              group: 'tool'
+            })
+          });
+          mcpRequests.push({
+            key: 'prompt',
+            promise: client.stats.getMcpBuckets({
+              from: start,
+              to: end,
+              interval: group,
+              group: 'prompt'
+            })
+          });
+          mcpRequests.push({
+            key: 'resource',
+            promise: client.stats.getMcpBuckets({
+              from: start,
+              to: end,
+              interval: group,
+              group: 'resource'
+            })
+          });
+        }
+
+        (async () => {
+          const settled = await Promise.allSettled(mcpRequests.map((req) => req.promise));
+          const grouped = { tool: null, prompt: null, resource: null };
+          let hasGrouped = false;
+
+          settled.forEach((result, index) => {
+            const key = mcpRequests[index]?.key;
+            if (result.status === 'fulfilled') {
+              if (key === 'ops') setMcpStats(result.value);
+              if (key === 'buckets') setMcpBuckets(result.value);
+              if (key === 'tool') {
+                grouped.tool = result.value;
+                hasGrouped = true;
+              }
+              if (key === 'prompt') {
+                grouped.prompt = result.value;
+                hasGrouped = true;
+              }
+              if (key === 'resource') {
+                grouped.resource = result.value;
+                hasGrouped = true;
+              }
+            } else if (result.reason) {
+              console.error(result.reason);
+              setMcpError(
+                (prev) => prev || result.reason?.message || 'Failed to load MCP statistics'
+              );
+            }
+          });
+
+          if (hasGrouped) {
+            setMcpGroupedBuckets(grouped);
+          }
+
+          setMcpLoading(false);
+        })();
       }
+
+      const statsResult = await statsPromise;
+      setStats(statsResult);
+    } catch (err) {
+      console.error(err);
+      setPrimaryError(err?.message || 'Failed to load statistics');
     } finally {
       setPrimaryLoading(false);
-      if (shouldLoadMcp) {
-        setMcpLoading(false);
-      }
     }
   };
 
@@ -611,15 +615,26 @@ export default function DashBoardApp() {
     setCompareLoading(true);
     setCompareError(null);
     try {
-      const [left, right] = await Promise.all([
-        fetchStatsForTag(compareLeftTag),
-        fetchStatsForTag(compareRightTag)
-      ]);
-      setCompareLeftStats(left);
-      setCompareRightStats(right);
-    } catch (err) {
-      console.error(err);
-      setCompareError(err?.message || 'Failed to load comparison data');
+      const leftPromise = fetchStatsForTag(compareLeftTag).then((left) => {
+        setCompareLeftStats(left);
+        return left;
+      });
+      const rightPromise = fetchStatsForTag(compareRightTag).then((right) => {
+        setCompareRightStats(right);
+        return right;
+      });
+
+      const [leftResult, rightResult] = await Promise.allSettled([leftPromise, rightPromise]);
+      const firstError =
+        leftResult.status === 'rejected'
+          ? leftResult.reason
+          : rightResult.status === 'rejected'
+            ? rightResult.reason
+            : null;
+      if (firstError) {
+        console.error(firstError);
+        setCompareError(firstError?.message || 'Failed to load comparison data');
+      }
     } finally {
       setCompareLoading(false);
     }
