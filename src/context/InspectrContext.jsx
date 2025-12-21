@@ -89,24 +89,32 @@ export const InspectrProvider = ({ children }) => {
   // Load credentials from URL query parameters
   const loadCredentialsFromQueryParams = () => {
     const urlParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+
+    const getParam = (key) => urlParams.get(key) || hashParams.get(key);
     const queryChannelCode = urlParams.get('channelCode');
     const queryChannel = urlParams.get('channel');
     const queryToken = urlParams.get('token');
     const querySseEndpoint = urlParams.get('sseEndpoint');
 
-    if (queryChannelCode || queryChannel || queryToken || querySseEndpoint) {
+    const resolvedChannelCode = queryChannelCode || getParam('channelCode');
+    const resolvedChannel = queryChannel || getParam('channel');
+    const resolvedToken = queryToken || getParam('token');
+    const resolvedSseEndpoint = querySseEndpoint || getParam('sseEndpoint');
+
+    if (resolvedChannelCode || resolvedChannel || resolvedToken || resolvedSseEndpoint) {
       console.log('🔍 Found credentials in query params');
-      if (queryChannelCode) {
-        setChannelCode(queryChannelCode);
+      if (resolvedChannelCode) {
+        setChannelCode(resolvedChannelCode);
       }
-      if (queryChannel) {
-        setChannel(queryChannel);
+      if (resolvedChannel) {
+        setChannel(resolvedChannel);
       }
-      if (queryToken) {
-        setToken(queryToken);
+      if (resolvedToken) {
+        setToken(resolvedToken);
       }
-      if (querySseEndpoint) {
-        setSseEndpoint(querySseEndpoint);
+      if (resolvedSseEndpoint) {
+        setSseEndpoint(resolvedSseEndpoint);
       }
       // Update the URL without reloading the page.
       window.history.replaceState(

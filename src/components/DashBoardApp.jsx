@@ -23,7 +23,7 @@ import DashBoardPercentileChart from './dashboards/DashBoardPercentileChart.jsx'
 import TagFilterDropdown from './TagFilterDropdown.jsx';
 import TagPill from './TagPill.jsx';
 import DateRangeButtons from './DateRangeButtons.jsx';
-import { getStartOfDay, getEndOfDay } from '../utils/timeRange.js';
+import { getStartOfDay, getEndOfDay, findPresetByLabel } from '../utils/timeRange.js';
 import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 import DashBoardMcpSummary from './dashboards/DashBoardMcpSummary.jsx';
 import DashBoardMcpBarList from './dashboards/DashBoardMcpBarList.jsx';
@@ -344,7 +344,7 @@ function ComparisonColumn({ label, tag, stats, intervalData, loading }) {
   );
 }
 
-export default function DashBoardApp() {
+export default function DashBoardApp({ route }) {
   const { client } = useInspectr();
 
   // Deprecate old features
@@ -395,6 +395,48 @@ export default function DashBoardApp() {
   const [customEndTime, setCustomEndTime] = useState('23:59');
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const params = route?.params || {};
+    const nextGroupRaw = params.interval || params.group || '';
+    const groupLookup = {
+      hourly: 'hour',
+      daily: 'day',
+      weekly: 'week',
+      monthly: 'month'
+    };
+    const nextGroup = groupLookup[String(nextGroupRaw).toLowerCase()] || nextGroupRaw;
+    if (['hour', 'day', 'week', 'month'].includes(nextGroup)) {
+      setGroup(nextGroup);
+    }
+
+    const fromParam = params.from || params.start;
+    const toParam = params.to || params.end;
+    if (fromParam && toParam) {
+      const fromDate = new Date(fromParam);
+      const toDate = new Date(toParam);
+      if (!Number.isNaN(fromDate.getTime()) && !Number.isNaN(toDate.getTime())) {
+        setStart(fromDate.toISOString());
+        setEnd(toDate.toISOString());
+        setSelectedRange('Custom');
+        setCustomStartDate(fromDate.toISOString().split('T')[0]);
+        setCustomEndDate(toDate.toISOString().split('T')[0]);
+        setCustomStartTime(fromDate.toISOString().slice(11, 16));
+        setCustomEndTime(toDate.toISOString().slice(11, 16));
+        setShowCustomDatePicker(false);
+        return;
+      }
+    }
+
+    const presetLabel = params.range || params.preset;
+    const preset = findPresetByLabel(presetLabel);
+    if (preset) {
+      setSelectedRange(preset.label);
+      setStart(preset.start);
+      setEnd(preset.end);
+      setShowCustomDatePicker(false);
+    }
+  }, [route?.params]);
 
   const fetchStatsForTag = async (tag) => {
     const common = {

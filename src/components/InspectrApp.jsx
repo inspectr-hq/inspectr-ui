@@ -43,6 +43,90 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
     DEFAULT_FILTERS,
     SESSION_FILTER_OPTIONS
   );
+  const hasAppliedRouteParams = useRef(false);
+  const parseListParam = (value) =>
+    String(value)
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+
+  useEffect(() => {
+    const params = route?.params || {};
+    const {
+      status,
+      method,
+      path,
+      host,
+      tags,
+      tag,
+      durationMin,
+      durationMax,
+      from,
+      to,
+      start,
+      end,
+      range,
+      timestampRange,
+      sortField: sortFieldParam,
+      sortDirection: sortDirectionParam,
+      page: pageParam
+    } = params;
+
+    const hasFilterParams =
+      status !== undefined ||
+      method !== undefined ||
+      path !== undefined ||
+      host !== undefined ||
+      tags !== undefined ||
+      tag !== undefined ||
+      durationMin !== undefined ||
+      durationMax !== undefined ||
+      from !== undefined ||
+      to !== undefined ||
+      start !== undefined ||
+      end !== undefined ||
+      range !== undefined ||
+      timestampRange !== undefined;
+
+    if (hasFilterParams) {
+      const nextFilters = {};
+      if (status !== undefined) nextFilters.status = parseListParam(status);
+      if (method !== undefined) nextFilters.method = parseListParam(method);
+      if (path) nextFilters.path = path;
+      if (host) nextFilters.host = host;
+      if (durationMin !== undefined) nextFilters.durationMin = durationMin;
+      if (durationMax !== undefined) nextFilters.durationMax = durationMax;
+      const rangeValue = range || timestampRange;
+      if (rangeValue) {
+        nextFilters.timestampRange = rangeValue;
+      } else if (from || to || start || end) {
+        nextFilters.timestampRange = {
+          start: from || start,
+          end: to || end
+        };
+      }
+      const tagsValue = tags ?? tag;
+      if (tagsValue !== undefined) nextFilters.tags = parseListParam(tagsValue);
+      setFilters(nextFilters);
+      hasAppliedRouteParams.current = true;
+    } else if (hasAppliedRouteParams.current) {
+      setFilters(DEFAULT_FILTERS);
+      hasAppliedRouteParams.current = false;
+    }
+
+    if (sortFieldParam) {
+      setSortField(sortFieldParam);
+    }
+    if (sortDirectionParam === 'asc' || sortDirectionParam === 'desc') {
+      setSortDirection(sortDirectionParam);
+    }
+    if (pageParam) {
+      const nextPage = Number.parseInt(pageParam, 10);
+      if (Number.isFinite(nextPage) && nextPage > 0) {
+        setPage(nextPage);
+      }
+    }
+  }, [route?.params, setFilters]);
 
   // Live query: get the events for the current page.
   const { results: operations = [], totalCount = 0 } =
