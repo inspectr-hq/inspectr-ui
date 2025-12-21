@@ -8,7 +8,8 @@ import {
   TabList,
   Tab,
   TabPanels,
-  TabPanel
+  TabPanel,
+  Card
 } from '@tremor/react';
 import { useInspectr } from '../context/InspectrContext';
 
@@ -70,6 +71,12 @@ function formatIntervalData(intervals) {
     return mapped;
   });
 }
+
+const formatNumber = (value) => {
+  const numeric = Number(value);
+  if (Number.isNaN(numeric)) return '0';
+  return Intl.NumberFormat('us').format(numeric);
+};
 
 function DatasetLabel({ tag }) {
   if (!tag) {
@@ -243,6 +250,66 @@ function buildMcpGroup(group, limit = 10) {
     .slice(0, limit);
 }
 
+function buildMcpSeriesData(buckets, limit = 5) {
+  const rows = Array.isArray(buckets) ? buckets : [];
+  if (!rows.length) {
+    return { data: [], keys: [], topLabel: '' };
+  }
+
+  const totals = new Map();
+  rows.forEach((item) => {
+    const series = item?.series;
+    if (!series || typeof series !== 'object') return;
+    Object.entries(series).forEach(([name, stats]) => {
+      const count = Number(stats?.count ?? 0);
+      totals.set(name, (totals.get(name) ?? 0) + count);
+    });
+  });
+
+  const sorted = [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit);
+  const keys = sorted.map(([name]) => name);
+  const topEntry = sorted[0];
+  const topLabel = topEntry ? `${topEntry[0]} (${formatNumber(topEntry[1])})` : '';
+
+  const data = rows.map((item) => {
+    const row = {
+      date: formatDateForChart(item.timestamp)
+    };
+    keys.forEach((key) => {
+      row[key] = Number(item?.series?.[key]?.count ?? 0);
+    });
+    return row;
+  });
+
+  return { data, keys, topLabel };
+}
+
+function McpTrendCard({ title, data, keys, highlightLabel, highlightValue }) {
+  if (!Array.isArray(data) || data.length === 0 || !Array.isArray(keys) || keys.length === 0) {
+    return (
+      <Card className="mt-4 rounded-tremor-small p-2">
+        <h3 className="font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+          {title}
+        </h3>
+        <div className="p-6">
+          <NoDataPlaceholder className="min-h-[180px]" />
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <DashBoardLineChart
+      title={title}
+      data={data}
+      metricKey={keys}
+      metricUnit=""
+      highlightLabel={highlightLabel}
+      highlightValue={highlightValue}
+    />
+  );
+}
+
 function ComparisonColumn({ label, tag, stats, intervalData, loading }) {
   const hasData = Boolean(stats);
 
@@ -300,6 +367,12 @@ export default function DashBoardApp() {
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareError, setCompareError] = useState(null);
   const [mcpStats, setMcpStats] = useState(null);
+  const [mcpBuckets, setMcpBuckets] = useState(null);
+  const [mcpGroupedBuckets, setMcpGroupedBuckets] = useState({
+    tool: null,
+    prompt: null,
+    resource: null
+  });
   const [mcpLoading, setMcpLoading] = useState(false);
   const [mcpError, setMcpError] = useState(null);
 
@@ -430,20 +503,50 @@ export default function DashBoardApp() {
 
   const loadPrimaryStats = async () => {
     if (!client?.stats?.getOverview) return;
-    const canLoadMcp = Boolean(client?.stats?.getMcpOperations);
+    const canLoadMcpOps = Boolean(client?.stats?.getMcpOperations);
+    const canLoadMcpBuckets = Boolean(client?.stats?.getMcpBuckets);
+    const shouldLoadMcp = canLoadMcpOps || canLoadMcpBuckets;
     setPrimaryLoading(true);
     setPrimaryError(null);
-    if (canLoadMcp) {
+    if (shouldLoadMcp) {
       setMcpLoading(true);
       setMcpError(null);
       setMcpStats(null);
+      setMcpBuckets(null);
+      setMcpGroupedBuckets({ tool: null, prompt: null, resource: null });
     }
     try {
       const statsPromise = fetchStatsForTag(selectedTag);
-      const mcpPromise = canLoadMcp
+      const mcpPromise = canLoadMcpOps
         ? client.stats.getMcpOperations({ from: start, to: end })
         : Promise.resolve(null);
-      const [statsResult, mcpResult] = await Promise.allSettled([statsPromise, mcpPromise]);
+      const mcpBucketsPromise = canLoadMcpBuckets
+        ? client.stats.getMcpBuckets({ from: start, to: end, interval: group })
+        : Promise.resolve(null);
+      const mcpToolBucketsPromise = canLoadMcpBuckets
+        ? client.stats.getMcpBuckets({ from: start, to: end, interval: group, group: 'tool' })
+        : Promise.resolve(null);
+      const mcpPromptBucketsPromise = canLoadMcpBuckets
+        ? client.stats.getMcpBuckets({ from: start, to: end, interval: group, group: 'prompt' })
+        : Promise.resolve(null);
+      const mcpResourceBucketsPromise = canLoadMcpBuckets
+        ? client.stats.getMcpBuckets({ from: start, to: end, interval: group, group: 'resource' })
+        : Promise.resolve(null);
+      const [
+        statsResult,
+        mcpResult,
+        mcpBucketsResult,
+        mcpToolBucketsResult,
+        mcpPromptBucketsResult,
+        mcpResourceBucketsResult
+      ] = await Promise.allSettled([
+        statsPromise,
+        mcpPromise,
+        mcpBucketsPromise,
+        mcpToolBucketsPromise,
+        mcpPromptBucketsPromise,
+        mcpResourceBucketsPromise
+      ]);
 
       if (statsResult.status === 'fulfilled') {
         setStats(statsResult.value);
@@ -458,9 +561,44 @@ export default function DashBoardApp() {
         console.error(mcpResult.reason);
         setMcpError(mcpResult.reason?.message || 'Failed to load MCP statistics');
       }
+
+      if (mcpBucketsResult.status === 'fulfilled') {
+        setMcpBuckets(mcpBucketsResult.value);
+      } else if (mcpBucketsResult.reason) {
+        console.error(mcpBucketsResult.reason);
+        setMcpError(
+          (prev) => prev || mcpBucketsResult.reason?.message || 'Failed to load MCP trends'
+        );
+      }
+
+      if (
+        mcpToolBucketsResult.status === 'fulfilled' ||
+        mcpPromptBucketsResult.status === 'fulfilled' ||
+        mcpResourceBucketsResult.status === 'fulfilled'
+      ) {
+        setMcpGroupedBuckets({
+          tool: mcpToolBucketsResult.status === 'fulfilled' ? mcpToolBucketsResult.value : null,
+          prompt:
+            mcpPromptBucketsResult.status === 'fulfilled' ? mcpPromptBucketsResult.value : null,
+          resource:
+            mcpResourceBucketsResult.status === 'fulfilled' ? mcpResourceBucketsResult.value : null
+        });
+      }
+      const groupErrors = [
+        mcpToolBucketsResult,
+        mcpPromptBucketsResult,
+        mcpResourceBucketsResult
+      ].filter((result) => result.status === 'rejected');
+      if (groupErrors.length) {
+        const firstError = groupErrors[0]?.reason;
+        if (firstError) {
+          console.error(firstError);
+          setMcpError((prev) => prev || firstError?.message || 'Failed to load MCP group trends');
+        }
+      }
     } finally {
       setPrimaryLoading(false);
-      if (canLoadMcp) {
+      if (shouldLoadMcp) {
         setMcpLoading(false);
       }
     }
@@ -585,6 +723,38 @@ export default function DashBoardApp() {
     [stats?.by_interval]
   );
   const mcpData = mcpStats?.data ?? null;
+  const mcpTrendData = useMemo(() => {
+    const rows = Array.isArray(mcpBuckets?.data) ? mcpBuckets.data : [];
+    return rows.map((item) => ({
+      date: formatDateForChart(item.timestamp),
+      mcp_count: item.count ?? 0,
+      mcp_request_tokens: item.request_tokens ?? 0,
+      mcp_response_tokens: item.response_tokens ?? 0,
+      mcp_total_tokens:
+        item.total_tokens != null
+          ? item.total_tokens
+          : (item.request_tokens ?? 0) + (item.response_tokens ?? 0)
+    }));
+  }, [mcpBuckets]);
+  const mcpToolTrend = useMemo(
+    () => buildMcpSeriesData(mcpGroupedBuckets.tool?.data),
+    [mcpGroupedBuckets.tool]
+  );
+  const mcpPromptTrend = useMemo(
+    () => buildMcpSeriesData(mcpGroupedBuckets.prompt?.data),
+    [mcpGroupedBuckets.prompt]
+  );
+  const mcpResourceTrend = useMemo(
+    () => buildMcpSeriesData(mcpGroupedBuckets.resource?.data),
+    [mcpGroupedBuckets.resource]
+  );
+  const hasMcpUsage = useMemo(() => {
+    const totalCount = Number(mcpData?.total?.count ?? 0);
+    const groupTotals =
+      mcpToolTrend.keys.length || mcpPromptTrend.keys.length || mcpResourceTrend.keys.length;
+    const trendPoints = mcpTrendData.length > 0;
+    return totalCount > 0 || groupTotals || trendPoints;
+  }, [mcpData, mcpToolTrend, mcpPromptTrend, mcpResourceTrend, mcpTrendData]);
   const mcpGroups = useMemo(
     () => ({
       byTool: buildMcpGroup(mcpData?.by_tool),
@@ -807,27 +977,59 @@ export default function DashBoardApp() {
               <p className="mt-4 text-red-600 dark:text-red-400">Error: {primaryError}</p>
             ) : null}
             <main className="mt-6">{renderStatisticsContent(stats, formattedIntervalData)}</main>
-            <section className="mt-10">
-              <div className="flex items-center justify-between gap-3">
-                <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                  MCP Usage
-                </h4>
-                {mcpLoading ? (
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    Loading MCP stats…
-                  </span>
+            {mcpLoading || mcpError || hasMcpUsage ? (
+              <section className="mt-10">
+                <div className="flex items-center justify-between gap-3">
+                  <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                    MCP Usage
+                  </h4>
+                  {mcpLoading ? (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Loading MCP stats…
+                    </span>
+                  ) : null}
+                </div>
+                {mcpError ? (
+                  <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                    MCP stats error: {mcpError}
+                  </p>
                 ) : null}
-              </div>
-              {mcpError ? (
-                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                  MCP stats error: {mcpError}
-                </p>
-              ) : null}
-              {!mcpLoading && !mcpError ? (
-                mcpData?.total ? (
+                {!mcpLoading && !mcpError && hasMcpUsage ? (
                   <>
                     <div className="mt-4">
                       <DashBoardMcpSummary total={mcpData.total} />
+                    </div>
+                    <div className="mt-6">
+                      <McpTrendCard
+                        title="MCP Usage Trend"
+                        data={mcpTrendData}
+                        keys={['mcp_count', 'mcp_total_tokens']}
+                        highlightValue={formatNumber(mcpData?.total?.count)}
+                        highlightLabel="Total MCP Requests"
+                      />
+                    </div>
+                    <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
+                      <McpTrendCard
+                        title="Tools Usage Over Time"
+                        data={mcpToolTrend.data}
+                        keys={mcpToolTrend.keys}
+                        highlightLabel="Top Tool"
+                        highlightValue={mcpToolTrend.topLabel}
+                      />
+                      <McpTrendCard
+                        title="Prompts Usage Over Time"
+                        data={mcpPromptTrend.data}
+                        keys={mcpPromptTrend.keys}
+                        highlightLabel="Top Prompt"
+                        highlightValue={mcpPromptTrend.topLabel}
+                      />
+                      <McpTrendCard
+                        title="Resources Usage Over Time"
+                        data={mcpResourceTrend.data}
+                        keys={mcpResourceTrend.keys}
+                        highlightLabel="Top Resource"
+                        highlightValue={mcpResourceTrend.topLabel}
+                      />
                     </div>
                     <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
                       <DashBoardMcpBarList title="By Tool" items={mcpGroups.byTool} />
@@ -838,13 +1040,9 @@ export default function DashBoardApp() {
                       <DashBoardMcpBarList title="By Session" items={mcpGroups.bySession} />
                     </div>
                   </>
-                ) : (
-                  <div className="mt-4">
-                    <NoDataPlaceholder className="min-h-[180px]" />
-                  </div>
-                )
-              ) : null}
-            </section>
+                ) : null}
+              </section>
+            ) : null}
           </TabPanel>
           <TabPanel>
             {compareError ? (
