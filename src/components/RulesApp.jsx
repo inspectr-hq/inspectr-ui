@@ -26,6 +26,7 @@ import {
   normalizeRuleOperators,
   getDefaultOperatorValue
 } from '../utils/rulesHelpers.js';
+import { parseHash } from '../hooks/useHashRouter.jsx';
 
 const createInitialForm = (events, actionsCatalog, defaultOperator) => ({
   name: '',
@@ -96,6 +97,7 @@ export default function RulesApp({ route }) {
   const [tagOptions, setTagOptions] = useState([]);
   const [rulesLicenseUsage, setRulesLicenseUsage] = useState(null);
   const lastRouteEditRef = useRef(null);
+  const dismissedRouteEditRef = useRef(null);
 
   const applyRulesPayload = (payload, fallbackPage = 1) => {
     const rulesList = Array.isArray(payload?.rules) ? payload.rules : [];
@@ -244,12 +246,17 @@ export default function RulesApp({ route }) {
   }, [operatorOptions, defaultOperatorValue]);
 
   useEffect(() => {
-    const routeRuleId = route?.operationId;
-    const routeSubTab = route?.subTab;
-    if (!routeRuleId || routeSubTab !== 'edit') return;
+    const hashRoute = typeof window !== 'undefined' ? parseHash() : {};
+    const routeRuleId = route?.operationId || hashRoute.operationId;
+    const routeSubTab = route?.subTab || hashRoute.subTab;
+    if (!routeRuleId || routeSubTab !== 'edit') {
+      dismissedRouteEditRef.current = null;
+      return;
+    }
     if (loading) return;
 
     const routeKey = `${routeRuleId}:edit`;
+    if (dismissedRouteEditRef.current === routeKey && !isBuilderOpen) return;
     if (lastRouteEditRef.current === routeKey && isBuilderOpen) return;
 
     let cancelled = false;
@@ -376,6 +383,12 @@ export default function RulesApp({ route }) {
   };
 
   const closeBuilder = () => {
+    const hashRoute = typeof window !== 'undefined' ? parseHash() : {};
+    const routeRuleId = route?.operationId || hashRoute.operationId;
+    const routeSubTab = route?.subTab || hashRoute.subTab;
+    if (routeRuleId && routeSubTab === 'edit') {
+      dismissedRouteEditRef.current = `${routeRuleId}:edit`;
+    }
     setIsBuilderOpen(false);
     resetForm();
   };
