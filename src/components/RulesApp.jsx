@@ -61,7 +61,7 @@ const convertConditionValue = (value, valueType, isMultiValue = false) => {
   return convertSingle(value);
 };
 
-export default function RulesApp() {
+export default function RulesApp({ route }) {
   const { client, setToast } = useInspectr();
   const [rules, setRules] = useState([]);
   const [rulesMeta, setRulesMeta] = useState(null);
@@ -95,6 +95,7 @@ export default function RulesApp() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [tagOptions, setTagOptions] = useState([]);
   const [rulesLicenseUsage, setRulesLicenseUsage] = useState(null);
+  const lastRouteEditRef = useRef(null);
 
   const applyRulesPayload = (payload, fallbackPage = 1) => {
     const rulesList = Array.isArray(payload?.rules) ? payload.rules : [];
@@ -241,6 +242,43 @@ export default function RulesApp() {
       return { ...prev, conditions: nextConditions };
     });
   }, [operatorOptions, defaultOperatorValue]);
+
+  useEffect(() => {
+    const routeRuleId = route?.operationId;
+    const routeSubTab = route?.subTab;
+    if (!routeRuleId || routeSubTab !== 'edit') return;
+    if (loading) return;
+
+    const routeKey = `${routeRuleId}:edit`;
+    if (lastRouteEditRef.current === routeKey && isBuilderOpen) return;
+
+    let cancelled = false;
+
+    const openFromRoute = async () => {
+      const match = rules.find((rule) => String(rule.id) === String(routeRuleId));
+      let rule = match;
+      if (!rule && client?.rules?.get) {
+        try {
+          rule = await client.rules.get(routeRuleId);
+        } catch (err) {
+          console.error('Failed to load rule for edit route', err);
+        }
+      }
+      if (cancelled || !rule) return;
+      setForm(mapRuleToForm(rule));
+      setEditingRuleId(rule.id || routeRuleId);
+      setFormErrors([]);
+      setIsBuilderOpen(true);
+      setOpenRuleId(rule.id || routeRuleId);
+      lastRouteEditRef.current = routeKey;
+    };
+
+    openFromRoute();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [route?.operationId, route?.subTab, loading, rules, client, isBuilderOpen]);
 
   const eventMap = useMemo(() => {
     return events.reduce((acc, event) => {
