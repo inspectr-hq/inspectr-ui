@@ -9,7 +9,7 @@ import {
   normalizeTraceOperation
 } from './traceUtils.js';
 
-const DEFAULT_LIMIT = 50;
+const DEFAULT_LIMIT = 200;
 
 export const useTraceExplorer = ({
   initialTraceId = null,
@@ -36,6 +36,7 @@ export const useTraceExplorer = ({
   const [isTraceDetailLoading, setIsTraceDetailLoading] = useState(false);
   const [traceDetailError, setTraceDetailError] = useState(null);
   const [traceDetailRefreshKey, setTraceDetailRefreshKey] = useState(0);
+  const [traceDetailPage, setTraceDetailPage] = useState(1);
 
   const [traceListRefreshKey, setTraceListRefreshKey] = useState(0);
 
@@ -113,6 +114,10 @@ export const useTraceExplorer = ({
   }, [traceList, selectedTraceId, initialTraceId]);
 
   useEffect(() => {
+    setTraceDetailPage(1);
+  }, [selectedTraceId]);
+
+  useEffect(() => {
     if (!supportsTraces || !isActive || !selectedTraceId) {
       setTraceDetail(null);
       setTraceDetailMeta(null);
@@ -126,7 +131,7 @@ export const useTraceExplorer = ({
     setTraceDetailError(null);
 
     client.traces
-      .get(selectedTraceId, { limit: detailLimit })
+      .get(selectedTraceId, { page: traceDetailPage, limit: detailLimit })
       .then((result) => {
         if (!alive) return;
         setTraceDetail(result?.trace || null);
@@ -148,7 +153,15 @@ export const useTraceExplorer = ({
     return () => {
       alive = false;
     };
-  }, [supportsTraces, client, selectedTraceId, detailLimit, isActive, traceDetailRefreshKey]);
+  }, [
+    supportsTraces,
+    client,
+    selectedTraceId,
+    detailLimit,
+    isActive,
+    traceDetailRefreshKey,
+    traceDetailPage
+  ]);
 
   const normalizedOperations = useMemo(() => {
     if (!Array.isArray(traceOperations)) return [];
@@ -264,7 +277,9 @@ export const useTraceExplorer = ({
     setSelectedOperationId: selectOperation,
     selectedOperation,
     refreshTraceList,
-    refreshTraceDetail
+    refreshTraceDetail,
+    traceDetailPage,
+    setTraceDetailPage
   };
 };
 

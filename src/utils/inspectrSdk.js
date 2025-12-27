@@ -210,6 +210,28 @@ class OperationsClient {
   }
 
   /**
+   * Retrieve a specific operation by ID
+   * @param {string} id - Operation ID to fetch
+   * @returns {Promise<Object>} - Operation payload
+   */
+  async getOperation(id) {
+    const res = await fetch(`${this.client.apiEndpoint}/operations/${id}`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => ({}));
+      const message = errorBody?.error || errorBody?.message || `Get ${id} failed (${res.status})`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.body = errorBody;
+      throw err;
+    }
+
+    return await res.json();
+  }
+
+  /**
    * Delete all operations
    * @returns {Promise<void>}
    */
@@ -925,6 +947,77 @@ class StatsClient {
     });
 
     if (!res.ok) throw new Error(`Stats overview failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * MCP operation statistics for a time window.
+   * Server endpoint: GET /stats/operations/mcp
+   * @param {Object} [options]
+   * @param {string|Date} [options.from]
+   * @param {string|Date} [options.to]
+   * @returns {Promise<Object>} MCP stats payload
+   */
+  async getMcpOperations(options = {}) {
+    const toISOString = (v) => {
+      if (v === undefined || v === null || v === '') return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return String(v);
+    };
+    const params = new URLSearchParams();
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '') return;
+      params.set(k, String(v));
+    };
+
+    add('from', toISOString(options.from));
+    add('to', toISOString(options.to));
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/stats/operations/mcp${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Stats MCP operations failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Time-bucketed MCP usage statistics.
+   * Server endpoint: GET /stats/operations/mcp/buckets
+   * @param {Object} [options]
+   * @param {string|Date} [options.from]
+   * @param {string|Date} [options.to]
+   * @param {string} [options.interval] - hour|day|week|month
+   * @returns {Promise<Object>} MCP buckets envelope
+   */
+  async getMcpBuckets(options = {}) {
+    const toISOString = (v) => {
+      if (v === undefined || v === null || v === '') return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return String(v);
+    };
+    const params = new URLSearchParams();
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '') return;
+      params.set(k, String(v));
+    };
+
+    add('from', toISOString(options.from));
+    add('to', toISOString(options.to));
+    add('interval', options.interval);
+    add('group', options.group);
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/stats/operations/mcp/buckets${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Stats MCP buckets failed (${res.status})`);
     return await res.json();
   }
 

@@ -13,6 +13,7 @@ import TraceTimelineHeader from './timeline/TraceTimelineHeader.jsx';
 import TraceMetadata from './timeline/TraceMetadata.jsx';
 import TraceEmptyStates from './timeline/TraceEmptyStates.jsx';
 import { getOperationTiming } from './traceUtils.js';
+import ListPagination from '../ListPagination.jsx';
 
 const DEFAULT_TIMELINE_WIDTH = 56;
 const MIN_TIMELINE_WIDTH = 30;
@@ -75,7 +76,9 @@ export default function TraceTimelineMode({
     setSelectedOperationId,
     selectedOperation,
     refreshTraceList,
-    refreshTraceDetail
+    refreshTraceDetail,
+    traceDetailPage,
+    setTraceDetailPage
   } = useTraceExplorer({
     initialTraceId,
     initialOperationId,
@@ -384,6 +387,12 @@ export default function TraceTimelineMode({
             )}
           </div>
         </div>
+        <ListPagination
+          meta={traceDetailMeta}
+          currentPage={traceDetailPage}
+          onPageChange={setTraceDetailPage}
+          alwaysShow={false}
+        />
       </Card>
 
       <PanelResizer
