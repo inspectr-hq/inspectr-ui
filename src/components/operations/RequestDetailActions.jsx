@@ -169,8 +169,8 @@ export default function RequestDetailActions({
 }) {
   const isCurl = copyActionKey === 'curl';
   const isCopied = isCurl ? copiedCurl : copiedOperation;
-  const label = isCurl ? 'Copy as cURL' : 'Copy operation';
-  const copiedLabel = isCurl ? 'Copied cURL' : 'Copied operation';
+  const label = isCurl ? 'Copy as cURL' : 'Copy Operation';
+  const copiedLabel = isCurl ? 'Copied cURL' : 'Copied Operation';
   const icon = isCurl ? <CurlIcon /> : <CopyIcon />;
   const handleAction = isCurl ? onCopyCurl : onCopyOperation;
   const showRefresh = typeof onRefresh === 'function';
