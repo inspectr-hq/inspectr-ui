@@ -72,6 +72,25 @@ function formatIntervalData(intervals) {
   });
 }
 
+function buildGroupTotals(rows) {
+  const totals = {};
+  if (!Array.isArray(rows)) return totals;
+
+  rows.forEach((item) => {
+    const series = item?.series;
+    if (!series || typeof series !== 'object') return;
+    Object.entries(series).forEach(([key, value]) => {
+      const count = typeof value === 'number' ? value : value?.count;
+      if (count == null) return;
+      const numeric = Number(count);
+      if (Number.isNaN(numeric)) return;
+      totals[key] = (totals[key] ?? 0) + numeric;
+    });
+  });
+
+  return totals;
+}
+
 const formatNumber = (value) => {
   const numeric = Number(value);
   if (Number.isNaN(numeric)) return '0';
@@ -150,6 +169,11 @@ function renderStatisticsContent(
               data={statsData?.totals?.method}
             />
             <DashBoardDonutChart
+              title="Protocol Ratio"
+              description="Distribution of protocols"
+              data={statsData?.totals?.protocol}
+            />
+            <DashBoardDonutChart
               title="Status Ratio"
               description="Distribution of HTTP status codes"
               data={statsData?.totals?.status}
@@ -194,11 +218,16 @@ function renderStatisticsContent(
               />
             </div>
           </div>
-          <div className="mt-6 grid grid-cols-3 gap-4 md:grid-cols-3 lg:grid-cols-3">
+          <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
             <DashBoardDonutChart
               title="Method Ratio"
               description="Distribution of HTTP methods"
               data={statsData?.totals?.method}
+            />
+            <DashBoardDonutChart
+              title="Protocol Ratio"
+              description="Distribution of protocols"
+              data={statsData?.totals?.protocol}
             />
             <DashBoardDonutChart
               title="Status Ratio"
@@ -446,38 +475,48 @@ export default function DashBoardApp({ route }) {
       tag: tag || undefined
     };
 
-    const [overview, buckets, byMethod, byStatus, topAll, topError, topFastest, topSlowest] =
-      await Promise.all([
-        client.stats.getOverview(common),
-        client.stats.getBuckets(common),
-        client.stats.aggregateBy('method', { ...common, order: '-count', metrics: ['count'] }),
-        client.stats.aggregateBy('status', { ...common, order: '-count', metrics: ['count'] }),
-        client.stats.aggregateBy('path', {
-          ...common,
-          order: '-count',
-          metrics: ['count'],
-          limit: 10
-        }),
-        client.stats.aggregateBy('path', {
-          ...common,
-          statusClass: ['4xx', '5xx'],
-          order: '-count',
-          metrics: ['count'],
-          limit: 10
-        }),
-        client.stats.aggregateBy('path', {
-          ...common,
-          order: '+p95_ms',
-          metrics: ['count', 'p95_ms'],
-          limit: 10
-        }),
-        client.stats.aggregateBy('path', {
-          ...common,
-          order: '-p95_ms',
-          metrics: ['count', 'p95_ms'],
-          limit: 10
-        })
-      ]);
+    const [
+      overview,
+      buckets,
+      byMethod,
+      byStatus,
+      byProtocol,
+      topAll,
+      topError,
+      topFastest,
+      topSlowest
+    ] = await Promise.all([
+      client.stats.getOverview(common),
+      client.stats.getBuckets(common),
+      client.stats.aggregateBy('method', { ...common, order: '-count', metrics: ['count'] }),
+      client.stats.aggregateBy('status', { ...common, order: '-count', metrics: ['count'] }),
+      client.stats.getBucketsGroup('protocol', { ...common }),
+      client.stats.aggregateBy('path', {
+        ...common,
+        order: '-count',
+        metrics: ['count'],
+        limit: 10
+      }),
+      client.stats.aggregateBy('path', {
+        ...common,
+        statusClass: ['4xx', '5xx'],
+        order: '-count',
+        metrics: ['count'],
+        limit: 10
+      }),
+      client.stats.aggregateBy('path', {
+        ...common,
+        order: '+p95_ms',
+        metrics: ['count', 'p95_ms'],
+        limit: 10
+      }),
+      client.stats.aggregateBy('path', {
+        ...common,
+        order: '-p95_ms',
+        metrics: ['count', 'p95_ms'],
+        limit: 10
+      })
+    ]);
 
     const overall = overview?.data ?? overview?.overall ?? overview ?? null;
 
@@ -518,7 +557,8 @@ export default function DashBoardApp({ route }) {
       method: Object.fromEntries((byMethod?.data?.rows ?? []).map((r) => [r.method, r.count])),
       status: Object.fromEntries(
         (byStatus?.data?.rows ?? []).map((r) => [String(r.status), r.count])
-      )
+      ),
+      protocol: buildGroupTotals(byProtocol?.data ?? byProtocol?.buckets ?? [])
     };
 
     const mapPaths = (rows) =>
