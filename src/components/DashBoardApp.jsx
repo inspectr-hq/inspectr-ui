@@ -8,7 +8,8 @@ import {
   TabList,
   Tab,
   TabPanels,
-  TabPanel
+  TabPanel,
+  Card
 } from '@tremor/react';
 import { useInspectr } from '../context/InspectrContext';
 
@@ -22,8 +23,11 @@ import DashBoardPercentileChart from './dashboards/DashBoardPercentileChart.jsx'
 import TagFilterDropdown from './TagFilterDropdown.jsx';
 import TagPill from './TagPill.jsx';
 import DateRangeButtons from './DateRangeButtons.jsx';
-import { getStartOfDay, getEndOfDay } from '../utils/timeRange.js';
+import { getStartOfDay, getEndOfDay, findPresetByLabel } from '../utils/timeRange.js';
 import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
+import DashBoardMcpSummary from './dashboards/DashBoardMcpSummary.jsx';
+import DashBoardMcpBarList from './dashboards/DashBoardMcpBarList.jsx';
+import NoDataPlaceholder from './NoDataPlaceholder.jsx';
 
 // Helper: Format date for range display
 function formatDateForDisplay(dateString) {
@@ -67,6 +71,31 @@ function formatIntervalData(intervals) {
     return mapped;
   });
 }
+
+function buildGroupTotals(rows) {
+  const totals = {};
+  if (!Array.isArray(rows)) return totals;
+
+  rows.forEach((item) => {
+    const series = item?.series;
+    if (!series || typeof series !== 'object') return;
+    Object.entries(series).forEach(([key, value]) => {
+      const count = typeof value === 'number' ? value : value?.count;
+      if (count == null) return;
+      const numeric = Number(count);
+      if (Number.isNaN(numeric)) return;
+      totals[key] = (totals[key] ?? 0) + numeric;
+    });
+  });
+
+  return totals;
+}
+
+const formatNumber = (value) => {
+  const numeric = Number(value);
+  if (Number.isNaN(numeric)) return '0';
+  return Intl.NumberFormat('us').format(numeric);
+};
 
 function DatasetLabel({ tag }) {
   if (!tag) {
@@ -140,6 +169,11 @@ function renderStatisticsContent(
               data={statsData?.totals?.method}
             />
             <DashBoardDonutChart
+              title="Protocol Ratio"
+              description="Distribution of protocols"
+              data={statsData?.totals?.protocol}
+            />
+            <DashBoardDonutChart
               title="Status Ratio"
               description="Distribution of HTTP status codes"
               data={statsData?.totals?.status}
@@ -184,11 +218,16 @@ function renderStatisticsContent(
               />
             </div>
           </div>
-          <div className="mt-6 grid grid-cols-3 gap-4 md:grid-cols-3 lg:grid-cols-3">
+          <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
             <DashBoardDonutChart
               title="Method Ratio"
               description="Distribution of HTTP methods"
               data={statsData?.totals?.method}
+            />
+            <DashBoardDonutChart
+              title="Protocol Ratio"
+              description="Distribution of protocols"
+              data={statsData?.totals?.protocol}
             />
             <DashBoardDonutChart
               title="Status Ratio"
@@ -216,6 +255,87 @@ function renderStatisticsContent(
         </>
       )}
     </>
+  );
+}
+
+function buildMcpGroup(group, limit = 10) {
+  if (!group || typeof group !== 'object') return [];
+
+  return Object.entries(group)
+    .map(([name, stats]) => {
+      const count = Number(stats?.count ?? 0);
+      const requestTokens = Number(stats?.request_tokens ?? 0);
+      const responseTokens = Number(stats?.response_tokens ?? 0);
+      const totalTokens =
+        stats?.total_tokens != null ? Number(stats.total_tokens) : requestTokens + responseTokens;
+
+      return {
+        name,
+        count,
+        totalTokens
+      };
+    })
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+function buildMcpSeriesData(buckets, limit = 5) {
+  const rows = Array.isArray(buckets) ? buckets : [];
+  if (!rows.length) {
+    return { data: [], keys: [], topLabel: '' };
+  }
+
+  const totals = new Map();
+  rows.forEach((item) => {
+    const series = item?.series;
+    if (!series || typeof series !== 'object') return;
+    Object.entries(series).forEach(([name, stats]) => {
+      const count = Number(stats?.count ?? 0);
+      totals.set(name, (totals.get(name) ?? 0) + count);
+    });
+  });
+
+  const sorted = [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit);
+  const keys = sorted.map(([name]) => name);
+  const topEntry = sorted[0];
+  const topLabel = topEntry ? `${topEntry[0]} (${formatNumber(topEntry[1])})` : '';
+
+  const data = rows.map((item) => {
+    const row = {
+      date: formatDateForChart(item.timestamp)
+    };
+    keys.forEach((key) => {
+      row[key] = Number(item?.series?.[key]?.count ?? 0);
+    });
+    return row;
+  });
+
+  return { data, keys, topLabel };
+}
+
+function McpTrendCard({ title, data, keys, highlightLabel, highlightValue }) {
+  if (!Array.isArray(data) || data.length === 0 || !Array.isArray(keys) || keys.length === 0) {
+    return (
+      <Card className="mt-4 rounded-tremor-small p-2">
+        <h3 className="font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+          {title}
+        </h3>
+        <div className="p-6">
+          <NoDataPlaceholder className="min-h-[180px]" />
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <DashBoardLineChart
+      title={title}
+      data={data}
+      metricKey={keys}
+      metricUnit=""
+      highlightLabel={highlightLabel}
+      highlightValue={highlightValue}
+    />
   );
 }
 
@@ -253,7 +373,7 @@ function ComparisonColumn({ label, tag, stats, intervalData, loading }) {
   );
 }
 
-export default function DashBoardApp() {
+export default function DashBoardApp({ route }) {
   const { client } = useInspectr();
 
   // Deprecate old features
@@ -275,6 +395,15 @@ export default function DashBoardApp() {
   const [compareRightStats, setCompareRightStats] = useState(null);
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareError, setCompareError] = useState(null);
+  const [mcpStats, setMcpStats] = useState(null);
+  const [mcpBuckets, setMcpBuckets] = useState(null);
+  const [mcpGroupedBuckets, setMcpGroupedBuckets] = useState({
+    tool: null,
+    prompt: null,
+    resource: null
+  });
+  const [mcpLoading, setMcpLoading] = useState(false);
+  const [mcpError, setMcpError] = useState(null);
 
   // Date range
   const today = new Date();
@@ -296,6 +425,48 @@ export default function DashBoardApp() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  useEffect(() => {
+    const params = route?.params || {};
+    const nextGroupRaw = params.interval || params.group || '';
+    const groupLookup = {
+      hourly: 'hour',
+      daily: 'day',
+      weekly: 'week',
+      monthly: 'month'
+    };
+    const nextGroup = groupLookup[String(nextGroupRaw).toLowerCase()] || nextGroupRaw;
+    if (['hour', 'day', 'week', 'month'].includes(nextGroup)) {
+      setGroup(nextGroup);
+    }
+
+    const fromParam = params.from || params.start;
+    const toParam = params.to || params.end;
+    if (fromParam && toParam) {
+      const fromDate = new Date(fromParam);
+      const toDate = new Date(toParam);
+      if (!Number.isNaN(fromDate.getTime()) && !Number.isNaN(toDate.getTime())) {
+        setStart(fromDate.toISOString());
+        setEnd(toDate.toISOString());
+        setSelectedRange('Custom');
+        setCustomStartDate(fromDate.toISOString().split('T')[0]);
+        setCustomEndDate(toDate.toISOString().split('T')[0]);
+        setCustomStartTime(fromDate.toISOString().slice(11, 16));
+        setCustomEndTime(toDate.toISOString().slice(11, 16));
+        setShowCustomDatePicker(false);
+        return;
+      }
+    }
+
+    const presetLabel = params.range || params.preset;
+    const preset = findPresetByLabel(presetLabel);
+    if (preset) {
+      setSelectedRange(preset.label);
+      setStart(preset.start);
+      setEnd(preset.end);
+      setShowCustomDatePicker(false);
+    }
+  }, [route?.params]);
+
   const fetchStatsForTag = async (tag) => {
     const common = {
       from: start,
@@ -304,38 +475,48 @@ export default function DashBoardApp() {
       tag: tag || undefined
     };
 
-    const [overview, buckets, byMethod, byStatus, topAll, topError, topFastest, topSlowest] =
-      await Promise.all([
-        client.stats.getOverview(common),
-        client.stats.getBuckets(common),
-        client.stats.aggregateBy('method', { ...common, order: '-count', metrics: ['count'] }),
-        client.stats.aggregateBy('status', { ...common, order: '-count', metrics: ['count'] }),
-        client.stats.aggregateBy('path', {
-          ...common,
-          order: '-count',
-          metrics: ['count'],
-          limit: 10
-        }),
-        client.stats.aggregateBy('path', {
-          ...common,
-          statusClass: ['4xx', '5xx'],
-          order: '-count',
-          metrics: ['count'],
-          limit: 10
-        }),
-        client.stats.aggregateBy('path', {
-          ...common,
-          order: '+p95_ms',
-          metrics: ['count', 'p95_ms'],
-          limit: 10
-        }),
-        client.stats.aggregateBy('path', {
-          ...common,
-          order: '-p95_ms',
-          metrics: ['count', 'p95_ms'],
-          limit: 10
-        })
-      ]);
+    const [
+      overview,
+      buckets,
+      byMethod,
+      byStatus,
+      byProtocol,
+      topAll,
+      topError,
+      topFastest,
+      topSlowest
+    ] = await Promise.all([
+      client.stats.getOverview(common),
+      client.stats.getBuckets(common),
+      client.stats.aggregateBy('method', { ...common, order: '-count', metrics: ['count'] }),
+      client.stats.aggregateBy('status', { ...common, order: '-count', metrics: ['count'] }),
+      client.stats.getBucketsGroup('protocol', { ...common }),
+      client.stats.aggregateBy('path', {
+        ...common,
+        order: '-count',
+        metrics: ['count'],
+        limit: 10
+      }),
+      client.stats.aggregateBy('path', {
+        ...common,
+        statusClass: ['4xx', '5xx'],
+        order: '-count',
+        metrics: ['count'],
+        limit: 10
+      }),
+      client.stats.aggregateBy('path', {
+        ...common,
+        order: '+p95_ms',
+        metrics: ['count', 'p95_ms'],
+        limit: 10
+      }),
+      client.stats.aggregateBy('path', {
+        ...common,
+        order: '-p95_ms',
+        metrics: ['count', 'p95_ms'],
+        limit: 10
+      })
+    ]);
 
     const overall = overview?.data ?? overview?.overall ?? overview ?? null;
 
@@ -376,7 +557,8 @@ export default function DashBoardApp() {
       method: Object.fromEntries((byMethod?.data?.rows ?? []).map((r) => [r.method, r.count])),
       status: Object.fromEntries(
         (byStatus?.data?.rows ?? []).map((r) => [String(r.status), r.count])
-      )
+      ),
+      protocol: buildGroupTotals(byProtocol?.data ?? byProtocol?.buckets ?? [])
     };
 
     const mapPaths = (rows) =>
@@ -403,11 +585,103 @@ export default function DashBoardApp() {
 
   const loadPrimaryStats = async () => {
     if (!client?.stats?.getOverview) return;
+    const canLoadMcpOps = Boolean(client?.stats?.getMcpOperations);
+    const canLoadMcpBuckets = Boolean(client?.stats?.getMcpBuckets);
+    const shouldLoadMcp = canLoadMcpOps || canLoadMcpBuckets;
     setPrimaryLoading(true);
     setPrimaryError(null);
+    if (shouldLoadMcp) {
+      setMcpLoading(true);
+      setMcpError(null);
+      setMcpStats(null);
+      setMcpBuckets(null);
+      setMcpGroupedBuckets({ tool: null, prompt: null, resource: null });
+    }
     try {
-      const data = await fetchStatsForTag(selectedTag);
-      setStats(data);
+      const statsPromise = fetchStatsForTag(selectedTag);
+
+      if (shouldLoadMcp) {
+        const mcpRequests = [];
+        if (canLoadMcpOps) {
+          mcpRequests.push({
+            key: 'ops',
+            promise: client.stats.getMcpOperations({ from: start, to: end })
+          });
+        }
+        if (canLoadMcpBuckets) {
+          mcpRequests.push({
+            key: 'buckets',
+            promise: client.stats.getMcpBuckets({ from: start, to: end, interval: group })
+          });
+          mcpRequests.push({
+            key: 'tool',
+            promise: client.stats.getMcpBuckets({
+              from: start,
+              to: end,
+              interval: group,
+              group: 'tool'
+            })
+          });
+          mcpRequests.push({
+            key: 'prompt',
+            promise: client.stats.getMcpBuckets({
+              from: start,
+              to: end,
+              interval: group,
+              group: 'prompt'
+            })
+          });
+          mcpRequests.push({
+            key: 'resource',
+            promise: client.stats.getMcpBuckets({
+              from: start,
+              to: end,
+              interval: group,
+              group: 'resource'
+            })
+          });
+        }
+
+        (async () => {
+          const settled = await Promise.allSettled(mcpRequests.map((req) => req.promise));
+          const grouped = { tool: null, prompt: null, resource: null };
+          let hasGrouped = false;
+
+          settled.forEach((result, index) => {
+            const key = mcpRequests[index]?.key;
+            if (result.status === 'fulfilled') {
+              if (key === 'ops') setMcpStats(result.value);
+              if (key === 'buckets') setMcpBuckets(result.value);
+              if (key === 'tool') {
+                grouped.tool = result.value;
+                hasGrouped = true;
+              }
+              if (key === 'prompt') {
+                grouped.prompt = result.value;
+                hasGrouped = true;
+              }
+              if (key === 'resource') {
+                grouped.resource = result.value;
+                hasGrouped = true;
+              }
+            } else if (result.reason) {
+              console.error(result.reason);
+              setMcpError(
+                (prev) => prev || result.reason?.message || 'Failed to load MCP statistics'
+              );
+            }
+          });
+
+          if (hasGrouped) {
+            setMcpGroupedBuckets(grouped);
+          }
+
+          setMcpLoading(false);
+        })();
+      }
+
+      const statsResult = await statsPromise;
+      setStats(statsResult);
     } catch (err) {
       console.error(err);
       setPrimaryError(err?.message || 'Failed to load statistics');
@@ -423,15 +697,26 @@ export default function DashBoardApp() {
     setCompareLoading(true);
     setCompareError(null);
     try {
-      const [left, right] = await Promise.all([
-        fetchStatsForTag(compareLeftTag),
-        fetchStatsForTag(compareRightTag)
-      ]);
-      setCompareLeftStats(left);
-      setCompareRightStats(right);
-    } catch (err) {
-      console.error(err);
-      setCompareError(err?.message || 'Failed to load comparison data');
+      const leftPromise = fetchStatsForTag(compareLeftTag).then((left) => {
+        setCompareLeftStats(left);
+        return left;
+      });
+      const rightPromise = fetchStatsForTag(compareRightTag).then((right) => {
+        setCompareRightStats(right);
+        return right;
+      });
+
+      const [leftResult, rightResult] = await Promise.allSettled([leftPromise, rightPromise]);
+      const firstError =
+        leftResult.status === 'rejected'
+          ? leftResult.reason
+          : rightResult.status === 'rejected'
+            ? rightResult.reason
+            : null;
+      if (firstError) {
+        console.error(firstError);
+        setCompareError(firstError?.message || 'Failed to load comparison data');
+      }
     } finally {
       setCompareLoading(false);
     }
@@ -533,6 +818,50 @@ export default function DashBoardApp() {
   const formattedIntervalData = useMemo(
     () => formatIntervalData(stats?.by_interval),
     [stats?.by_interval]
+  );
+  const mcpData = mcpStats?.data ?? null;
+  const mcpTrendData = useMemo(() => {
+    const rows = Array.isArray(mcpBuckets?.data) ? mcpBuckets.data : [];
+    return rows.map((item) => ({
+      date: formatDateForChart(item.timestamp),
+      mcp_count: item.count ?? 0,
+      mcp_request_tokens: item.request_tokens ?? 0,
+      mcp_response_tokens: item.response_tokens ?? 0,
+      mcp_total_tokens:
+        item.total_tokens != null
+          ? item.total_tokens
+          : (item.request_tokens ?? 0) + (item.response_tokens ?? 0)
+    }));
+  }, [mcpBuckets]);
+  const mcpToolTrend = useMemo(
+    () => buildMcpSeriesData(mcpGroupedBuckets.tool?.data),
+    [mcpGroupedBuckets.tool]
+  );
+  const mcpPromptTrend = useMemo(
+    () => buildMcpSeriesData(mcpGroupedBuckets.prompt?.data),
+    [mcpGroupedBuckets.prompt]
+  );
+  const mcpResourceTrend = useMemo(
+    () => buildMcpSeriesData(mcpGroupedBuckets.resource?.data),
+    [mcpGroupedBuckets.resource]
+  );
+  const hasMcpUsage = useMemo(() => {
+    const totalCount = Number(mcpData?.total?.count ?? 0);
+    const groupTotals =
+      mcpToolTrend.keys.length || mcpPromptTrend.keys.length || mcpResourceTrend.keys.length;
+    const trendPoints = mcpTrendData.length > 0;
+    return totalCount > 0 || groupTotals || trendPoints;
+  }, [mcpData, mcpToolTrend, mcpPromptTrend, mcpResourceTrend, mcpTrendData]);
+  const mcpGroups = useMemo(
+    () => ({
+      byTool: buildMcpGroup(mcpData?.by_tool),
+      byResource: buildMcpGroup(mcpData?.by_resource),
+      byPrompt: buildMcpGroup(mcpData?.by_prompt),
+      byMethod: buildMcpGroup(mcpData?.by_method),
+      byCategory: buildMcpGroup(mcpData?.by_category),
+      bySession: buildMcpGroup(mcpData?.by_session)
+    }),
+    [mcpData]
   );
   const compareLeftIntervalData = useMemo(
     () => formatIntervalData(compareLeftStats?.by_interval),
@@ -745,6 +1074,72 @@ export default function DashBoardApp() {
               <p className="mt-4 text-red-600 dark:text-red-400">Error: {primaryError}</p>
             ) : null}
             <main className="mt-6">{renderStatisticsContent(stats, formattedIntervalData)}</main>
+            {mcpLoading || mcpError || hasMcpUsage ? (
+              <section className="mt-10">
+                <div className="flex items-center justify-between gap-3">
+                  <h4 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                    MCP Usage
+                  </h4>
+                  {mcpLoading ? (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Loading MCP stats…
+                    </span>
+                  ) : null}
+                </div>
+                {mcpError ? (
+                  <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                    MCP stats error: {mcpError}
+                  </p>
+                ) : null}
+                {!mcpLoading && !mcpError && hasMcpUsage ? (
+                  <>
+                    <div className="mt-4">
+                      <DashBoardMcpSummary total={mcpData.total} />
+                    </div>
+                    <div className="mt-6">
+                      <McpTrendCard
+                        title="MCP Usage Trend"
+                        data={mcpTrendData}
+                        keys={['mcp_count', 'mcp_total_tokens']}
+                        highlightValue={formatNumber(mcpData?.total?.count)}
+                        highlightLabel="Total MCP Requests"
+                      />
+                    </div>
+                    <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
+                      <McpTrendCard
+                        title="Tools Usage Over Time"
+                        data={mcpToolTrend.data}
+                        keys={mcpToolTrend.keys}
+                        highlightLabel="Top Tool"
+                        highlightValue={mcpToolTrend.topLabel}
+                      />
+                      <McpTrendCard
+                        title="Prompts Usage Over Time"
+                        data={mcpPromptTrend.data}
+                        keys={mcpPromptTrend.keys}
+                        highlightLabel="Top Prompt"
+                        highlightValue={mcpPromptTrend.topLabel}
+                      />
+                      <McpTrendCard
+                        title="Resources Usage Over Time"
+                        data={mcpResourceTrend.data}
+                        keys={mcpResourceTrend.keys}
+                        highlightLabel="Top Resource"
+                        highlightValue={mcpResourceTrend.topLabel}
+                      />
+                    </div>
+                    <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                      <DashBoardMcpBarList title="By Tool" items={mcpGroups.byTool} />
+                      <DashBoardMcpBarList title="By Resource" items={mcpGroups.byResource} />
+                      <DashBoardMcpBarList title="By Prompt" items={mcpGroups.byPrompt} />
+                      <DashBoardMcpBarList title="By Method" items={mcpGroups.byMethod} />
+                      <DashBoardMcpBarList title="By Category" items={mcpGroups.byCategory} />
+                      <DashBoardMcpBarList title="By Session" items={mcpGroups.bySession} />
+                    </div>
+                  </>
+                ) : null}
+              </section>
+            ) : null}
           </TabPanel>
           <TabPanel>
             {compareError ? (
