@@ -31,7 +31,12 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
     'replayTargetPreference',
     'original'
   );
-  const copyActionKey = copyActionValue === 'operation' ? 'operation' : 'curl';
+  const copyActionKey =
+    copyActionValue === 'operation'
+      ? 'operation'
+      : copyActionValue === 'proxy_curl'
+        ? 'proxy_curl'
+        : 'curl';
   const replayTarget = replayTargetValue === 'proxy' ? 'proxy' : 'original';
 
   // Local tag state for UI updates after delete
@@ -79,6 +84,7 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
   const tags = normalizeTags(localTagsRaw);
   const hasTags = tags.length > 0;
   const hasProxy = Boolean(proxyEndpoint || operation?.meta?.proxy?.url);
+  const hasInspectrCurl = Boolean(operation?.meta?.proxy?.url);
 
   useEffect(() => {
     if (!hasProxy && replayTargetValue === 'proxy') {
@@ -86,12 +92,19 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
     }
   }, [hasProxy, replayTargetValue, setReplayTargetValue]);
 
+  useEffect(() => {
+    if (!hasInspectrCurl && copyActionValue === 'proxy_curl') {
+      setCopyActionValue('curl');
+    }
+  }, [copyActionValue, hasInspectrCurl, setCopyActionValue]);
+
   // Generate a cURL command string from the request data
-  const generateCurlCommand = () => {
+  const generateCurlCommand = (targetUrl) => {
     if (!operation?.request) return;
     const { request } = operation;
     const { method, url, headers, body } = request;
-    let curlCommand = `curl -X ${method} '${url}'`;
+    const finalUrl = targetUrl || url;
+    let curlCommand = `curl -X ${method} '${finalUrl}'`;
 
     // Add headers
     if (headers) {
@@ -118,6 +131,38 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
       })
       .catch((err) => {
         console.error('[Inspectr] Failed to copy cURL command:', err);
+        setShowCurlErrorToast(true);
+      });
+  };
+
+  const getInspectrCurlUrl = () => {
+    const proxyUrl = operation?.meta?.proxy?.url;
+    if (!proxyUrl || !operation?.request?.url) return null;
+
+    try {
+      const proxy = new URL(proxyUrl);
+      const original = new URL(operation.request.url);
+      proxy.pathname = original.pathname || proxy.pathname;
+      proxy.search = original.search;
+      return proxy.toString();
+    } catch (err) {
+      console.warn('[Inspectr] Failed to build Inspectr cURL URL:', err);
+      return proxyUrl;
+    }
+  };
+
+  const handleCopyInspectrCurl = () => {
+    const inspectrUrl = getInspectrCurlUrl();
+    if (!inspectrUrl) return;
+    const curlCommand = generateCurlCommand(inspectrUrl);
+    navigator.clipboard
+      .writeText(curlCommand)
+      .then(() => {
+        setCopiedCurl(true);
+        setTimeout(() => setCopiedCurl(false), 2500);
+      })
+      .catch((err) => {
+        console.error('[Inspectr] Failed to copy Inspectr cURL command:', err);
         setShowCurlErrorToast(true);
       });
   };
@@ -330,11 +375,13 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
           onViewTrace={handleViewTrace}
           onDownload={handleDownloadOperation}
           onCopyCurl={handleCopyCurl}
+          onCopyInspectrCurl={handleCopyInspectrCurl}
           onCopyOperation={handleCopyOperation}
           copyActionKey={copyActionKey}
           onCopyActionChange={setCopyActionValue}
           copiedCurl={copiedCurl}
           copiedOperation={copiedOperation}
+          hasInspectrCurl={hasInspectrCurl}
           onReplay={handleReplay}
           replayTarget={replayTarget}
           onReplayTargetChange={setReplayTargetValue}

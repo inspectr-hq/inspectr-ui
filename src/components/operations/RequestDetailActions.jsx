@@ -157,11 +157,13 @@ export default function RequestDetailActions({
   onViewTrace,
   onDownload,
   onCopyCurl,
+  onCopyInspectrCurl,
   onCopyOperation,
   copyActionKey = 'curl',
   onCopyActionChange,
   copiedCurl = false,
   copiedOperation = false,
+  hasInspectrCurl = false,
   onReplay,
   replayTarget = 'original',
   onReplayTargetChange,
@@ -171,11 +173,12 @@ export default function RequestDetailActions({
   isRefreshing = false
 }) {
   const isCurl = copyActionKey === 'curl';
-  const isCopied = isCurl ? copiedCurl : copiedOperation;
-  const label = isCurl ? 'Copy as cURL' : 'Copy Operation';
-  const copiedLabel = isCurl ? 'Copied cURL' : 'Copied Operation';
-  const icon = isCurl ? <CurlIcon /> : <CopyIcon />;
-  const handleAction = isCurl ? onCopyCurl : onCopyOperation;
+  const isProxyCurl = copyActionKey === 'proxy_curl';
+  const isCopied = isCurl || isProxyCurl ? copiedCurl : copiedOperation;
+  const label = isProxyCurl ? 'Copy Proxy cURL' : isCurl ? 'Copy cURL' : 'Copy Operation';
+  const copiedLabel = isCurl || isProxyCurl ? 'Copied cURL' : 'Copied Operation';
+  const icon = isCurl || isProxyCurl ? <CurlIcon /> : <CopyIcon />;
+  const handleAction = isProxyCurl ? onCopyInspectrCurl : isCurl ? onCopyCurl : onCopyOperation;
   const showRefresh = typeof onRefresh === 'function';
   const isOriginalReplay = replayTarget === 'original';
   const replayTargetLabel = isOriginalReplay ? 'Replay to original host' : 'Replay via Inspectr';
@@ -185,7 +188,7 @@ export default function RequestDetailActions({
       {hasTrace ? (
         <button type="button" onClick={onViewTrace} className={TraceButtonClasses}>
           <TraceIcon className="h-4 w-4" />
-          <span className="text-xs hidden [@container(min-width:600px)]:inline">View trace</span>
+          <span className="text-xs hidden [@container(min-width:620px)]:inline">View trace</span>
         </button>
       ) : null}
       <button onClick={onDownload} className={ButtonClasses} aria-label="Export as JSON">
@@ -194,7 +197,7 @@ export default function RequestDetailActions({
       <div className="relative flex">
         <button onClick={handleAction} className={SplitLeftClasses}>
           {isCopied ? <CheckIcon /> : icon}
-          <span className="text-xs hidden [@container(min-width:600px)]:inline">
+          <span className="text-xs hidden [@container(min-width:620px)]:inline">
             {isCopied ? copiedLabel : label}
           </span>
         </button>
@@ -202,23 +205,34 @@ export default function RequestDetailActions({
           <MenuButton className={SplitRightClasses} aria-label="Select copy action">
             <ChevronDownIcon />
           </MenuButton>
-          <MenuItems className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-slate-200 bg-white p-1 text-sm text-slate-700 shadow-lg focus:outline-none dark:border-dark-tremor-border dark:bg-dark-tremor-background dark:text-dark-tremor-content">
+          <MenuItems className="absolute right-0 top-full z-20 mt-1 w-48 rounded-lg border border-slate-200 bg-white p-1 text-sm text-slate-700 shadow-lg focus:outline-none dark:border-dark-tremor-border dark:bg-dark-tremor-background dark:text-dark-tremor-content">
             <MenuItem>
               <button
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 data-[focus]:bg-slate-100 dark:data-[focus]:bg-dark-tremor-background-subtle"
                 onClick={() => onCopyActionChange?.('curl')}
               >
                 <CurlIcon />
-                Copy as cURL
+                Copy cURL
               </button>
             </MenuItem>
+            {hasInspectrCurl ? (
+              <MenuItem>
+                <button
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 data-[focus]:bg-slate-100 dark:data-[focus]:bg-dark-tremor-background-subtle"
+                  onClick={() => onCopyActionChange?.('proxy_curl')}
+                >
+                  <CurlIcon />
+                  Copy Proxy cURL
+                </button>
+              </MenuItem>
+            ) : null}
             <MenuItem>
               <button
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 data-[focus]:bg-slate-100 dark:data-[focus]:bg-dark-tremor-background-subtle"
                 onClick={() => onCopyActionChange?.('operation')}
               >
                 <CopyIcon />
-                Copy operation
+                Copy Operation
               </button>
             </MenuItem>
           </MenuItems>
@@ -227,7 +241,7 @@ export default function RequestDetailActions({
       <div className="relative flex">
         <button onClick={onReplay} className={SplitLeftClasses} aria-label={replayTargetLabel}>
           {replayed ? <CheckIcon /> : <ReplayIcon />}
-          <span className="text-xs hidden [@container(min-width:600px)]:inline">
+          <span className="text-xs hidden [@container(min-width:620px)]:inline">
             {replayed ? 'Replayed' : 'Replay'}
           </span>
         </button>
