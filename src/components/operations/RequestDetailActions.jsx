@@ -185,7 +185,7 @@ export default function RequestDetailActions({
       {hasTrace ? (
         <button type="button" onClick={onViewTrace} className={TraceButtonClasses}>
           <TraceIcon className="h-4 w-4" />
-          <span className="text-xs hidden [@container(min-width:520px)]:inline">View trace</span>
+          <span className="text-xs hidden [@container(min-width:600px)]:inline">View trace</span>
         </button>
       ) : null}
       <button onClick={onDownload} className={ButtonClasses} aria-label="Export as JSON">
@@ -194,7 +194,7 @@ export default function RequestDetailActions({
       <div className="relative flex">
         <button onClick={handleAction} className={SplitLeftClasses}>
           {isCopied ? <CheckIcon /> : icon}
-          <span className="text-xs hidden [@container(min-width:520px)]:inline">
+          <span className="text-xs hidden [@container(min-width:600px)]:inline">
             {isCopied ? copiedLabel : label}
           </span>
         </button>
@@ -227,7 +227,7 @@ export default function RequestDetailActions({
       <div className="relative flex">
         <button onClick={onReplay} className={SplitLeftClasses} aria-label={replayTargetLabel}>
           {replayed ? <CheckIcon /> : <ReplayIcon />}
-          <span className="text-xs hidden [@container(min-width:520px)]:inline">
+          <span className="text-xs hidden [@container(min-width:600px)]:inline">
             {replayed ? 'Replayed' : 'Replay'}
           </span>
         </button>
