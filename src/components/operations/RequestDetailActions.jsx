@@ -235,10 +235,10 @@ export default function RequestDetailActions({
           <MenuButton className={SplitRightClasses} aria-label="Select replay target">
             <ChevronDownIcon />
           </MenuButton>
-          <MenuItems className="absolute right-0 top-full z-20 mt-1 w-52 rounded-lg border border-slate-200 bg-white p-1 text-sm text-slate-700 shadow-lg focus:outline-none dark:border-dark-tremor-border dark:bg-dark-tremor-background dark:text-dark-tremor-content">
+          <MenuItems className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-slate-200 bg-white p-1 text-sm text-slate-700 shadow-lg focus:outline-none dark:border-dark-tremor-border dark:bg-dark-tremor-background dark:text-dark-tremor-content">
             <MenuItem>
               <button
-                className="flex w-full items-center justify-end gap-2 rounded-md px-2 py-1.5 text-right data-[focus]:bg-slate-100 dark:data-[focus]:bg-dark-tremor-background-subtle"
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-right data-[focus]:bg-slate-100 dark:data-[focus]:bg-dark-tremor-background-subtle"
                 onClick={() => onReplayTargetChange?.('original')}
               >
                 {isOriginalReplay ? <CheckIcon /> : null}
@@ -247,7 +247,7 @@ export default function RequestDetailActions({
             </MenuItem>
             <MenuItem disabled={!hasProxy}>
               <button
-                className="flex w-full items-center justify-end gap-2 rounded-md px-2 py-1.5 text-right data-[focus]:bg-slate-100 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 dark:data-[focus]:bg-dark-tremor-background-subtle"
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-right data-[focus]:bg-slate-100 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 dark:data-[focus]:bg-dark-tremor-background-subtle"
                 onClick={() => onReplayTargetChange?.('proxy')}
                 disabled={!hasProxy}
               >
