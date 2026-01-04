@@ -163,6 +163,9 @@ export default function RequestDetailActions({
   copiedCurl = false,
   copiedOperation = false,
   onReplay,
+  replayTarget = 'original',
+  onReplayTargetChange,
+  hasProxy = false,
   replayed = false,
   onRefresh,
   isRefreshing = false
@@ -174,6 +177,8 @@ export default function RequestDetailActions({
   const icon = isCurl ? <CurlIcon /> : <CopyIcon />;
   const handleAction = isCurl ? onCopyCurl : onCopyOperation;
   const showRefresh = typeof onRefresh === 'function';
+  const isOriginalReplay = replayTarget === 'original';
+  const replayTargetLabel = isOriginalReplay ? 'Replay to original host' : 'Replay via Inspectr';
 
   return (
     <div className="flex space-x-2">
@@ -219,12 +224,40 @@ export default function RequestDetailActions({
           </MenuItems>
         </Menu>
       </div>
-      <button onClick={onReplay} className={ButtonClasses}>
-        {replayed ? <CheckIcon /> : <ReplayIcon />}
-        <span className="text-xs hidden [@container(min-width:520px)]:inline">
-          {replayed ? 'Replayed' : 'Replay'}
-        </span>
-      </button>
+      <div className="relative flex">
+        <button onClick={onReplay} className={SplitLeftClasses} aria-label={replayTargetLabel}>
+          {replayed ? <CheckIcon /> : <ReplayIcon />}
+          <span className="text-xs hidden [@container(min-width:520px)]:inline">
+            {replayed ? 'Replayed' : 'Replay'}
+          </span>
+        </button>
+        <Menu>
+          <MenuButton className={SplitRightClasses} aria-label="Select replay target">
+            <ChevronDownIcon />
+          </MenuButton>
+          <MenuItems className="absolute right-0 top-full z-20 mt-1 w-52 rounded-lg border border-slate-200 bg-white p-1 text-sm text-slate-700 shadow-lg focus:outline-none dark:border-dark-tremor-border dark:bg-dark-tremor-background dark:text-dark-tremor-content">
+            <MenuItem>
+              <button
+                className="flex w-full items-center justify-end gap-2 rounded-md px-2 py-1.5 text-right data-[focus]:bg-slate-100 dark:data-[focus]:bg-dark-tremor-background-subtle"
+                onClick={() => onReplayTargetChange?.('original')}
+              >
+                {isOriginalReplay ? <CheckIcon /> : null}
+                Replay to original host
+              </button>
+            </MenuItem>
+            <MenuItem disabled={!hasProxy}>
+              <button
+                className="flex w-full items-center justify-end gap-2 rounded-md px-2 py-1.5 text-right data-[focus]:bg-slate-100 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 dark:data-[focus]:bg-dark-tremor-background-subtle"
+                onClick={() => onReplayTargetChange?.('proxy')}
+                disabled={!hasProxy}
+              >
+                {!isOriginalReplay ? <CheckIcon /> : null}
+                Replay via Inspectr {hasProxy ? '' : ' (unavailable)'}
+              </button>
+            </MenuItem>
+          </MenuItems>
+        </Menu>
+      </div>
       {showRefresh ? (
         <button onClick={onRefresh} className={ButtonClasses} aria-label="Refresh operation">
           <RefreshIcon className={isRefreshing ? 'animate-spin' : ''} />

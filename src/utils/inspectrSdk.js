@@ -261,16 +261,28 @@ class OperationsClient {
   /**
    * Replay an operation
    * @param {Object} operation - Operation data to replay
+   * @param {Object} [options]
+   * @param {string} [options.replayTarget] - 'original' or 'proxy'
    * @returns {Promise<Object>} - Replay response
    */
-  async replay(operation) {
+  async replay(operation, options = {}) {
     // Remove response, meta, and timing from the operation before sending
+    const proxyUrl = operation?.meta?.proxy?.url;
     const { meta, timing, response, ...opRequest } = operation;
+    const replayTarget = options.replay_target || options.replayTarget;
+    const payload = replayTarget ? { ...opRequest, replay_target: replayTarget } : opRequest;
+
+    if (replayTarget === 'proxy' && proxyUrl && payload?.request?.url) {
+      payload.request = {
+        ...payload.request,
+        url: proxyUrl
+      };
+    }
 
     const res = await fetch(`${this.client.apiEndpoint}/replay`, {
       method: 'POST',
       headers: this.client.jsonHeaders,
-      body: JSON.stringify(opRequest)
+      body: JSON.stringify(payload)
     });
 
     if (!res.ok) throw new Error(`Replay failed (${res.status})`);

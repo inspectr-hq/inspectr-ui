@@ -18,7 +18,7 @@ import RequestDetailActions from './RequestDetailActions.jsx';
 
 const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = false }) => {
   // Get the client from context
-  const { client, setToast } = useInspectr();
+  const { client, setToast, proxyEndpoint } = useInspectr();
 
   const [copiedCurl, setCopiedCurl] = useState(false);
   const [copiedOperation, setCopiedOperation] = useState(false);
@@ -27,7 +27,12 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
   const [showReplayToast, setShowReplayToast] = useState(false);
   const [replayed, setReplayed] = useState(false);
   const [copyActionValue, setCopyActionValue] = useLocalStorage('copyActionPreference', 'curl');
+  const [replayTargetValue, setReplayTargetValue] = useLocalStorage(
+    'replayTargetPreference',
+    'original'
+  );
   const copyActionKey = copyActionValue === 'operation' ? 'operation' : 'curl';
+  const replayTarget = replayTargetValue === 'proxy' ? 'proxy' : 'original';
 
   // Local tag state for UI updates after delete
   const [localTagsRaw, setLocalTagsRaw] = useState(() => operation?.meta?.tags || []);
@@ -73,6 +78,13 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
 
   const tags = normalizeTags(localTagsRaw);
   const hasTags = tags.length > 0;
+  const hasProxy = Boolean(proxyEndpoint || operation?.meta?.proxy?.url);
+
+  useEffect(() => {
+    if (!hasProxy && replayTargetValue === 'proxy') {
+      setReplayTargetValue('original');
+    }
+  }, [hasProxy, replayTargetValue, setReplayTargetValue]);
 
   // Generate a cURL command string from the request data
   const generateCurlCommand = () => {
@@ -153,7 +165,7 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
   // Replay the request using the SDK
   const handleReplay = () => {
     client.operations
-      .replay(operation)
+      .replay(operation, { replayTarget })
       .then(() => {
         setReplayed(true);
         setTimeout(() => setReplayed(false), 2500);
@@ -324,6 +336,9 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
           copiedCurl={copiedCurl}
           copiedOperation={copiedOperation}
           onReplay={handleReplay}
+          replayTarget={replayTarget}
+          onReplayTargetChange={setReplayTargetValue}
+          hasProxy={hasProxy}
           replayed={replayed}
           onRefresh={onRefresh}
           isRefreshing={isRefreshing}
