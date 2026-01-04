@@ -182,13 +182,16 @@ export default function RequestDetailActions({
   const showRefresh = typeof onRefresh === 'function';
   const isOriginalReplay = replayTarget === 'original';
   const replayTargetLabel = isOriginalReplay ? 'Replay to original host' : 'Replay via Inspectr';
+  const labelClass = hasTrace
+    ? 'text-xs hidden [@container(min-width:620px)]:inline'
+    : 'text-xs hidden [@container(min-width:520px)]:inline';
 
   return (
     <div className="flex space-x-2">
       {hasTrace ? (
         <button type="button" onClick={onViewTrace} className={TraceButtonClasses}>
           <TraceIcon className="h-4 w-4" />
-          <span className="text-xs hidden [@container(min-width:620px)]:inline">View trace</span>
+          <span className={labelClass}>View trace</span>
         </button>
       ) : null}
       <button onClick={onDownload} className={ButtonClasses} aria-label="Export as JSON">
@@ -197,9 +200,7 @@ export default function RequestDetailActions({
       <div className="relative flex">
         <button onClick={handleAction} className={SplitLeftClasses}>
           {isCopied ? <CheckIcon /> : icon}
-          <span className="text-xs hidden [@container(min-width:620px)]:inline">
-            {isCopied ? copiedLabel : label}
-          </span>
+          <span className={labelClass}>{isCopied ? copiedLabel : label}</span>
         </button>
         <Menu>
           <MenuButton className={SplitRightClasses} aria-label="Select copy action">
@@ -241,9 +242,7 @@ export default function RequestDetailActions({
       <div className="relative flex">
         <button onClick={onReplay} className={SplitLeftClasses} aria-label={replayTargetLabel}>
           {replayed ? <CheckIcon /> : <ReplayIcon />}
-          <span className="text-xs hidden [@container(min-width:620px)]:inline">
-            {replayed ? 'Replayed' : 'Replay'}
-          </span>
+          <span className={labelClass}>{replayed ? 'Replayed' : 'Replay'}</span>
         </button>
         <Menu>
           <MenuButton className={SplitRightClasses} aria-label="Select replay target">
