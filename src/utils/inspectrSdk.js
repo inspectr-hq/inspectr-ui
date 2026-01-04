@@ -210,6 +210,28 @@ class OperationsClient {
   }
 
   /**
+   * Retrieve a specific operation by ID
+   * @param {string} id - Operation ID to fetch
+   * @returns {Promise<Object>} - Operation payload
+   */
+  async getOperation(id) {
+    const res = await fetch(`${this.client.apiEndpoint}/operations/${id}`, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => ({}));
+      const message = errorBody?.error || errorBody?.message || `Get ${id} failed (${res.status})`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.body = errorBody;
+      throw err;
+    }
+
+    return await res.json();
+  }
+
+  /**
    * Delete all operations
    * @returns {Promise<void>}
    */
@@ -239,16 +261,28 @@ class OperationsClient {
   /**
    * Replay an operation
    * @param {Object} operation - Operation data to replay
+   * @param {Object} [options]
+   * @param {string} [options.replayTarget] - 'original' or 'proxy'
    * @returns {Promise<Object>} - Replay response
    */
-  async replay(operation) {
+  async replay(operation, options = {}) {
     // Remove response, meta, and timing from the operation before sending
+    const proxyUrl = operation?.meta?.proxy?.url;
     const { meta, timing, response, ...opRequest } = operation;
+    const replayTarget = options.replay_target || options.replayTarget;
+    const payload = replayTarget ? { ...opRequest, replay_target: replayTarget } : opRequest;
+
+    if (replayTarget === 'proxy' && proxyUrl && payload?.request?.url) {
+      payload.request = {
+        ...payload.request,
+        url: proxyUrl
+      };
+    }
 
     const res = await fetch(`${this.client.apiEndpoint}/replay`, {
       method: 'POST',
       headers: this.client.jsonHeaders,
-      body: JSON.stringify(opRequest)
+      body: JSON.stringify(payload)
     });
 
     if (!res.ok) throw new Error(`Replay failed (${res.status})`);
@@ -929,6 +963,77 @@ class StatsClient {
   }
 
   /**
+   * MCP operation statistics for a time window.
+   * Server endpoint: GET /stats/operations/mcp
+   * @param {Object} [options]
+   * @param {string|Date} [options.from]
+   * @param {string|Date} [options.to]
+   * @returns {Promise<Object>} MCP stats payload
+   */
+  async getMcpOperations(options = {}) {
+    const toISOString = (v) => {
+      if (v === undefined || v === null || v === '') return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return String(v);
+    };
+    const params = new URLSearchParams();
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '') return;
+      params.set(k, String(v));
+    };
+
+    add('from', toISOString(options.from));
+    add('to', toISOString(options.to));
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/stats/operations/mcp${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Stats MCP operations failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Time-bucketed MCP usage statistics.
+   * Server endpoint: GET /stats/operations/mcp/buckets
+   * @param {Object} [options]
+   * @param {string|Date} [options.from]
+   * @param {string|Date} [options.to]
+   * @param {string} [options.interval] - hour|day|week|month
+   * @returns {Promise<Object>} MCP buckets envelope
+   */
+  async getMcpBuckets(options = {}) {
+    const toISOString = (v) => {
+      if (v === undefined || v === null || v === '') return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return String(v);
+    };
+    const params = new URLSearchParams();
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '') return;
+      params.set(k, String(v));
+    };
+
+    add('from', toISOString(options.from));
+    add('to', toISOString(options.to));
+    add('interval', options.interval);
+    add('group', options.group);
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/stats/operations/mcp/buckets${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Stats MCP buckets failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
    * Time-bucketed statistics suitable for charting.
    * Server endpoint: GET /stats/operations/buckets
    * @param {Object} [options]
@@ -984,9 +1089,67 @@ class StatsClient {
   }
 
   /**
+   * Time-bucketed statistics with grouping in the path.
+   * Server endpoint: GET /stats/operations/buckets/{group}
+   * @param {string} group - grouping hint (e.g., protocol)
+   * @param {Object} [options]
+   * @param {string|Date} [options.from]
+   * @param {string|Date} [options.to]
+   * @param {string} [options.interval] - hour|day|week|month
+   * @param {string} [options.group] - optional grouping hint (overrides path group)
+   * @param {string} [options.tag]
+   * @returns {Promise<Object>} Buckets envelope
+   */
+  async getBucketsGroup(group, options = {}) {
+    if (!group) throw new Error('Stats buckets group is required');
+
+    const toISOString = (v) => {
+      if (v === undefined || v === null || v === '') return undefined;
+      if (v instanceof Date) return v.toISOString();
+      return String(v);
+    };
+    const params = new URLSearchParams();
+    const add = (k, v) => {
+      if (v === undefined || v === null || v === '') return;
+      params.set(k, String(v));
+    };
+    const addCsv = (k, v) => {
+      if (v === undefined || v === null) return;
+      if (Array.isArray(v)) {
+        if (!v.length) return;
+        params.set(k, v.map((x) => String(x)).join(','));
+      } else {
+        params.set(k, String(v));
+      }
+    };
+
+    add('from', toISOString(options.from));
+    add('to', toISOString(options.to));
+    add('interval', options.interval);
+    add('group', options.group);
+    addCsv('filter[method]', options.method);
+    addCsv('filter[status]', options.status);
+    addCsv('filter[status_class]', options.statusClass);
+    addCsv('filter[tag]', options.tag);
+    addCsv('filter[path]', options.path);
+    add('path_prefix', options.pathPrefix);
+    addCsv('filter[host]', options.host);
+
+    const qs = params.toString();
+    const url = `${this.client.apiEndpoint}/stats/operations/buckets/${encodeURIComponent(group)}${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Stats buckets failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
    * Aggregate statistics grouped by a dimension.
    * Server endpoint: GET /stats/operations/aggregate/{dimension}
-   * @param {('path'|'method'|'host'|'status_class'|'status'|'tag')} dimension - Required group-by dimension
+   * @param {('path'|'method'|'host'|'status_class'|'status'|'tag'|'protocol')} dimension - Required group-by dimension
    * @param {Object} [options]
    * @param {string|Date} [options.from]
    * @param {string|Date} [options.to]
@@ -1003,7 +1166,7 @@ class StatsClient {
    * @returns {Promise<Object>} Aggregate envelope
    */
   async aggregateBy(dimension, options = {}) {
-    const allowed = ['path', 'method', 'host', 'status_class', 'status', 'tag'];
+    const allowed = ['path', 'method', 'host', 'status_class', 'status', 'tag', 'protocol'];
     if (!allowed.includes(dimension)) {
       throw new Error(`Invalid dimension: ${dimension}. Allowed: ${allowed.join(', ')}`);
     }

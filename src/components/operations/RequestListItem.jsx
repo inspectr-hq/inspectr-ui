@@ -39,9 +39,9 @@ const RequestListItem = ({
     return `${hours}:${minutes}:${seconds}`;
   };
 
-  const basePath = operation?.request?.path;
-  const query = operation?.request?.query_params;
-  let fullPath = basePath || operation?.request?.url;
+  const basePath = operation?.path || operation?.request?.path;
+  const query = operation?.query_params || operation?.request?.query_params;
+  let fullPath = basePath || operation?.url || operation?.request?.url;
 
   const hasQuery = showQueryParams && basePath && Array.isArray(query) && query.length > 0;
   const qs = hasQuery ? `?${query.map((p) => `${p.name}=${p.value}`).join('&')}` : '';
@@ -61,16 +61,16 @@ const RequestListItem = ({
         <div className="w-16 flex justify-center">
           <span
             className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(
-              operation?.response?.status
+              operation?.status_code ?? operation?.response?.status
             )}`}
           >
-            {operation?.response?.status || 'N/A'}
+            {(operation?.status_code ?? operation?.response?.status) || 'N/A'}
           </span>
         </div>
         <div
-          className={`w-20 text-center font-medium ${getMethodTextClass(operation?.request?.method)}`}
+          className={`w-20 text-center font-medium ${getMethodTextClass(operation?.method || operation?.request?.method)}`}
         >
-          {operation?.request?.method || 'GET'}
+          {operation?.method || operation?.request?.method || 'GET'}
         </div>
         <div
           className="flex-grow truncate text-left text-tremor-content-strong dark:text-dark-tremor-content-strong"
@@ -86,7 +86,11 @@ const RequestListItem = ({
           )}
         </div>
         <div className="w-20 text-gray-900 dark:text-dark-tremor-content text-center text-xs hidden [@container(min-width:440px)]:inline">
-          {operation?.request?.timestamp ? formatTime(operation.request.timestamp) : 'N/A'}
+          {operation?.time
+            ? formatTime(operation.time)
+            : operation?.request?.timestamp
+              ? formatTime(operation.request.timestamp)
+              : 'N/A'}
         </div>
         {/*<div className="flex flex-col text-left">*/}
         {/*  <div className="w-20 text-gray-500 text-xs font-bold">*/}
@@ -97,7 +101,7 @@ const RequestListItem = ({
         {/*  </div>*/}
         {/*</div>*/}
         <div className="w-16 text-gray-500 dark:text-dark-tremor-content text-center text-xs hidden [@container(min-width:520px)]:inline">
-          {formatDuration(operation?.timing?.duration)}
+          {formatDuration(operation?.duration ?? operation?.timing?.duration)}
         </div>
         <button
           className="w-8 h-8 flex items-center justify-center cursor-pointer text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
