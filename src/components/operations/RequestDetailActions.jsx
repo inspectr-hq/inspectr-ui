@@ -255,7 +255,7 @@ export default function RequestDetailActions({
                 onClick={() => onReplayTargetChange?.('original')}
               >
                 {isOriginalReplay ? <CheckIcon /> : null}
-                Replay to original host
+                Replay to host
               </button>
             </MenuItem>
             <MenuItem disabled={!hasProxy}>
