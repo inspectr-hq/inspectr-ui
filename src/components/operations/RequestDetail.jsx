@@ -38,7 +38,7 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
   const [localTagsRaw, setLocalTagsRaw] = useState(() => operation?.meta?.tags || []);
   useEffect(() => {
     setLocalTagsRaw(operation?.meta?.tags || []);
-  }, [operation?.id]);
+  }, [operation?.id, operation?.operation_id, operation?.meta?.tags]);
 
   // Delete tag dialog state
   const [pendingTag, setPendingTag] = useState(null);
@@ -210,7 +210,7 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
 
   const handleConfirmDeleteTag = async () => {
     if (!pendingTag) return;
-    const opId = operation?.id;
+    const opId = operation?.operation_id ?? operation?.id;
     if (!client?.operations || !opId) {
       setDeleteTagError('Operation or client not available');
       return;
