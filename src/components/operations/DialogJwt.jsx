@@ -17,7 +17,7 @@ const DialogJwt = ({ open, onClose, decoded }) => {
       <div className="absolute inset-0 bg-black opacity-50" onClick={onClose}></div>
 
       {/* Dialog panel */}
-      <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 p-6 z-10">
+      <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 p-6 z-10 flex flex-col max-h-[94vh] overflow-hidden">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <div className="flex-shrink-0 bg-blue-100 rounded-full p-2">
@@ -77,28 +77,30 @@ const DialogJwt = ({ open, onClose, decoded }) => {
             &times;
           </button>
         </div>
-        <div className="relative mt-4">
+        <div className="relative mt-4 flex-1 min-h-0">
           <div className="absolute top-2 right-2 z-10">
             <CopyButton textToCopy={jwtText} />
           </div>
-          <pre className="bg-gray-100 p-2 rounded text-xs text-gray-700 overflow-x-auto">
-            {jwtText}
-          </pre>
-          {decoded && (
-            <div className="mt-2 text-sm text-gray-600">
-              {decoded?.payload?.iat && (
-                <p>Issued At (iat): {formatTimestamp(decoded.payload.iat)}</p>
-              )}
-              {decoded?.payload?.nbf && (
-                <p>Not Before (nbf): {formatTimestamp(decoded.payload.nbf)}</p>
-              )}
-              {decoded?.payload?.exp && (
-                <p>Expires At (exp): {formatTimestamp(decoded.payload.exp)}</p>
-              )}
-            </div>
-          )}
+          <div className="flex h-full flex-col">
+            <pre className="bg-gray-100 p-2 rounded text-xs text-gray-700 overflow-x-auto overflow-y-auto max-h-[70vh]">
+              {jwtText}
+            </pre>
+            {decoded && (
+              <div className="mt-2 text-sm text-gray-600">
+                {decoded?.payload?.iat && (
+                  <p>Issued At (iat): {formatTimestamp(decoded.payload.iat)}</p>
+                )}
+                {decoded?.payload?.nbf && (
+                  <p>Not Before (nbf): {formatTimestamp(decoded.payload.nbf)}</p>
+                )}
+                {decoded?.payload?.exp && (
+                  <p>Expires At (exp): {formatTimestamp(decoded.payload.exp)}</p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="mt-6 flex justify-end">
+        <div className="mt-4 flex justify-end">
           <button
             onClick={onClose}
             className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
