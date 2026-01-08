@@ -52,6 +52,46 @@ const RequestListSidePanel = ({
   const handleResetFilters = () => {
     setFilters({});
   };
+  const handleResetTimeFilters = () => {
+    setFilters((prev) => ({
+      ...prev,
+      timestampRange: undefined,
+      customStart: undefined,
+      customEnd: undefined
+    }));
+  };
+  const handleResetHttpFilters = () => {
+    setFilters((prev) => ({
+      ...prev,
+      status: [],
+      method: [],
+      path: ''
+    }));
+  };
+  const handleResetTagFilters = () => {
+    setFilters((prev) => ({
+      ...prev,
+      tags: []
+    }));
+  };
+  const handleResetMcpFilters = () => {
+    setFilters((prev) => ({
+      ...prev,
+      mcpTool: [],
+      mcpResource: [],
+      mcpPrompt: [],
+      mcpCategory: [],
+      mcpMethod: []
+    }));
+  };
+  const handleResetTimingFilters = () => {
+    setFilters((prev) => ({
+      ...prev,
+      durationMin: '',
+      durationMax: '',
+      host: ''
+    }));
+  };
 
   // Handle preset time range change
   const handlePresetTimeRangeChange = (e) => {
@@ -93,7 +133,7 @@ const RequestListSidePanel = ({
       )}
 
       <div
-        className={`fixed top-0 left-0 h-full w-[400px] max-w-full bg-white dark:bg-dark-tremor-background shadow-xl dark:shadow-dark-tremor-shadow transform transition-transform duration-300 flex flex-col
+        className={`fixed top-0 left-0 h-full w-[420px] max-w-full bg-white dark:bg-dark-tremor-background shadow-xl dark:shadow-dark-tremor-shadow transform transition-transform duration-300 flex flex-col
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}
         style={{ zIndex: 9999 }}
@@ -218,9 +258,17 @@ const RequestListSidePanel = ({
             </div>
             <div className="space-y-6 pt-4">
               <div className="space-y-4">
-                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-dark-tremor-content-subtle">
-                  Time
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-dark-tremor-content-subtle">
+                    Time
+                  </h4>
+                  <button
+                    onClick={handleResetTimeFilters}
+                    className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                </div>
                 {/* Time Range Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
@@ -277,9 +325,17 @@ const RequestListSidePanel = ({
               </div>
 
               <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-dark-tremor-border">
-                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-dark-tremor-content-subtle">
-                  HTTP
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-dark-tremor-content-subtle">
+                    HTTP
+                  </h4>
+                  <button
+                    onClick={handleResetHttpFilters}
+                    className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                </div>
                 {/* Status Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
@@ -324,9 +380,17 @@ const RequestListSidePanel = ({
               </div>
 
               <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-dark-tremor-border">
-                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-dark-tremor-content-subtle">
-                  Tags
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-dark-tremor-content-subtle">
+                    Tags
+                  </h4>
+                  <button
+                    onClick={handleResetTagFilters}
+                    className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                </div>
                 {/* Tags Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
@@ -348,9 +412,17 @@ const RequestListSidePanel = ({
                 showMcpCategoryFilter ||
                 showMcpMethodFilter ? (
                   <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-dark-tremor-border">
-                    <h5 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-dark-tremor-content-subtle">
-                      MCP
-                    </h5>
+                    <div className="flex items-center justify-between">
+                      <h5 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-dark-tremor-content-subtle">
+                        MCP
+                      </h5>
+                      <button
+                        onClick={handleResetMcpFilters}
+                        className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                      >
+                        Reset
+                      </button>
+                    </div>
 
                     {/* MCP Tool Filter */}
                     {showMcpToolFilter && (
@@ -406,24 +478,6 @@ const RequestListSidePanel = ({
                       </div>
                     )}
 
-                    {/* MCP Category Filter */}
-                    {showMcpCategoryFilter && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
-                          MCP Category
-                        </label>
-                        <TagsInput
-                          options={mcpCategoryOptions}
-                          selected={filters.mcpCategory || []}
-                          onChange={(selectedCategories) =>
-                            setFilters((prev) => ({ ...prev, mcpCategory: selectedCategories }))
-                          }
-                          placeholder="Add MCP category..."
-                          colorFn={getMcpTagClass}
-                        />
-                      </div>
-                    )}
-
                     {/* MCP Method Filter */}
                     {showMcpMethodFilter && (
                       <div>
@@ -441,14 +495,40 @@ const RequestListSidePanel = ({
                         />
                       </div>
                     )}
+
+                    {/* MCP Category Filter */}
+                    {showMcpCategoryFilter && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
+                          MCP Category
+                        </label>
+                        <TagsInput
+                          options={mcpCategoryOptions}
+                          selected={filters.mcpCategory || []}
+                          onChange={(selectedCategories) =>
+                            setFilters((prev) => ({ ...prev, mcpCategory: selectedCategories }))
+                          }
+                          placeholder="Add MCP category..."
+                          colorFn={getMcpTagClass}
+                        />
+                      </div>
+                    )}
                   </div>
                 ) : null}
               </div>
 
               <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-dark-tremor-border">
-                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-dark-tremor-content-subtle">
-                  Timing & Host
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-dark-tremor-content-subtle">
+                    Timing & Host
+                  </h4>
+                  <button
+                    onClick={handleResetTimingFilters}
+                    className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                </div>
                 {/* Duration (Latency) Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">

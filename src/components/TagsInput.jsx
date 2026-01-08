@@ -93,7 +93,7 @@ const TagsInput = ({
         <input
           ref={inputRef}
           type="text"
-          className="flex-grow outline-none p-1 text-gray-900 dark:text-dark-tremor-content placeholder-gray-400 dark:placeholder-dark-tremor-content-subtle bg-transparent dark:bg-dark-tremor-background-subtle border-0"
+          className="flex-grow outline-none p-1 text-sm text-gray-900 dark:text-dark-tremor-content placeholder-gray-400 dark:placeholder-dark-tremor-content-subtle bg-transparent dark:bg-dark-tremor-background-subtle border-0"
           placeholder={selected.length > 0 ? '' : placeholder}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
