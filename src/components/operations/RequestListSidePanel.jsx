@@ -33,17 +33,14 @@ const RequestListSidePanel = ({
     const color = getMcpMethodColor(value);
     return mcpColorClasses[color] || mcpColorClasses.slate;
   };
-  const getFixedMcpTagClass = (color) => () =>
-    mcpColorClasses[color] || mcpColorClasses.slate;
+  const getFixedMcpTagClass = (color) => () => mcpColorClasses[color] || mcpColorClasses.slate;
   const showMcpToolFilter = mcpToolOptions.length > 0 || (filters.mcpTool || []).length > 0;
   const showMcpResourceFilter =
     mcpResourceOptions.length > 0 || (filters.mcpResource || []).length > 0;
-  const showMcpPromptFilter =
-    mcpPromptOptions.length > 0 || (filters.mcpPrompt || []).length > 0;
+  const showMcpPromptFilter = mcpPromptOptions.length > 0 || (filters.mcpPrompt || []).length > 0;
   const showMcpCategoryFilter =
     mcpCategoryOptions.length > 0 || (filters.mcpCategory || []).length > 0;
-  const showMcpMethodFilter =
-    mcpMethodOptions.length > 0 || (filters.mcpMethod || []).length > 0;
+  const showMcpMethodFilter = mcpMethodOptions.length > 0 || (filters.mcpMethod || []).length > 0;
 
   // Reset sort options
   const handleResetSort = () => {
