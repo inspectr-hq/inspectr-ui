@@ -145,6 +145,16 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
 
   const tagOptions =
     useLiveQuery(() => eventDB.getAllTagOptions(), [], [], { throttle: 300 }) || [];
+  const mcpToolOptions =
+    useLiveQuery(() => eventDB.getAllMcpToolOptions(), [], [], { throttle: 300 }) || [];
+  const mcpResourceOptions =
+    useLiveQuery(() => eventDB.getAllMcpResourceOptions(), [], [], { throttle: 300 }) || [];
+  const mcpPromptOptions =
+    useLiveQuery(() => eventDB.getAllMcpPromptOptions(), [], [], { throttle: 300 }) || [];
+  const mcpCategoryOptions =
+    useLiveQuery(() => eventDB.getAllMcpCategoryOptions(), [], [], { throttle: 300 }) || [];
+  const mcpMethodOptions =
+    useLiveQuery(() => eventDB.getAllMcpMethodOptions(), [], [], { throttle: 300 }) || [];
 
   // Count unread events newer than lastSeenAt
   const latestEventTime =
@@ -381,6 +391,11 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
             syncOperations={syncOperations}
             isSyncing={isSyncing}
             tagOptions={tagOptions}
+            mcpToolOptions={mcpToolOptions}
+            mcpResourceOptions={mcpResourceOptions}
+            mcpPromptOptions={mcpPromptOptions}
+            mcpCategoryOptions={mcpCategoryOptions}
+            mcpMethodOptions={mcpMethodOptions}
           />
         </div>
         <div
