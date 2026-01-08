@@ -156,63 +156,55 @@ const RequestListSidePanel = ({
         <div className="p-4 overflow-y-auto flex-1 min-h-0">
           {/* Sort Section */}
           <section className="mb-6">
-            <div className="flex items-center justify-between pb-2">
-              <h3 className="text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
-                Sort By
-              </h3>
-              <button
-                onClick={handleResetSort}
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-              >
-                Reset
-              </button>
-            </div>
-            <div className="space-y-2">
-              <label className="flex items-center text-xs">
-                <input
-                  type="radio"
-                  name="sortField"
-                  value="time"
-                  checked={sortField === 'time'}
-                  onChange={(e) => setSortField(e.target.value)}
-                  className="form-radio text-blue-600 dark:text-blue-500 h-3 w-3"
-                />
-                <span className="ml-2 text-xs text-gray-700 dark:text-dark-tremor-content">
-                  Timestamp
-                </span>
-              </label>
-              <label className="flex items-center text-xs">
-                <input
-                  type="radio"
-                  name="sortField"
-                  value="status_code"
-                  checked={sortField === 'status_code'}
-                  onChange={(e) => setSortField(e.target.value)}
-                  className="form-radio text-blue-600 dark:text-blue-500 h-3 w-3"
-                />
-                <span className="ml-2 text-xs text-gray-700 dark:text-dark-tremor-content">
-                  Status
-                </span>
-              </label>
-              <label className="flex items-center text-xs">
-                <input
-                  type="radio"
-                  name="sortField"
-                  value="method"
-                  checked={sortField === 'method'}
-                  onChange={(e) => setSortField(e.target.value)}
-                  className="form-radio text-blue-600 dark:text-blue-500 h-3 w-3"
-                />
-                <span className="ml-2 text-xs text-gray-700 dark:text-dark-tremor-content">
-                  Method
-                </span>
-              </label>
-            </div>
-            <div className="mt-4">
-              <h4 className="mb-2 text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
-                Sort Direction
-              </h4>
-              <div className="space-y-2">
+            <div className="grid grid-cols-[1fr_1fr_auto]  gap-4">
+              <div className="space-y-2 pt-1">
+                <h3 className="text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
+                  Sort By
+                </h3>
+                <label className="flex items-center text-xs">
+                  <input
+                    type="radio"
+                    name="sortField"
+                    value="time"
+                    checked={sortField === 'time'}
+                    onChange={(e) => setSortField(e.target.value)}
+                    className="form-radio text-blue-600 dark:text-blue-500 h-3 w-3"
+                  />
+                  <span className="ml-2 text-xs text-gray-700 dark:text-dark-tremor-content">
+                    Timestamp
+                  </span>
+                </label>
+                <label className="flex items-center text-xs">
+                  <input
+                    type="radio"
+                    name="sortField"
+                    value="status_code"
+                    checked={sortField === 'status_code'}
+                    onChange={(e) => setSortField(e.target.value)}
+                    className="form-radio text-blue-600 dark:text-blue-500 h-3 w-3"
+                  />
+                  <span className="ml-2 text-xs text-gray-700 dark:text-dark-tremor-content">
+                    Status
+                  </span>
+                </label>
+                <label className="flex items-center text-xs">
+                  <input
+                    type="radio"
+                    name="sortField"
+                    value="method"
+                    checked={sortField === 'method'}
+                    onChange={(e) => setSortField(e.target.value)}
+                    className="form-radio text-blue-600 dark:text-blue-500 h-3 w-3"
+                  />
+                  <span className="ml-2 text-xs text-gray-700 dark:text-dark-tremor-content">
+                    Method
+                  </span>
+                </label>
+              </div>
+              <div className="space-y-2 pt-1">
+                <h3 className="text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
+                  Sort Direction
+                </h3>
                 <label className="flex items-center text-xs">
                   <input
                     type="radio"
@@ -239,6 +231,14 @@ const RequestListSidePanel = ({
                     Descending
                   </span>
                 </label>
+              </div>
+              <div className="space-y-2">
+                <button
+                  onClick={handleResetSort}
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                >
+                  Reset
+                </button>
               </div>
             </div>
           </section>
