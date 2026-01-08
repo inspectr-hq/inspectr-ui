@@ -93,7 +93,7 @@ const RequestListSidePanel = ({
       )}
 
       <div
-        className={`fixed top-0 left-0 h-full w-100 bg-white dark:bg-dark-tremor-background shadow-xl dark:shadow-dark-tremor-shadow transform transition-transform duration-300
+        className={`fixed top-0 left-0 h-full w-100 bg-white dark:bg-dark-tremor-background shadow-xl dark:shadow-dark-tremor-shadow transform transition-transform duration-300 flex flex-col
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}
         style={{ zIndex: 9999 }}
@@ -113,7 +113,7 @@ const RequestListSidePanel = ({
         </div>
 
         {/* Panel Content */}
-        <div className="p-4 overflow-y-auto h-full">
+        <div className="p-4 overflow-y-auto flex-1 min-h-0">
           {/* Sort Section */}
           <section className="mb-6">
             <div className="flex items-center justify-between">
