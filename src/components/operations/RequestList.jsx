@@ -34,7 +34,9 @@ const RequestList = ({
   mcpCategoryOptions = [],
   mcpMethodOptions = [],
   persistFilters = false,
-  onPersistFiltersChange
+  onPersistFiltersChange,
+  persistSort = false,
+  onPersistSortChange
 }) => {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -273,6 +275,8 @@ const RequestList = ({
         mcpMethodOptions={mcpMethodOptions}
         persistFilters={persistFilters}
         onPersistFiltersChange={onPersistFiltersChange}
+        persistSort={persistSort}
+        onPersistSortChange={onPersistSortChange}
       />
 
       {/* Clear All Dialog */}

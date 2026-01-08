@@ -36,8 +36,14 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
   const leftPanelWidth = parseFloat(leftPanelWidthValue || LEFT_PANEL_WIDTH);
   const isResizingRef = useRef(false);
 
-  const [sortField, setSortField] = useState('time');
-  const [sortDirection, setSortDirection] = useState('desc');
+  const [persistSortValue, setPersistSortValue] = useLocalStorage('persistSortOnReload', 'false');
+  const persistSort = persistSortValue === 'true';
+  const [sortField, setSortField] = useSessionStorage('requestSortField', 'time', {
+    resetOnReload: !persistSort
+  });
+  const [sortDirection, setSortDirection] = useSessionStorage('requestSortDirection', 'desc', {
+    resetOnReload: !persistSort
+  });
   const [persistFiltersValue, setPersistFiltersValue] = useLocalStorage(
     'persistFiltersOnReload',
     'false'
@@ -401,6 +407,8 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
             mcpMethodOptions={mcpMethodOptions}
             persistFilters={persistFilters}
             onPersistFiltersChange={setPersistFiltersValue}
+            persistSort={persistSort}
+            onPersistSortChange={setPersistSortValue}
           />
         </div>
         <div

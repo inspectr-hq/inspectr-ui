@@ -22,7 +22,9 @@ const RequestListSidePanel = ({
   mcpCategoryOptions = [],
   mcpMethodOptions = [],
   persistFilters = false,
-  onPersistFiltersChange
+  onPersistFiltersChange,
+  persistSort = false,
+  onPersistSortChange
 }) => {
   const mcpColorClasses = {
     blue: 'bg-blue-500/10 text-blue-700 dark:bg-blue-500/5 dark:text-blue-200',
@@ -158,11 +160,33 @@ const RequestListSidePanel = ({
         <div className="p-4 overflow-y-auto flex-1 min-h-0">
           {/* Sort Section */}
           <section className="mb-6">
-            <div className="grid grid-cols-[1fr_1fr_auto]  gap-4">
-              <div className="space-y-2 pt-1">
-                <h3 className="text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
-                  Sort By
-                </h3>
+            <div className="flex items-center justify-between pb-2 border-b border-gray-200 dark:border-dark-tremor-border">
+              <h3 className="text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
+                Sorting
+              </h3>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 text-[11px] text-gray-600 dark:text-dark-tremor-content">
+                  <input
+                    type="checkbox"
+                    checked={persistSort}
+                    onChange={(e) => onPersistSortChange?.(e.target.checked ? 'true' : 'false')}
+                    className="h-3 w-3 text-blue-600 dark:text-blue-500"
+                  />
+                  Keep on reload
+                </label>
+                <button
+                  onClick={handleResetSort}
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 pt-4">
+              <div className="space-y-2">
+                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-dark-tremor-content-subtle">
+                  By field
+                </h4>
                 <label className="flex items-center text-xs">
                   <input
                     type="radio"
@@ -203,10 +227,10 @@ const RequestListSidePanel = ({
                   </span>
                 </label>
               </div>
-              <div className="space-y-2 pt-1">
-                <h3 className="text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
-                  Sort Direction
-                </h3>
+              <div className="space-y-2">
+                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-dark-tremor-content-subtle">
+                  Direction
+                </h4>
                 <label className="flex items-center text-xs">
                   <input
                     type="radio"
@@ -233,14 +257,6 @@ const RequestListSidePanel = ({
                     Descending
                   </span>
                 </label>
-              </div>
-              <div className="space-y-2">
-                <button
-                  onClick={handleResetSort}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                >
-                  Reset
-                </button>
               </div>
             </div>
           </section>
