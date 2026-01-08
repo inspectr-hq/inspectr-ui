@@ -20,7 +20,9 @@ const RequestListSidePanel = ({
   mcpResourceOptions = [],
   mcpPromptOptions = [],
   mcpCategoryOptions = [],
-  mcpMethodOptions = []
+  mcpMethodOptions = [],
+  persistFilters = false,
+  onPersistFiltersChange
 }) => {
   const mcpColorClasses = {
     blue: 'bg-blue-500/10 text-blue-700 dark:bg-blue-500/5 dark:text-blue-200',
@@ -249,12 +251,23 @@ const RequestListSidePanel = ({
               <h3 className="text-xs font-bold text-gray-600 dark:text-dark-tremor-content uppercase tracking-wide">
                 Filters
               </h3>
-              <button
-                onClick={handleResetFilters}
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-              >
-                Reset
-              </button>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 text-[11px] text-gray-600 dark:text-dark-tremor-content">
+                  <input
+                    type="checkbox"
+                    checked={persistFilters}
+                    onChange={(e) => onPersistFiltersChange?.(e.target.checked ? 'true' : 'false')}
+                    className="h-3 w-3 text-blue-600 dark:text-blue-500"
+                  />
+                  Keep on reload
+                </label>
+                <button
+                  onClick={handleResetFilters}
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                >
+                  Reset
+                </button>
+              </div>
             </div>
             <div className="space-y-6 pt-4">
               <div className="space-y-4">
