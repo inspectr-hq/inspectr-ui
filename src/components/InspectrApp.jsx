@@ -38,11 +38,14 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
 
   const [sortField, setSortField] = useState('time');
   const [sortDirection, setSortDirection] = useState('desc');
-  const [filters, setFilters] = useSessionStorage(
-    FILTER_STORAGE_KEY,
-    DEFAULT_FILTERS,
-    SESSION_FILTER_OPTIONS
+  const [persistFiltersValue, setPersistFiltersValue] = useLocalStorage(
+    'persistFiltersOnReload',
+    'false'
   );
+  const persistFilters = persistFiltersValue === 'true';
+  const [filters, setFilters] = useSessionStorage(FILTER_STORAGE_KEY, DEFAULT_FILTERS, {
+    resetOnReload: !persistFilters
+  });
   const hasAppliedRouteParams = useRef(false);
   const parseListParam = (value) =>
     String(value)
@@ -396,6 +399,8 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
             mcpPromptOptions={mcpPromptOptions}
             mcpCategoryOptions={mcpCategoryOptions}
             mcpMethodOptions={mcpMethodOptions}
+            persistFilters={persistFilters}
+            onPersistFiltersChange={setPersistFiltersValue}
           />
         </div>
         <div
