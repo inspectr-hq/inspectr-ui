@@ -1,8 +1,10 @@
 // src/components/JsonPathPicker.jsx
-import React, { useEffect, useId, useMemo, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { JSONPath } from 'jsonpath-plus';
 import { inspectrJsonPathTree, flattenJsonPathTree } from '../utils/inspectrJsonPaths';
 import useRecentOperations from '../hooks/useRecentOperations.jsx';
+import useOperationDetails from '../hooks/useOperationDetails.jsx';
+import { useInspectr } from '../context/InspectrContext.jsx';
 
 const parseJsonSafely = (value) => {
   if (typeof value !== 'string') return value;
@@ -100,10 +102,15 @@ export default function JsonPathPicker({
   const [previewMatchesCount, setPreviewMatchesCount] = useState(0);
   const [previewError, setPreviewError] = useState('');
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [previewOperationDetails, setPreviewOperationDetails] = useState({});
+  const previewDetailsRequestIdRef = useRef(0);
 
   const trimmedValue = typeof value === 'string' ? value.trim() : '';
 
   const { results: recentOperations } = useRecentOperations(8);
+  const { client } = useInspectr();
+  const { detailOperation, isFetching: isFetchingOperation } =
+    useOperationDetails(selectedOperationId);
 
   const flatOptions = useMemo(() => flattenJsonPathTree(inspectrJsonPathTree), []);
 
@@ -137,6 +144,39 @@ export default function JsonPathPicker({
   }, [enablePreview, isPreviewOpen, recentOperations]);
 
   useEffect(() => {
+    if (!enablePreview || !isPreviewOpen) return;
+    if (!client?.operations?.getOperation) return;
+    if (!recentOperations.length) return;
+
+    const ids = recentOperations.map((operation) => operation?.id).filter(Boolean);
+    if (!ids.length) return;
+
+    const missingIds = ids.filter((id) => !previewOperationDetails[id]);
+    if (!missingIds.length) return;
+
+    const requestId = ++previewDetailsRequestIdRef.current;
+    const loadDetails = async () => {
+      const results = await Promise.allSettled(
+        missingIds.map((id) => client.operations.getOperation(id))
+      );
+      if (previewDetailsRequestIdRef.current !== requestId) return;
+      setPreviewOperationDetails((prev) => {
+        const next = { ...prev };
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            const op = result.value;
+            const id = missingIds[index];
+            next[id] = op;
+          }
+        });
+        return next;
+      });
+    };
+
+    loadDetails().catch(() => {});
+  }, [enablePreview, isPreviewOpen, recentOperations, client, previewOperationDetails]);
+
+  useEffect(() => {
     if (!enablePreview) return;
     if (!isPreviewOpen) return;
 
@@ -156,7 +196,8 @@ export default function JsonPathPicker({
       return;
     }
 
-    const operation = recentOperations.find((item) => item.id === selectedOperationId);
+    const operation =
+      detailOperation || recentOperations.find((item) => item.id === selectedOperationId);
 
     if (!operation) {
       setPreviewResult(null);
@@ -190,7 +231,14 @@ export default function JsonPathPicker({
     } finally {
       setIsEvaluating(false);
     }
-  }, [enablePreview, isPreviewOpen, trimmedValue, selectedOperationId, recentOperations]);
+  }, [
+    enablePreview,
+    isPreviewOpen,
+    trimmedValue,
+    selectedOperationId,
+    recentOperations,
+    detailOperation
+  ]);
 
   useEffect(() => {
     if (!enablePreview) {
@@ -223,7 +271,7 @@ export default function JsonPathPicker({
       );
     }
 
-    if (isEvaluating) {
+    if (isEvaluating || isFetchingOperation) {
       return <p className="text-xs text-gray-500 dark:text-gray-400">Evaluating JSON path…</p>;
     }
 
@@ -258,7 +306,7 @@ export default function JsonPathPicker({
             Found {previewMatchesCount} matches.
           </p>
         )}
-        <pre className="max-h-64 overflow-auto rounded-md border border-gray-200 bg-gray-50 p-3 text-xs text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
+        <pre className="max-h-64 overflow-x-auto overflow-y-auto whitespace-pre rounded-md border border-gray-200 bg-gray-50 p-3 text-xs text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
           {formatted}
         </pre>
       </div>
@@ -266,12 +314,17 @@ export default function JsonPathPicker({
   };
 
   const previewOperationOptions = recentOperations.map((operation) => {
-    const method = operation?.request?.method || 'GET';
-    const path = operation?.request?.path || operation?.request?.url || 'Unknown path';
-    const status = operation?.response?.status;
-    const timestamp = operation?.request?.timestamp
-      ? new Date(operation.request.timestamp).toLocaleString()
-      : 'Unknown time';
+    const detail = previewOperationDetails[operation?.id] || operation;
+    const method = detail?.request?.method || detail?.method || 'GET';
+    const path =
+      detail?.request?.path ||
+      detail?.request?.url ||
+      detail?.path ||
+      detail?.url ||
+      'Unknown path';
+    const status = detail?.response?.status ?? detail?.status_code;
+    const timestampValue = detail?.request?.timestamp || detail?.time;
+    const timestamp = timestampValue ? new Date(timestampValue).toLocaleString() : 'Unknown time';
     const statusLabel = status ? `${status}` : 'N/A';
     return {
       id: operation.id,
