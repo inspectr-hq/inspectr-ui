@@ -300,15 +300,17 @@ export default function JsonPathPicker({
     })();
 
     return (
-      <div className="space-y-2">
+      <div className="min-w-0 space-y-2">
         {previewMatchesCount > 1 && (
           <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
             Found {previewMatchesCount} matches.
           </p>
         )}
-        <pre className="max-h-64 overflow-x-auto overflow-y-auto whitespace-pre rounded-md border border-gray-200 bg-gray-50 p-3 text-xs text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
-          {formatted}
-        </pre>
+        <div className="w-full min-w-0 max-w-full">
+          <pre className="max-h-64 w-full max-w-full overflow-y-auto whitespace-pre-wrap break-all rounded-md border border-gray-200 bg-gray-50 p-3 text-xs text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
+            {formatted}
+          </pre>
+        </div>
       </div>
     );
   };
