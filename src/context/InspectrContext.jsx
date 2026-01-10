@@ -373,7 +373,53 @@ export const InspectrProvider = ({ children }) => {
       if (debugMode) console.log('📡️ SSE connection opened.');
     };
 
-    eventSource.onmessage = (e) => {
+    // SSE sync event handlers
+    const handleSyncEvent = (e) => {
+      try {
+        if (!e.data || e.data.trim() === '') {
+          if (debugMode) console.warn('Received empty sync event data, skipping');
+          return;
+        }
+        const event = JSON.parse(e.data);
+        if (debugMode) console.log('[Inspectr] Received sync event:', event);
+
+        if (event?.type !== 'dev.inspectr.platform.sse.v1.sync_complete') {
+          return;
+        }
+
+        // ========================================================================================
+        // sync_complete event
+        // ========================================================================================
+        const activeSyncId = syncRunIdRef.current;
+        syncRunIdRef.current = null;
+        const flushAndPrune = async () => {
+          const syncedCount = Number(event?.data?.record_count || 0);
+          if (burstBufferRef.current.length) {
+            const buffered = burstBufferRef.current;
+            burstBufferRef.current = [];
+            burstCountRef.current = 0;
+            burstStartRef.current = performance.now();
+            await eventDB.bulkUpsertEvents(buffered);
+          }
+          if (debugMode) {
+            console.log(`[Inspectr] Sync complete: ${syncedCount} synced`);
+          }
+          if (activeSyncId) {
+            const deletedCount = await eventDB.removeEventsNotSynced(activeSyncId);
+            if (debugMode) {
+              console.log(`[Inspectr] Sync cleanup: ${deletedCount} removed`);
+            }
+          }
+        };
+
+        flushAndPrune().catch((err) => console.error('Failed to finalize sync pruning', err));
+      } catch (err) {
+        console.error('Error parsing SSE sync event:', err);
+      }
+    };
+
+    // SSE message/operation event handlers
+    const handleMessageEvent = (e) => {
       try {
         const now = performance.now();
         if (now - burstStartRef.current > BURST_WINDOW_MS) {
@@ -390,37 +436,7 @@ export const InspectrProvider = ({ children }) => {
         if (debugMode) console.log('[Inspectr] Received event:', event);
 
         // ========================================================================================
-        // sync_complete event
-        // ========================================================================================
-        if (event?.type === 'dev.inspectr.operation.sse.v1.sync_complete') {
-          const activeSyncId = syncRunIdRef.current;
-          syncRunIdRef.current = null;
-          const flushAndPrune = async () => {
-            const syncedCount = Number(event?.data?.record_count || 0);
-            if (burstBufferRef.current.length) {
-              const buffered = burstBufferRef.current;
-              burstBufferRef.current = [];
-              burstCountRef.current = 0;
-              burstStartRef.current = performance.now();
-              await eventDB.bulkUpsertEvents(buffered);
-            }
-            if (debugMode) {
-              console.log(`[Inspectr] Sync complete: ${syncedCount} synced`);
-            }
-            if (activeSyncId) {
-              const deletedCount = await eventDB.removeEventsNotSynced(activeSyncId);
-              if (debugMode) {
-                console.log(`[Inspectr] Sync cleanup: ${deletedCount} removed`);
-              }
-            }
-          };
-          // Cleanup ghost events
-          flushAndPrune().catch((err) => console.error('Failed to finalize sync pruning', err));
-          return;
-        }
-
-        // ========================================================================================
-        // Operation event
+        // operation event
         // ========================================================================================
         // Normalize IDs and maintain lastEventId when operation_id present
         if (event.operation_id) {
@@ -459,6 +475,11 @@ export const InspectrProvider = ({ children }) => {
       }
     };
 
+    // SSE event listener registration
+    eventSource.onmessage = handleMessageEvent;
+    eventSource.addEventListener('sync', handleSyncEvent);
+
+    // SSE error handler
     eventSource.onerror = (err) => {
       console.error('❌ SSE connection error:', err);
       setConnectionStatus('reconnecting');
