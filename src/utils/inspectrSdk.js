@@ -595,6 +595,79 @@ class OperationsClient {
   }
 
   /**
+   * List operations with pagination support.
+   * Server endpoint: GET /operations
+   * @param {Object} [options]
+   * @param {string} [options.operationId]
+   * @param {string|Date} [options.since]
+   * @param {string|Date} [options.until]
+   * @param {string} [options.sortField]
+   * @param {string} [options.sortDirection]
+   * @param {number} [options.page]
+   * @param {number} [options.limit]
+   * @param {string|number} [options.status]
+   * @param {Array<string|number>} [options.statuses]
+   * @param {string} [options.method]
+   * @param {string[]} [options.methods]
+   * @param {string} [options.path]
+   * @param {string} [options.host]
+   * @param {number} [options.minDuration]
+   * @param {number} [options.maxDuration]
+   * @param {string} [options.tag]
+   * @param {string[]} [options.tags]
+   * @param {string} [options.tagAny]
+   * @param {string[]} [options.tagsAny]
+   * @returns {Promise<Object>} Operations response
+   */
+  async list(options = {}) {
+    const qs = new URLSearchParams();
+
+    const toISOString = (value) => {
+      if (value === undefined || value === null || value === '') return undefined;
+      if (value instanceof Date) return value.toISOString();
+      return String(value);
+    };
+
+    const setParam = (key, value) => {
+      if (value === undefined || value === null || value === '') return;
+      if (Array.isArray(value)) {
+        if (!value.length) return;
+        qs.set(key, value.map((item) => String(item)).join(','));
+        return;
+      }
+      qs.set(key, String(value));
+    };
+
+    setParam('operation_id', options.operationId);
+    setParam('since', toISOString(options.since));
+    setParam('until', toISOString(options.until));
+    setParam('sort_field', options.sortField);
+    setParam('sort_direction', options.sortDirection);
+    setParam('page', options.page);
+    setParam('limit', options.limit);
+    setParam('filter[status]', options.status);
+    setParam('filter[statuses]', options.statuses);
+    setParam('filter[method]', options.method);
+    setParam('filter[methods]', options.methods);
+    setParam('filter[path]', options.path);
+    setParam('filter[host]', options.host);
+    setParam('min_duration', options.minDuration);
+    setParam('max_duration', options.maxDuration);
+    setParam('filter[tag]', options.tag);
+    setParam('filter[tags]', options.tags);
+    setParam('filter[tag_any]', options.tagAny);
+    setParam('filter[tags_any]', options.tagsAny);
+
+    const query = qs.toString();
+    const url = `${this.client.apiEndpoint}/operations${query ? `?${query}` : ''}`;
+    const res = await fetch(url, {
+      headers: { ...this.client.defaultHeaders, Accept: 'application/json' }
+    });
+    if (!res.ok) throw new Error(`List operations failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
    * Delete one or more tags from a specific operation.
    * Server endpoint: DELETE /operations/{id}/tags
    * Provide either a single tag via `tag` (string or string[]) and/or `tags` (string|string[])
