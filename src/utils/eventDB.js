@@ -81,6 +81,7 @@ class EventDB {
   // Helper method to transform a raw SSE event into a flattened record.
   transformEvent(event) {
     const { id, data, operation_id } = event;
+    const syncRunId = event?.__syncRunId;
     const normalizedTags = normalizeTags(data?.meta?.tags || []);
     const rawTags = Array.isArray(data?.meta?.tags) ? data.meta.tags : [];
     const mcpMeta = data?.meta?.mcp || data?.meta?.trace?.mcp || null;
@@ -117,6 +118,7 @@ class EventDB {
       mcp_prompt: mcpPrompt,
       mcp_category: mcpCategory,
       mcp_method: mcpMethod,
+      ...(syncRunId ? { last_synced_at: syncRunId } : {}),
       tagTokens: normalizedTags.map((tag) => tag.token),
       tags: normalizedTags.map((tag) => tag.display)
     };
@@ -411,6 +413,11 @@ class EventDB {
   // Clear all stored events.
   async clearEvents() {
     return await this.db.events.clear();
+  }
+
+  async removeEventsNotSynced(syncRunId) {
+    if (!syncRunId) return 0;
+    return await this.db.events.filter((item) => item.last_synced_at !== syncRunId).delete();
   }
 
   async getAllTagOptions() {

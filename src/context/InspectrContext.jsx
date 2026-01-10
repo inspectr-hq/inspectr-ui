@@ -337,6 +337,7 @@ export const InspectrProvider = ({ children }) => {
   const burstStartRef = useRef(0);
   const burstCountRef = useRef(0);
   const burstBufferRef = useRef([]);
+  const syncRunIdRef = useRef(null);
 
   const closeEventSource = () => {
     if (eventSourceRef.current) {
@@ -388,12 +389,49 @@ export const InspectrProvider = ({ children }) => {
         const event = JSON.parse(e.data);
         if (debugMode) console.log('[Inspectr] Received event:', event);
 
+        // ========================================================================================
+        // sync_complete event
+        // ========================================================================================
+        if (event?.type === 'dev.inspectr.operation.sse.v1.sync_complete') {
+          const activeSyncId = syncRunIdRef.current;
+          syncRunIdRef.current = null;
+          const flushAndPrune = async () => {
+            const syncedCount = Number(event?.data?.record_count || 0);
+            if (burstBufferRef.current.length) {
+              const buffered = burstBufferRef.current;
+              burstBufferRef.current = [];
+              burstCountRef.current = 0;
+              burstStartRef.current = performance.now();
+              await eventDB.bulkUpsertEvents(buffered);
+            }
+            if (debugMode) {
+              console.log(`[Inspectr] Sync complete: ${syncedCount} synced`);
+            }
+            if (activeSyncId) {
+              const deletedCount = await eventDB.removeEventsNotSynced(activeSyncId);
+              if (debugMode) {
+                console.log(`[Inspectr] Sync cleanup: ${deletedCount} pruned`);
+              }
+            }
+          };
+          // Cleanup ghost events
+          flushAndPrune().catch((err) => console.error('Failed to finalize sync pruning', err));
+          return;
+        }
+
+        // ========================================================================================
+        // Operation event
+        // ========================================================================================
         // Normalize IDs and maintain lastEventId when operation_id present
         if (event.operation_id) {
           event.id = event.operation_id;
           setLastEventId(event.operation_id);
         } else {
           event.id = event.id || `req-${Math.random().toString(36).slice(2, 11)}`;
+        }
+
+        if (syncRunIdRef.current) {
+          event.__syncRunId = syncRunIdRef.current;
         }
 
         if (burstCountRef.current < BURST_THRESHOLD) {
@@ -452,6 +490,7 @@ export const InspectrProvider = ({ children }) => {
       console.log('[Inspectr] Syncing all operations...');
     }
 
+    syncRunIdRef.current = Date.now();
     setLastEventId(SYNC_LAST_EVENT_ID);
     connect(SYNC_LAST_EVENT_ID);
   };
