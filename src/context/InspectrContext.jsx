@@ -410,7 +410,7 @@ export const InspectrProvider = ({ children }) => {
             if (activeSyncId) {
               const deletedCount = await eventDB.removeEventsNotSynced(activeSyncId);
               if (debugMode) {
-                console.log(`[Inspectr] Sync cleanup: ${deletedCount} pruned`);
+                console.log(`[Inspectr] Sync cleanup: ${deletedCount} removed`);
               }
             }
           };
