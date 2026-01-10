@@ -382,6 +382,19 @@ export default function RulesApp({ route }) {
     setEditingRuleId(null);
   };
 
+  const updateRuleEditHash = (ruleId) => {
+    if (typeof window === 'undefined') return;
+    const slug = route?.slug || 'rules';
+    const encodedId = encodeURIComponent(String(ruleId));
+    window.history.pushState(null, '', `#${slug}/${encodedId}/edit`);
+  };
+
+  const clearRuleEditHash = () => {
+    if (typeof window === 'undefined') return;
+    const slug = route?.slug || 'rules';
+    window.history.pushState(null, '', `#${slug}`);
+  };
+
   const closeBuilder = () => {
     const hashRoute = typeof window !== 'undefined' ? parseHash() : {};
     const routeRuleId = route?.operationId || hashRoute.operationId;
@@ -390,6 +403,9 @@ export default function RulesApp({ route }) {
       dismissedRouteEditRef.current = `${routeRuleId}:edit`;
     }
     setIsBuilderOpen(false);
+    if (routeSubTab === 'edit') {
+      clearRuleEditHash();
+    }
     resetForm();
   };
 
@@ -900,6 +916,9 @@ export default function RulesApp({ route }) {
     setFormErrors([]);
     setIsBuilderOpen(true);
     setOpenRuleId(rule.id || null);
+    if (rule?.id) {
+      updateRuleEditHash(rule.id);
+    }
   };
 
   const handleRequestDeleteRule = (rule) => {
