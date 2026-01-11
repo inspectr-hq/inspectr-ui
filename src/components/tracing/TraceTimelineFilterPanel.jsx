@@ -66,7 +66,7 @@ const TraceTimelineFilterPanel = ({
       )}
 
       <div
-        className={`fixed top-0 left-0 h-full w-[400px] max-w-full bg-white dark:bg-dark-tremor-background shadow-xl dark:shadow-dark-tremor-shadow transform transition-transform duration-300 flex flex-col
+        className={`fixed top-0 left-0 h-full w-[420px] max-w-full bg-white dark:bg-dark-tremor-background shadow-xl dark:shadow-dark-tremor-shadow transform transition-transform duration-300 flex flex-col
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}
         style={{ zIndex: 9999 }}
@@ -94,7 +94,7 @@ const TraceTimelineFilterPanel = ({
                 onClick={handleResetFilters}
                 className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
               >
-                Clear
+                Reset
               </button>
             </div>
 
