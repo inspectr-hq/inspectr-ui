@@ -71,7 +71,7 @@ const TraceTimelineFilterPanel = ({
       `}
         style={{ zIndex: 9999 }}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-300 dark:border-dark-tremor-border bg-gray-50 dark:bg-dark-tremor-background-subtle">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-300 dark:border-dark-tremor-border bg-gray-50 dark:bg-dark-tremor-background-subtle">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-dark-tremor-content-strong">
             Filters
           </h2>
@@ -116,7 +116,9 @@ const TraceTimelineFilterPanel = ({
                           'mcpResource',
                           'mcpPrompt',
                           'mcpMethod',
-                          'mcpCategory'
+                          'mcpCategory',
+                          'tokenMin',
+                          'tokenMax'
                         ])
                       }
                       className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
@@ -204,6 +206,31 @@ const TraceTimelineFilterPanel = ({
                       />
                     </div>
                   )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
+                      Total Tokens
+                    </label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="number"
+                        placeholder="Min"
+                        value={filters.tokenMin || ''}
+                        onChange={(e) =>
+                          setFilters((prev) => ({ ...prev, tokenMin: e.target.value }))
+                        }
+                        className="w-1/2 border border-gray-300 dark:border-dark-tremor-border bg-white dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Max"
+                        value={filters.tokenMax || ''}
+                        onChange={(e) =>
+                          setFilters((prev) => ({ ...prev, tokenMax: e.target.value }))
+                        }
+                        className="w-1/2 border border-gray-300 dark:border-dark-tremor-border bg-white dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
               ) : null}
 

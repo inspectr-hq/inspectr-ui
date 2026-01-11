@@ -132,6 +132,22 @@ export default function TraceTimelineMode({
       return normalizedFilterTokens.every((token) => recordTokens.includes(token));
     };
 
+    const getTokenTotal = (operation) => {
+      const meta =
+        operation?.meta?.mcp ||
+        operation?.raw?.meta?.mcp ||
+        operation?.meta?.trace?.mcp ||
+        operation?.raw?.meta?.trace?.mcp;
+      const tokens = meta?.tokens;
+      if (!tokens) return null;
+      const total = toFiniteNumber(tokens.total);
+      if (total !== null) return total;
+      const req = toFiniteNumber(tokens.request);
+      const res = toFiniteNumber(tokens.response);
+      if (req !== null || res !== null) return (req ?? 0) + (res ?? 0);
+      return null;
+    };
+
     return normalizedOperations.filter((operation) => {
       if (!operation) return false;
 
@@ -159,6 +175,18 @@ export default function TraceTimelineMode({
       if (filters.durationMax) {
         if (!Number.isFinite(operation.duration)) return false;
         if (Number(operation.duration) > Number(filters.durationMax)) return false;
+      }
+
+      if (filters.tokenMin) {
+        const total = getTokenTotal(operation);
+        if (total === null) return false;
+        if (total < Number(filters.tokenMin)) return false;
+      }
+
+      if (filters.tokenMax) {
+        const total = getTokenTotal(operation);
+        if (total === null) return false;
+        if (total > Number(filters.tokenMax)) return false;
       }
 
       if (filters.host && Array.isArray(filters.host) && filters.host.length > 0) {
