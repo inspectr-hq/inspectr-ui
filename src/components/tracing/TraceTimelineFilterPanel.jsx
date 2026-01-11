@@ -18,7 +18,8 @@ const TraceTimelineFilterPanel = ({
   mcpPromptOptions = [],
   mcpCategoryOptions = [],
   mcpMethodOptions = [],
-  hostOptions = []
+  hostOptions = [],
+  hasMcpOperations = false
 }) => {
   const mcpColorClasses = {
     blue: 'bg-blue-500/10 text-blue-700 dark:bg-blue-500/5 dark:text-blue-200',
@@ -40,6 +41,23 @@ const TraceTimelineFilterPanel = ({
   const showMcpCategoryFilter =
     mcpCategoryOptions.length > 0 || (filters.mcpCategory || []).length > 0;
   const showMcpMethodFilter = mcpMethodOptions.length > 0 || (filters.mcpMethod || []).length > 0;
+  const hasMcpFiltersActive = [
+    ...(filters.mcpTool || []),
+    ...(filters.mcpResource || []),
+    ...(filters.mcpPrompt || []),
+    ...(filters.mcpCategory || []),
+    ...(filters.mcpMethod || [])
+  ].length
+    ? true
+    : Boolean(filters.tokenMin || filters.tokenMax);
+  const showMcpSection =
+    hasMcpOperations ||
+    hasMcpFiltersActive ||
+    showMcpToolFilter ||
+    showMcpResourceFilter ||
+    showMcpPromptFilter ||
+    showMcpCategoryFilter ||
+    showMcpMethodFilter;
 
   const handleResetFilters = () => {
     setFilters({});
@@ -99,11 +117,7 @@ const TraceTimelineFilterPanel = ({
             </div>
 
             <div className="space-y-6 pt-4">
-              {showMcpToolFilter ||
-              showMcpResourceFilter ||
-              showMcpPromptFilter ||
-              showMcpCategoryFilter ||
-              showMcpMethodFilter ? (
+              {showMcpSection ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-dark-tremor-content-subtle">

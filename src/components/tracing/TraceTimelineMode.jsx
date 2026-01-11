@@ -483,6 +483,20 @@ export default function TraceTimelineMode({
     };
   }, [normalizedOperations]);
 
+  const hasMcpOperations = useMemo(
+    () =>
+      normalizedOperations.some((op) => {
+        if (!op) return false;
+        const meta = op.meta || {};
+        const rawMeta = op.raw?.meta || {};
+        const traceMeta = meta.trace || rawMeta.trace || {};
+        const mcpMeta = meta.mcp || rawMeta.mcp || traceMeta.mcp;
+        const hasProtocol = meta.protocol === 'mcp' || rawMeta.protocol === 'mcp';
+        return Boolean((mcpMeta && Object.keys(mcpMeta).length) || hasProtocol);
+      }),
+    [normalizedOperations]
+  );
+
   // Check if we should show an empty state
   if (
     !supportsTraces ||
@@ -640,6 +654,7 @@ export default function TraceTimelineMode({
         mcpCategoryOptions={mcpOptions.category}
         mcpMethodOptions={mcpOptions.method}
         hostOptions={hostOptions}
+        hasMcpOperations={hasMcpOperations}
       />
     </div>
   );
