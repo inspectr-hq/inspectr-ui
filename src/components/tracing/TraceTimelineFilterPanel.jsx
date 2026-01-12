@@ -261,7 +261,13 @@ const TraceTimelineFilterPanel = ({
                 </div>
               ) : null}
 
-              <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-dark-tremor-border">
+              <div
+                className={`space-y-4 ${
+                  showMcpSection
+                    ? 'pt-4 border-t border-gray-200 dark:border-dark-tremor-border'
+                    : ''
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-dark-tremor-content-subtle">
                     HTTP
