@@ -67,7 +67,7 @@ export default function TraceTimelineHeader({
           <button
             type="button"
             onClick={onOpenFilters}
-            className={`relative inline-flex items-center gap-2 rounded px-3 py-1.5 text-xs cursor-pointer ${filtersButtonClass}`}
+            className={`relative inline-flex items-center gap-1 rounded px-3 py-1.5 text-xs font-medium shadow-sm cursor-pointer ${filtersButtonClass}`}
           >
             <FilterIcon className="h-4 w-4" />
             Filters
@@ -85,7 +85,7 @@ export default function TraceTimelineHeader({
           onClick={onRefresh}
           disabled={isRefreshing}
           title="Refresh trace"
-          className="inline-flex items-center gap-1 rounded-tremor-small border border-tremor-border px-3 py-1.5 text-sm font-medium text-tremor-content-strong shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-dark-tremor-border dark:text-dark-tremor-content-strong dark:hover:bg-dark-tremor-background-subtle"
+          className="inline-flex items-center gap-2 rounded border border-tremor-border px-3 py-1.5 text-xs font-medium text-tremor-content-strong shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-dark-tremor-border dark:text-dark-tremor-content-strong dark:hover:bg-dark-tremor-background-subtle"
         >
           {isRefreshing ? 'Refreshing…' : 'Refresh'}
         </button>

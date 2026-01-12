@@ -22,6 +22,8 @@ const MIN_TIMELINE_WIDTH = 30;
 const MAX_TIMELINE_WIDTH = 75;
 const TIMELINE_WIDTH_STORAGE_KEY = 'traceTimelineWidth';
 const PANEL_MAX_HEIGHT = 'calc(100vh - 64px)';
+const FILTERS_STORAGE_KEY = 'traceTimelineFilters';
+const FILTERS_PERSIST_STORAGE_KEY = 'traceTimelinePersistFilters';
 
 const deriveGroupLabel = (operations) => {
   if (!operations.length) return 'Trace group';
@@ -94,6 +96,11 @@ export default function TraceTimelineMode({
     TIMELINE_WIDTH_STORAGE_KEY,
     String(DEFAULT_TIMELINE_WIDTH)
   );
+  const [persistFiltersRaw, setPersistFiltersRaw] = useLocalStorage(
+    FILTERS_PERSIST_STORAGE_KEY,
+    'false'
+  );
+  const [storedFilters, setStoredFilters] = useLocalStorage(FILTERS_STORAGE_KEY, '');
   const timelineWidth = useMemo(() => {
     const parsed = Number(timelineWidthRaw);
     if (Number.isFinite(parsed) && parsed >= MIN_TIMELINE_WIDTH && parsed <= MAX_TIMELINE_WIDTH) {
@@ -106,6 +113,7 @@ export default function TraceTimelineMode({
   const selectedOperationRef = useRef(null);
   const lastScrolledOperationIdRef = useRef(null);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const persistFilters = persistFiltersRaw === 'true';
   const [filters, setFilters] = useState({});
 
   const baseStart = timeline.start;
@@ -279,12 +287,7 @@ export default function TraceTimelineMode({
   }, [selectedTraceId, groups]);
 
   useEffect(() => {
-    if (!filteredOperations.length) {
-      if (selectedOperationId !== null) {
-        setSelectedOperationId(null);
-      }
-      return;
-    }
+    if (!filteredOperations.length) return;
 
     if (
       selectedOperationId &&
@@ -298,6 +301,11 @@ export default function TraceTimelineMode({
       setSelectedOperationId(fallbackOperationId);
     }
   }, [filteredOperations, selectedOperationId, setSelectedOperationId]);
+
+  const selectedFilteredOperation = useMemo(() => {
+    if (!selectedOperationId) return null;
+    return filteredOperations.find((operation) => operation.id === selectedOperationId) || null;
+  }, [filteredOperations, selectedOperationId]);
 
   // Ensure the group containing the selected operation is expanded
   useEffect(() => {
@@ -318,7 +326,7 @@ export default function TraceTimelineMode({
 
   // Auto-scroll to selected operation
   useEffect(() => {
-    if (!selectedOperationId) return;
+    if (!selectedFilteredOperation) return;
 
     // Use a small timeout to allow the DOM to update after group expansion
     const timeoutId = setTimeout(() => {
@@ -336,7 +344,7 @@ export default function TraceTimelineMode({
     }, 150);
 
     return () => clearTimeout(timeoutId);
-  }, [selectedOperationId, expandedGroups]);
+  }, [selectedOperationId, selectedFilteredOperation, expandedGroups]);
 
   const stopResizing = useCallback(() => {
     isResizingRef.current = false;
@@ -362,6 +370,38 @@ export default function TraceTimelineMode({
       window.removeEventListener('mouseup', stopResizing);
     };
   }, [handleMouseMove, stopResizing]);
+
+  useEffect(() => {
+    if (!persistFilters) {
+      setStoredFilters(null);
+      return;
+    }
+    if (!storedFilters) return;
+    if (Object.keys(filters || {}).length) return;
+    try {
+      const parsed = JSON.parse(storedFilters);
+      if (!parsed || typeof parsed !== 'object') return;
+      setFilters(parsed);
+    } catch {
+      // Ignore malformed storage entries.
+    }
+  }, [persistFilters, storedFilters, filters, setStoredFilters]);
+
+  useEffect(() => {
+    if (!persistFilters) return;
+
+    const hasValues = Object.entries(filters || {}).some(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return value !== '' && value !== null && value !== undefined;
+    });
+
+    if (!hasValues) {
+      setStoredFilters(null);
+      return;
+    }
+
+    setStoredFilters(JSON.stringify(filters));
+  }, [filters, persistFilters, setStoredFilters]);
 
   const tokenTotals = useMemo(() => {
     let requestSum = 0;
@@ -633,10 +673,16 @@ export default function TraceTimelineMode({
         className="w-full overflow-y-auto rounded-tremor-small border border-tremor-border dark:border-dark-tremor-border"
         style={{ width: `${100 - timelineWidth}%`, maxHeight: PANEL_MAX_HEIGHT }}
       >
-        {isMcpOperation(selectedOperation) ? (
-          <TraceOperationMcpDetail operation={selectedOperation} isLoading={isTraceDetailLoading} />
+        {isMcpOperation(selectedFilteredOperation) ? (
+          <TraceOperationMcpDetail
+            operation={selectedFilteredOperation}
+            isLoading={isTraceDetailLoading}
+          />
         ) : (
-          <TraceOperationDetail operation={selectedOperation} isLoading={isTraceDetailLoading} />
+          <TraceOperationDetail
+            operation={selectedFilteredOperation}
+            isLoading={isTraceDetailLoading}
+          />
         )}
       </Card>
 
@@ -655,6 +701,8 @@ export default function TraceTimelineMode({
         mcpMethodOptions={mcpOptions.method}
         hostOptions={hostOptions}
         hasMcpOperations={hasMcpOperations}
+        persistFilters={persistFilters}
+        onPersistFiltersChange={(nextValue) => setPersistFiltersRaw(nextValue ? 'true' : 'false')}
       />
     </div>
   );
