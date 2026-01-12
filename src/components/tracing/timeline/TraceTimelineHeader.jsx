@@ -23,13 +23,37 @@ const TraceIcon = ({ className = '', ...props }) => (
   </svg>
 );
 
+const FilterIcon = ({ className = '', ...props }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth="1.5"
+    stroke="currentColor"
+    className={` text-white ${className}`}
+    aria-hidden="true"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z"
+    />
+  </svg>
+);
+
 export default function TraceTimelineHeader({
   operationCount,
   onRefresh,
   isRefreshing,
   hasError,
-  traceSources
+  traceSources,
+  onOpenFilters,
+  activeFiltersCount = 0
 }) {
+  const filtersButtonClass =
+    activeFiltersCount > 0 ? 'bg-green-500 text-white' : 'bg-blue-500 text-white';
+  const filtersBadgeClass = activeFiltersCount > 0 ? 'bg-green-700' : 'bg-blue-700';
+
   return (
     <Flex justifyContent="between" alignItems="start">
       <div>
@@ -39,12 +63,29 @@ export default function TraceTimelineHeader({
         </Title>
       </div>
       <div className="flex flex-wrap items-center justify-end gap-2">
+        {onOpenFilters ? (
+          <button
+            type="button"
+            onClick={onOpenFilters}
+            className={`relative inline-flex items-center gap-1 rounded px-3 py-1.5 text-xs font-medium shadow-sm cursor-pointer ${filtersButtonClass}`}
+          >
+            <FilterIcon className="h-4 w-4" />
+            Filters
+            {activeFiltersCount > 0 ? (
+              <span
+                className={`absolute -top-1 -right-1 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full ${filtersBadgeClass}`}
+              >
+                {activeFiltersCount}
+              </span>
+            ) : null}
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onRefresh}
           disabled={isRefreshing}
           title="Refresh trace"
-          className="inline-flex items-center gap-1 rounded-tremor-small border border-tremor-border px-3 py-1.5 text-sm font-medium text-tremor-content-strong shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-dark-tremor-border dark:text-dark-tremor-content-strong dark:hover:bg-dark-tremor-background-subtle"
+          className="inline-flex items-center gap-2 rounded border border-tremor-border px-3 py-1.5 text-xs font-medium text-tremor-content-strong shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-dark-tremor-border dark:text-dark-tremor-content-strong dark:hover:bg-dark-tremor-background-subtle"
         >
           {isRefreshing ? 'Refreshing…' : 'Refresh'}
         </button>

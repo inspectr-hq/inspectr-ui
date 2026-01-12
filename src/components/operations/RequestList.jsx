@@ -27,7 +27,16 @@ const RequestList = ({
   setSortDirection,
   setFilters,
   isSyncing,
-  tagOptions = []
+  tagOptions = [],
+  mcpToolOptions = [],
+  mcpResourceOptions = [],
+  mcpPromptOptions = [],
+  mcpCategoryOptions = [],
+  mcpMethodOptions = [],
+  persistFilters = false,
+  onPersistFiltersChange,
+  persistSort = false,
+  onPersistSortChange
 }) => {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -259,6 +268,15 @@ const RequestList = ({
         setSortDirection={setSortDirection}
         setFilters={setFilters}
         tagOptions={tagOptions}
+        mcpToolOptions={mcpToolOptions}
+        mcpResourceOptions={mcpResourceOptions}
+        mcpPromptOptions={mcpPromptOptions}
+        mcpCategoryOptions={mcpCategoryOptions}
+        mcpMethodOptions={mcpMethodOptions}
+        persistFilters={persistFilters}
+        onPersistFiltersChange={onPersistFiltersChange}
+        persistSort={persistSort}
+        onPersistSortChange={onPersistSortChange}
       />
 
       {/* Clear All Dialog */}

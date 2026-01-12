@@ -158,7 +158,7 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
   if (!operation) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-tremor-content-subtle dark:text-dark-tremor-content">
-        {isLoading ? 'Loading trace details…' : 'Select a span to inspect its details.'}
+        {isLoading ? 'Loading trace details…' : 'Select an Operation span to inspect its details.'}
       </div>
     );
   }

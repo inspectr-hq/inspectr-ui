@@ -36,13 +36,22 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
   const leftPanelWidth = parseFloat(leftPanelWidthValue || LEFT_PANEL_WIDTH);
   const isResizingRef = useRef(false);
 
-  const [sortField, setSortField] = useState('time');
-  const [sortDirection, setSortDirection] = useState('desc');
-  const [filters, setFilters] = useSessionStorage(
-    FILTER_STORAGE_KEY,
-    DEFAULT_FILTERS,
-    SESSION_FILTER_OPTIONS
+  const [persistSortValue, setPersistSortValue] = useLocalStorage('persistSortOnReload', 'false');
+  const persistSort = persistSortValue === 'true';
+  const [sortField, setSortField] = useSessionStorage('requestSortField', 'time', {
+    resetOnReload: !persistSort
+  });
+  const [sortDirection, setSortDirection] = useSessionStorage('requestSortDirection', 'desc', {
+    resetOnReload: !persistSort
+  });
+  const [persistFiltersValue, setPersistFiltersValue] = useLocalStorage(
+    'persistFiltersOnReload',
+    'false'
   );
+  const persistFilters = persistFiltersValue === 'true';
+  const [filters, setFilters] = useSessionStorage(FILTER_STORAGE_KEY, DEFAULT_FILTERS, {
+    resetOnReload: !persistFilters
+  });
   const hasAppliedRouteParams = useRef(false);
   const parseListParam = (value) =>
     String(value)
@@ -145,6 +154,16 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
 
   const tagOptions =
     useLiveQuery(() => eventDB.getAllTagOptions(), [], [], { throttle: 300 }) || [];
+  const mcpToolOptions =
+    useLiveQuery(() => eventDB.getAllMcpToolOptions(), [], [], { throttle: 300 }) || [];
+  const mcpResourceOptions =
+    useLiveQuery(() => eventDB.getAllMcpResourceOptions(), [], [], { throttle: 300 }) || [];
+  const mcpPromptOptions =
+    useLiveQuery(() => eventDB.getAllMcpPromptOptions(), [], [], { throttle: 300 }) || [];
+  const mcpCategoryOptions =
+    useLiveQuery(() => eventDB.getAllMcpCategoryOptions(), [], [], { throttle: 300 }) || [];
+  const mcpMethodOptions =
+    useLiveQuery(() => eventDB.getAllMcpMethodOptions(), [], [], { throttle: 300 }) || [];
 
   // Count unread events newer than lastSeenAt
   const latestEventTime =
@@ -381,6 +400,15 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
             syncOperations={syncOperations}
             isSyncing={isSyncing}
             tagOptions={tagOptions}
+            mcpToolOptions={mcpToolOptions}
+            mcpResourceOptions={mcpResourceOptions}
+            mcpPromptOptions={mcpPromptOptions}
+            mcpCategoryOptions={mcpCategoryOptions}
+            mcpMethodOptions={mcpMethodOptions}
+            persistFilters={persistFilters}
+            onPersistFiltersChange={setPersistFiltersValue}
+            persistSort={persistSort}
+            onPersistSortChange={setPersistSortValue}
           />
         </div>
         <div

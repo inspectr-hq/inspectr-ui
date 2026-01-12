@@ -10,6 +10,53 @@ const getRecordNormalizedTags = (record) => {
   return tags;
 };
 
+const normalizeOptionValue = (value) => {
+  if (value == null) return null;
+  const normalized = String(value).trim();
+  return normalized ? normalized : null;
+};
+
+const getFirstPrefixedTagValue = (tags, prefixes) => {
+  if (!Array.isArray(tags)) return null;
+  for (const tag of tags) {
+    if (typeof tag !== 'string') continue;
+    for (const prefix of prefixes) {
+      if (tag.startsWith(prefix)) {
+        const value = normalizeOptionValue(tag.slice(prefix.length));
+        if (value) return value;
+      }
+    }
+  }
+  return null;
+};
+
+const getMcpMetaValue = (meta, category, key) => {
+  if (!meta || typeof meta !== 'object') return null;
+  const direct = normalizeOptionValue(meta[key]);
+  if (direct) return direct;
+  if (meta.category === category && meta.name) {
+    return normalizeOptionValue(meta.name);
+  }
+  return null;
+};
+
+const collectDistinctValues = (records, field) => {
+  const values = new Set();
+  records.forEach((record) => {
+    const recordValue = record?.[field];
+    if (Array.isArray(recordValue)) {
+      recordValue.forEach((value) => {
+        const normalized = normalizeOptionValue(value);
+        if (normalized) values.add(normalized);
+      });
+      return;
+    }
+    const normalized = normalizeOptionValue(recordValue);
+    if (normalized) values.add(normalized);
+  });
+  return Array.from(values).sort((a, b) => a.localeCompare(b));
+};
+
 class EventDB {
   constructor() {
     this.db = new Dexie('InspectrDB');
@@ -18,18 +65,41 @@ class EventDB {
     this.db.version(1).stores({
       events: 'id, time, operation_id, method, status_code, path, duration, server'
     });
-    this.db
-      .version(2)
-      .stores({
-        events: 'id, time, operation_id, method, status_code, path, duration, server'
-      })
-      .upgrade(() => this.db.events.clear());
+    this.db.version(2).stores({
+      events: 'id, time, operation_id, method, status_code, path, duration, server'
+    });
+    this.db.version(3).stores({
+      events:
+        'id, time, operation_id, method, status_code, path, duration, server, mcp_tool, mcp_resource, mcp_prompt'
+    });
+    this.db.version(4).stores({
+      events:
+        'id, time, operation_id, method, status_code, path, duration, server, mcp_tool, mcp_resource, mcp_prompt, mcp_category, mcp_method'
+    });
   }
 
   // Helper method to transform a raw SSE event into a flattened record.
   transformEvent(event) {
     const { id, data, operation_id } = event;
+    const syncRunId = event?.__syncRunId;
     const normalizedTags = normalizeTags(data?.meta?.tags || []);
+    const rawTags = Array.isArray(data?.meta?.tags) ? data.meta.tags : [];
+    const mcpMeta = data?.meta?.mcp || data?.meta?.trace?.mcp || null;
+    const mcpTool =
+      getMcpMetaValue(mcpMeta, 'tool', 'tool_name') ||
+      getFirstPrefixedTagValue(rawTags, ['mcp.tool.', 'mcp.tool:']);
+    const mcpResource =
+      getMcpMetaValue(mcpMeta, 'resource', 'resource_name') ||
+      getFirstPrefixedTagValue(rawTags, ['mcp.resource.', 'mcp.resource:']);
+    const mcpPrompt =
+      getMcpMetaValue(mcpMeta, 'prompt', 'prompt_name') ||
+      getFirstPrefixedTagValue(rawTags, ['mcp.prompt.', 'mcp.prompt:']);
+    const mcpCategory =
+      normalizeOptionValue(mcpMeta?.category) ||
+      getFirstPrefixedTagValue(rawTags, ['mcp.category.', 'mcp.category:']);
+    const mcpMethod =
+      normalizeOptionValue(mcpMeta?.method) ||
+      getFirstPrefixedTagValue(rawTags, ['mcp.method.', 'mcp.method:']);
 
     return {
       id,
@@ -43,6 +113,12 @@ class EventDB {
       client_ip: data.request.client_ip,
       duration: data.timing.duration,
       status_code: data.response?.status,
+      mcp_tool: mcpTool,
+      mcp_resource: mcpResource,
+      mcp_prompt: mcpPrompt,
+      mcp_category: mcpCategory,
+      mcp_method: mcpMethod,
+      ...(syncRunId ? { last_synced_at: syncRunId } : {}),
       tagTokens: normalizedTags.map((tag) => tag.token),
       tags: normalizedTags.map((tag) => tag.display)
     };
@@ -89,7 +165,12 @@ class EventDB {
       filters.durationMin ||
       filters.durationMax ||
       filters.host ||
-      (filters.tags && filters.tags.length)
+      (filters.tags && filters.tags.length) ||
+      (filters.mcpTool && filters.mcpTool.length) ||
+      (filters.mcpResource && filters.mcpResource.length) ||
+      (filters.mcpPrompt && filters.mcpPrompt.length) ||
+      (filters.mcpCategory && filters.mcpCategory.length) ||
+      (filters.mcpMethod && filters.mcpMethod.length)
     );
 
     // --- Fast path: no filters → direct index count & page fetch ---
@@ -236,6 +317,47 @@ class EventDB {
       }
     }
 
+    const matchesMcpFilter = (value, selected) => {
+      if (!Array.isArray(selected) || selected.length === 0) return true;
+      if (!value) return false;
+      const recordValues = Array.isArray(value) ? value : [value];
+      const recordSet = new Set(recordValues.map((item) => String(item).toLowerCase()));
+      return selected.some((item) => recordSet.has(String(item).toLowerCase()));
+    };
+
+    // --- Filter on MCP Tool / Resource / Prompt ---
+    if (filters.mcpTool && Array.isArray(filters.mcpTool) && filters.mcpTool.length > 0) {
+      collection = collection.filter((item) => matchesMcpFilter(item.mcp_tool, filters.mcpTool));
+    }
+    if (
+      filters.mcpResource &&
+      Array.isArray(filters.mcpResource) &&
+      filters.mcpResource.length > 0
+    ) {
+      collection = collection.filter((item) =>
+        matchesMcpFilter(item.mcp_resource, filters.mcpResource)
+      );
+    }
+    if (filters.mcpPrompt && Array.isArray(filters.mcpPrompt) && filters.mcpPrompt.length > 0) {
+      collection = collection.filter((item) =>
+        matchesMcpFilter(item.mcp_prompt, filters.mcpPrompt)
+      );
+    }
+    if (
+      filters.mcpCategory &&
+      Array.isArray(filters.mcpCategory) &&
+      filters.mcpCategory.length > 0
+    ) {
+      collection = collection.filter((item) =>
+        matchesMcpFilter(item.mcp_category, filters.mcpCategory)
+      );
+    }
+    if (filters.mcpMethod && Array.isArray(filters.mcpMethod) && filters.mcpMethod.length > 0) {
+      collection = collection.filter((item) =>
+        matchesMcpFilter(item.mcp_method, filters.mcpMethod)
+      );
+    }
+
     // Count result after filtering
     const totalCount = await collection.count();
 
@@ -293,6 +415,11 @@ class EventDB {
     return await this.db.events.clear();
   }
 
+  async removeEventsNotSynced(syncRunId) {
+    if (!syncRunId) return 0;
+    return await this.db.events.filter((item) => item.last_synced_at !== syncRunId).delete();
+  }
+
   async getAllTagOptions() {
     const records = await this.db.events.toArray();
     const tagMap = new Map();
@@ -305,6 +432,31 @@ class EventDB {
       });
     });
     return Array.from(tagMap.values()).sort((a, b) => a.localeCompare(b));
+  }
+
+  async getAllMcpToolOptions() {
+    const records = await this.db.events.toArray();
+    return collectDistinctValues(records, 'mcp_tool');
+  }
+
+  async getAllMcpResourceOptions() {
+    const records = await this.db.events.toArray();
+    return collectDistinctValues(records, 'mcp_resource');
+  }
+
+  async getAllMcpPromptOptions() {
+    const records = await this.db.events.toArray();
+    return collectDistinctValues(records, 'mcp_prompt');
+  }
+
+  async getAllMcpCategoryOptions() {
+    const records = await this.db.events.toArray();
+    return collectDistinctValues(records, 'mcp_category');
+  }
+
+  async getAllMcpMethodOptions() {
+    const records = await this.db.events.toArray();
+    return collectDistinctValues(records, 'mcp_method');
   }
 }
 

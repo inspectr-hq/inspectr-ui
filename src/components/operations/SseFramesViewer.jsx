@@ -187,10 +187,10 @@ const SseFramesViewer = ({ frames, raw }) => {
                   </td>
                   <td className="border px-2 py-1 font-mono text-xs whitespace-pre-wrap break-all dark:text-dark-tremor-content">
                     <div className="flex items-start gap-2">
-                      <div className="flex-1 break-all whitespace-pre-wrap">{f.data}</div>
+                      <div className="flex-1 min-w-0 break-all whitespace-pre-wrap">{f.data}</div>
                       {json && (
                         <button
-                          className="self-start px-2 py-1 text-xs rounded bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                          className="self-start shrink-0 px-2 py-1 text-xs rounded bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
                           title={isOpen ? 'Hide formatted JSON' : 'Show formatted JSON'}
                           aria-expanded={isOpen}
                           onClick={() => setShowJson((prev) => ({ ...prev, [key]: !prev[key] }))}

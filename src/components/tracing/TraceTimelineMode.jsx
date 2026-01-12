@@ -14,12 +14,16 @@ import TraceMetadata from './timeline/TraceMetadata.jsx';
 import TraceEmptyStates from './timeline/TraceEmptyStates.jsx';
 import { getOperationTiming } from './traceUtils.js';
 import ListPagination from '../ListPagination.jsx';
+import TraceTimelineFilterPanel from './TraceTimelineFilterPanel.jsx';
+import { normalizeTagFilters } from '../../utils/normalizeTags.js';
 
 const DEFAULT_TIMELINE_WIDTH = 56;
 const MIN_TIMELINE_WIDTH = 30;
 const MAX_TIMELINE_WIDTH = 75;
 const TIMELINE_WIDTH_STORAGE_KEY = 'traceTimelineWidth';
 const PANEL_MAX_HEIGHT = 'calc(100vh - 64px)';
+const FILTERS_STORAGE_KEY = 'traceTimelineFilters';
+const FILTERS_PERSIST_STORAGE_KEY = 'traceTimelinePersistFilters';
 
 const deriveGroupLabel = (operations) => {
   if (!operations.length) return 'Trace group';
@@ -92,6 +96,11 @@ export default function TraceTimelineMode({
     TIMELINE_WIDTH_STORAGE_KEY,
     String(DEFAULT_TIMELINE_WIDTH)
   );
+  const [persistFiltersRaw, setPersistFiltersRaw] = useLocalStorage(
+    FILTERS_PERSIST_STORAGE_KEY,
+    'false'
+  );
+  const [storedFilters, setStoredFilters] = useLocalStorage(FILTERS_STORAGE_KEY, '');
   const timelineWidth = useMemo(() => {
     const parsed = Number(timelineWidthRaw);
     if (Number.isFinite(parsed) && parsed >= MIN_TIMELINE_WIDTH && parsed <= MAX_TIMELINE_WIDTH) {
@@ -103,15 +112,132 @@ export default function TraceTimelineMode({
   const panelContainerRef = useRef(null);
   const selectedOperationRef = useRef(null);
   const lastScrolledOperationIdRef = useRef(null);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const persistFilters = persistFiltersRaw === 'true';
+  const [filters, setFilters] = useState({});
 
   const baseStart = timeline.start;
   const baseDuration = timeline.duration;
 
-  const allGroups = useMemo(() => {
+  const filteredOperations = useMemo(() => {
     if (!normalizedOperations.length) return [];
+
+    const matchesMcpFilter = (value, selected) => {
+      if (!Array.isArray(selected) || selected.length === 0) return true;
+      if (!value) return false;
+      const recordValues = Array.isArray(value) ? value : [value];
+      const recordSet = new Set(recordValues.map((item) => String(item).toLowerCase()));
+      return selected.some((item) => recordSet.has(String(item).toLowerCase()));
+    };
+
+    const matchesTags = (operationTags, selectedTags) => {
+      if (!Array.isArray(selectedTags) || selectedTags.length === 0) return true;
+      const normalizedFilterTokens = normalizeTagFilters(selectedTags);
+      if (!normalizedFilterTokens.length) return true;
+      const recordTokens = Array.isArray(operationTags)
+        ? operationTags.map((tag) => tag.token)
+        : [];
+      return normalizedFilterTokens.every((token) => recordTokens.includes(token));
+    };
+
+    const getTokenTotal = (operation) => {
+      const meta =
+        operation?.meta?.mcp ||
+        operation?.raw?.meta?.mcp ||
+        operation?.meta?.trace?.mcp ||
+        operation?.raw?.meta?.trace?.mcp;
+      const tokens = meta?.tokens;
+      if (!tokens) return null;
+      const total = toFiniteNumber(tokens.total);
+      if (total !== null) return total;
+      const req = toFiniteNumber(tokens.request);
+      const res = toFiniteNumber(tokens.response);
+      if (req !== null || res !== null) return (req ?? 0) + (res ?? 0);
+      return null;
+    };
+
+    return normalizedOperations.filter((operation) => {
+      if (!operation) return false;
+
+      if (filters.status && Array.isArray(filters.status) && filters.status.length > 0) {
+        const statusValue = operation.status != null ? String(operation.status) : '';
+        if (!filters.status.includes(statusValue)) return false;
+      }
+
+      if (filters.method && Array.isArray(filters.method) && filters.method.length > 0) {
+        const methodValue = (operation.method || '').toLowerCase();
+        const selectedMethods = filters.method.map((method) => String(method).toLowerCase());
+        if (!selectedMethods.includes(methodValue)) return false;
+      }
+
+      if (filters.path) {
+        const pathValue = operation.path || operation.url || '';
+        if (!pathValue.toLowerCase().includes(String(filters.path).toLowerCase())) return false;
+      }
+
+      if (filters.durationMin) {
+        if (!Number.isFinite(operation.duration)) return false;
+        if (Number(operation.duration) < Number(filters.durationMin)) return false;
+      }
+
+      if (filters.durationMax) {
+        if (!Number.isFinite(operation.duration)) return false;
+        if (Number(operation.duration) > Number(filters.durationMax)) return false;
+      }
+
+      if (filters.tokenMin) {
+        const total = getTokenTotal(operation);
+        if (total === null) return false;
+        if (total < Number(filters.tokenMin)) return false;
+      }
+
+      if (filters.tokenMax) {
+        const total = getTokenTotal(operation);
+        if (total === null) return false;
+        if (total > Number(filters.tokenMax)) return false;
+      }
+
+      if (filters.host && Array.isArray(filters.host) && filters.host.length > 0) {
+        const hostValue = (operation.host || '').toLowerCase();
+        const selectedHosts = filters.host.map((host) => String(host).toLowerCase());
+        if (!selectedHosts.some((host) => hostValue.includes(host))) return false;
+      }
+
+      if (filters.tags && !matchesTags(operation.tags, filters.tags)) return false;
+
+      const rawMeta = operation.raw?.meta || {};
+      const traceMeta = rawMeta.trace || {};
+      const mcpMeta = rawMeta.mcp || traceMeta.mcp || operation.meta?.mcp || null;
+      const mcpCategory = mcpMeta?.category || '';
+      const mcpMethod = mcpMeta?.method || '';
+      const mcpName = mcpMeta?.name || '';
+
+      if (filters.mcpCategory && !matchesMcpFilter(mcpCategory, filters.mcpCategory)) return false;
+      if (filters.mcpMethod && !matchesMcpFilter(mcpMethod, filters.mcpMethod)) return false;
+
+      if (filters.mcpTool && filters.mcpTool.length > 0) {
+        if (!matchesMcpFilter(mcpCategory === 'tool' ? mcpName : '', filters.mcpTool)) return false;
+      }
+      if (filters.mcpResource && filters.mcpResource.length > 0) {
+        if (!matchesMcpFilter(mcpCategory === 'resource' ? mcpName : '', filters.mcpResource)) {
+          return false;
+        }
+      }
+      if (filters.mcpPrompt && filters.mcpPrompt.length > 0) {
+        if (!matchesMcpFilter(mcpCategory === 'prompt' ? mcpName : '', filters.mcpPrompt)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [normalizedOperations, filters]);
+
+  const allGroups = useMemo(() => {
+    if (!filteredOperations.length) return [];
     const bucket = new Map();
 
-    normalizedOperations.forEach((operation, index) => {
+    filteredOperations.forEach((operation, index) => {
       const key = operation.correlationId || `__group-${index}`;
       if (!bucket.has(key)) {
         bucket.set(key, {
@@ -141,7 +267,7 @@ export default function TraceTimelineMode({
         maxStatus: deriveGroupStatus(group.operations)
       }))
       .sort((a, b) => (a.startMs ?? 0) - (b.startMs ?? 0));
-  }, [normalizedOperations]);
+  }, [filteredOperations]);
 
   const groups = allGroups;
 
@@ -159,6 +285,27 @@ export default function TraceTimelineMode({
     }
     setExpandedGroups(new Set(groups.map((group) => group.id)));
   }, [selectedTraceId, groups]);
+
+  useEffect(() => {
+    if (!filteredOperations.length) return;
+
+    if (
+      selectedOperationId &&
+      filteredOperations.some((operation) => operation.id === selectedOperationId)
+    ) {
+      return;
+    }
+
+    const fallbackOperationId = filteredOperations[0]?.id || null;
+    if (fallbackOperationId && fallbackOperationId !== selectedOperationId) {
+      setSelectedOperationId(fallbackOperationId);
+    }
+  }, [filteredOperations, selectedOperationId, setSelectedOperationId]);
+
+  const selectedFilteredOperation = useMemo(() => {
+    if (!selectedOperationId) return null;
+    return filteredOperations.find((operation) => operation.id === selectedOperationId) || null;
+  }, [filteredOperations, selectedOperationId]);
 
   // Ensure the group containing the selected operation is expanded
   useEffect(() => {
@@ -179,7 +326,7 @@ export default function TraceTimelineMode({
 
   // Auto-scroll to selected operation
   useEffect(() => {
-    if (!selectedOperationId) return;
+    if (!selectedFilteredOperation) return;
 
     // Use a small timeout to allow the DOM to update after group expansion
     const timeoutId = setTimeout(() => {
@@ -197,7 +344,7 @@ export default function TraceTimelineMode({
     }, 150);
 
     return () => clearTimeout(timeoutId);
-  }, [selectedOperationId, expandedGroups]);
+  }, [selectedOperationId, selectedFilteredOperation, expandedGroups]);
 
   const stopResizing = useCallback(() => {
     isResizingRef.current = false;
@@ -224,6 +371,38 @@ export default function TraceTimelineMode({
     };
   }, [handleMouseMove, stopResizing]);
 
+  useEffect(() => {
+    if (!persistFilters) {
+      setStoredFilters(null);
+      return;
+    }
+    if (!storedFilters) return;
+    if (Object.keys(filters || {}).length) return;
+    try {
+      const parsed = JSON.parse(storedFilters);
+      if (!parsed || typeof parsed !== 'object') return;
+      setFilters(parsed);
+    } catch {
+      // Ignore malformed storage entries.
+    }
+  }, [persistFilters, storedFilters, filters, setStoredFilters]);
+
+  useEffect(() => {
+    if (!persistFilters) return;
+
+    const hasValues = Object.entries(filters || {}).some(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return value !== '' && value !== null && value !== undefined;
+    });
+
+    if (!hasValues) {
+      setStoredFilters(null);
+      return;
+    }
+
+    setStoredFilters(JSON.stringify(filters));
+  }, [filters, persistFilters, setStoredFilters]);
+
   const tokenTotals = useMemo(() => {
     let requestSum = 0;
     let responseSum = 0;
@@ -232,7 +411,7 @@ export default function TraceTimelineMode({
     let hasResponse = false;
     let hasTotal = false;
 
-    normalizedOperations.forEach((operation) => {
+    filteredOperations.forEach((operation) => {
       if (!operation) return;
       const meta =
         operation?.meta?.mcp ||
@@ -271,7 +450,92 @@ export default function TraceTimelineMode({
       response: hasResponse ? responseSum : null,
       total: hasTotal ? totalSum : null
     };
+  }, [filteredOperations]);
+
+  const operationCount = filteredOperations.length;
+  const activeFiltersCount = Object.entries(filters || {}).reduce((count, [key, value]) => {
+    if (Array.isArray(value)) {
+      return value.length > 0 ? count + 1 : count;
+    }
+    return value ? count + 1 : count;
+  }, 0);
+
+  const statusOptions = useMemo(() => {
+    const values = new Set();
+    normalizedOperations.forEach((op) => {
+      if (op?.status != null) values.add(String(op.status));
+    });
+    return Array.from(values).sort((a, b) => a.localeCompare(b));
   }, [normalizedOperations]);
+
+  const methodOptions = useMemo(() => {
+    const values = new Set();
+    normalizedOperations.forEach((op) => {
+      if (op?.method) values.add(op.method.toUpperCase());
+    });
+    return Array.from(values).sort((a, b) => a.localeCompare(b));
+  }, [normalizedOperations]);
+
+  const tagOptions = useMemo(() => {
+    const values = new Set();
+    normalizedOperations.forEach((op) => {
+      if (Array.isArray(op.tags)) {
+        op.tags.forEach((tag) => values.add(tag.display));
+      }
+    });
+    return Array.from(values).sort((a, b) => a.localeCompare(b));
+  }, [normalizedOperations]);
+
+  const hostOptions = useMemo(() => {
+    const values = new Set();
+    normalizedOperations.forEach((op) => {
+      if (op?.host) values.add(op.host);
+    });
+    return Array.from(values).sort((a, b) => a.localeCompare(b));
+  }, [normalizedOperations]);
+
+  const mcpOptions = useMemo(() => {
+    const tool = new Set();
+    const resource = new Set();
+    const prompt = new Set();
+    const category = new Set();
+    const method = new Set();
+
+    normalizedOperations.forEach((op) => {
+      const rawMeta = op?.raw?.meta || {};
+      const traceMeta = rawMeta.trace || {};
+      const mcpMeta = rawMeta.mcp || traceMeta.mcp || op?.meta?.mcp;
+      if (!mcpMeta) return;
+      if (mcpMeta.category) category.add(mcpMeta.category);
+      if (mcpMeta.method) method.add(mcpMeta.method);
+      if (mcpMeta.name && mcpMeta.category === 'tool') tool.add(mcpMeta.name);
+      if (mcpMeta.name && mcpMeta.category === 'resource') resource.add(mcpMeta.name);
+      if (mcpMeta.name && mcpMeta.category === 'prompt') prompt.add(mcpMeta.name);
+    });
+
+    const toList = (set) => Array.from(set).sort((a, b) => a.localeCompare(b));
+    return {
+      tool: toList(tool),
+      resource: toList(resource),
+      prompt: toList(prompt),
+      category: toList(category),
+      method: toList(method)
+    };
+  }, [normalizedOperations]);
+
+  const hasMcpOperations = useMemo(
+    () =>
+      normalizedOperations.some((op) => {
+        if (!op) return false;
+        const meta = op.meta || {};
+        const rawMeta = op.raw?.meta || {};
+        const traceMeta = meta.trace || rawMeta.trace || {};
+        const mcpMeta = meta.mcp || rawMeta.mcp || traceMeta.mcp;
+        const hasProtocol = meta.protocol === 'mcp' || rawMeta.protocol === 'mcp';
+        return Boolean((mcpMeta && Object.keys(mcpMeta).length) || hasProtocol);
+      }),
+    [normalizedOperations]
+  );
 
   // Check if we should show an empty state
   if (
@@ -289,8 +553,6 @@ export default function TraceTimelineMode({
       />
     );
   }
-
-  const operationCount = traceSummary?.operation_count || normalizedOperations.length;
 
   const handleToggleGroup = (groupId) => {
     setExpandedGroups((prev) => {
@@ -331,6 +593,8 @@ export default function TraceTimelineMode({
           isRefreshing={isRefreshingTrace}
           hasError={!!traceDetailError}
           traceSources={traceSources}
+          onOpenFilters={() => setIsFilterPanelOpen(true)}
+          activeFiltersCount={activeFiltersCount}
         />
 
         <div className="mt-6 flex flex-col gap-4 min-w-0">
@@ -409,12 +673,37 @@ export default function TraceTimelineMode({
         className="w-full overflow-y-auto rounded-tremor-small border border-tremor-border dark:border-dark-tremor-border"
         style={{ width: `${100 - timelineWidth}%`, maxHeight: PANEL_MAX_HEIGHT }}
       >
-        {isMcpOperation(selectedOperation) ? (
-          <TraceOperationMcpDetail operation={selectedOperation} isLoading={isTraceDetailLoading} />
+        {isMcpOperation(selectedFilteredOperation) ? (
+          <TraceOperationMcpDetail
+            operation={selectedFilteredOperation}
+            isLoading={isTraceDetailLoading}
+          />
         ) : (
-          <TraceOperationDetail operation={selectedOperation} isLoading={isTraceDetailLoading} />
+          <TraceOperationDetail
+            operation={selectedFilteredOperation}
+            isLoading={isTraceDetailLoading}
+          />
         )}
       </Card>
+
+      <TraceTimelineFilterPanel
+        isOpen={isFilterPanelOpen}
+        onClose={() => setIsFilterPanelOpen(false)}
+        filters={filters}
+        setFilters={setFilters}
+        statusOptions={statusOptions}
+        methodOptions={methodOptions}
+        tagOptions={tagOptions}
+        mcpToolOptions={mcpOptions.tool}
+        mcpResourceOptions={mcpOptions.resource}
+        mcpPromptOptions={mcpOptions.prompt}
+        mcpCategoryOptions={mcpOptions.category}
+        mcpMethodOptions={mcpOptions.method}
+        hostOptions={hostOptions}
+        hasMcpOperations={hasMcpOperations}
+        persistFilters={persistFilters}
+        onPersistFiltersChange={(nextValue) => setPersistFiltersRaw(nextValue ? 'true' : 'false')}
+      />
     </div>
   );
 }
