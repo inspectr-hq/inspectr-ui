@@ -25,3 +25,8 @@ pnpm-debug.log*
 
 # Other
 inspiration
+
+# Agents
+.claude
+.codex
+PLAN.md

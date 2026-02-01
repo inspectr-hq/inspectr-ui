@@ -15,6 +15,7 @@ import useLocalStorage from '../../hooks/useLocalStorage.jsx';
 import DialogDeleteConfirm from '../DialogDeleteConfirm.jsx';
 import TagPill from '../TagPill.jsx';
 import RequestDetailActions from './RequestDetailActions.jsx';
+import { shouldIncludeHeaderInCurl } from '../../utils/curlHeaders.js';
 
 const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = false }) => {
   // Get the client from context
@@ -102,16 +103,15 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
   const generateCurlCommand = (targetUrl) => {
     if (!operation?.request) return;
     const { request } = operation;
-    const { method, url, headers, body } = request;
+    const { method, url, headers = [], body } = request;
     const finalUrl = targetUrl || url;
     let curlCommand = `curl -X ${method} '${finalUrl}'`;
 
     // Add headers
-    if (headers) {
-      headers.forEach((header) => {
-        curlCommand += ` -H '${header.name}: ${header.value}'`;
-      });
-    }
+    const filteredHeaders = headers.filter((header) => shouldIncludeHeaderInCurl(header?.name));
+    filteredHeaders.forEach((header) => {
+      curlCommand += ` -H '${header.name}: ${header.value}'`;
+    });
 
     // Add payload if it exists
     if (body) {
