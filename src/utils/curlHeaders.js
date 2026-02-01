@@ -17,7 +17,8 @@ const KNOWN_CURL_HEADER_EXCLUSIONS = new Set([
   'user-agent',
   'origin',
   'referer',
-  'dnt'
+  'dnt',
+  'postman-token'
 ]);
 const HEADER_PREFIXES_TO_EXCLUDE = ['sec-fetch-', 'sec-ch-ua'];
 
