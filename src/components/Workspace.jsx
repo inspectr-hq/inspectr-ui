@@ -99,45 +99,55 @@ export default function Workspace() {
       <DialogMockLaunch />
 
       <div className="flex flex-col min-h-screen">
-        <div className="border-b border-tremor-border dark:border-dark-tremor-border relative h-full overflow-hidden bg-gray-50 dark:bg-dark-tremor-background-subtle">
+        <div className="border-b border-tremor-border dark:border-dark-tremor-border relative h-full bg-gray-50 dark:bg-dark-tremor-background-subtle">
           <div className="px-4 sm:px-6 lg:px-8">
-            <div className="overflow flex h-16 sm:space-x-7 items-center">
-              <div className="hidden shrink-0 sm:flex sm:items-center">
-                <a href="/" className="p-1.5">
-                  <Logo
-                    className="size-4 shrink-0 w-8 h-8 text-tremor-content-strong dark:text-dark-tremor-content-strong"
-                    aria-hidden={true}
-                  />
-                </a>
-              </div>
-              <nav className="flex-1 -mb-px flex space-x-6" aria-label="Tabs">
-                {visibleNavigation.map((navItem) =>
-                  navItem.slug === 'inspectr' ? (
-                    <InspectrNavButton
-                      key={navItem.slug}
-                      navItem={navItem}
-                      isActive={navItem.slug === currentNav.slug}
-                      onClick={() => handleTabClick(navItem)}
-                      isCurrent={navItem.name === currentTab.name}
+            <div className="flex h-16 items-center justify-between gap-6">
+              <div className="flex items-center gap-6 min-w-0">
+                {/* ——— Logo ——— */}
+                <div className="hidden shrink-0 sm:flex sm:items-center">
+                  <a href="/" className="p-1.5">
+                    <Logo
+                      className="size-4 shrink-0 w-8 h-8 text-tremor-content-strong dark:text-dark-tremor-content-strong"
+                      aria-hidden={true}
                     />
-                  ) : (
-                    <button
-                      key={navItem.slug}
-                      onClick={() => handleTabClick(navItem)}
-                      className={classNames(
-                        navItem.slug === currentNav.slug
-                          ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
-                          : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong dark:text-dark-tremor-content-emphasis hover:dark:border-dark-tremor-content-subtle hover:dark:text-dark-tremor-content-strong',
-                        'inline-flex items-center whitespace-nowrap border-b-2 px-2 py-2 text-tremor-default font-medium'
-                      )}
-                      aria-current={navItem.name === currentTab.name ? 'page' : undefined}
-                    >
-                      {navItem.name}
-                    </button>
-                  )
-                )}
-              </nav>
-              <div className="ml-auto flex items-center space-x-2">
+                  </a>
+                </div>
+                {/* ——— Workspace Navigation ——— */}
+                <div className="flex-1 min-w-0">
+                  <nav
+                    className="flex-1 min-w-0 -mb-px flex space-x-4 overflow-x-auto"
+                    aria-label="Tabs"
+                  >
+                    {visibleNavigation.map((navItem) =>
+                      navItem.slug === 'inspectr' ? (
+                        <InspectrNavButton
+                          key={navItem.slug}
+                          navItem={navItem}
+                          isActive={navItem.slug === currentNav.slug}
+                          onClick={() => handleTabClick(navItem)}
+                          isCurrent={navItem.name === currentTab.name}
+                        />
+                      ) : (
+                        <button
+                          key={navItem.slug}
+                          onClick={() => handleTabClick(navItem)}
+                          className={classNames(
+                            navItem.slug === currentNav.slug
+                              ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
+                              : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong dark:text-dark-tremor-content-emphasis hover:dark:border-dark-tremor-content-subtle hover:dark:text-dark-tremor-content-strong',
+                            'inline-flex items-center whitespace-nowrap border-b-2 px-2 py-2 text-tremor-default font-medium'
+                          )}
+                          aria-current={navItem.name === currentTab.name ? 'page' : undefined}
+                        >
+                          {navItem.name}
+                        </button>
+                      )
+                    )}
+                  </nav>
+                </div>
+              </div>
+              {/* ——— Workspace Actions ——— */}
+              <div className="shrink-0 flex items-center space-x-2">
                 <DialogVersionUpdate />
                 <button
                   className="px-2 py-1 text-cyan-500 hover:text-white border border-cyan-500 hover:bg-cyan-500 rounded text-xs"
@@ -154,7 +164,11 @@ export default function Workspace() {
                 <div className="relative">
                   <button
                     disabled={isRecordExportOpen}
-                    className={`px-2 py-1 rounded text-xs flex items-center border border-green-500 ${isRecording ? 'text-white bg-green-500' : 'text-green-500 hover:text-white  hover:bg-green-500'} `}
+                    className={`px-2 py-1 rounded text-xs flex items-center border border-green-500 ${
+                      isRecording
+                        ? 'text-white bg-green-500'
+                        : 'text-green-500 hover:text-white  hover:bg-green-500'
+                    } `}
                     onClick={() => {
                       if (isRecording) {
                         if (recordCount > 0) {
@@ -170,9 +184,21 @@ export default function Workspace() {
                     }}
                   >
                     <span
-                      className={`mr-1 block w-2 h-2 ${isRecording ? 'bg-red-600 animate-pulse' : 'bg-red-600 rounded-full'}`}
+                      className={`mr-1 block w-2 h-2 ${
+                        isRecording ? 'bg-red-600 animate-pulse' : 'bg-red-600 rounded-full'
+                      }`}
                     ></span>
-                    {isRecording ? `Stop Recording` : 'Start Recording'}
+                    {isRecording ? (
+                      <>
+                        <span>Stop</span>
+                        <span className="max-[880px]:hidden"> Recording</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Start</span>
+                        <span className="max-[880px]:hidden"> Recording</span>
+                      </>
+                    )}
                   </button>
                   {isRecording && recordCount > 0 && (
                     <span className="absolute -top-3 -right-2">
