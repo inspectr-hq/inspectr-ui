@@ -299,7 +299,7 @@ class OperationsClient {
    * @param {string} [options.format='json'] - Export format
    * @returns {Promise<Blob>} - Exported data blob
    */
-  async export({ path, preset, since, until, format = 'json' } = {}) {
+  async export({ path, preset, since, until, format = 'json', indent } = {}) {
     let url;
     // Set export format
     if (['postman', 'openapi', 'phar'].includes(format)) {
@@ -314,6 +314,7 @@ class OperationsClient {
     if (preset) params.append('preset', preset);
     if (since) params.append('since', since);
     if (until) params.append('until', until);
+    if (indent !== undefined) params.append('indent', indent);
 
     const res = await fetch(`${url}?${params}`, {
       headers: this.client.defaultHeaders

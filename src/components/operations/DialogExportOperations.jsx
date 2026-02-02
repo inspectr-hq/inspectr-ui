@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useInspectr } from '../../context/InspectrContext';
 import useFeaturePreview from '../../hooks/useFeaturePreview.jsx';
+import useLocalStorage from '../../hooks/useLocalStorage.jsx';
 
 export default function DialogExportOperations({ open, onClose }) {
   const { client, setToast } = useInspectr();
@@ -11,6 +12,7 @@ export default function DialogExportOperations({ open, onClose }) {
   const [preset, setPreset] = useState('');
   const [since, setSince] = useState('');
   const [until, setUntil] = useState('');
+  const [indentJson, setIndentJson] = useLocalStorage('exportJsonIndent', 'false');
   const [openapiEnabled] = useFeaturePreview('feat_export_openapi');
   const [postmanEnabled] = useFeaturePreview('feat_export_postman');
   const [errorMessage, setErrorMessage] = useState('');
@@ -24,6 +26,9 @@ export default function DialogExportOperations({ open, onClose }) {
     setErrorMessage('');
     try {
       const params = { format };
+      if (format === 'json') {
+        params.indent = indentJson === 'true';
+      }
       if (timeOption === 'preset') {
         if (preset) params.preset = preset;
       } else {
@@ -145,6 +150,38 @@ export default function DialogExportOperations({ open, onClose }) {
             {postmanEnabled && <option value="postman">Postman (preview)</option>}
           </select>
         </div>
+        {format === 'json' && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">JSON formatting</label>
+            <div className="mt-1 flex items-center space-x-4">
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  name="jsonIndentOperations"
+                  value="false"
+                  checked={indentJson === 'false'}
+                  onChange={() => setIndentJson('false')}
+                  className="form-radio"
+                />
+                <span className="ml-2">Minified</span>
+              </label>
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  name="jsonIndentOperations"
+                  value="true"
+                  checked={indentJson === 'true'}
+                  onChange={() => setIndentJson('true')}
+                  className="form-radio"
+                />
+                <span className="ml-2">Pretty-printed</span>
+              </label>
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Minified is the default but you can export as a pretty-printed JSON.
+            </p>
+          </div>
+        )}
         {errorMessage && (
           <p className="mb-4 text-sm text-red-600" role="alert">
             {errorMessage}
