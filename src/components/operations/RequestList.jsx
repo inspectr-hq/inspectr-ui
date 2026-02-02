@@ -109,8 +109,8 @@ const RequestList = ({
 
   return (
     <div className="flex flex-col h-full relative">
-      <div className="p-4 flex justify-between items-center">
-        <span className="font-bold text-xl text-tremor-content-strong dark:text-dark-tremor-content-strong">
+      <div className="p-4 flex justify-between items-center [container-type:inline-size] [container-name:requestHeader]">
+        <span className="font-bold text-xl text-tremor-content-strong dark:text-dark-tremor-content-strong [@container(max-width:360px)]:text-base [@container(max-width:310px)]:hidden">
           Requests ({operations.length} of {totalCount})
         </span>
         <div className="space-x-2 relative">
