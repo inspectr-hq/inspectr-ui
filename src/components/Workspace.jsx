@@ -22,6 +22,7 @@ import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 import { normalizeTimestamp, isTimestampAfter } from '../utils/timestampUtils.js';
 import DialogVersionUpdate from './DialogVersionUpdate.jsx';
 import HeaderActionButton from './HeaderActionButton.jsx';
+import NotificationBadge from './NotificationBadge.jsx';
 import RecordingToggle from './RecordingToggle.jsx';
 
 function classNames(...classes) {
@@ -113,8 +114,11 @@ export default function Workspace() {
                 </a>
               </div>
               {/* ——— Workspace Navigation ——— */}
-              <div className="flex-1 min-w-0 overflow-hidden">
-                <nav className="flex-1 min-w-0 flex space-x-6 overflow-x-auto" aria-label="Tabs">
+              <div className="flex-1 min-w-0">
+                <nav
+                  className="flex-1 min-w-0 flex space-x-6 overflow-x-auto overflow-y-visible"
+                  aria-label="Tabs"
+                >
                   {visibleNavigation.map((navItem) =>
                     navItem.slug === 'inspectr' ? (
                       <InspectrNavButton
@@ -302,16 +306,18 @@ const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
         isActive
           ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
           : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong dark:text-dark-tremor-content-emphasis hover:dark:border-dark-tremor-content-subtle hover:dark:text-dark-tremor-content-strong',
-        'inline-flex items-center whitespace-nowrap border-b-2 px-2 py-2 text-tremor-default font-medium relative'
+        'inline-flex items-center whitespace-nowrap border-b-2 px-2 py-2 pr-2 text-tremor-default font-medium relative'
       )}
       aria-current={isCurrent ? 'page' : undefined}
     >
-      {navItem.name}
-      {!isActive && unreadCount > 0 && (
-        <span className="absolute -top-3 -right-2">
-          <NotificationBadge count={unreadCount} color={color} />
-        </span>
-      )}
+      <span className="relative inline-flex items-center">
+        <span>{navItem.name}</span>
+        {!isActive && unreadCount > 0 && (
+          <span className="absolute -top-2 right-0 translate-x-full pointer-events-none">
+            <NotificationBadge count={unreadCount} color={color} />
+          </span>
+        )}
+      </span>
     </button>
   );
 };
