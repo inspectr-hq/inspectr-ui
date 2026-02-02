@@ -55,6 +55,7 @@ class InspectrClient {
     this.rules = new RulesClient(this);
     this.traces = new TracesClient(this);
     this.connectors = new ConnectorsClient(this);
+    this.expose = new ExposeSettingsClient(this);
   }
 
   /**
@@ -197,6 +198,45 @@ class McpSettingsClient {
       '[Inspectr SDK] mcp.updateAuthenticationSettings is deprecated. Use updateMCPServerSettings instead.'
     );
     return this.updateMCPServerSettings(body);
+  }
+}
+
+class ExposeSettingsClient {
+  constructor(client) {
+    this.client = client;
+  }
+
+  async handleResponse(res, errorMessage) {
+    let payload = null;
+    try {
+      payload = await res.json();
+    } catch {
+      payload = null;
+    }
+    if (!res.ok) {
+      const message = payload?.error || payload?.message || `${errorMessage} (${res.status})`;
+      const error = new Error(message);
+      error.status = res.status;
+      error.payload = payload;
+      throw error;
+    }
+    return payload;
+  }
+
+  async getExposeSettings() {
+    const res = await fetch(`${this.client.apiEndpoint}/expose/settings`, {
+      headers: this.client.defaultHeaders
+    });
+    return await this.handleResponse(res, 'Expose settings failed');
+  }
+
+  async putExposeSettings(body) {
+    const res = await fetch(`${this.client.apiEndpoint}/expose/settings`, {
+      method: 'PUT',
+      headers: this.client.jsonHeaders,
+      body: JSON.stringify(body)
+    });
+    return await this.handleResponse(res, 'Expose settings update failed');
   }
 }
 
