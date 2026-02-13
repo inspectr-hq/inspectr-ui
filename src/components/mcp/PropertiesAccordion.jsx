@@ -29,12 +29,16 @@ const PropertiesAccordion = ({ operation, mcpMeta }) => {
           {operation.id}
         </dd>
       </div>
-      <div className="flex items-center justify-between gap-3 px-3 py-2">
-        <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">Correlation ID</dt>
-        <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
-          {operation.correlationId || '—'}
-        </dd>
-      </div>
+      {operation?.correlationId ? (
+        <div className="flex items-center justify-between gap-3 px-3 py-2">
+          <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">
+            Correlation ID
+          </dt>
+          <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
+            {operation.correlationId || '—'}
+          </dd>
+        </div>
+      ) : null}
       <div className="flex items-center justify-between gap-3 px-3 py-2">
         <dt className="text-tremor-content-subtle dark:text-dark-tremor-content">Trace ID</dt>
         <dd className="text-right text-sm font-mono text-tremor-content dark:text-dark-tremor-content">
