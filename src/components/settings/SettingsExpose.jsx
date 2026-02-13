@@ -75,9 +75,18 @@ export default function SettingsExpose() {
 
   const localUrl = settings?.local_url || '-';
   const publicUrl = settings?.public_url || '';
+  const persistedEnabled = Boolean(settings?.enabled);
 
   const canSave = useMemo(() => settings !== null, [settings]);
-  const statusEnabled = settings?.enabled ?? false;
+  const isDirty = useMemo(() => {
+    if (!settings) return false;
+    return (
+      Boolean(form.enabled) !== Boolean(settings?.enabled) ||
+      form.channel !== (settings?.channel || '') ||
+      form.channel_code !== (settings?.channel_code || '')
+    );
+  }, [form.channel, form.channel_code, form.enabled, settings]);
+  const statusEnabled = persistedEnabled;
 
   return (
     <>
@@ -141,12 +150,12 @@ export default function SettingsExpose() {
             </List>
           )}
           <Divider className="my-8" />
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div className="space-y-3">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-[220px_minmax(0,1fr)] md:items-center md:gap-4">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                  Enable expose
-                </span>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content">
+                  Enable expose toggle
+                </label>
                 <TooltipInfoButton
                   label="Expose"
                   tooltip="Enable to share the viewport through a public channel and expose operations externally."
@@ -155,6 +164,7 @@ export default function SettingsExpose() {
               <Switch
                 checked={form.enabled}
                 onChange={(value) => setForm((prev) => ({ ...prev, enabled: value }))}
+                disabled={saving || loading || !canSave}
                 className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-all duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${form.enabled ? 'bg-tremor-brand dark:bg-dark-tremor-brand' : 'bg-gray-200 dark:bg-gray-700'}`}
               >
                 <span className="sr-only">Toggle expose</span>
@@ -165,41 +175,61 @@ export default function SettingsExpose() {
                 />
               </Switch>
             </div>
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wide text-tremor-default">
-                  Channel
-                </label>
-                <input
-                  type="text"
-                  value={form.channel}
-                  onChange={(e) => setForm((prev) => ({ ...prev, channel: e.target.value }))}
-                  placeholder="hello-world"
-                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-tremor-content shadow-sm focus:border-tremor-brand focus:outline-none focus:ring-1 focus:ring-tremor-brand"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wide text-tremor-default">
-                  Channel Code
-                </label>
-                <input
-                  type="text"
-                  value={form.channel_code}
-                  onChange={(e) => setForm((prev) => ({ ...prev, channel_code: e.target.value }))}
-                  placeholder="12345ABC"
-                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-tremor-content shadow-sm focus:border-tremor-brand focus:outline-none focus:ring-1 focus:ring-tremor-brand"
-                />
-              </div>
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-[220px_minmax(0,1fr)] md:items-center md:gap-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
+                Channel
+              </label>
+              <input
+                type="text"
+                value={form.channel}
+                onChange={(e) => setForm((prev) => ({ ...prev, channel: e.target.value }))}
+                disabled={saving || loading || !canSave}
+                placeholder="hello-world"
+                className="w-full border bg-white dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content border-gray-300 dark:border-dark-tremor-border rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-[220px_minmax(0,1fr)] md:items-center md:gap-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-tremor-content mb-1">
+                Channel code
+              </label>
+              <input
+                type="text"
+                value={form.channel_code}
+                onChange={(e) => setForm((prev) => ({ ...prev, channel_code: e.target.value }))}
+                disabled={saving || loading || !canSave}
+                placeholder="12345ABC"
+                className="w-full border bg-white dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content border-gray-300 dark:border-dark-tremor-border rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
             </div>
           </div>
-          <div className="mt-6 flex items-center gap-3 justify-end">
+          <div className="mt-6 md:ml-[220px] flex items-center gap-3 justify-end">
+            <button
+              type="button"
+              onClick={() =>
+                setForm({
+                  enabled: Boolean(settings?.enabled),
+                  channel: settings?.channel || '',
+                  channel_code: settings?.channel_code || ''
+                })
+              }
+              disabled={!canSave || saving || !isDirty}
+              className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-dark-tremor-border dark:text-dark-tremor-content dark:hover:bg-dark-tremor-background-subtle"
+            >
+              Cancel
+            </button>
             <button
               type="button"
               onClick={handleSave}
-              disabled={!canSave || saving}
-              className={`px-4 py-2 rounded text-white ${saving ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+              disabled={!canSave || saving || !isDirty}
+              className={`px-4 py-2 rounded text-white ${
+                saving
+                  ? 'bg-gray-400'
+                  : persistedEnabled
+                    ? 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
+                    : 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800'
+              }`}
             >
-              {saving ? 'Saving…' : 'Save expose settings'}
+              {saving ? 'Saving…' : persistedEnabled ? 'Disable expose' : 'Enable expose'}
             </button>
             {!canSave && (
               <p className="text-xs text-gray-500 dark:text-gray-400">
