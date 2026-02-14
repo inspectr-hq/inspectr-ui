@@ -15,7 +15,7 @@ const SseFramesViewer = ({ frames, raw }) => {
   );
 
   const [showJson, setShowJson] = React.useState({});
-  const [sortKey, setSortKey] = React.useState(null); // 'id' | 'type' | 'data' | 'time'
+  const [sortKey, setSortKey] = React.useState('time'); // 'id' | 'type' | 'data' | 'time'
   const [sortDir, setSortDir] = React.useState('asc'); // 'asc' | 'desc'
 
   const getTs = (frame) => {
@@ -31,7 +31,6 @@ const SseFramesViewer = ({ frames, raw }) => {
   const compareStr = (a, b) => String(a || '').localeCompare(String(b || ''));
 
   const sortedItems = React.useMemo(() => {
-    if (!sortKey) return items;
     const dir = sortDir === 'asc' ? 1 : -1;
     return [...items].sort((a, b) => {
       let cmp = 0;
@@ -50,8 +49,8 @@ const SseFramesViewer = ({ frames, raw }) => {
     } else if (sortDir === 'asc') {
       setSortDir('desc');
     } else if (sortDir === 'desc') {
-      // third click resets sorting
-      setSortKey(null);
+      // third click resets to chronological default
+      setSortKey('time');
       setSortDir('asc');
     } else {
       setSortKey(key);
