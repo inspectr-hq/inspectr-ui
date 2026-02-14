@@ -52,11 +52,17 @@ export default function useInspectrRouter(operations, defaultTab = 'request') {
     window.history.pushState(null, '', '#inspectr');
   };
 
+  // Keep selected operation data fresh when the underlying record updates.
+  const syncSelectedOperation = (op) => {
+    setSelectedOperation(op || null);
+  };
+
   return {
     selectedOperation,
     currentTab,
     handleSelect,
     handleTabChange,
-    clearSelection
+    clearSelection,
+    syncSelectedOperation
   };
 }

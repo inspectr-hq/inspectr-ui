@@ -200,8 +200,14 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
 
   // now hook in deep-linking
-  const { selectedOperation, currentTab, handleSelect, handleTabChange, clearSelection } =
-    useInspectrRouter(operations);
+  const {
+    selectedOperation,
+    currentTab,
+    handleSelect,
+    handleTabChange,
+    clearSelection,
+    syncSelectedOperation
+  } = useInspectrRouter(operations);
 
   const syncOperations = () => {
     setIsSyncing(true);
@@ -215,10 +221,15 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
   useEffect(() => {
     if (!operations) return;
 
-    const currentExists =
-      selectedOperation && operations.some((op) => toId(op.id) === toId(selectedOperation.id));
+    const currentMatch =
+      selectedOperation && operations.find((op) => toId(op.id) === toId(selectedOperation.id));
 
-    if (currentExists) return;
+    if (currentMatch) {
+      if (currentMatch !== selectedOperation) {
+        syncSelectedOperation(currentMatch);
+      }
+      return;
+    }
 
     const { slug, operationId } = parseHash();
     const hasRouteSelection = slug === 'inspectr' && operationId;
@@ -236,7 +247,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
     } else {
       clearSelection();
     }
-  }, [operations, selectedOperation]);
+  }, [operations, selectedOperation, syncSelectedOperation]);
 
   // Clear all operations.
   const clearOperations = async () => {

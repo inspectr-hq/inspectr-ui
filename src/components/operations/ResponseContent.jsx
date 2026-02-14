@@ -1,5 +1,5 @@
 // src/components/operations/ResponseContent.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import CopyButton from '../CopyButton.jsx';
 import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
@@ -63,6 +63,7 @@ const ResponseContent = ({ operation }) => {
   const [viewMode, setViewMode] = useState('source');
   const [showResponseBody, setShowResponseBody] = useState(true);
   const currentOperationId = operation?.id;
+  const lastEventsCountRef = useRef(0);
 
   const normalizeHeaders = (headers) => {
     if (!headers) return [];
@@ -188,8 +189,23 @@ const ResponseContent = ({ operation }) => {
 
   useEffect(() => {
     if (!currentOperationId) return;
-    setViewMode(shouldDefaultToPreview ? 'preview' : 'source');
-  }, [currentOperationId, shouldDefaultToPreview]);
+    if (isSseContent) {
+      setViewMode('events');
+    } else {
+      setViewMode(shouldDefaultToPreview ? 'preview' : 'source');
+    }
+    lastEventsCountRef.current = Array.isArray(availableSseFrames) ? availableSseFrames.length : 0;
+  }, [currentOperationId, isSseContent, shouldDefaultToPreview]);
+
+  useEffect(() => {
+    if (!currentOperationId) return;
+    if (!hasEvents) return;
+    const count = Array.isArray(availableSseFrames) ? availableSseFrames.length : 0;
+    if (count > lastEventsCountRef.current) {
+      setViewMode('events');
+    }
+    lastEventsCountRef.current = count;
+  }, [availableSseFrames, currentOperationId, hasEvents]);
   // Ensure we only try rendering when we actually have binary-safe data in hand
   const previewPayloadString = typeof previewPayload === 'string' ? previewPayload : '';
   const trimmedPreviewPayload = previewPayloadString.trim();
@@ -292,6 +308,54 @@ const ResponseContent = ({ operation }) => {
 
   const shouldShowDownloadButton = hasDownloadableBody && isBinaryish;
 
+  const getLastFrameTimestampMs = () => {
+    if (!Array.isArray(availableSseFrames) || !availableSseFrames.length) return null;
+    for (let i = availableSseFrames.length - 1; i >= 0; i -= 1) {
+      const raw = availableSseFrames[i]?.timestamp || availableSseFrames[i]?.time;
+      if (!raw) continue;
+      const ms = new Date(raw).getTime();
+      if (!Number.isNaN(ms)) return ms;
+    }
+    return null;
+  };
+
+  const getStreamState = () => {
+    if (!isSseContent) return null;
+    if (operation?.__streamEventType === 'dev.inspectr.operation.http.v1.completed') {
+      return {
+        label: 'Completed',
+        className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+      };
+    }
+    const status = Number(operation?.response?.status);
+    if (Number.isFinite(status) && status >= 400) {
+      return {
+        label: 'Error',
+        className: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
+      };
+    }
+    const lastActivity = getLastFrameTimestampMs();
+    if (!lastActivity) {
+      return {
+        label: 'Streaming…',
+        className: 'bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-300'
+      };
+    }
+    const ageMs = Date.now() - lastActivity;
+    if (Number.isFinite(ageMs) && ageMs < 12000) {
+      return {
+        label: 'Streaming…',
+        className: 'bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-300'
+      };
+    }
+    return {
+      label: 'Completed',
+      className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+    };
+  };
+
+  const streamState = getStreamState();
+
   return (
     <div className="flex flex-col h-full">
       {/* Response Headers Section */}
@@ -340,7 +404,16 @@ const ResponseContent = ({ operation }) => {
           onClick={() => setShowResponseBody(!showResponseBody)}
           className="w-full p-2 text-left font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong cursor-pointer flex items-center justify-between"
         >
-          <span>Response Body</span>
+          <span className="inline-flex items-center gap-2">
+            <span>Response Body</span>
+            {streamState ? (
+              <span
+                className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-medium ${streamState.className}`}
+              >
+                {streamState.label}
+              </span>
+            ) : null}
+          </span>
           <span className="flex items-center gap-2">
             <span className="flex items-center" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center space-x-2 mr-2">
