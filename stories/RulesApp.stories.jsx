@@ -1,5 +1,4 @@
 import React from 'react';
-import { action } from '@storybook/addon-actions';
 import RulesApp from '../src/components/RulesApp.jsx';
 import InspectrContext from '../src/context/InspectrContext.jsx';
 import {
@@ -11,6 +10,8 @@ import {
   mockRuleTemplates,
   mockOperationTags
 } from './rulesMocks.js';
+
+const action = () => () => {};
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

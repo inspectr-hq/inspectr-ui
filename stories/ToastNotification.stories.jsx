@@ -1,7 +1,8 @@
 // src/components/ToastNotification.stories.jsx
 import React from 'react';
-import { action } from '@storybook/addon-actions';
 import ToastNotification from '../src/components/ToastNotification';
+
+const action = () => () => {};
 
 export default {
   title: 'Components/ToastNotification',

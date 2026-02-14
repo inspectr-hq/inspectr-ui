@@ -1,6 +1,7 @@
 import React from 'react';
-import { action } from '@storybook/addon-actions';
 import DialogConfirmClearAll from '../src/components/DialogConfirmClearAll';
+
+const action = () => () => {};
 
 export default {
   title: 'Components/DialogConfirmClearAll',

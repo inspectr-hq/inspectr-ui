@@ -1,5 +1,4 @@
 import React from 'react';
-import { action } from '@storybook/addon-actions';
 import RulesBuilderPanel from '../src/components/rules/RulesBuilderPanel.jsx';
 import {
   mockActionsCatalog,
@@ -8,6 +7,8 @@ import {
   createMockBuilderForm
 } from './rulesMocks.js';
 import { buildActionState } from '../src/utils/rulesHelpers.js';
+
+const action = () => () => {};
 
 const reorder = (items, fromIndex, toIndex) => {
   const copy = items.slice();

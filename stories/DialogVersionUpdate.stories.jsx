@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import DialogVersionUpdate from '../src/components/DialogVersionUpdate.jsx';
-import { InspectrContext } from '../src/context/InspectrContext.jsx';
+import InspectrContext from '../src/context/InspectrContext.jsx';
 
 export default {
   title: 'Components/DialogVersionUpdate',
