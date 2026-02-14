@@ -10,6 +10,7 @@ import {
 } from './traceUtils.js';
 
 const DEFAULT_LIMIT = 200;
+const toId = (value) => (value == null ? null : String(value));
 
 export const useTraceExplorer = ({
   initialTraceId = null,
@@ -28,7 +29,7 @@ export const useTraceExplorer = ({
   const [isTraceListLoading, setIsTraceListLoading] = useState(false);
   const [traceListError, setTraceListError] = useState(null);
 
-  const [selectedTraceId, setSelectedTraceId] = useState(initialTraceId ?? null);
+  const [selectedTraceId, setSelectedTraceId] = useState(toId(initialTraceId));
 
   const [traceDetail, setTraceDetail] = useState(null);
   const [traceDetailMeta, setTraceDetailMeta] = useState(null);
@@ -40,7 +41,7 @@ export const useTraceExplorer = ({
 
   const [traceListRefreshKey, setTraceListRefreshKey] = useState(0);
 
-  const [selectedOperationId, setSelectedOperationId] = useState(initialOperationId ?? null);
+  const [selectedOperationId, setSelectedOperationId] = useState(toId(initialOperationId));
 
   const traceChangeCallbackRef = useRef(onTraceChange);
   const operationChangeCallbackRef = useRef(onOperationChange);
@@ -56,14 +57,16 @@ export const useTraceExplorer = ({
   }, [onOperationChange]);
 
   useEffect(() => {
-    if (initialTraceId && initialTraceId !== selectedTraceId) {
-      setSelectedTraceId(initialTraceId);
+    const nextTraceId = toId(initialTraceId);
+    if (nextTraceId && nextTraceId !== selectedTraceId) {
+      setSelectedTraceId(nextTraceId);
     }
   }, [initialTraceId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (initialOperationId && initialOperationId !== selectedOperationId) {
-      setSelectedOperationId(initialOperationId);
+    const nextOperationId = toId(initialOperationId);
+    if (nextOperationId && nextOperationId !== selectedOperationId) {
+      setSelectedOperationId(nextOperationId);
     }
   }, [initialOperationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -177,23 +180,23 @@ export const useTraceExplorer = ({
 
   useEffect(() => {
     if (!normalizedOperations.length) {
-      if (selectedOperationId !== null) {
-        setSelectedOperationId(null);
-      }
+      // Don't clear selection while operations are loading
       return;
     }
 
     if (
       selectedOperationId &&
-      normalizedOperations.some((operation) => operation.id === selectedOperationId)
+      normalizedOperations.some((operation) => toId(operation.id) === selectedOperationId)
     ) {
       return;
     }
 
     const initialExists =
       initialOperationId &&
-      normalizedOperations.some((operation) => operation.id === initialOperationId);
-    const fallbackOperationId = initialExists ? initialOperationId : normalizedOperations[0].id;
+      normalizedOperations.some((operation) => toId(operation.id) === toId(initialOperationId));
+    const fallbackOperationId = toId(
+      initialExists ? initialOperationId : normalizedOperations[0].id
+    );
 
     if (fallbackOperationId !== selectedOperationId) {
       setSelectedOperationId(fallbackOperationId);
@@ -202,7 +205,9 @@ export const useTraceExplorer = ({
 
   const selectedOperation = useMemo(() => {
     if (!selectedOperationId) return null;
-    return normalizedOperations.find((operation) => operation.id === selectedOperationId) || null;
+    return (
+      normalizedOperations.find((operation) => toId(operation.id) === selectedOperationId) || null
+    );
   }, [normalizedOperations, selectedOperationId]);
 
   const traceSummary = useMemo(() => {
@@ -239,19 +244,20 @@ export const useTraceExplorer = ({
   }, [isActive]);
 
   const selectTrace = (traceId) => {
-    if (!traceId) {
+    const nextTraceId = toId(traceId);
+    if (!nextTraceId) {
       setSelectedTraceId(null);
       setSelectedOperationId(null);
       return;
     }
-    if (traceId !== selectedTraceId) {
+    if (nextTraceId !== selectedTraceId) {
       setSelectedOperationId(null);
     }
-    setSelectedTraceId(traceId);
+    setSelectedTraceId(nextTraceId);
   };
 
   const selectOperation = (operationId) => {
-    setSelectedOperationId(operationId);
+    setSelectedOperationId(toId(operationId));
   };
 
   const refreshTraceList = () => setTraceListRefreshKey((value) => value + 1);

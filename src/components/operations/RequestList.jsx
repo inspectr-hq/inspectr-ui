@@ -8,6 +8,8 @@ import { RiExpandWidthFill } from '@remixicon/react';
 import DialogConfirmClear from '../DialogConfirmClear.jsx';
 import DividerText from '../DividerText.jsx';
 
+const toId = (value) => (value == null ? null : String(value));
+
 const RequestList = ({
   operations,
   onSelect,
@@ -239,7 +241,7 @@ const RequestList = ({
                     operation={op}
                     onSelect={onSelect}
                     onRemove={onRemove}
-                    selected={selectedOperation && selectedOperation.id === opId}
+                    selected={selectedOperation && toId(selectedOperation.id) === toId(opId)}
                     showQueryParams={showQueryParams}
                     selectedOperationRef={selectedOperationRef}
                   />

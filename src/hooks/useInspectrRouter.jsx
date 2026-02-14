@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { parseHash } from './useHashRouter';
 
+const toId = (value) => (value == null ? null : String(value));
+
 export default function useInspectrRouter(operations, defaultTab = 'request') {
   const [selectedOperation, setSelectedOperation] = useState(null);
   const [currentTab, setCurrentTab] = useState(defaultTab);
@@ -13,7 +15,7 @@ export default function useInspectrRouter(operations, defaultTab = 'request') {
 
       // select by ID
       if (operationId && operations.length) {
-        const match = operations.find((o) => String(o.id) === operationId);
+        const match = operations.find((o) => toId(o.id) === operationId);
         if (match) setSelectedOperation(match);
       }
 
@@ -32,14 +34,16 @@ export default function useInspectrRouter(operations, defaultTab = 'request') {
   const handleSelect = (op) => {
     setSelectedOperation(op);
     // "#inspectr/{id}/{currentTab}"
-    window.history.pushState(null, '', `#inspectr/${op.id}/${currentTab}`);
+    const encodedId = op.id ? encodeURIComponent(op.id) : '';
+    window.history.pushState(null, '', `#inspectr/${encodedId}/${currentTab}`);
   };
 
   // if you let them switch tabs inside InspectrApp:
   const handleTabChange = (tab) => {
     setCurrentTab(tab);
     // preserve selectedOperation in URL if present
-    const base = selectedOperation ? `#inspectr/${selectedOperation.id}` : '#inspectr';
+    const encodedId = selectedOperation?.id ? encodeURIComponent(selectedOperation.id) : null;
+    const base = encodedId ? `#inspectr/${encodedId}` : '#inspectr';
     window.history.replaceState(null, '', `${base}/${tab}`);
   };
 

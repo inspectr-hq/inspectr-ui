@@ -290,6 +290,12 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
 
   const traceInfo = operation?.meta?.trace || null;
   const traceId = traceInfo?.trace_id || null;
+  const traceOperationId = operation?.operation_id || operation?.id || null;
+  const encodedTraceId = traceId ? encodeURIComponent(traceId) : null;
+  const encodedTraceOperationId = traceOperationId ? encodeURIComponent(traceOperationId) : null;
+  const traceHref = encodedTraceId
+    ? `#traces/${encodedTraceId}${encodedTraceOperationId ? `/${encodedTraceOperationId}` : ''}`
+    : null;
   const traceSource = traceInfo?.source || null;
   const rawMcpMeta = operation?.meta?.mcp;
   const mcpMeta =
@@ -344,9 +350,8 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
   };
 
   const handleViewTrace = () => {
-    if (!traceId) return;
-    const traceOperationId = operation?.operation_id || operation?.id || null;
-    const hashValue = `#traces/${traceId}${traceOperationId ? `/${traceOperationId}` : ''}`;
+    if (!traceHref) return;
+    const hashValue = traceHref;
     if (window.location.hash === hashValue) {
       window.dispatchEvent(new HashChangeEvent('hashchange'));
     } else {
@@ -372,6 +377,7 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
         </div>
         <RequestDetailActions
           hasTrace={hasTrace}
+          traceHref={traceHref}
           onViewTrace={handleViewTrace}
           onDownload={handleDownloadOperation}
           onCopyCurl={handleCopyCurl}

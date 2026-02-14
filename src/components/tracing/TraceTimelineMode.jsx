@@ -17,6 +17,7 @@ import ListPagination from '../ListPagination.jsx';
 import TraceTimelineFilterPanel from './TraceTimelineFilterPanel.jsx';
 import { normalizeTagFilters } from '../../utils/normalizeTags.js';
 
+const toId = (value) => (value == null ? null : String(value));
 const DEFAULT_TIMELINE_WIDTH = 56;
 const MIN_TIMELINE_WIDTH = 30;
 const MAX_TIMELINE_WIDTH = 75;
@@ -291,12 +292,12 @@ export default function TraceTimelineMode({
 
     if (
       selectedOperationId &&
-      filteredOperations.some((operation) => operation.id === selectedOperationId)
+      filteredOperations.some((operation) => toId(operation.id) === selectedOperationId)
     ) {
       return;
     }
 
-    const fallbackOperationId = filteredOperations[0]?.id || null;
+    const fallbackOperationId = toId(filteredOperations[0]?.id);
     if (fallbackOperationId && fallbackOperationId !== selectedOperationId) {
       setSelectedOperationId(fallbackOperationId);
     }
@@ -304,7 +305,9 @@ export default function TraceTimelineMode({
 
   const selectedFilteredOperation = useMemo(() => {
     if (!selectedOperationId) return null;
-    return filteredOperations.find((operation) => operation.id === selectedOperationId) || null;
+    return (
+      filteredOperations.find((operation) => toId(operation.id) === selectedOperationId) || null
+    );
   }, [filteredOperations, selectedOperationId]);
 
   // Ensure the group containing the selected operation is expanded
@@ -312,7 +315,7 @@ export default function TraceTimelineMode({
     if (!selectedOperationId || !groups.length) return;
 
     const groupContainingOperation = groups.find((group) =>
-      group.operations.some((op) => op.id === selectedOperationId)
+      group.operations.some((op) => toId(op.id) === selectedOperationId)
     );
 
     if (groupContainingOperation && !expandedGroups.has(groupContainingOperation.id)) {

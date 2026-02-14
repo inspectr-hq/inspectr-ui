@@ -58,8 +58,10 @@ export const normalizeTraceOperation = (operation, index = 0) => {
       ? operation.tags
       : [];
 
+  const rawOperationId = operation.operation_id || operation.operationId || operation.id || null;
+
   return {
-    id: operation.operation_id || operation.operationId || `operation-${index}`,
+    id: rawOperationId != null ? String(rawOperationId) : `operation-${index}`,
     method: (request.method || operation.method || 'GET').toUpperCase(),
     status: response.status ?? operation.status ?? null,
     duration: durationValue,
