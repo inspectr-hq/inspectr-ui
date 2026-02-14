@@ -29,7 +29,10 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   const [exposeValue] = useLocalStorage('expose', 'false');
   const expose = exposeValue === 'true';
   const [isLoaded, setIsLoaded] = useState(false);
-  const { detailOperation, fetchDetail, isFetching } = useOperationDetails(operation?.id);
+  const { detailOperation, fetchDetail, isFetching } = useOperationDetails(
+    operation?.id,
+    operation
+  );
   const [isManualRefresh, setIsManualRefresh] = useState(false);
 
   const extractHeaders = (input) => {

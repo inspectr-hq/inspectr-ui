@@ -1,7 +1,8 @@
 // src/components/DialogConfirmClear.stories.jsx
 import React from 'react';
-import { action } from '@storybook/addon-actions';
 import DialogConfirmClear from '../src/components/DialogConfirmClear';
+
+const action = () => () => {};
 
 export default {
   title: 'Components/DialogConfirmClear',

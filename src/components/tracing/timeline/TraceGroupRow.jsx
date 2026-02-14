@@ -7,6 +7,8 @@ import { classNames } from '../traceUtils.js';
 import TraceTimelineBar from './TraceTimelineBar.jsx';
 import TraceOperationRow from './TraceOperationRow.jsx';
 
+const toId = (value) => (value == null ? null : String(value));
+
 export default function TraceGroupRow({
   group,
   isExpanded,
@@ -18,7 +20,7 @@ export default function TraceGroupRow({
   baseDuration,
   selectedOperationRef
 }) {
-  const isGroupSelected = group.operations.some((op) => op.id === selectedOperationId);
+  const isGroupSelected = group.operations.some((op) => toId(op.id) === selectedOperationId);
   const { startMs, durationMs } = group;
 
   return (
@@ -122,7 +124,7 @@ export default function TraceGroupRow({
                 key={operation.id}
                 operation={operation}
                 index={index}
-                isSelected={selectedOperationId === operation.id}
+                isSelected={selectedOperationId === toId(operation.id)}
                 onSelect={() => onOperationSelect(operation.id)}
                 timelineWidth={timelineWidth}
                 baseStart={baseStart}

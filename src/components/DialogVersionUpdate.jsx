@@ -85,7 +85,7 @@ export default function DialogVersionUpdate() {
       <button
         type="button"
         onClick={handleOpen}
-        className="inline-flex items-center gap-2 rounded-md border border-amber-400 bg-amber-500 px-1 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+        className="inline-flex max-[1040px]:hidden items-center gap-2 rounded-md border border-amber-400 bg-amber-500 px-1 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
       >
         <span className="h-2 w-2 rounded-full bg-white/90 shadow-sm" />
         <span className="uppercase tracking-wide">Update available</span>

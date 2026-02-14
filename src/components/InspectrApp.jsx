@@ -12,6 +12,7 @@ import { useInspectr } from '../context/InspectrContext';
 import { parseHash } from '../hooks/useHashRouter.jsx';
 import { normalizeTimestamp, isTimestampAfter } from '../utils/timestampUtils.js';
 
+const toId = (value) => (value == null ? null : String(value));
 const FILTER_STORAGE_KEY = 'requestFilters';
 const DEFAULT_FILTERS = Object.freeze({});
 const SESSION_FILTER_OPTIONS = Object.freeze({ resetOnReload: true });
@@ -199,8 +200,14 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 1;
 
   // now hook in deep-linking
-  const { selectedOperation, currentTab, handleSelect, handleTabChange, clearSelection } =
-    useInspectrRouter(operations);
+  const {
+    selectedOperation,
+    currentTab,
+    handleSelect,
+    handleTabChange,
+    clearSelection,
+    syncSelectedOperation
+  } = useInspectrRouter(operations);
 
   const syncOperations = () => {
     setIsSyncing(true);
@@ -214,16 +221,21 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
   useEffect(() => {
     if (!operations) return;
 
-    const currentExists =
-      selectedOperation && operations.some((op) => op.id === selectedOperation.id);
+    const currentMatch =
+      selectedOperation && operations.find((op) => toId(op.id) === toId(selectedOperation.id));
 
-    if (currentExists) return;
+    if (currentMatch) {
+      if (currentMatch !== selectedOperation) {
+        syncSelectedOperation(currentMatch);
+      }
+      return;
+    }
 
     const { slug, operationId } = parseHash();
     const hasRouteSelection = slug === 'inspectr' && operationId;
 
     if (hasRouteSelection) {
-      const match = operations.find((op) => String(op.id) === operationId);
+      const match = operations.find((op) => toId(op.id) === operationId);
       if (match) {
         handleSelect(match);
       }
@@ -235,7 +247,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
     } else {
       clearSelection();
     }
-  }, [operations, selectedOperation]);
+  }, [operations, selectedOperation, syncSelectedOperation]);
 
   // Clear all operations.
   const clearOperations = async () => {
@@ -275,7 +287,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
       );
       if (
         selectedOperation &&
-        filteredOperations.some((record) => record.id === selectedOperation.id)
+        filteredOperations.some((record) => toId(record.id) === toId(selectedOperation.id))
       ) {
         clearSelection();
       }
@@ -286,7 +298,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
 
   // Remove a single request.
   const removeOperation = async (opId) => {
-    const isCurrentlySelected = selectedOperation && (selectedOperation.id || '') === opId;
+    const isCurrentlySelected = selectedOperation && toId(selectedOperation.id) === toId(opId);
     const operation = await eventDB.getEvent(opId);
 
     try {

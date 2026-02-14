@@ -6,9 +6,9 @@ import TraceTimelineMode from './TraceTimelineMode.jsx';
 const buildTraceHash = (traceId, operationId) => {
   let hash = '#traces';
   if (traceId) {
-    hash += `/${traceId}`;
+    hash += `/${encodeURIComponent(traceId)}`;
     if (operationId) {
-      hash += `/${operationId}`;
+      hash += `/${encodeURIComponent(operationId)}`;
     }
   }
   return hash;

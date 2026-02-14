@@ -1,7 +1,8 @@
 // src/components/RequestListSidePanel.stories.jsx
 import React, { useState } from 'react';
-import { action } from '@storybook/addon-actions';
 import RequestListSidePanel from '../src/components/operations/RequestListSidePanel.jsx';
+
+const action = () => () => {};
 
 export default {
   title: 'Components/RequestListSidePanel',

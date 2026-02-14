@@ -154,6 +154,7 @@ const ChevronDownIcon = () => (
 
 export default function RequestDetailActions({
   hasTrace = false,
+  traceHref = null,
   onViewTrace,
   onDownload,
   onCopyCurl,
@@ -189,10 +190,20 @@ export default function RequestDetailActions({
   return (
     <div className="flex space-x-2">
       {hasTrace ? (
-        <button type="button" onClick={onViewTrace} className={TraceButtonClasses}>
+        <a
+          href={traceHref || '#traces'}
+          onClick={(event) => {
+            if (typeof onViewTrace !== 'function') return;
+            if (traceHref && window.location.hash === traceHref) {
+              event.preventDefault();
+              onViewTrace();
+            }
+          }}
+          className={TraceButtonClasses}
+        >
           <TraceIcon className="h-4 w-4" />
           <span className={labelClass}>View trace</span>
-        </button>
+        </a>
       ) : null}
       <button onClick={onDownload} className={ButtonClasses} aria-label="Export as JSON">
         <DownloadIcon />

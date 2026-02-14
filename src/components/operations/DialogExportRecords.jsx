@@ -4,6 +4,7 @@ import { useInspectr } from '../../context/InspectrContext';
 import { useLiveQuery } from 'dexie-react-hooks';
 import eventDB from '../../utils/eventDB.js';
 import useFeaturePreview from '../../hooks/useFeaturePreview.jsx';
+import useLocalStorage from '../../hooks/useLocalStorage.jsx';
 
 export default function DialogExportRecords({
   open,
@@ -15,6 +16,7 @@ export default function DialogExportRecords({
   const { client, setToast } = useInspectr();
   const [format, setFormat] = useState('json');
   const [exporting, setExporting] = useState(false);
+  const [indentJson, setIndentJson] = useLocalStorage('exportJsonIndent', 'false');
   const [openapiEnabled] = useFeaturePreview('feat_export_openapi');
   const [postmanEnabled] = useFeaturePreview('feat_export_postman');
   const [errorMessage, setErrorMessage] = useState('');
@@ -31,10 +33,14 @@ export default function DialogExportRecords({
     setExporting(true);
     setErrorMessage('');
     try {
-      const blob = await client.operations.export({
+      const params = {
         since: startTime,
         format
-      });
+      };
+      if (format === 'json') {
+        params.indent = indentJson === 'true';
+      }
+      const blob = await client.operations.export(params);
       const now = new Date();
       const pad = (num) => num.toString().padStart(2, '0');
       const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
@@ -88,6 +94,38 @@ export default function DialogExportRecords({
             {postmanEnabled && <option value="postman">Postman (preview)</option>}
           </select>
         </div>
+        {format === 'json' && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">JSON formatting</label>
+            <div className="mt-1 flex items-center space-x-4">
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  name="jsonIndentRecords"
+                  value="false"
+                  checked={indentJson === 'false'}
+                  onChange={() => setIndentJson('false')}
+                  className="form-radio"
+                />
+                <span className="ml-2">Minified</span>
+              </label>
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  name="jsonIndentRecords"
+                  value="true"
+                  checked={indentJson === 'true'}
+                  onChange={() => setIndentJson('true')}
+                  className="form-radio"
+                />
+                <span className="ml-2">Pretty-printed</span>
+              </label>
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Minified is the default but you can export as a pretty-printed JSON.
+            </p>
+          </div>
+        )}
         {errorMessage && (
           <p className="-mt-2 mb-4 text-sm text-red-600" role="alert">
             {errorMessage}

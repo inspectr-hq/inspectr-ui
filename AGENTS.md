@@ -1,3 +1,26 @@
+# inspectr-ui
+
+## Required Reading (MANDATORY)
+
+Before any work, open and read: **../.agents/AI_RULES.md**
+
+Failure to read is a violation. If file not found, stop and ask.
+
+## Planning
+
+For non-trivial tasks: create/update PLAN.md using ../.agents/PLAN_TEMPLATE.md
+
+## Skills & Commands
+
+Skills at `.codex/skills/`:
+- **`frontend-react`** - **Read this for React work.** 
+- `plan-first` - Planning workflow for complex tasks
+- `code-review` - For code review
+
+Commands: `/plan`, `/test`, `/lint`, `/release`
+
+---
+
 # Repository Guidelines
 
 ## Project Structure & Module Organization

@@ -438,10 +438,25 @@ export const InspectrProvider = ({ children }) => {
         // ========================================================================================
         // operation event
         // ========================================================================================
-        // Normalize IDs and maintain lastEventId when operation_id present
-        if (event.operation_id) {
-          event.id = event.operation_id;
-          setLastEventId(event.operation_id);
+        // Normalize IDs and maintain lastEventId when operation_id is present.
+        // Some emitters place operation_id under data, so handle both shapes.
+        const operationId = event.operation_id || event?.data?.operation_id;
+        if (operationId) {
+          event.operation_id = operationId;
+          event.id = operationId;
+          setLastEventId(operationId);
+          if (typeof window !== 'undefined' && event?.data && typeof event.data === 'object') {
+            window.dispatchEvent(
+              new CustomEvent('inspectr:operation-stream-update', {
+                detail: {
+                  operationId: String(operationId),
+                  payload: event.data,
+                  eventType: event.type,
+                  eventTime: event.time || null
+                }
+              })
+            );
+          }
         } else {
           event.id = event.id || `req-${Math.random().toString(36).slice(2, 11)}`;
         }

@@ -6,6 +6,7 @@ import SettingsMock from './settings/SettingsMock.jsx';
 import SettingsGuard from './settings/SettingsGuard.jsx';
 import SettingsFeaturePreviews from './settings/SettingsFeaturePreviews.jsx';
 import SettingsMcpInfo from './settings/SettingsMcpInfo.jsx';
+import SettingsExpose from './settings/SettingsExpose.jsx';
 import SettingsConnector from './settings/SettingsConnector.jsx';
 import { parseHash } from '../hooks/useHashRouter.jsx';
 import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
@@ -15,6 +16,7 @@ const navItems = [
   { slug: 'mock', label: 'Mock' },
   { slug: 'guard', label: 'Authentication Guard' },
   { slug: 'connectors', label: 'Connectors' },
+  { slug: 'expose', label: 'Expose' },
   { slug: 'mcp-server', label: 'MCP Server' },
   { slug: 'previews', label: 'Feature Previews' }
 ];
@@ -75,6 +77,7 @@ export default function SettingsApp() {
         {current === 'connectors' && connectorsFeatureEnabled && <SettingsConnector />}
         {current === 'mock' && <SettingsMock />}
         {current === 'guard' && <SettingsGuard />}
+        {current === 'expose' && <SettingsExpose />}
         {current === 'mcp-server' && <SettingsMcpInfo />}
         {current === 'previews' && <SettingsFeaturePreviews />}
       </div>

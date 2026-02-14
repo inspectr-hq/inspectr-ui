@@ -1,5 +1,4 @@
 import React from 'react';
-import { action } from '@storybook/addon-actions';
 import RulesListPanel from '../src/components/rules/RulesListPanel.jsx';
 import {
   mockEvents,
@@ -7,6 +6,8 @@ import {
   mockOperatorLabelMap,
   mockRulesLicenseUsage
 } from './rulesMocks.js';
+
+const action = () => () => {};
 
 export default {
   title: 'Components/RulesListPanel',

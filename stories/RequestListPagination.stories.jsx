@@ -1,7 +1,8 @@
 // src/components/ListPagination.stories.jsx
 import React, { useState } from 'react';
-import { action } from '@storybook/addon-actions';
 import RequestListPagination from '../src/components/ListPagination';
+
+const action = () => () => {};
 
 export default {
   title: 'Components/ListPagination',
