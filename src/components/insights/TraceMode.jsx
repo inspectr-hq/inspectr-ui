@@ -15,6 +15,8 @@ import {
 } from '../tracing/traceUtils.js';
 import { useTraceExplorer } from '../tracing/useTraceExplorer.js';
 
+const toId = (value) => (value == null ? null : String(value));
+
 const MIN_BAR_WIDTH_PERCENT = 2;
 
 export default function TraceMode({
@@ -97,7 +99,7 @@ export default function TraceMode({
       Math.max(Number.isFinite(widthRaw) ? widthRaw : MIN_BAR_WIDTH_PERCENT, MIN_BAR_WIDTH_PERCENT),
       100 - offset
     );
-    const isActiveOperation = selectedOperationId === operation.id;
+    const isActiveOperation = selectedOperationId === toId(operation.id);
     const title = `${operation.method} ${operation.path}`;
 
     return (

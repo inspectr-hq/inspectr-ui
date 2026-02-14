@@ -55,6 +55,7 @@ class InspectrClient {
     this.rules = new RulesClient(this);
     this.traces = new TracesClient(this);
     this.connectors = new ConnectorsClient(this);
+    this.expose = new ExposeSettingsClient(this);
   }
 
   /**
@@ -200,6 +201,45 @@ class McpSettingsClient {
   }
 }
 
+class ExposeSettingsClient {
+  constructor(client) {
+    this.client = client;
+  }
+
+  async handleResponse(res, errorMessage) {
+    let payload = null;
+    try {
+      payload = await res.json();
+    } catch {
+      payload = null;
+    }
+    if (!res.ok) {
+      const message = payload?.error || payload?.message || `${errorMessage} (${res.status})`;
+      const error = new Error(message);
+      error.status = res.status;
+      error.payload = payload;
+      throw error;
+    }
+    return payload;
+  }
+
+  async getExposeSettings() {
+    const res = await fetch(`${this.client.apiEndpoint}/expose/settings`, {
+      headers: this.client.defaultHeaders
+    });
+    return await this.handleResponse(res, 'Expose settings failed');
+  }
+
+  async putExposeSettings(body) {
+    const res = await fetch(`${this.client.apiEndpoint}/expose/settings`, {
+      method: 'PUT',
+      headers: this.client.jsonHeaders,
+      body: JSON.stringify(body)
+    });
+    return await this.handleResponse(res, 'Expose settings update failed');
+  }
+}
+
 /**
  * OperationsClient - Handles operations management
  * @private
@@ -299,7 +339,7 @@ class OperationsClient {
    * @param {string} [options.format='json'] - Export format
    * @returns {Promise<Blob>} - Exported data blob
    */
-  async export({ path, preset, since, until, format = 'json' } = {}) {
+  async export({ path, preset, since, until, format = 'json', indent } = {}) {
     let url;
     // Set export format
     if (['postman', 'openapi', 'phar'].includes(format)) {
@@ -314,6 +354,7 @@ class OperationsClient {
     if (preset) params.append('preset', preset);
     if (since) params.append('since', since);
     if (until) params.append('until', until);
+    if (indent !== undefined) params.append('indent', indent);
 
     const res = await fetch(`${url}?${params}`, {
       headers: this.client.defaultHeaders

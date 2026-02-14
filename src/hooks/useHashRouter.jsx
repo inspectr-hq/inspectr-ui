@@ -8,9 +8,23 @@ import { useState, useEffect } from 'react';
 export function parseHash() {
   const raw = window.location.hash.slice(1); // drop "#"
   const [path, qs] = raw.split('?'); // "inspectr/42/details", "view=raw..."
-  const [slug, operationId, subTab] = path.split('/');
+  const decodePart = (value) => {
+    if (value == null) return value;
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return value;
+    }
+  };
+  const [slug, operationId, ...subTabParts] = path.split('/');
+  const subTab = subTabParts.length ? subTabParts.join('/') : undefined;
   const params = Object.fromEntries(new URLSearchParams(qs || ''));
-  return { slug, operationId, subTab, params };
+  return {
+    slug: decodePart(slug),
+    operationId: decodePart(operationId),
+    subTab: decodePart(subTab),
+    params
+  };
 }
 
 /**

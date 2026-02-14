@@ -17,11 +17,13 @@ import DialogImportOperations from './operations/DialogImportOperations.jsx';
 import { InspectrProvider, useInspectr } from '../context/InspectrContext';
 import { useLiveQuery } from 'dexie-react-hooks';
 import eventDB from '../utils/eventDB.js';
-import NotificationBadge from './NotificationBadge.jsx';
 import useLocalStorage from '../hooks/useLocalStorage.jsx';
 import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 import { normalizeTimestamp, isTimestampAfter } from '../utils/timestampUtils.js';
 import DialogVersionUpdate from './DialogVersionUpdate.jsx';
+import HeaderActionButton from './HeaderActionButton.jsx';
+import NotificationBadge from './NotificationBadge.jsx';
+import RecordingToggle from './RecordingToggle.jsx';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -99,9 +101,10 @@ export default function Workspace() {
       <DialogMockLaunch />
 
       <div className="flex flex-col min-h-screen">
-        <div className="border-b border-tremor-border dark:border-dark-tremor-border relative h-full overflow-hidden bg-gray-50 dark:bg-dark-tremor-background-subtle">
+        <div className="border-b border-tremor-border dark:border-dark-tremor-border relative h-full bg-gray-50 dark:bg-dark-tremor-background-subtle">
           <div className="px-4 sm:px-6 lg:px-8">
-            <div className="overflow flex h-16 sm:space-x-7 items-center">
+            <div className="flex h-16 items-center gap-6">
+              {/* ———Logo ——— */}
               <div className="hidden shrink-0 sm:flex sm:items-center">
                 <a href="/" className="p-1.5">
                   <Logo
@@ -110,76 +113,66 @@ export default function Workspace() {
                   />
                 </a>
               </div>
-              <nav className="flex-1 -mb-px flex space-x-6" aria-label="Tabs">
-                {visibleNavigation.map((navItem) =>
-                  navItem.slug === 'inspectr' ? (
-                    <InspectrNavButton
-                      key={navItem.slug}
-                      navItem={navItem}
-                      isActive={navItem.slug === currentNav.slug}
-                      onClick={() => handleTabClick(navItem)}
-                      isCurrent={navItem.name === currentTab.name}
-                    />
-                  ) : (
-                    <button
-                      key={navItem.slug}
-                      onClick={() => handleTabClick(navItem)}
-                      className={classNames(
-                        navItem.slug === currentNav.slug
-                          ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
-                          : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong dark:text-dark-tremor-content-emphasis hover:dark:border-dark-tremor-content-subtle hover:dark:text-dark-tremor-content-strong',
-                        'inline-flex items-center whitespace-nowrap border-b-2 px-2 py-2 text-tremor-default font-medium'
-                      )}
-                      aria-current={navItem.name === currentTab.name ? 'page' : undefined}
-                    >
-                      {navItem.name}
-                    </button>
-                  )
-                )}
-              </nav>
+              {/* ——— Workspace Navigation ——— */}
+              <div className="flex-1 min-w-0">
+                <nav
+                  className="flex-1 min-w-0 flex space-x-6 overflow-x-auto overflow-y-visible"
+                  aria-label="Tabs"
+                >
+                  {visibleNavigation.map((navItem) =>
+                    navItem.slug === 'inspectr' ? (
+                      <InspectrNavButton
+                        key={navItem.slug}
+                        navItem={navItem}
+                        isActive={navItem.slug === currentNav.slug}
+                        onClick={() => handleTabClick(navItem)}
+                        isCurrent={navItem.name === currentTab.name}
+                      />
+                    ) : (
+                      <button
+                        key={navItem.slug}
+                        onClick={() => handleTabClick(navItem)}
+                        className={classNames(
+                          navItem.slug === currentNav.slug
+                            ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
+                            : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong dark:text-dark-tremor-content-emphasis hover:dark:border-dark-tremor-content-subtle hover:dark:text-dark-tremor-content-strong',
+                          'inline-flex items-center whitespace-nowrap border-b-2 px-2 py-2 text-tremor-default font-medium'
+                        )}
+                        aria-current={navItem.name === currentTab.name ? 'page' : undefined}
+                      >
+                        {navItem.name}
+                      </button>
+                    )
+                  )}
+                </nav>
+              </div>
+              {/* ——— Workspace Actions ——— */}
               <div className="ml-auto flex items-center space-x-2">
                 <DialogVersionUpdate />
-                <button
-                  className="px-2 py-1 text-cyan-500 hover:text-white border border-cyan-500 hover:bg-cyan-500 rounded text-xs"
-                  onClick={() => setIsExportOpen(true)}
-                >
+                <HeaderActionButton onClick={() => setIsExportOpen(true)}>
                   Export
-                </button>
-                <button
-                  className="px-2 py-1 text-cyan-500 hover:text-white border border-cyan-500 hover:bg-cyan-500 rounded text-xs"
-                  onClick={() => setIsImportOpen(true)}
-                >
+                </HeaderActionButton>
+                <HeaderActionButton onClick={() => setIsImportOpen(true)}>
                   Import
-                </button>
-                <div className="relative">
-                  <button
-                    disabled={isRecordExportOpen}
-                    className={`px-2 py-1 rounded text-xs flex items-center border border-green-500 ${isRecording ? 'text-white bg-green-500' : 'text-green-500 hover:text-white  hover:bg-green-500'} `}
-                    onClick={() => {
-                      if (isRecording) {
-                        if (recordCount > 0) {
-                          setIsRecordExportOpen(true);
-                        } else {
-                          setIsRecording(false);
-                          setRecordStart(null);
-                        }
+                </HeaderActionButton>
+                <RecordingToggle
+                  isRecording={isRecording}
+                  recordCount={recordCount}
+                  disabled={isRecordExportOpen}
+                  onClick={() => {
+                    if (isRecording) {
+                      if (recordCount > 0) {
+                        setIsRecordExportOpen(true);
                       } else {
-                        setRecordStart(new Date().toISOString());
-                        setIsRecording(true);
+                        setIsRecording(false);
+                        setRecordStart(null);
                       }
-                    }}
-                  >
-                    <span
-                      className={`mr-1 block w-2 h-2 ${isRecording ? 'bg-red-600 animate-pulse' : 'bg-red-600 rounded-full'}`}
-                    ></span>
-                    {isRecording ? `Stop Recording` : 'Start Recording'}
-                  </button>
-                  {isRecording && recordCount > 0 && (
-                    <span className="absolute -top-3 -right-2">
-                      <NotificationBadge count={recordCount} />
-                    </span>
-                  )}
-                </div>
+                    } else {
+                      setRecordStart(new Date().toISOString());
+                      setIsRecording(true);
+                    }
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -313,16 +306,18 @@ const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
         isActive
           ? 'dark:text-tremor-dark-brand border-tremor-brand text-tremor-brand'
           : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong dark:text-dark-tremor-content-emphasis hover:dark:border-dark-tremor-content-subtle hover:dark:text-dark-tremor-content-strong',
-        'inline-flex items-center whitespace-nowrap border-b-2 px-2 py-2 text-tremor-default font-medium relative'
+        'inline-flex items-center whitespace-nowrap border-b-2 px-2 py-2 pr-2 text-tremor-default font-medium relative'
       )}
       aria-current={isCurrent ? 'page' : undefined}
     >
-      {navItem.name}
-      {!isActive && unreadCount > 0 && (
-        <span className="absolute -top-3 -right-2">
-          <NotificationBadge count={unreadCount} color={color} />
-        </span>
-      )}
+      <span className="relative inline-flex items-center">
+        <span>{navItem.name}</span>
+        {!isActive && unreadCount > 0 && (
+          <span className="absolute -top-2 right-0 translate-x-full pointer-events-none">
+            <NotificationBadge count={unreadCount} color={color} />
+          </span>
+        )}
+      </span>
     </button>
   );
 };

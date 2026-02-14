@@ -60,10 +60,10 @@
     "@tailwindcss/vite": "^4.0.5",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.6",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react-swc": "^4.2.3",
     "autoprefixer": "^10.4.21",
     "storybook": "^8.6.14",
-    "vite": "^6.4.1"
+    "vite": "^7.3.1"
   },
   "publishConfig": {
     "access": "public"
