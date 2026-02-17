@@ -45,6 +45,14 @@ const InspectrContext = createContext({
   // Debug mode
   debugMode: false,
 
+  // Hosted app auth bootstrap context
+  appAuthContext: {
+    appAuthEnabled: false,
+    authenticated: false,
+    tokenType: null,
+    tokenExpiresAt: null
+  },
+
   // SDK client
   client: null
 });
@@ -54,6 +62,12 @@ export const useInspectr = () => useContext(InspectrContext);
 
 // Provider component
 export const InspectrProvider = ({ children }) => {
+  const emptyAppAuthContext = {
+    appAuthEnabled: false,
+    authenticated: false,
+    tokenType: null,
+    tokenExpiresAt: null
+  };
   // Settings state
   const [rawApiEndpoint, setRawApiEndpoint] = useLocalStorage('apiEndpoint', '/api');
   const apiEndpoint = rawApiEndpoint ? rawApiEndpoint.replace(/\/+$/, '') : '/api';
@@ -70,6 +84,7 @@ export const InspectrProvider = ({ children }) => {
   const [, setExposeLocalStorage] = useLocalStorage('expose', 'false');
   const [isInitialized, setIsInitialized] = useState(false);
   const [toast, setToast] = useState(null);
+  const [appAuthContext, setAppAuthContext] = useState(emptyAppAuthContext);
 
   // SSE connection reference
   const registrationRetryCountRef = useRef(0);
@@ -146,6 +161,47 @@ export const InspectrProvider = ({ children }) => {
   useEffect(() => {
     inspectrClient.configure({ apiEndpoint });
   }, [apiEndpoint]);
+
+  // Bootstrap hosted app auth context and keep bearer token in memory only.
+  useEffect(() => {
+    let cancelled = false;
+
+    const applyBootstrap = (payload) => {
+      const appAuthEnabled = Boolean(payload?.app_auth_enabled);
+      const authenticated = Boolean(payload?.authenticated);
+      const token = typeof payload?.token === 'string' ? payload.token.trim() : '';
+      const shouldAttachToken = appAuthEnabled && authenticated && token;
+
+      inspectrClient.setAuthorizationToken(shouldAttachToken ? token : '');
+      setAppAuthContext({
+        appAuthEnabled,
+        authenticated,
+        tokenType: payload?.token_type || null,
+        tokenExpiresAt: payload?.token_expires_at || null
+      });
+    };
+
+    const loadAuthBootstrap = async () => {
+      try {
+        const payload = await inspectrClient.registration.getAuthBootstrap();
+        if (cancelled) return;
+        applyBootstrap(payload);
+      } catch (err) {
+        if (cancelled) return;
+        inspectrClient.setAuthorizationToken('');
+        setAppAuthContext(emptyAppAuthContext);
+        if (debugMode) {
+          console.warn('[Inspectr] Hosted auth bootstrap unavailable, using local auth behavior.');
+        }
+      }
+    };
+
+    loadAuthBootstrap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiEndpoint, inspectrClient, debugMode]);
 
   // Load credentials from REST API
   const loadCredentialsFromApi = async () => {
@@ -363,7 +419,12 @@ export const InspectrProvider = ({ children }) => {
 
     const eventSource = new EventSource(sseUrl);
     eventSourceRef.current = eventSource;
-    console.log(`🔄 SSE connecting with ${sseUrl}`);
+    let logEndpoint = sseEndpoint;
+    try {
+      const parsed = new URL(sseUrl);
+      logEndpoint = `${parsed.origin}${parsed.pathname}`;
+    } catch {}
+    console.log(`🔄 SSE connecting with ${logEndpoint}`);
 
     setConnectionStatus(wasConnectedRef.current ? 'reconnecting' : 'connecting');
 
@@ -580,6 +641,7 @@ export const InspectrProvider = ({ children }) => {
     toast,
     setToast,
     debugMode,
+    appAuthContext,
     client: inspectrClient,
     // Expose connection helpers/state
     lastEventId,

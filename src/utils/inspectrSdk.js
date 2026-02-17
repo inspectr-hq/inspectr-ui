@@ -81,6 +81,25 @@ class InspectrClient {
       };
     }
   }
+
+  /**
+   * Set or clear the Authorization header for all SDK requests.
+   * @param {string} token - Bearer token value without "Bearer " prefix
+   */
+  setAuthorizationToken(token) {
+    const next = { ...this.defaultHeaders };
+    if (token && String(token).trim()) {
+      next.Authorization = `Bearer ${String(token).trim()}`;
+    } else {
+      delete next.Authorization;
+    }
+
+    this.defaultHeaders = next;
+    this.jsonHeaders = {
+      ...this.defaultHeaders,
+      'Content-Type': 'application/json'
+    };
+  }
 }
 
 /**
@@ -115,6 +134,18 @@ class registrationClient {
   async getConfig() {
     const res = await fetch('/app/config');
     if (!res.ok) throw new Error(`Config load failed (${res.status})`);
+    return await res.json();
+  }
+
+  /**
+   * Get hosted app auth bootstrap context from the app server.
+   * Returns null when endpoint is unavailable.
+   */
+  async getAuthBootstrap() {
+    const res = await fetch('/app/auth/bootstrap', {
+      headers: this.client.defaultHeaders
+    });
+    if (!res.ok) throw new Error(`Auth bootstrap failed (${res.status})`);
     return await res.json();
   }
 }
