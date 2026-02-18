@@ -62,7 +62,6 @@ const RequestContent = ({ operation }) => {
   const [showRequestHeaders, setShowRequestHeaders] = useState(false);
   const [showRequestBody, setShowRequestBody] = useState(true);
   const headersSectionRef = useRef(null);
-  const requestEditorRef = useRef(null);
   const requestBodyContentRef = useRef(null);
   const [requestEditorHeight, setRequestEditorHeight] = useState(320);
   useEffect(() => {
@@ -78,23 +77,6 @@ const RequestContent = ({ operation }) => {
   }, []);
   const [jwtDialogOpen, setJwtDialogOpen] = useState(false);
   const [jwtDecoded, setJwtDecoded] = useState(null);
-
-  const relayoutRequestEditor = () => {
-    if (!requestEditorRef.current) return;
-    requestAnimationFrame(() => {
-      requestEditorRef.current?.layout();
-    });
-  };
-
-  const handleRequestEditorMount = (editor) => {
-    requestEditorRef.current = editor;
-    relayoutRequestEditor();
-    setTimeout(relayoutRequestEditor, 0);
-  };
-
-  useEffect(() => {
-    relayoutRequestEditor();
-  }, [showQueryParams, showRequestHeaders, showRequestBody, operation?.id]);
 
   useEffect(() => {
     if (!showRequestBody) return;
@@ -116,7 +98,7 @@ const RequestContent = ({ operation }) => {
     const observer = new ResizeObserver(updateHeight);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [showQueryParams, showRequestHeaders, showRequestBody, operation?.id]);
+  }, [showRequestBody, operation?.id]);
 
   const normalizeHeaders = (headers) => {
     if (!headers) return [];
@@ -368,12 +350,10 @@ const RequestContent = ({ operation }) => {
             ) : (
               <Editor
                 height={`${requestEditorHeight}px`}
-                className="flex-1"
                 defaultLanguage="json"
                 value={formatPayload(payload)}
                 theme={getMonacoTheme()}
                 beforeMount={defineMonacoThemes}
-                onMount={handleRequestEditorMount}
                 options={{
                   readOnly: true,
                   minimap: { enabled: false },

@@ -64,22 +64,8 @@ const ResponseContent = ({ operation }) => {
   const [showResponseBody, setShowResponseBody] = useState(true);
   const currentOperationId = operation?.id;
   const lastEventsCountRef = useRef(0);
-  const responseEditorRef = useRef(null);
   const responseBodyContentRef = useRef(null);
   const [responseEditorHeight, setResponseEditorHeight] = useState(320);
-
-  const relayoutResponseEditor = () => {
-    if (!responseEditorRef.current) return;
-    requestAnimationFrame(() => {
-      responseEditorRef.current?.layout();
-    });
-  };
-
-  const handleResponseEditorMount = (editor) => {
-    responseEditorRef.current = editor;
-    relayoutResponseEditor();
-    setTimeout(relayoutResponseEditor, 0);
-  };
 
   const normalizeHeaders = (headers) => {
     if (!headers) return [];
@@ -224,10 +210,6 @@ const ResponseContent = ({ operation }) => {
   }, [availableSseFrames, currentOperationId, hasEvents]);
 
   useEffect(() => {
-    relayoutResponseEditor();
-  }, [showResponseHeaders, showResponseBody, viewMode, currentOperationId]);
-
-  useEffect(() => {
     if (!showResponseBody) return;
     const node = responseBodyContentRef.current;
     if (!node) return;
@@ -247,7 +229,7 @@ const ResponseContent = ({ operation }) => {
     const observer = new ResizeObserver(updateHeight);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [showResponseBody, showResponseHeaders, viewMode, currentOperationId]);
+  }, [showResponseBody, viewMode, currentOperationId]);
   // Ensure we only try rendering when we actually have binary-safe data in hand
   const previewPayloadString = typeof previewPayload === 'string' ? previewPayload : '';
   const trimmedPreviewPayload = previewPayloadString.trim();
@@ -534,12 +516,10 @@ const ResponseContent = ({ operation }) => {
               ) : (
                 <Editor
                   height={`${responseEditorHeight}px`}
-                  className="flex-1"
                   language="plaintext"
                   value={sourcePayload ?? ''}
                   theme={getMonacoTheme()}
                   beforeMount={defineMonacoThemes}
-                  onMount={handleResponseEditorMount}
                   options={{
                     readOnly: true,
                     minimap: { enabled: false },
@@ -574,13 +554,10 @@ const ResponseContent = ({ operation }) => {
             ) : (
               <Editor
                 height={`${responseEditorHeight}px`}
-                className="flex-1"
-                // defaultLanguage="json"
                 language={editorLanguage}
                 value={formatPayload(sourcePayload, contentType) ?? ''}
                 theme={getMonacoTheme()}
                 beforeMount={defineMonacoThemes}
-                onMount={handleResponseEditorMount}
                 options={{
                   readOnly: true,
                   minimap: { enabled: false },
