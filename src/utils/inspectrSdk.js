@@ -17,7 +17,19 @@
  * Helper function to normalize API endpoints by removing trailing slashes
  * @private
  */
-const normalizeEndpoint = (endpoint) => endpoint.replace(/\/+$/, '');
+const normalizeEndpoint = (endpoint) => {
+  const raw = String(endpoint || '').trim();
+  if (!raw) return 'api';
+
+  // Preserve explicit absolute endpoints (http/https/custom schemes).
+  if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(raw)) {
+    return raw.replace(/\/+$/, '');
+  }
+
+  // Prefer relative same-origin API paths so hosted mount paths keep working.
+  const normalized = raw.replace(/^\/+/, '').replace(/\/+$/, '');
+  return normalized || 'api';
+};
 
 /**
  * InspectrClient - The main class for interacting with the Inspectr API
@@ -26,11 +38,11 @@ class InspectrClient {
   /**
    * Create a new InspectrClient instance
    * @param {Object} options - Configuration options
-   * @param {string} [options.apiEndpoint='/api'] - The base API endpoint
+   * @param {string} [options.apiEndpoint='api'] - The base API endpoint
    * @param {Object} [options.headers={}] - Additional headers to include in all requests
    */
   constructor(options = {}) {
-    this.apiEndpoint = normalizeEndpoint(options.apiEndpoint || '/api');
+    this.apiEndpoint = normalizeEndpoint(options.apiEndpoint || 'api');
 
     // Default headers for all requests
     this.defaultHeaders = {
@@ -132,7 +144,7 @@ class registrationClient {
    * @returns {Promise<Object>} - Configuration data
    */
   async getConfig() {
-    const res = await fetch('/app/config');
+    const res = await fetch('app/config');
     if (!res.ok) throw new Error(`Config load failed (${res.status})`);
     return await res.json();
   }
@@ -142,7 +154,7 @@ class registrationClient {
    * Returns null when endpoint is unavailable.
    */
   async getAuthBootstrap() {
-    const res = await fetch('/app/auth/bootstrap', {
+    const res = await fetch('app/auth/bootstrap', {
       headers: this.client.defaultHeaders
     });
     if (!res.ok) throw new Error(`Auth bootstrap failed (${res.status})`);

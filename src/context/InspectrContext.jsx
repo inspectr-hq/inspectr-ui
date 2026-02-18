@@ -14,7 +14,7 @@ import eventDB from '../utils/eventDB';
 // Create the context with default values
 const InspectrContext = createContext({
   // Settings
-  apiEndpoint: '/api',
+  apiEndpoint: 'api',
   setApiEndpoint: () => {},
 
   // Connection status
@@ -68,11 +68,21 @@ export const InspectrProvider = ({ children }) => {
     tokenType: null,
     tokenExpiresAt: null
   };
+  const normalizeApiEndpoint = (value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return 'api';
+    if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(raw)) {
+      return raw.replace(/\/+$/, '');
+    }
+    const normalized = raw.replace(/^\/+/, '').replace(/\/+$/, '');
+    return normalized || 'api';
+  };
+
   // Settings state
-  const [rawApiEndpoint, setRawApiEndpoint] = useLocalStorage('apiEndpoint', '/api');
-  const apiEndpoint = rawApiEndpoint ? rawApiEndpoint.replace(/\/+$/, '') : '/api';
+  const [rawApiEndpoint, setRawApiEndpoint] = useLocalStorage('apiEndpoint', 'api');
+  const apiEndpoint = normalizeApiEndpoint(rawApiEndpoint);
   const setApiEndpoint = (value) => {
-    setRawApiEndpoint(value ? value.replace(/\/+$/, '') : value);
+    setRawApiEndpoint(normalizeApiEndpoint(value));
   };
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [sseEndpoint, setSseEndpoint] = useLocalStorage('sseEndpoint', '');
