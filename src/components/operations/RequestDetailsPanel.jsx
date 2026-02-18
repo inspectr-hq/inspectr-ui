@@ -52,9 +52,8 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   );
   const hasTags =
     Array.isArray(detailOperation?.meta?.tags) && detailOperation.meta.tags.length > 0;
-  const contentMaxHeight = hasTags
-    ? 'calc(100vh - 270px - 64px - 48px)'
-    : 'calc(100vh - 270px - 64px)';
+  const contentHeightOffset = hasTags ? 382 : 334;
+  const contentMaxHeight = `max(calc(100vh - ${contentHeightOffset}px), 22rem)`;
 
   useEffect(() => {
     if (!detailOperation) return;

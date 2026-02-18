@@ -64,6 +64,22 @@ const ResponseContent = ({ operation }) => {
   const [showResponseBody, setShowResponseBody] = useState(true);
   const currentOperationId = operation?.id;
   const lastEventsCountRef = useRef(0);
+  const responseEditorRef = useRef(null);
+  const responseBodyContentRef = useRef(null);
+  const [responseEditorHeight, setResponseEditorHeight] = useState(320);
+
+  const relayoutResponseEditor = () => {
+    if (!responseEditorRef.current) return;
+    requestAnimationFrame(() => {
+      responseEditorRef.current?.layout();
+    });
+  };
+
+  const handleResponseEditorMount = (editor) => {
+    responseEditorRef.current = editor;
+    relayoutResponseEditor();
+    setTimeout(relayoutResponseEditor, 0);
+  };
 
   const normalizeHeaders = (headers) => {
     if (!headers) return [];
@@ -206,6 +222,32 @@ const ResponseContent = ({ operation }) => {
     }
     lastEventsCountRef.current = count;
   }, [availableSseFrames, currentOperationId, hasEvents]);
+
+  useEffect(() => {
+    relayoutResponseEditor();
+  }, [showResponseHeaders, showResponseBody, viewMode, currentOperationId]);
+
+  useEffect(() => {
+    if (!showResponseBody) return;
+    const node = responseBodyContentRef.current;
+    if (!node) return;
+
+    const updateHeight = () => {
+      const next = Math.max(320, Math.floor(node.clientHeight || 0));
+      setResponseEditorHeight(next);
+    };
+
+    updateHeight();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateHeight);
+      return () => window.removeEventListener('resize', updateHeight);
+    }
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [showResponseBody, showResponseHeaders, viewMode, currentOperationId]);
   // Ensure we only try rendering when we actually have binary-safe data in hand
   const previewPayloadString = typeof previewPayload === 'string' ? previewPayload : '';
   const trimmedPreviewPayload = previewPayloadString.trim();
@@ -357,7 +399,7 @@ const ResponseContent = ({ operation }) => {
   const streamState = getStreamState();
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex min-h-full flex-col">
       {/* Response Headers Section */}
       <div
         className={`mb-4 border border-slate-200 dark:border-dark-tremor-border ${
@@ -394,10 +436,10 @@ const ResponseContent = ({ operation }) => {
       {/* Response Body Section */}
       <div
         className={`${
-          showResponseBody ? 'flex flex-col flex-1' : ''
+          showResponseBody ? 'flex flex-1 flex-col min-h-[320px]' : ''
         } border border-slate-200 dark:border-dark-tremor-border ${
           showResponseBody ? 'rounded-tremor-small rounded-b-none' : 'rounded-tremor-small'
-        } bg-white dark:bg-dark-tremor-background-subtle overflow-hidden`}
+        } bg-white dark:bg-dark-tremor-background-subtle`}
       >
         <button
           type="button"
@@ -479,7 +521,7 @@ const ResponseContent = ({ operation }) => {
           </span>
         </button>
         {showResponseBody ? (
-          <>
+          <div ref={responseBodyContentRef} className="flex flex-1 min-h-[320px] flex-col">
             {hasEvents && viewMode === 'events' ? (
               <SseFramesViewer frames={availableSseFrames} raw={sourcePayload ?? ''} />
             ) : isSseContent ? (
@@ -491,12 +533,13 @@ const ResponseContent = ({ operation }) => {
                 </div>
               ) : (
                 <Editor
-                  height="100%"
+                  height={`${responseEditorHeight}px`}
                   className="flex-1"
                   language="plaintext"
                   value={sourcePayload ?? ''}
                   theme={getMonacoTheme()}
                   beforeMount={defineMonacoThemes}
+                  onMount={handleResponseEditorMount}
                   options={{
                     readOnly: true,
                     minimap: { enabled: false },
@@ -530,13 +573,14 @@ const ResponseContent = ({ operation }) => {
               )
             ) : (
               <Editor
-                height="100%"
+                height={`${responseEditorHeight}px`}
                 className="flex-1"
                 // defaultLanguage="json"
                 language={editorLanguage}
                 value={formatPayload(sourcePayload, contentType) ?? ''}
                 theme={getMonacoTheme()}
                 beforeMount={defineMonacoThemes}
+                onMount={handleResponseEditorMount}
                 options={{
                   readOnly: true,
                   minimap: { enabled: false },
@@ -548,7 +592,7 @@ const ResponseContent = ({ operation }) => {
                 }}
               />
             )}
-          </>
+          </div>
         ) : null}
       </div>
     </div>
