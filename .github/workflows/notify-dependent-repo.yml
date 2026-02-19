@@ -3,6 +3,11 @@ name: Notify Dependent Repo
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to dispatch (e.g. 1.8.2)'
+        required: true
 
 jobs:
   dispatch:
@@ -11,9 +16,9 @@ jobs:
       - name: Dispatch release event to inspectr-app
         env:
           REPO_Y_DISPATCH_TOKEN: ${{ secrets.REPO_Y_DISPATCH_TOKEN }}
-          VERSION: ${{ github.event.release.tag_name }}
+          VERSION: ${{ github.event.release.tag_name || github.event.inputs.version }}
           SOURCE_REPO: ${{ github.repository }}
-          RELEASE_URL: ${{ github.event.release.html_url }}
+          RELEASE_URL: ${{ github.event.release.html_url || format('https://github.com/{0}/releases/tag/v{1}', github.repository, github.event.inputs.version) }}
         run: |
           set -euo pipefail
           : "${REPO_Y_DISPATCH_TOKEN:?REPO_Y_DISPATCH_TOKEN secret is required}"
