@@ -21,7 +21,7 @@ jobs:
           curl -fsS -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${REPO_Y_DISPATCH_TOKEN}" \
-            https://api.github.com/repos/thim81/inspectr-app/dispatches \
+            https://api.github.com/repos/inspectr-hq/inspectr-app/dispatches \
             -d "$(cat <<EOF
           {
             \"event_type\": \"repo-released\",
