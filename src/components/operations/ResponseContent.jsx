@@ -1,5 +1,6 @@
 // src/components/operations/ResponseContent.jsx
 import React, { useEffect, useRef, useState } from 'react';
+import useElementHeight from '../../hooks/useElementHeight.jsx';
 import Editor from '@monaco-editor/react';
 import CopyButton from '../CopyButton.jsx';
 import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
@@ -65,7 +66,11 @@ const ResponseContent = ({ operation }) => {
   const currentOperationId = operation?.id;
   const lastEventsCountRef = useRef(0);
   const responseBodyContentRef = useRef(null);
-  const [responseEditorHeight, setResponseEditorHeight] = useState(320);
+  const responseEditorHeight = useElementHeight(responseBodyContentRef, {
+    min: 320,
+    enabled: showResponseBody,
+    deps: [viewMode, currentOperationId],
+  });
 
   const normalizeHeaders = (headers) => {
     if (!headers) return [];
@@ -209,27 +214,6 @@ const ResponseContent = ({ operation }) => {
     lastEventsCountRef.current = count;
   }, [availableSseFrames, currentOperationId, hasEvents]);
 
-  useEffect(() => {
-    if (!showResponseBody) return;
-    const node = responseBodyContentRef.current;
-    if (!node) return;
-
-    const updateHeight = () => {
-      const next = Math.max(320, Math.floor(node.clientHeight || 0));
-      setResponseEditorHeight(next);
-    };
-
-    updateHeight();
-
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', updateHeight);
-      return () => window.removeEventListener('resize', updateHeight);
-    }
-
-    const observer = new ResizeObserver(updateHeight);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [showResponseBody, viewMode, currentOperationId]);
   // Ensure we only try rendering when we actually have binary-safe data in hand
   const previewPayloadString = typeof previewPayload === 'string' ? previewPayload : '';
   const trimmedPreviewPayload = previewPayloadString.trim();

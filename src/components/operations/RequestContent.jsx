@@ -1,5 +1,6 @@
 // src/components/operations/RequestContent.jsx
 import React, { useEffect, useRef, useState } from 'react';
+import useElementHeight from '../../hooks/useElementHeight.jsx';
 import Editor from '@monaco-editor/react';
 import DialogJwt from './DialogJwt.jsx';
 import CopyButton from '../CopyButton.jsx';
@@ -63,7 +64,11 @@ const RequestContent = ({ operation }) => {
   const [showRequestBody, setShowRequestBody] = useState(true);
   const headersSectionRef = useRef(null);
   const requestBodyContentRef = useRef(null);
-  const [requestEditorHeight, setRequestEditorHeight] = useState(320);
+  const requestEditorHeight = useElementHeight(requestBodyContentRef, {
+    min: 320,
+    enabled: showRequestBody,
+    deps: [operation?.id],
+  });
   useEffect(() => {
     const open = () => {
       setShowRequestHeaders(true);
@@ -77,28 +82,6 @@ const RequestContent = ({ operation }) => {
   }, []);
   const [jwtDialogOpen, setJwtDialogOpen] = useState(false);
   const [jwtDecoded, setJwtDecoded] = useState(null);
-
-  useEffect(() => {
-    if (!showRequestBody) return;
-    const node = requestBodyContentRef.current;
-    if (!node) return;
-
-    const updateHeight = () => {
-      const next = Math.max(320, Math.floor(node.clientHeight || 0));
-      setRequestEditorHeight(next);
-    };
-
-    updateHeight();
-
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', updateHeight);
-      return () => window.removeEventListener('resize', updateHeight);
-    }
-
-    const observer = new ResizeObserver(updateHeight);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [showRequestBody, operation?.id]);
 
   const normalizeHeaders = (headers) => {
     if (!headers) return [];
