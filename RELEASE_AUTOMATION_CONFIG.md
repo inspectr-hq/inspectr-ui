@@ -10,7 +10,7 @@
 ## Dispatch target
 - Owner: `thim81`
 - Repo Y: `inspectr-app`
-- Event type: `repo-x-released`
+- Event type: `repo-released`
 
 ## Payload sent to Repo Y
 - `version`: release tag name (for example `v1.2.3` or `1.2.3`)

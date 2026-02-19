@@ -24,7 +24,7 @@ jobs:
             https://api.github.com/repos/thim81/inspectr-app/dispatches \
             -d "$(cat <<EOF
           {
-            \"event_type\": \"repo-x-released\",
+            \"event_type\": \"repo-released\",
             \"client_payload\": {
               \"version\": \"${VERSION}\",
               \"repo\": \"${SOURCE_REPO}\",
