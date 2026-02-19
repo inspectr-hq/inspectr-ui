@@ -24,11 +24,11 @@ jobs:
             https://api.github.com/repos/inspectr-hq/inspectr-app/dispatches \
             -d "$(cat <<EOF
           {
-            \"event_type\": \"repo-released\",
-            \"client_payload\": {
-              \"version\": \"${VERSION}\",
-              \"repo\": \"${SOURCE_REPO}\",
-              \"release_url\": \"${RELEASE_URL}\"
+            "event_type": "repo-released",
+            "client_payload": {
+              "version": "${VERSION}",
+              "repo": "${SOURCE_REPO}",
+              "release_url": "${RELEASE_URL}"
             }
           }
           EOF
