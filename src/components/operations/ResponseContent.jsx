@@ -1,5 +1,6 @@
 // src/components/operations/ResponseContent.jsx
 import React, { useEffect, useRef, useState } from 'react';
+import useElementHeight from '../../hooks/useElementHeight.jsx';
 import Editor from '@monaco-editor/react';
 import CopyButton from '../CopyButton.jsx';
 import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
@@ -64,6 +65,12 @@ const ResponseContent = ({ operation }) => {
   const [showResponseBody, setShowResponseBody] = useState(true);
   const currentOperationId = operation?.id;
   const lastEventsCountRef = useRef(0);
+  const responseBodyContentRef = useRef(null);
+  const responseEditorHeight = useElementHeight(responseBodyContentRef, {
+    min: 320,
+    enabled: showResponseBody,
+    deps: [viewMode, currentOperationId],
+  });
 
   const normalizeHeaders = (headers) => {
     if (!headers) return [];
@@ -206,6 +213,7 @@ const ResponseContent = ({ operation }) => {
     }
     lastEventsCountRef.current = count;
   }, [availableSseFrames, currentOperationId, hasEvents]);
+
   // Ensure we only try rendering when we actually have binary-safe data in hand
   const previewPayloadString = typeof previewPayload === 'string' ? previewPayload : '';
   const trimmedPreviewPayload = previewPayloadString.trim();
@@ -357,7 +365,7 @@ const ResponseContent = ({ operation }) => {
   const streamState = getStreamState();
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex min-h-full flex-col">
       {/* Response Headers Section */}
       <div
         className={`mb-4 border border-slate-200 dark:border-dark-tremor-border ${
@@ -394,10 +402,10 @@ const ResponseContent = ({ operation }) => {
       {/* Response Body Section */}
       <div
         className={`${
-          showResponseBody ? 'flex flex-col flex-1' : ''
+          showResponseBody ? 'flex flex-1 flex-col min-h-[320px]' : ''
         } border border-slate-200 dark:border-dark-tremor-border ${
           showResponseBody ? 'rounded-tremor-small rounded-b-none' : 'rounded-tremor-small'
-        } bg-white dark:bg-dark-tremor-background-subtle overflow-hidden`}
+        } bg-white dark:bg-dark-tremor-background-subtle`}
       >
         <button
           type="button"
@@ -479,7 +487,7 @@ const ResponseContent = ({ operation }) => {
           </span>
         </button>
         {showResponseBody ? (
-          <>
+          <div ref={responseBodyContentRef} className="flex flex-1 min-h-[320px] flex-col">
             {hasEvents && viewMode === 'events' ? (
               <SseFramesViewer frames={availableSseFrames} raw={sourcePayload ?? ''} />
             ) : isSseContent ? (
@@ -491,8 +499,7 @@ const ResponseContent = ({ operation }) => {
                 </div>
               ) : (
                 <Editor
-                  height="100%"
-                  className="flex-1"
+                  height={`${responseEditorHeight}px`}
                   language="plaintext"
                   value={sourcePayload ?? ''}
                   theme={getMonacoTheme()}
@@ -530,9 +537,7 @@ const ResponseContent = ({ operation }) => {
               )
             ) : (
               <Editor
-                height="100%"
-                className="flex-1"
-                // defaultLanguage="json"
+                height={`${responseEditorHeight}px`}
                 language={editorLanguage}
                 value={formatPayload(sourcePayload, contentType) ?? ''}
                 theme={getMonacoTheme()}
@@ -548,7 +553,7 @@ const ResponseContent = ({ operation }) => {
                 }}
               />
             )}
-          </>
+          </div>
         ) : null}
       </div>
     </div>

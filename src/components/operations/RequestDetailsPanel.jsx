@@ -52,9 +52,10 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   );
   const hasTags =
     Array.isArray(detailOperation?.meta?.tags) && detailOperation.meta.tags.length > 0;
-  const contentMaxHeight = hasTags
-    ? 'calc(100vh - 270px - 64px - 48px)'
-    : 'calc(100vh - 270px - 64px)';
+  // Offset breakdown: request-detail bar (270px) + navbar (64px) = 334px base;
+  // tags row adds an extra 48px when present → 382px.
+  const contentHeightOffset = hasTags ? 382 : 334;
+  const contentMaxHeight = `max(calc(100vh - ${contentHeightOffset}px), 22rem)`;
 
   useEffect(() => {
     if (!detailOperation) return;

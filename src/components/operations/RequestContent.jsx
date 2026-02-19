@@ -1,5 +1,6 @@
 // src/components/operations/RequestContent.jsx
 import React, { useEffect, useRef, useState } from 'react';
+import useElementHeight from '../../hooks/useElementHeight.jsx';
 import Editor from '@monaco-editor/react';
 import DialogJwt from './DialogJwt.jsx';
 import CopyButton from '../CopyButton.jsx';
@@ -62,6 +63,12 @@ const RequestContent = ({ operation }) => {
   const [showRequestHeaders, setShowRequestHeaders] = useState(false);
   const [showRequestBody, setShowRequestBody] = useState(true);
   const headersSectionRef = useRef(null);
+  const requestBodyContentRef = useRef(null);
+  const requestEditorHeight = useElementHeight(requestBodyContentRef, {
+    min: 320,
+    enabled: showRequestBody,
+    deps: [operation?.id],
+  });
   useEffect(() => {
     const open = () => {
       setShowRequestHeaders(true);
@@ -226,7 +233,7 @@ const RequestContent = ({ operation }) => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex min-h-full flex-col">
       {/* Query Parameters Section */}
       <div
         className={`mb-4 border border-slate-200 dark:border-dark-tremor-border ${
@@ -297,10 +304,10 @@ const RequestContent = ({ operation }) => {
       {/* Request Body Section */}
       <div
         className={`${
-          showRequestBody ? 'flex flex-col flex-1' : ''
+          showRequestBody ? 'flex flex-1 flex-col min-h-[320px]' : ''
         } mb-4 border border-slate-200 dark:border-dark-tremor-border ${
           showRequestBody ? 'rounded-tremor-small rounded-b-none' : 'rounded-tremor-small'
-        } bg-white dark:bg-dark-tremor-background-subtle overflow-hidden`}
+        } bg-white dark:bg-dark-tremor-background-subtle`}
       >
         <button
           type="button"
@@ -315,15 +322,17 @@ const RequestContent = ({ operation }) => {
         </button>
 
         {showRequestBody ? (
-          <div className="border-t border-tremor-border dark:border-dark-tremor-border flex flex-col flex-1">
+          <div
+            ref={requestBodyContentRef}
+            className="border-t border-tremor-border dark:border-dark-tremor-border flex flex-1 min-h-[320px] flex-col"
+          >
             {isEmptyPayload ? (
               <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content">
                 No payload
               </div>
             ) : (
               <Editor
-                height="100%"
-                className="flex-1"
+                height={`${requestEditorHeight}px`}
                 defaultLanguage="json"
                 value={formatPayload(payload)}
                 theme={getMonacoTheme()}
