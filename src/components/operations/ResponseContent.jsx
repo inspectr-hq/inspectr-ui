@@ -69,7 +69,7 @@ const ResponseContent = ({ operation }) => {
   const responseEditorHeight = useElementHeight(responseBodyContentRef, {
     min: 320,
     enabled: showResponseBody,
-    deps: [viewMode, currentOperationId],
+    deps: [viewMode, currentOperationId]
   });
 
   const normalizeHeaders = (headers) => {

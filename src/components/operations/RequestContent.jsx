@@ -67,7 +67,7 @@ const RequestContent = ({ operation }) => {
   const requestEditorHeight = useElementHeight(requestBodyContentRef, {
     min: 320,
     enabled: showRequestBody,
-    deps: [operation?.id],
+    deps: [operation?.id]
   });
   useEffect(() => {
     const open = () => {
