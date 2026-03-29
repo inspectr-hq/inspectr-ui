@@ -4,7 +4,6 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import RequestList from './operations/RequestList';
 import RequestDetailsPanel from './operations/RequestDetailsPanel';
 import SettingsPanel from './operations/SettingsPanel';
-import eventDB from '../utils/eventDB';
 import useInspectrRouter from '../hooks/useInspectrRouter.jsx';
 import useLocalStorage from '../hooks/useLocalStorage.jsx';
 import useSessionStorage from '../hooks/useSessionStorage.jsx';
@@ -19,7 +18,7 @@ const SESSION_FILTER_OPTIONS = Object.freeze({ resetOnReload: true });
 
 const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
   // Get all the shared state from context
-  const { toast, setToast, client } = useInspectr();
+  const { toast, setToast, client, eventDB } = useInspectr();
 
   const { syncOperations: connectionSync, setLastEventId: setConnectionLastEventId } =
     useInspectr();

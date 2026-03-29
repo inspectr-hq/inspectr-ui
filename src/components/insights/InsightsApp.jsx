@@ -16,7 +16,6 @@ import {
   Title
 } from '@tremor/react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import eventDB from '../../utils/eventDB.js';
 import { useInspectr } from '../../context/InspectrContext.jsx';
 import { parseHash } from '../../hooks/useHashRouter.jsx';
 import EndpointMode from './EndpointMode.jsx';
@@ -68,7 +67,7 @@ const getInitialInsightsState = () => {
 };
 
 export default function InsightsApp() {
-  const { client } = useInspectr();
+  const { client, eventDB } = useInspectr();
   const initialInsightsState = useMemo(() => getInitialInsightsState(), []);
   const [summary, setSummary] = useState(null);
   const [summaryError, setSummaryError] = useState(null);

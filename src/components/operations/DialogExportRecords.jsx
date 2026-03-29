@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { useInspectr } from '../../context/InspectrContext';
 import { useLiveQuery } from 'dexie-react-hooks';
-import eventDB from '../../utils/eventDB.js';
 import useFeaturePreview from '../../hooks/useFeaturePreview.jsx';
 import useLocalStorage from '../../hooks/useLocalStorage.jsx';
 
@@ -13,7 +12,7 @@ export default function DialogExportRecords({
   onCancelRecording,
   startTime
 }) {
-  const { client, setToast } = useInspectr();
+  const { client, setToast, eventDB } = useInspectr();
   const [format, setFormat] = useState('json');
   const [exporting, setExporting] = useState(false);
   const [indentJson, setIndentJson] = useLocalStorage('exportJsonIndent', 'false');
