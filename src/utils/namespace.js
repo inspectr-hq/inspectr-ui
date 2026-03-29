@@ -7,7 +7,9 @@ export const sanitizeNamespace = (
   const normalizedReplacement = String(replacement || '-');
   const disallowedPattern = allowSlash ? /[^\w./-]+/g : /[^\w.-]+/g;
 
-  let sanitized = String(namespace || '').trim().replace(disallowedPattern, normalizedReplacement);
+  let sanitized = String(namespace || '')
+    .trim()
+    .replace(disallowedPattern, normalizedReplacement);
 
   if (removeEdgeSlashes) {
     sanitized = sanitized.replace(/^\/+|\/+$/g, '');

@@ -132,7 +132,8 @@ export default function InspectrEmbeddedApp({
         ? internalModule
         : initialModule;
   const selectedModule = normalizeModuleKey(selectedVisibleModule, initialModule);
-  const ActiveModuleComponent = MODULE_COMPONENTS[selectedModule] || MODULE_COMPONENTS[initialModule];
+  const ActiveModuleComponent =
+    MODULE_COMPONENTS[selectedModule] || MODULE_COMPONENTS[initialModule];
 
   useEffect(() => {
     if (activeModule != null) return;

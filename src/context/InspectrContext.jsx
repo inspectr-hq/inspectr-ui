@@ -204,7 +204,8 @@ export const InspectrProvider = ({
   const retryDelay = 5000; // milliseconds
 
   const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-  const debugMode = typeof window !== 'undefined' && localStorage.getItem('debug') === 'true';
+  const [debugModeValue] = useStorageAdapter('debug', 'false', resolvedStorageAdapter);
+  const debugMode = debugModeValue === 'true';
 
   useEffect(() => {
     if (debugMode) {

@@ -1,5 +1,5 @@
 // src/components/InspectrApp.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import RequestList from './operations/RequestList';
 import RequestDetailsPanel from './operations/RequestDetailsPanel';
@@ -10,6 +10,7 @@ import useSessionStorage from '../hooks/useSessionStorage.jsx';
 import { useInspectr } from '../context/InspectrContext';
 import { parseHash } from '../hooks/useHashRouter.jsx';
 import { normalizeTimestamp, isTimestampAfter } from '../utils/timestampUtils.js';
+import { resolveNamespacedStorageKey } from '../utils/storageAdapter.js';
 
 const toId = (value) => (value == null ? null : String(value));
 const FILTER_STORAGE_KEY = 'requestFilters';
@@ -18,7 +19,7 @@ const SESSION_FILTER_OPTIONS = Object.freeze({ resetOnReload: true });
 
 const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
   // Get all the shared state from context
-  const { toast, setToast, client, eventDB, featureConfig } = useInspectr();
+  const { toast, setToast, client, eventDB, featureConfig, mode, namespace } = useInspectr();
   const actionFlags = featureConfig?.actions || {};
   const allowDelete = actionFlags.allowDelete !== false;
 
@@ -43,11 +44,17 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
     'false'
   );
   const persistSort = persistSortValue === 'true';
+  const sessionStorageKeyPrefix = useMemo(
+    () => (mode === 'embedded' ? `${resolveNamespacedStorageKey(namespace, 'session:')}` : ''),
+    [mode, namespace]
+  );
   const [sortField, setSortField] = useSessionStorage('requestSortField', 'time', {
-    resetOnReload: !persistSort
+    resetOnReload: !persistSort,
+    keyPrefix: sessionStorageKeyPrefix
   });
   const [sortDirection, setSortDirection] = useSessionStorage('requestSortDirection', 'desc', {
-    resetOnReload: !persistSort
+    resetOnReload: !persistSort,
+    keyPrefix: sessionStorageKeyPrefix
   });
   const [persistFiltersValue, setPersistFiltersValue] = useInspectrStorage(
     'persistFiltersOnReload',
@@ -55,7 +62,8 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
   );
   const persistFilters = persistFiltersValue === 'true';
   const [filters, setFilters] = useSessionStorage(FILTER_STORAGE_KEY, DEFAULT_FILTERS, {
-    resetOnReload: !persistFilters
+    resetOnReload: !persistFilters,
+    keyPrefix: sessionStorageKeyPrefix
   });
   const hasAppliedRouteParams = useRef(false);
   const parseListParam = (value) =>
@@ -166,8 +174,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
   const mcpPromptOptions =
     useLiveQuery(() => eventDB.getAllMcpPromptOptions(), [eventDB], [], { throttle: 300 }) || [];
   const mcpCategoryOptions =
-    useLiveQuery(() => eventDB.getAllMcpCategoryOptions(), [eventDB], [], { throttle: 300 }) ||
-    [];
+    useLiveQuery(() => eventDB.getAllMcpCategoryOptions(), [eventDB], [], { throttle: 300 }) || [];
   const mcpMethodOptions =
     useLiveQuery(() => eventDB.getAllMcpMethodOptions(), [eventDB], [], { throttle: 300 }) || [];
 

@@ -109,6 +109,12 @@ Theme token contract (initial):
 - `accentPrimary` -> `--inspectr-accent-primary`
 - `accentPrimaryContrast` -> `--inspectr-accent-primary-contrast`
 
+Bins migration checklist:
+- supply a stable `namespace` per embedded runtime (for storage + Dexie isolation),
+- inject `sessionBootstrap` from Bins runtime credentials (do not rely on global browser state),
+- pass `featureConfig` for enabled modules/actions,
+- pass optional `themeConfig` tokens from Bins design system.
+
 ## Storybook
 
 Explore and test components in isolation with Storybook.
