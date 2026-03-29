@@ -8,6 +8,13 @@ import {
   createNamespacedStorageAdapter
 } from '../utils/storageAdapter.js';
 
+const EMPTY_APP_AUTH_CONTEXT = Object.freeze({
+  appAuthEnabled: false,
+  authenticated: false,
+  tokenType: null,
+  tokenExpiresAt: null
+});
+
 // Create the context with default values
 const InspectrContext = createContext({
   // Settings
@@ -50,12 +57,7 @@ const InspectrContext = createContext({
   debugMode: false,
 
   // Hosted app auth bootstrap context
-  appAuthContext: {
-    appAuthEnabled: false,
-    authenticated: false,
-    tokenType: null,
-    tokenExpiresAt: null
-  },
+  appAuthContext: EMPTY_APP_AUTH_CONTEXT,
 
   // SDK client
   client: null
@@ -75,12 +77,6 @@ export const InspectrProvider = ({
   featureConfig = null,
   themeConfig = null
 }) => {
-  const emptyAppAuthContext = {
-    appAuthEnabled: false,
-    authenticated: false,
-    tokenType: null,
-    tokenExpiresAt: null
-  };
   const normalizeApiEndpoint = (value) => {
     const raw = String(value || '').trim();
     if (!raw) return 'api';
@@ -148,7 +144,7 @@ export const InspectrProvider = ({
   const [, setExposeLocalStorage] = useStorageAdapter('expose', 'false', resolvedStorageAdapter);
   const [isInitialized, setIsInitialized] = useState(false);
   const [toast, setToast] = useState(null);
-  const [appAuthContext, setAppAuthContext] = useState(emptyAppAuthContext);
+  const [appAuthContext, setAppAuthContext] = useState(EMPTY_APP_AUTH_CONTEXT);
 
   // SSE connection reference
   const registrationRetryCountRef = useRef(0);
@@ -289,7 +285,7 @@ export const InspectrProvider = ({
       } catch (err) {
         if (cancelled) return;
         inspectrClient.setAuthorizationToken('');
-        setAppAuthContext(emptyAppAuthContext);
+        setAppAuthContext(EMPTY_APP_AUTH_CONTEXT);
         if (debugMode) {
           console.warn('[Inspectr] Hosted auth bootstrap unavailable, using local auth behavior.');
         }
