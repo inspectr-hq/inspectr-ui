@@ -58,8 +58,9 @@ const collectDistinctValues = (records, field) => {
 };
 
 class EventDB {
-  constructor() {
-    this.db = new Dexie('InspectrDB');
+  constructor({ dbName = 'InspectrDB' } = {}) {
+    this.dbName = dbName;
+    this.db = new Dexie(dbName);
     // Define the "events" table with indexes on the key fields.
     // Here "id" is the primary key.
     this.db.version(1).stores({
@@ -460,5 +461,31 @@ class EventDB {
   }
 }
 
-const eventDB = new EventDB();
+const normalizeNamespaceForDbName = (namespace) => {
+  const normalized = String(namespace || '')
+    .trim()
+    .replace(/[^\w.-]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  if (!normalized) return '';
+  if (normalized.length <= 42) return normalized;
+  let hash = 0;
+  for (let i = 0; i < normalized.length; i += 1) {
+    hash = (hash * 31 + normalized.charCodeAt(i)) >>> 0;
+  }
+  return `${normalized.slice(0, 28)}_${hash.toString(16)}`;
+};
+
+export const getNamespacedEventDBName = (namespace) => {
+  const normalizedNamespace = normalizeNamespaceForDbName(namespace);
+  if (!normalizedNamespace) return 'InspectrDB';
+  return `InspectrDB_${normalizedNamespace}`;
+};
+
+export const createEventDB = ({ dbName, namespace } = {}) => {
+  const resolvedDbName = dbName || (namespace ? getNamespacedEventDBName(namespace) : 'InspectrDB');
+  return new EventDB({ dbName: resolvedDbName });
+};
+
+const eventDB = createEventDB();
+export { EventDB };
 export default eventDB;

@@ -1,15 +1,12 @@
 // src/context/InspectrContext.jsx
-import React, {
-  createContext,
-  useState,
-  useContext,
-  useRef,
-  useEffect,
-  useLayoutEffect
-} from 'react';
-import useLocalStorage from '../hooks/useLocalStorage.jsx';
+import React, { createContext, useState, useContext, useRef, useEffect, useMemo } from 'react';
+import useStorageAdapter from '../hooks/useStorageAdapter.jsx';
 import InspectrClient from '../utils/inspectrSdk';
-import eventDB from '../utils/eventDB';
+import eventDB, { createEventDB, getNamespacedEventDBName } from '../utils/eventDB';
+import {
+  createDefaultStorageAdapter,
+  createNamespacedStorageAdapter
+} from '../utils/storageAdapter.js';
 
 // Create the context with default values
 const InspectrContext = createContext({
@@ -29,6 +26,13 @@ const InspectrContext = createContext({
   channel: '',
   setChannel: () => {},
   token: '',
+  mode: 'standalone',
+  namespace: '',
+  featureConfig: null,
+  themeConfig: null,
+  sessionBootstrap: null,
+  storageAdapter: null,
+  eventDB,
 
   // Refs
   reRegistrationFailedRef: { current: false },
@@ -61,7 +65,16 @@ const InspectrContext = createContext({
 export const useInspectr = () => useContext(InspectrContext);
 
 // Provider component
-export const InspectrProvider = ({ children }) => {
+export const InspectrProvider = ({
+  children,
+  mode = 'standalone',
+  storageAdapter,
+  namespace = '',
+  dbName,
+  sessionBootstrap = null,
+  featureConfig = null,
+  themeConfig = null
+}) => {
   const emptyAppAuthContext = {
     appAuthEnabled: false,
     authenticated: false,
@@ -78,20 +91,61 @@ export const InspectrProvider = ({ children }) => {
     return normalized || 'api';
   };
 
+  const resolvedStorageAdapter = useMemo(() => {
+    if (storageAdapter) return storageAdapter;
+    if (mode === 'embedded' && namespace) {
+      return createNamespacedStorageAdapter(namespace, createDefaultStorageAdapter());
+    }
+    return createDefaultStorageAdapter();
+  }, [storageAdapter, mode, namespace]);
+
+  const resolvedEventDB = useMemo(() => {
+    if (mode !== 'embedded') {
+      return eventDB;
+    }
+    const resolvedDbName = dbName || getNamespacedEventDBName(namespace);
+    return createEventDB({ dbName: resolvedDbName, namespace });
+  }, [mode, dbName, namespace]);
+
+  useEffect(() => {
+    if (resolvedEventDB === eventDB) return;
+    return () => {
+      try {
+        resolvedEventDB.db.close();
+      } catch {}
+    };
+  }, [resolvedEventDB]);
+
   // Settings state
-  const [rawApiEndpoint, setRawApiEndpoint] = useLocalStorage('apiEndpoint', 'api');
+  const [rawApiEndpoint, setRawApiEndpoint] = useStorageAdapter(
+    'apiEndpoint',
+    'api',
+    resolvedStorageAdapter
+  );
   const apiEndpoint = normalizeApiEndpoint(rawApiEndpoint);
   const setApiEndpoint = (value) => {
     setRawApiEndpoint(normalizeApiEndpoint(value));
   };
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
-  const [sseEndpoint, setSseEndpoint] = useLocalStorage('sseEndpoint', '');
-  const [ingressEndpoint, setIngressEndpoint] = useLocalStorage('ingressEndpoint', '');
-  const [channelCode, setChannelCode] = useLocalStorage('channelCode', '');
-  const [channel, setChannel] = useLocalStorage('channel', '');
-  const [token, setToken] = useLocalStorage('token', '');
-  const [expires, setExpires] = useLocalStorage('expires', '');
-  const [, setExposeLocalStorage] = useLocalStorage('expose', 'false');
+  const [sseEndpoint, setSseEndpoint] = useStorageAdapter(
+    'sseEndpoint',
+    '',
+    resolvedStorageAdapter
+  );
+  const [ingressEndpoint, setIngressEndpoint] = useStorageAdapter(
+    'ingressEndpoint',
+    '',
+    resolvedStorageAdapter
+  );
+  const [channelCode, setChannelCode] = useStorageAdapter(
+    'channelCode',
+    '',
+    resolvedStorageAdapter
+  );
+  const [channel, setChannel] = useStorageAdapter('channel', '', resolvedStorageAdapter);
+  const [token, setToken] = useStorageAdapter('token', '', resolvedStorageAdapter);
+  const [expires, setExpires] = useStorageAdapter('expires', '', resolvedStorageAdapter);
+  const [, setExposeLocalStorage] = useStorageAdapter('expose', 'false', resolvedStorageAdapter);
   const [isInitialized, setIsInitialized] = useState(false);
   const [toast, setToast] = useState(null);
   const [appAuthContext, setAppAuthContext] = useState(emptyAppAuthContext);
@@ -162,10 +216,14 @@ export const InspectrProvider = ({ children }) => {
   };
 
   // Proxy URL state (persisted)
-  const [proxyEndpoint, setProxyEndpoint] = useLocalStorage('proxyEndpoint', '');
+  const [proxyEndpoint, setProxyEndpoint] = useStorageAdapter(
+    'proxyEndpoint',
+    '',
+    resolvedStorageAdapter
+  );
 
   // Create an InspectrClient instance
-  const [inspectrClient, setInspectrClient] = useState(() => new InspectrClient({ apiEndpoint }));
+  const [inspectrClient] = useState(() => new InspectrClient({ apiEndpoint }));
 
   // Update the client when apiEndpoint changes
   useEffect(() => {
@@ -394,7 +452,11 @@ export const InspectrProvider = ({ children }) => {
   }, [isInitialized, channel, channelCode, token, sseEndpoint]);
 
   // ——— SSE connection lifecycle (moved from InspectrConnectionContext) ———
-  const [lastEventId, setLastEventId] = useLocalStorage('lastEventId', '');
+  const [lastEventId, setLastEventId] = useStorageAdapter(
+    'lastEventId',
+    '',
+    resolvedStorageAdapter
+  );
   const eventSourceRef = useRef(null);
   const wasConnectedRef = useRef(false);
 
@@ -470,13 +532,13 @@ export const InspectrProvider = ({ children }) => {
             burstBufferRef.current = [];
             burstCountRef.current = 0;
             burstStartRef.current = performance.now();
-            await eventDB.bulkUpsertEvents(buffered);
+            await resolvedEventDB.bulkUpsertEvents(buffered);
           }
           if (debugMode) {
             console.log(`[Inspectr] Sync complete: ${syncedCount} synced`);
           }
           if (activeSyncId) {
-            const deletedCount = await eventDB.removeEventsNotSynced(activeSyncId);
+            const deletedCount = await resolvedEventDB.removeEventsNotSynced(activeSyncId);
             if (debugMode) {
               console.log(`[Inspectr] Sync cleanup: ${deletedCount} removed`);
             }
@@ -537,7 +599,7 @@ export const InspectrProvider = ({ children }) => {
         }
 
         if (burstCountRef.current < BURST_THRESHOLD) {
-          eventDB
+          resolvedEventDB
             .upsertEvent(event)
             .catch((err) => console.error('Error saving event to DB:', err));
         } else {
@@ -545,7 +607,7 @@ export const InspectrProvider = ({ children }) => {
           if (burstCountRef.current === BURST_THRESHOLD) {
             setTimeout(async () => {
               try {
-                await eventDB.bulkUpsertEvents(burstBufferRef.current);
+                await resolvedEventDB.bulkUpsertEvents(burstBufferRef.current);
               } catch (err) {
                 console.error('bulk save failed', err);
               } finally {
@@ -615,7 +677,7 @@ export const InspectrProvider = ({ children }) => {
     };
     // We intentionally omit lastEventId here to avoid reconnects when it changes during streaming
     // Sync action explicitly reconnects with override.
-  }, [sseEndpoint, token]);
+  }, [sseEndpoint, token, resolvedEventDB]);
 
   // Close on full page unload
   useEffect(() => {
@@ -630,6 +692,13 @@ export const InspectrProvider = ({ children }) => {
 
   // Context value
   const contextValue = {
+    mode,
+    namespace,
+    featureConfig,
+    themeConfig,
+    sessionBootstrap,
+    storageAdapter: resolvedStorageAdapter,
+    eventDB: resolvedEventDB,
     apiEndpoint,
     setApiEndpoint,
     connectionStatus,
