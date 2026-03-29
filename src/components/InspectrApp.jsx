@@ -18,7 +18,9 @@ const SESSION_FILTER_OPTIONS = Object.freeze({ resetOnReload: true });
 
 const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
   // Get all the shared state from context
-  const { toast, setToast, client, eventDB } = useInspectr();
+  const { toast, setToast, client, eventDB, featureConfig } = useInspectr();
+  const actionFlags = featureConfig?.actions || {};
+  const allowDelete = actionFlags.allowDelete !== false;
 
   const { syncOperations: connectionSync, setLastEventId: setConnectionLastEventId } =
     useInspectr();
@@ -253,6 +255,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
 
   // Clear all operations.
   const clearOperations = async () => {
+    if (!allowDelete) return;
     clearSelection();
 
     try {
@@ -271,6 +274,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
 
   // Clear only the operations matching the active filters.
   const clearFilteredOperations = async () => {
+    if (!allowDelete) return;
     try {
       // Query all filtered operations using a very high pageSize.
       const filteredOperations = await eventDB.queryEvents({
@@ -300,6 +304,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
 
   // Remove a single request.
   const removeOperation = async (opId) => {
+    if (!allowDelete) return;
     const isCurrentlySelected = selectedOperation && toId(selectedOperation.id) === toId(opId);
     const operation = await eventDB.getEvent(opId);
 
@@ -400,6 +405,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
             onRemove={removeOperation}
             clearOperations={clearOperations}
             clearFilteredOperations={clearFilteredOperations}
+            allowDeleteActions={allowDelete}
             selectedOperation={selectedOperation}
             currentPage={page}
             totalPages={totalPages}

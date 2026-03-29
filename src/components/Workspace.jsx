@@ -63,7 +63,9 @@ export default function Workspace() {
 }
 
 function WorkspaceContent() {
-  const { eventDB } = useInspectr();
+  const { eventDB, featureConfig } = useInspectr();
+  const actionFlags = featureConfig?.actions || {};
+  const allowExport = actionFlags.allowExport !== false;
   const [workspaceFeatureEnabled] = useFeaturePreview('feat_insights_display', false, true);
 
   // Deprecate old features
@@ -157,9 +159,11 @@ function WorkspaceContent() {
               {/* ——— Workspace Actions ——— */}
               <div className="ml-auto flex items-center space-x-2">
                 <DialogVersionUpdate />
-                <HeaderActionButton onClick={() => setIsExportOpen(true)}>
-                  Export
-                </HeaderActionButton>
+                {allowExport ? (
+                  <HeaderActionButton onClick={() => setIsExportOpen(true)}>
+                    Export
+                  </HeaderActionButton>
+                ) : null}
                 <HeaderActionButton onClick={() => setIsImportOpen(true)}>
                   Import
                 </HeaderActionButton>
@@ -169,7 +173,7 @@ function WorkspaceContent() {
                   disabled={isRecordExportOpen}
                   onClick={() => {
                     if (isRecording) {
-                      if (recordCount > 0) {
+                      if (allowExport && recordCount > 0) {
                         setIsRecordExportOpen(true);
                       } else {
                         setIsRecording(false);
@@ -204,24 +208,28 @@ function WorkspaceContent() {
         <ToastNotificationFromContext />
 
         {/* Export/Import/Record dialogs */}
-        <DialogExportOperations open={isExportOpen} onClose={() => setIsExportOpen(false)} />
+        {allowExport ? (
+          <DialogExportOperations open={isExportOpen} onClose={() => setIsExportOpen(false)} />
+        ) : null}
         <DialogImportOperations open={isImportOpen} onClose={() => setIsImportOpen(false)} />
 
-        <DialogExportRecords
-          open={isRecordExportOpen}
-          onContinue={() => {
-            // Simply close and keep recording
-            setIsRecordExportOpen(false);
-          }}
-          onCancelRecording={() => {
-            // Stop recording and clear start time
-            setIsRecordExportOpen(false);
-            setIsRecording(false);
-            setRecordStart(null);
-          }}
-          onClose={() => setIsRecordExportOpen(false)}
-          startTime={recordStart}
-        />
+        {allowExport ? (
+          <DialogExportRecords
+            open={isRecordExportOpen}
+            onContinue={() => {
+              // Simply close and keep recording
+              setIsRecordExportOpen(false);
+            }}
+            onCancelRecording={() => {
+              // Stop recording and clear start time
+              setIsRecordExportOpen(false);
+              setIsRecording(false);
+              setRecordStart(null);
+            }}
+            onClose={() => setIsRecordExportOpen(false)}
+            startTime={recordStart}
+          />
+        ) : null}
       </div>
     </>
   );
