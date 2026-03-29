@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useInspectr } from '../../context/InspectrContext';
 import useFeaturePreview from '../../hooks/useFeaturePreview.jsx';
-import useLocalStorage from '../../hooks/useLocalStorage.jsx';
+import useInspectrStorage from '../../hooks/useInspectrStorage.jsx';
 
 export default function DialogExportOperations({ open, onClose }) {
   const { client, setToast } = useInspectr();
@@ -12,7 +12,7 @@ export default function DialogExportOperations({ open, onClose }) {
   const [preset, setPreset] = useState('');
   const [since, setSince] = useState('');
   const [until, setUntil] = useState('');
-  const [indentJson, setIndentJson] = useLocalStorage('exportJsonIndent', 'false');
+  const [indentJson, setIndentJson] = useInspectrStorage('exportJsonIndent', 'false');
   const [openapiEnabled] = useFeaturePreview('feat_export_openapi');
   const [postmanEnabled] = useFeaturePreview('feat_export_postman');
   const [errorMessage, setErrorMessage] = useState('');

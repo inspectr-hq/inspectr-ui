@@ -16,8 +16,7 @@ import DialogExportRecords from './operations/DialogExportRecords.jsx';
 import DialogImportOperations from './operations/DialogImportOperations.jsx';
 import { InspectrProvider, useInspectr } from '../context/InspectrContext';
 import { useLiveQuery } from 'dexie-react-hooks';
-import eventDB from '../utils/eventDB.js';
-import useLocalStorage from '../hooks/useLocalStorage.jsx';
+import useInspectrStorage from '../hooks/useInspectrStorage.jsx';
 import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 import { normalizeTimestamp, isTimestampAfter } from '../utils/timestampUtils.js';
 import DialogVersionUpdate from './DialogVersionUpdate.jsx';
@@ -56,6 +55,15 @@ const Logo = (props) => (
 );
 
 export default function Workspace() {
+  return (
+    <InspectrProvider>
+      <WorkspaceContent />
+    </InspectrProvider>
+  );
+}
+
+function WorkspaceContent() {
+  const { eventDB } = useInspectr();
   const [workspaceFeatureEnabled] = useFeaturePreview('feat_insights_display', false, true);
 
   // Deprecate old features
@@ -78,7 +86,7 @@ export default function Workspace() {
   const ActiveComponent = currentNav.component;
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [recordStart, setRecordStart] = useLocalStorage('recordStart', null);
+  const [recordStart, setRecordStart] = useInspectrStorage('recordStart', null);
   const [isRecording, setIsRecording] = useState(() => !!recordStart);
   useEffect(() => {
     setIsRecording(!!recordStart);
@@ -97,7 +105,7 @@ export default function Workspace() {
   }, [isRecording, recordStart]);
 
   return (
-    <InspectrProvider>
+    <>
       <DialogMockLaunch />
 
       <div className="flex flex-col min-h-screen">
@@ -215,7 +223,7 @@ export default function Workspace() {
           startTime={recordStart}
         />
       </div>
-    </InspectrProvider>
+    </>
   );
 }
 
@@ -237,8 +245,8 @@ const ToastNotificationFromContext = () => {
 
 // Specialized nav button for the Inspectr tab that shows unread count and connection-colored badge
 const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
-  const { connectionStatus } = useInspectr();
-  const [lastSeenAt, setLastSeenAt] = useLocalStorage('inspectrLastSeenAt', null);
+  const { connectionStatus, eventDB } = useInspectr();
+  const [lastSeenAt, setLastSeenAt] = useInspectrStorage('inspectrLastSeenAt', null);
   const [trackedLastSeenAt, setTrackedLastSeenAt] = useState(() => normalizeTimestamp(lastSeenAt));
 
   // Latest event time in Dexie

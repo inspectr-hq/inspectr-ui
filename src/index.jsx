@@ -6,6 +6,7 @@ import './utils/configureMonaco.js';
 export * from './components/index.jsx';
 export { default as useHashRouter, parseHash } from './hooks/useHashRouter.jsx';
 export { default as useStorageAdapter } from './hooks/useStorageAdapter.jsx';
+export { default as useInspectrStorage } from './hooks/useInspectrStorage.jsx';
 
 export * from './utils/eventDB.js';
 export * from './utils/storageAdapter.js';

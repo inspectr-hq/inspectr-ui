@@ -7,7 +7,7 @@ import MetaContent from './MetaContent.jsx';
 import McpContent from './McpContent.jsx';
 import Terminal from '../Terminal';
 import { RiExternalLinkLine } from '@remixicon/react';
-import useLocalStorage from '../../hooks/useLocalStorage.jsx';
+import useInspectrStorage from '../../hooks/useInspectrStorage.jsx';
 import useOperationDetails from '../../hooks/useOperationDetails.jsx';
 
 // CSS for fade-in effect
@@ -24,9 +24,9 @@ const hiddenStyle = {
 };
 
 const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
-  const [ingressEndpoint, setIngressEndpoint] = useLocalStorage('ingressEndpoint', '');
-  const [proxyEndpoint, setProxyEndpoint] = useLocalStorage('proxyEndpoint', '');
-  const [exposeValue] = useLocalStorage('expose', 'false');
+  const [ingressEndpoint, setIngressEndpoint] = useInspectrStorage('ingressEndpoint', '');
+  const [proxyEndpoint, setProxyEndpoint] = useInspectrStorage('proxyEndpoint', '');
+  const [exposeValue] = useInspectrStorage('expose', 'false');
   const expose = exposeValue === 'true';
   const [isLoaded, setIsLoaded] = useState(false);
   const { detailOperation, fetchDetail, isFetching } = useOperationDetails(

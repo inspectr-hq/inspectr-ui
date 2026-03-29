@@ -1,6 +1,6 @@
 // src/components/operations/RequestList.jsx
 import React, { useEffect, useRef, useState } from 'react';
-import useLocalStorage from '../../hooks/useLocalStorage.jsx';
+import useInspectrStorage from '../../hooks/useInspectrStorage.jsx';
 import RequestListItem from './RequestListItem';
 import RequestListSidePanel from './RequestListSidePanel';
 import ListPagination from '../ListPagination.jsx';
@@ -44,7 +44,7 @@ const RequestList = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const selectedOperationRef = useRef(null);
 
-  const [showQueryParamsValue, setShowQueryParamsValue] = useLocalStorage(
+  const [showQueryParamsValue, setShowQueryParamsValue] = useInspectrStorage(
     'showQueryParams',
     'false'
   );

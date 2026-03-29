@@ -5,7 +5,7 @@ import RequestList from './operations/RequestList';
 import RequestDetailsPanel from './operations/RequestDetailsPanel';
 import SettingsPanel from './operations/SettingsPanel';
 import useInspectrRouter from '../hooks/useInspectrRouter.jsx';
-import useLocalStorage from '../hooks/useLocalStorage.jsx';
+import useInspectrStorage from '../hooks/useInspectrStorage.jsx';
 import useSessionStorage from '../hooks/useSessionStorage.jsx';
 import { useInspectr } from '../context/InspectrContext';
 import { parseHash } from '../hooks/useHashRouter.jsx';
@@ -28,15 +28,18 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
 
   const [page, setPage] = useState(1);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [leftPanelWidthValue, setLeftPanelWidthValue] = useLocalStorage(
+  const [leftPanelWidthValue, setLeftPanelWidthValue] = useInspectrStorage(
     'leftPanelWidth',
     LEFT_PANEL_WIDTH
   );
-  const [, setLastSeenAt] = useLocalStorage('inspectrLastSeenAt', null);
+  const [, setLastSeenAt] = useInspectrStorage('inspectrLastSeenAt', null);
   const leftPanelWidth = parseFloat(leftPanelWidthValue || LEFT_PANEL_WIDTH);
   const isResizingRef = useRef(false);
 
-  const [persistSortValue, setPersistSortValue] = useLocalStorage('persistSortOnReload', 'false');
+  const [persistSortValue, setPersistSortValue] = useInspectrStorage(
+    'persistSortOnReload',
+    'false'
+  );
   const persistSort = persistSortValue === 'true';
   const [sortField, setSortField] = useSessionStorage('requestSortField', 'time', {
     resetOnReload: !persistSort
@@ -44,7 +47,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
   const [sortDirection, setSortDirection] = useSessionStorage('requestSortDirection', 'desc', {
     resetOnReload: !persistSort
   });
-  const [persistFiltersValue, setPersistFiltersValue] = useLocalStorage(
+  const [persistFiltersValue, setPersistFiltersValue] = useInspectrStorage(
     'persistFiltersOnReload',
     'false'
   );

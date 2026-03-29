@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import useLocalStorage from './useLocalStorage.jsx';
+import useInspectrStorage from './useInspectrStorage.jsx';
 
 export default function useFeaturePreview(slug, defaultEnabled = false, removeWhenFalse = true) {
-  const [value, setValue] = useLocalStorage(
+  const [value, setValue] = useInspectrStorage(
     `feature_preview_${slug}`,
     defaultEnabled ? 'true' : undefined
   );

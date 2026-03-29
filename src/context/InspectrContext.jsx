@@ -31,7 +31,7 @@ const InspectrContext = createContext({
   featureConfig: null,
   themeConfig: null,
   sessionBootstrap: null,
-  storageAdapter: null,
+  storageAdapter: createDefaultStorageAdapter(),
   eventDB,
 
   // Refs
@@ -213,6 +213,38 @@ export const InspectrProvider = ({
       return true;
     }
     return false;
+  };
+
+  const applySessionBootstrap = (bootstrap) => {
+    if (!bootstrap || typeof bootstrap !== 'object') return;
+
+    if (bootstrap.apiEndpoint) {
+      setApiEndpoint(bootstrap.apiEndpoint);
+    }
+    if (bootstrap.channelCode) {
+      setChannelCode(String(bootstrap.channelCode));
+    }
+    if (bootstrap.channel) {
+      setChannel(String(bootstrap.channel));
+    }
+    if (bootstrap.token) {
+      setToken(String(bootstrap.token));
+    }
+    if (bootstrap.expires) {
+      setExpires(String(bootstrap.expires));
+    }
+    if (bootstrap.sseEndpoint) {
+      setSseEndpoint(String(bootstrap.sseEndpoint));
+    }
+    if (bootstrap.ingressEndpoint) {
+      setIngressEndpoint(String(bootstrap.ingressEndpoint));
+    }
+    if (bootstrap.proxyEndpoint) {
+      setProxyEndpoint(String(bootstrap.proxyEndpoint));
+    }
+    if (typeof bootstrap.expose === 'boolean') {
+      setExposeLocalStorage(bootstrap.expose ? 'true' : 'false');
+    }
   };
 
   // Proxy URL state (persisted)
@@ -398,6 +430,12 @@ export const InspectrProvider = ({
     const loadCredentials = async () => {
       if (typeof window === 'undefined') return;
 
+      if (mode === 'embedded') {
+        applySessionBootstrap(sessionBootstrap);
+        setIsInitialized(true);
+        return;
+      }
+
       if (!loadCredentialsFromQueryParams()) {
         if (!loadCredentialsFromLocalStorage() && isLocalhost) {
           await loadCredentialsFromApi();
@@ -408,7 +446,7 @@ export const InspectrProvider = ({
     };
 
     loadCredentials();
-  }, []);
+  }, [mode, sessionBootstrap, isLocalhost]);
 
   /**
    * 🏁 Step 2: When `isInitialized` is true, register using stored credentials

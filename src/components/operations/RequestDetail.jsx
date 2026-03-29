@@ -11,7 +11,7 @@ import { Tooltip } from '../ToolTip.jsx';
 import AuthIndicator from './AuthIndicator.jsx';
 import McpIndicator from './McpIndicator.jsx';
 import { normalizeTags, normalizeTag } from '../../utils/normalizeTags.js';
-import useLocalStorage from '../../hooks/useLocalStorage.jsx';
+import useInspectrStorage from '../../hooks/useInspectrStorage.jsx';
 import DialogDeleteConfirm from '../DialogDeleteConfirm.jsx';
 import TagPill from '../TagPill.jsx';
 import RequestDetailActions from './RequestDetailActions.jsx';
@@ -27,8 +27,8 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
   const [showUrlToast, setShowUrlToast] = useState(false);
   const [showReplayToast, setShowReplayToast] = useState(false);
   const [replayed, setReplayed] = useState(false);
-  const [copyActionValue, setCopyActionValue] = useLocalStorage('copyActionPreference', 'curl');
-  const [replayTargetValue, setReplayTargetValue] = useLocalStorage(
+  const [copyActionValue, setCopyActionValue] = useInspectrStorage('copyActionPreference', 'curl');
+  const [replayTargetValue, setReplayTargetValue] = useInspectrStorage(
     'replayTargetPreference',
     'original'
   );
