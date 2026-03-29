@@ -16,7 +16,7 @@ export default function useRecentOperations(limit = 10) {
           page: 1,
           pageSize
         }),
-      [pageSize],
+      [eventDB, pageSize],
       DEFAULT_RESULT,
       { throttle: 200 }
     ) || DEFAULT_RESULT;

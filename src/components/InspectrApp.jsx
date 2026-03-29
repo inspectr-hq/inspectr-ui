@@ -152,23 +152,24 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
           page,
           pageSize
         }),
-      [filters, sortField, sortDirection, page],
+      [eventDB, filters, sortField, sortDirection, page],
       { results: [], totalCount: 0 },
       { throttle: 100 }
     ) || {};
 
   const tagOptions =
-    useLiveQuery(() => eventDB.getAllTagOptions(), [], [], { throttle: 300 }) || [];
+    useLiveQuery(() => eventDB.getAllTagOptions(), [eventDB], [], { throttle: 300 }) || [];
   const mcpToolOptions =
-    useLiveQuery(() => eventDB.getAllMcpToolOptions(), [], [], { throttle: 300 }) || [];
+    useLiveQuery(() => eventDB.getAllMcpToolOptions(), [eventDB], [], { throttle: 300 }) || [];
   const mcpResourceOptions =
-    useLiveQuery(() => eventDB.getAllMcpResourceOptions(), [], [], { throttle: 300 }) || [];
+    useLiveQuery(() => eventDB.getAllMcpResourceOptions(), [eventDB], [], { throttle: 300 }) || [];
   const mcpPromptOptions =
-    useLiveQuery(() => eventDB.getAllMcpPromptOptions(), [], [], { throttle: 300 }) || [];
+    useLiveQuery(() => eventDB.getAllMcpPromptOptions(), [eventDB], [], { throttle: 300 }) || [];
   const mcpCategoryOptions =
-    useLiveQuery(() => eventDB.getAllMcpCategoryOptions(), [], [], { throttle: 300 }) || [];
+    useLiveQuery(() => eventDB.getAllMcpCategoryOptions(), [eventDB], [], { throttle: 300 }) ||
+    [];
   const mcpMethodOptions =
-    useLiveQuery(() => eventDB.getAllMcpMethodOptions(), [], [], { throttle: 300 }) || [];
+    useLiveQuery(() => eventDB.getAllMcpMethodOptions(), [eventDB], [], { throttle: 300 }) || [];
 
   // Count unread events newer than lastSeenAt
   const latestEventTime =
@@ -179,7 +180,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
       } catch (error) {
         return null;
       }
-    }, []) || null;
+    }, [eventDB]) || null;
 
   const routeSlug = route?.slug || null;
   const isInspectrRoute = routeSlug === 'inspectr';

@@ -6,6 +6,37 @@
   --font-sans: InterVariable, sans-serif;
 }
 
+/* Embedded theme token contract defaults */
+:root {
+  --inspectr-surface-background: transparent;
+  --inspectr-surface-muted: #f3f4f6;
+  --inspectr-border-subtle: #e5e7eb;
+  --inspectr-text-primary: #0f172a;
+  --inspectr-text-secondary: #374151;
+  --inspectr-accent-primary: #2563eb;
+  --inspectr-accent-primary-contrast: #ffffff;
+}
+
+/* Embeddable shell classes */
+.inspectr-embedded-root {
+  background-color: var(--inspectr-surface-background);
+  color: var(--inspectr-text-primary);
+}
+
+.inspectr-embedded-tabs {
+  border-bottom: 1px solid var(--inspectr-border-subtle);
+}
+
+.inspectr-embedded-tab {
+  background-color: var(--inspectr-surface-muted);
+  color: var(--inspectr-text-secondary);
+}
+
+.inspectr-embedded-tab[data-active='true'] {
+  background-color: var(--inspectr-accent-primary);
+  color: var(--inspectr-accent-primary-contrast);
+}
+
 /* Brand utility classes */
 :root {
   /* Consumers can override this via CSS variables at runtime */

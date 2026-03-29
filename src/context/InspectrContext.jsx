@@ -15,6 +15,67 @@ const EMPTY_APP_AUTH_CONTEXT = Object.freeze({
   tokenExpiresAt: null
 });
 
+const normalizeApiEndpoint = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return 'api';
+  if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(raw)) {
+    return raw.replace(/\/+$/, '');
+  }
+  const normalized = raw.replace(/^\/+/, '').replace(/\/+$/, '');
+  return normalized || 'api';
+};
+
+const stableStringify = (value) => {
+  const normalize = (input) => {
+    if (Array.isArray(input)) {
+      return input.map(normalize);
+    }
+    if (input && typeof input === 'object') {
+      return Object.keys(input)
+        .sort()
+        .reduce((acc, key) => {
+          acc[key] = normalize(input[key]);
+          return acc;
+        }, {});
+    }
+    return input;
+  };
+
+  return JSON.stringify(normalize(value));
+};
+
+const applySessionBootstrap = (bootstrap, setters) => {
+  if (!bootstrap || typeof bootstrap !== 'object') return;
+
+  if (bootstrap.apiEndpoint) {
+    setters.setApiEndpoint(bootstrap.apiEndpoint);
+  }
+  if (bootstrap.channelCode) {
+    setters.setChannelCode(String(bootstrap.channelCode));
+  }
+  if (bootstrap.channel) {
+    setters.setChannel(String(bootstrap.channel));
+  }
+  if (bootstrap.token) {
+    setters.setToken(String(bootstrap.token));
+  }
+  if (bootstrap.expires) {
+    setters.setExpires(String(bootstrap.expires));
+  }
+  if (bootstrap.sseEndpoint) {
+    setters.setSseEndpoint(String(bootstrap.sseEndpoint));
+  }
+  if (bootstrap.ingressEndpoint) {
+    setters.setIngressEndpoint(String(bootstrap.ingressEndpoint));
+  }
+  if (bootstrap.proxyEndpoint) {
+    setters.setProxyEndpoint(String(bootstrap.proxyEndpoint));
+  }
+  if (typeof bootstrap.expose === 'boolean') {
+    setters.setExposeLocalStorage(bootstrap.expose ? 'true' : 'false');
+  }
+};
+
 // Create the context with default values
 const InspectrContext = createContext({
   // Settings
@@ -77,16 +138,6 @@ export const InspectrProvider = ({
   featureConfig = null,
   themeConfig = null
 }) => {
-  const normalizeApiEndpoint = (value) => {
-    const raw = String(value || '').trim();
-    if (!raw) return 'api';
-    if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(raw)) {
-      return raw.replace(/\/+$/, '');
-    }
-    const normalized = raw.replace(/^\/+/, '').replace(/\/+$/, '');
-    return normalized || 'api';
-  };
-
   const resolvedStorageAdapter = useMemo(() => {
     if (storageAdapter) return storageAdapter;
     if (mode === 'embedded' && namespace) {
@@ -211,38 +262,6 @@ export const InspectrProvider = ({
     return false;
   };
 
-  const applySessionBootstrap = (bootstrap) => {
-    if (!bootstrap || typeof bootstrap !== 'object') return;
-
-    if (bootstrap.apiEndpoint) {
-      setApiEndpoint(bootstrap.apiEndpoint);
-    }
-    if (bootstrap.channelCode) {
-      setChannelCode(String(bootstrap.channelCode));
-    }
-    if (bootstrap.channel) {
-      setChannel(String(bootstrap.channel));
-    }
-    if (bootstrap.token) {
-      setToken(String(bootstrap.token));
-    }
-    if (bootstrap.expires) {
-      setExpires(String(bootstrap.expires));
-    }
-    if (bootstrap.sseEndpoint) {
-      setSseEndpoint(String(bootstrap.sseEndpoint));
-    }
-    if (bootstrap.ingressEndpoint) {
-      setIngressEndpoint(String(bootstrap.ingressEndpoint));
-    }
-    if (bootstrap.proxyEndpoint) {
-      setProxyEndpoint(String(bootstrap.proxyEndpoint));
-    }
-    if (typeof bootstrap.expose === 'boolean') {
-      setExposeLocalStorage(bootstrap.expose ? 'true' : 'false');
-    }
-  };
-
   // Proxy URL state (persisted)
   const [proxyEndpoint, setProxyEndpoint] = useStorageAdapter(
     'proxyEndpoint',
@@ -252,6 +271,11 @@ export const InspectrProvider = ({
 
   // Create an InspectrClient instance
   const [inspectrClient] = useState(() => new InspectrClient({ apiEndpoint }));
+  const sessionBootstrapFingerprint = useMemo(
+    () => stableStringify(sessionBootstrap || null),
+    [sessionBootstrap]
+  );
+  const lastAppliedSessionBootstrapRef = useRef(null);
 
   // Update the client when apiEndpoint changes
   useEffect(() => {
@@ -261,6 +285,11 @@ export const InspectrProvider = ({
   // Bootstrap hosted app auth context and keep bearer token in memory only.
   useEffect(() => {
     let cancelled = false;
+    if (mode === 'embedded') {
+      inspectrClient.setAuthorizationToken('');
+      setAppAuthContext(EMPTY_APP_AUTH_CONTEXT);
+      return;
+    }
 
     const applyBootstrap = (payload) => {
       const appAuthEnabled = Boolean(payload?.app_auth_enabled);
@@ -297,7 +326,7 @@ export const InspectrProvider = ({
     return () => {
       cancelled = true;
     };
-  }, [apiEndpoint, inspectrClient, debugMode]);
+  }, [apiEndpoint, inspectrClient, debugMode, mode]);
 
   // Load credentials from REST API
   const loadCredentialsFromApi = async () => {
@@ -427,10 +456,24 @@ export const InspectrProvider = ({
       if (typeof window === 'undefined') return;
 
       if (mode === 'embedded') {
-        applySessionBootstrap(sessionBootstrap);
+        if (lastAppliedSessionBootstrapRef.current !== sessionBootstrapFingerprint) {
+          applySessionBootstrap(sessionBootstrap, {
+            setApiEndpoint,
+            setChannelCode,
+            setChannel,
+            setToken,
+            setExpires,
+            setSseEndpoint,
+            setIngressEndpoint,
+            setProxyEndpoint,
+            setExposeLocalStorage
+          });
+          lastAppliedSessionBootstrapRef.current = sessionBootstrapFingerprint;
+        }
         setIsInitialized(true);
         return;
       }
+      lastAppliedSessionBootstrapRef.current = null;
 
       if (!loadCredentialsFromQueryParams()) {
         if (!loadCredentialsFromLocalStorage() && isLocalhost) {
@@ -442,7 +485,7 @@ export const InspectrProvider = ({
     };
 
     loadCredentials();
-  }, [mode, sessionBootstrap, isLocalhost]);
+  }, [mode, sessionBootstrapFingerprint, isLocalhost]);
 
   /**
    * 🏁 Step 2: When `isInitialized` is true, register using stored credentials

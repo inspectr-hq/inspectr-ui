@@ -38,6 +38,14 @@ const BASE_NAVIGATION = [
   { name: 'Settings', slug: 'settings', component: SettingsApp }
 ];
 
+const NAVIGATION_MODULE_MAP = Object.freeze({
+  inspectr: 'history',
+  traces: 'trace',
+  statistics: 'statistics',
+  rules: 'rules',
+  settings: 'settings'
+});
+
 const Logo = (props) => (
   <svg
     fill="currentColor"
@@ -64,6 +72,7 @@ export default function Workspace() {
 
 function WorkspaceContent() {
   const { eventDB, featureConfig } = useInspectr();
+  const moduleFlags = featureConfig?.modules || {};
   const actionFlags = featureConfig?.actions || {};
   const allowExport = actionFlags.allowExport !== false;
   const [workspaceFeatureEnabled] = useFeaturePreview('feat_insights_display', false, true);
@@ -79,8 +88,18 @@ function WorkspaceContent() {
       items = items.filter((item) => item.slug !== 'insights');
     }
 
+    items = items.filter((item) => {
+      const moduleKey = NAVIGATION_MODULE_MAP[item.slug];
+      if (!moduleKey) return true;
+      return moduleFlags[moduleKey] !== false;
+    });
+
+    if (!items.length) {
+      return [BASE_NAVIGATION[0]];
+    }
+
     return items;
-  }, [workspaceFeatureEnabled]);
+  }, [workspaceFeatureEnabled, moduleFlags]);
 
   const [currentTab, setCurrentTab] = useState(() => navigation[0]);
   const { route, currentNav, handleTabClick } = useHashRouter(navigation);
@@ -104,7 +123,7 @@ function WorkspaceContent() {
   const recordCount = useLiveQuery(async () => {
     if (!isRecording || !recordStart) return 0;
     return await eventDB.db.events.where('time').above(recordStart).count();
-  }, [isRecording, recordStart]);
+  }, [eventDB, isRecording, recordStart]);
 
   return (
     <>
@@ -265,7 +284,7 @@ const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
     } catch (e) {
       return null;
     }
-  }, []);
+  }, [eventDB]);
 
   // Count unread events newer than lastSeenAt
   const unreadCount = useLiveQuery(async () => {
@@ -275,7 +294,7 @@ const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
     } catch (e) {
       return 0;
     }
-  }, [trackedLastSeenAt]);
+  }, [eventDB, trackedLastSeenAt]);
 
   useEffect(() => {
     const normalizedLast = normalizeTimestamp(lastSeenAt);

@@ -27,6 +27,8 @@ const MODULE_LABELS = Object.freeze({
   settings: 'Settings'
 });
 
+const classNames = (...values) => values.filter(Boolean).join(' ');
+
 export function InspectrHistoryModule({ route }) {
   return <InspectrApp route={route || { slug: 'inspectr' }} />;
 }
@@ -148,19 +150,21 @@ export default function InspectrEmbeddedApp({
   if (!ActiveModuleComponent) return null;
 
   return (
-    <div className={className} style={{ ...effectiveThemeStyle, ...style }}>
+    <div
+      className={classNames('inspectr-embedded-root', className)}
+      style={{ ...effectiveThemeStyle, ...style }}
+    >
       {showModuleTabs && visibleModules.length > 1 ? (
-        <div className="mb-3 flex flex-wrap gap-2 border-b border-gray-200 pb-2 dark:border-gray-800">
+        <div className="inspectr-embedded-tabs mb-3 flex flex-wrap gap-2 pb-2" role="tablist">
           {visibleModules.map((moduleKey) => (
             <button
               key={moduleKey}
               type="button"
               onClick={() => handleModuleChange(moduleKey)}
-              className={`rounded px-3 py-1.5 text-sm ${
-                selectedModule === moduleKey
-                  ? 'bg-blue-600 text-white dark:bg-blue-700'
-                  : 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200'
-              }`}
+              role="tab"
+              aria-selected={selectedModule === moduleKey}
+              data-active={selectedModule === moduleKey ? 'true' : 'false'}
+              className="inspectr-embedded-tab rounded px-3 py-1.5 text-sm"
             >
               {MODULE_LABELS[moduleKey] || moduleKey}
             </button>

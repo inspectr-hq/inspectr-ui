@@ -1,37 +1,35 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function useStorageAdapter(key, defaultValue, adapter) {
-  const stableAdapter = useMemo(() => adapter, [adapter]);
-
   const [value, setValue] = useState(() => {
-    if (!stableAdapter || typeof stableAdapter.get !== 'function') {
+    if (!adapter || typeof adapter.get !== 'function') {
       return defaultValue;
     }
-    const stored = stableAdapter.get(key);
+    const stored = adapter.get(key);
     return stored !== null ? stored : defaultValue;
   });
 
   useEffect(() => {
-    if (!stableAdapter || typeof stableAdapter.get !== 'function') return;
-    const stored = stableAdapter.get(key);
+    if (!adapter || typeof adapter.get !== 'function') return;
+    const stored = adapter.get(key);
     setValue(stored !== null ? stored : defaultValue);
-  }, [stableAdapter, key, defaultValue]);
+  }, [adapter, key, defaultValue]);
 
   useEffect(() => {
-    if (!stableAdapter || typeof stableAdapter.subscribe !== 'function') return;
-    return stableAdapter.subscribe(key, (nextValue) => {
+    if (!adapter || typeof adapter.subscribe !== 'function') return;
+    return adapter.subscribe(key, (nextValue) => {
       setValue(nextValue !== null ? nextValue : defaultValue);
     });
-  }, [stableAdapter, key, defaultValue]);
+  }, [adapter, key, defaultValue]);
 
   useEffect(() => {
-    if (!stableAdapter) return;
+    if (!adapter) return;
     if (value === undefined || value === null) {
-      stableAdapter.remove?.(key);
+      adapter.remove?.(key);
       return;
     }
-    stableAdapter.set?.(key, value);
-  }, [stableAdapter, key, value]);
+    adapter.set?.(key, value);
+  }, [adapter, key, value]);
 
   return [value, setValue];
 }
