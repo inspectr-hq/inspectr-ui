@@ -1,3 +1,5 @@
+import { sanitizeNamespace } from './namespace.js';
+
 const LOCAL_STORAGE_EVENT = 'local-storage';
 const STORAGE_KEY_PREFIX = 'inspectr';
 
@@ -54,15 +56,12 @@ export const createDefaultStorageAdapter = () => ({
   }
 });
 
-const normalizeNamespaceSegment = (value) => {
-  return String(value || '')
-    .trim()
-    .replace(/[^\w.-/]+/g, '-')
-    .replace(/^\/+|\/+$/g, '');
-};
-
 export const resolveNamespacedStorageKey = (namespace, key) => {
-  const namespaceSegment = normalizeNamespaceSegment(namespace);
+  const namespaceSegment = sanitizeNamespace(namespace, {
+    replacement: '-',
+    allowSlash: true,
+    removeEdgeSlashes: true
+  });
   if (!namespaceSegment) return key;
   return `${STORAGE_KEY_PREFIX}:${namespaceSegment}:${key}`;
 };

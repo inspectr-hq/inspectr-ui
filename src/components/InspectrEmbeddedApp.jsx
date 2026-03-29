@@ -109,6 +109,7 @@ export default function InspectrEmbeddedApp({
     [context?.featureConfig, featureConfig]
   );
   const effectiveThemeStyle = useMemo(
+    // Contract: local prop themeConfig fully overrides provider themeConfig.
     () => buildThemeStyle(themeConfig || context?.themeConfig),
     [themeConfig, context?.themeConfig]
   );

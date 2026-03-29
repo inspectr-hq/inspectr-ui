@@ -63,6 +63,7 @@ npm run build
 Use `InspectrProvider` in `embedded` mode and mount `InspectrEmbeddedApp` when consuming from host apps (for example Bins):
 
 - Embedded mode applies `sessionBootstrap` values as the source of truth and skips hosted `app/auth/bootstrap` auto-fetch.
+- Theme precedence contract: when `InspectrEmbeddedApp` receives a `themeConfig` prop, it takes precedence over provider `themeConfig` (no deep merge).
 
 ```jsx
 import React from 'react';

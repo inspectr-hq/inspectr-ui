@@ -1,6 +1,7 @@
 // src/utils/eventDB.js
 import Dexie from 'dexie';
 import { normalizeTags, normalizeTagFilters } from './normalizeTags.js';
+import { sanitizeNamespace } from './namespace.js';
 
 const getRecordNormalizedTags = (record) => {
   if (!record) return [];
@@ -462,10 +463,10 @@ class EventDB {
 }
 
 const normalizeNamespaceForDbName = (namespace) => {
-  const normalized = String(namespace || '')
-    .trim()
-    .replace(/[^\w.-]+/g, '_')
-    .replace(/^_+|_+$/g, '');
+  const normalized = sanitizeNamespace(namespace, {
+    replacement: '_',
+    allowSlash: false
+  });
   if (!normalized) return '';
   if (normalized.length <= 42) return normalized;
   let hash = 0;
