@@ -477,7 +477,11 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
             <>
               <span> • Proxy </span>
               <div className="relative inline-block align-middle">
-                <Tooltip side="right" content={operation.meta.proxy.url}>
+                <Tooltip
+                  side="right"
+                  content={operation.meta.proxy.url}
+                  className="max-w-sm whitespace-normal break-all"
+                >
                   <InfoIcon className="relative inline-block" />
                 </Tooltip>
               </div>

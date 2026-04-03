@@ -283,6 +283,13 @@ export const InspectrProvider = ({
     inspectrClient.configure({ apiEndpoint });
   }, [apiEndpoint]);
 
+  // Embedded mode uses runtime JWT for API calls as Bearer auth.
+  // SSE still authenticates with `?token=...` because EventSource cannot set headers.
+  useEffect(() => {
+    if (mode !== 'embedded') return;
+    inspectrClient.setAuthorizationToken(token || '');
+  }, [mode, token, inspectrClient]);
+
   // Bootstrap hosted app auth context and keep bearer token in memory only.
   useEffect(() => {
     let cancelled = false;
@@ -356,6 +363,17 @@ export const InspectrProvider = ({
     newToken = token,
     showNotification
   ) => {
+    if (mode === 'embedded') {
+      // Embedded mode receives runtime/session bootstrap from the host app and
+      // must not call runtime /api/register from a different origin.
+      if (newToken && sseEndpoint) {
+        setConnectionStatus('connected');
+        return true;
+      }
+      setConnectionStatus('disconnected');
+      throw new Error('registration_disabled_in_embedded_mode');
+    }
+
     try {
       // Construct request body
       let requestBody = {};
@@ -416,6 +434,10 @@ export const InspectrProvider = ({
   };
 
   const attemptReRegistration = () => {
+    if (mode === 'embedded') {
+      // In embedded mode we rely on SSE reconnect behavior only.
+      return;
+    }
     if (reRegistrationFailedRef.current) return;
 
     setConnectionStatus('reconnecting');
@@ -496,6 +518,7 @@ export const InspectrProvider = ({
 
   useEffect(() => {
     if (!isInitialized) return;
+    if (mode === 'embedded') return;
 
     // Skip auto-registration if it was triggered by the user via SettingsPanel
     if (userInitiatedRegistrationRef.current) {
@@ -527,7 +550,7 @@ export const InspectrProvider = ({
     } else {
       console.log('⚠️ Missing credentials for auto-registration, skipping.');
     }
-  }, [isInitialized, channel, channelCode, token, sseEndpoint]);
+  }, [isInitialized, channel, channelCode, token, sseEndpoint, mode]);
 
   // ——— SSE connection lifecycle (moved from InspectrConnectionContext) ———
   const [lastEventId, setLastEventId] = useStorageAdapter(
@@ -576,7 +599,10 @@ export const InspectrProvider = ({
     } catch {}
     console.log(`🔄 SSE connecting with ${logEndpoint}`);
 
-    setConnectionStatus(wasConnectedRef.current ? 'reconnecting' : 'connecting');
+    // Use "connecting" for normal (re)connects. Reserve "reconnecting" for
+    // actual SSE error recovery paths so embedded guards don't trigger refresh
+    // loops on healthy reconnects (e.g. token/session rotation).
+    setConnectionStatus('connecting');
 
     eventSource.onopen = () => {
       wasConnectedRef.current = true;
@@ -710,6 +736,11 @@ export const InspectrProvider = ({
       console.error('❌ SSE connection error:', err);
       setConnectionStatus('reconnecting');
 
+      if (mode === 'embedded') {
+        // Avoid cross-origin /api/register attempts in embedded mode.
+        return;
+      }
+
       if (reRegistrationFailedRef.current) {
         console.log('❌ Maximum re-registration attempts reached. Closing EventSource.');
         setConnectionStatus('disconnected');
@@ -755,7 +786,7 @@ export const InspectrProvider = ({
     };
     // We intentionally omit lastEventId here to avoid reconnects when it changes during streaming
     // Sync action explicitly reconnects with override.
-  }, [sseEndpoint, token, resolvedEventDB]);
+  }, [sseEndpoint, token, resolvedEventDB, mode]);
 
   // Close on full page unload
   useEffect(() => {

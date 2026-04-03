@@ -483,8 +483,8 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
           </div>
         </div>
       </div>
-      {/* Bottom Panel */}
-      <SettingsPanel />
+      {/* Bottom Panel (standalone only) */}
+      {mode !== 'embedded' ? <SettingsPanel /> : null}
     </div>
   );
 };

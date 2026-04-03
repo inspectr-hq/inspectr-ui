@@ -36,6 +36,7 @@ const formatDuration = (milliseconds) => {
 
   const trim = (value, maxFractionDigits = 2) => {
     const text = value.toFixed(maxFractionDigits);
+    if (maxFractionDigits === 0) return text;
     return text.replace(/\.?0+$/, '');
   };
 

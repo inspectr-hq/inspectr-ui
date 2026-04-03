@@ -407,85 +407,92 @@ const ResponseContent = ({ operation }) => {
           showResponseBody ? 'rounded-tremor-small rounded-b-none' : 'rounded-tremor-small'
         } bg-white dark:bg-dark-tremor-background-subtle`}
       >
-        <button
-          type="button"
-          onClick={() => setShowResponseBody(!showResponseBody)}
-          className="w-full p-2 text-left font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong cursor-pointer flex items-center justify-between"
-        >
-          <span className="inline-flex items-center gap-2">
-            <span>Response Body</span>
-            {streamState ? (
-              <span
-                className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-medium ${streamState.className}`}
-              >
-                {streamState.label}
-              </span>
-            ) : null}
-          </span>
+        <div className="w-full p-2 font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setShowResponseBody(!showResponseBody)}
+            className="min-w-0 flex-1 text-left cursor-pointer"
+          >
+            <span className="inline-flex items-center gap-2">
+              <span>Response Body</span>
+              {streamState ? (
+                <span
+                  className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-medium ${streamState.className}`}
+                >
+                  {streamState.label}
+                </span>
+              ) : null}
+            </span>
+          </button>
           <span className="flex items-center gap-2">
-            <span className="flex items-center" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center space-x-2 mr-2">
-                {supportsPreview && (
-                  <div className="flex space-x-1">
+            <div className="flex items-center space-x-2 mr-2">
+              {supportsPreview && (
+                <div className="flex space-x-1">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('source')}
+                    className={`px-2 py-1 text-xs rounded ${
+                      viewMode === 'source'
+                        ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                        : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                    }`}
+                  >
+                    Source
+                  </button>
+                  {hasEvents ? (
                     <button
                       type="button"
-                      onClick={() => setViewMode('source')}
+                      onClick={() => setViewMode('events')}
                       className={`px-2 py-1 text-xs rounded ${
-                        viewMode === 'source'
+                        viewMode === 'events'
                           ? 'bg-blue-600 dark:bg-blue-700 text-white'
                           : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                       }`}
                     >
-                      Source
+                      Events
                     </button>
-                    {hasEvents ? (
-                      <button
-                        type="button"
-                        onClick={() => setViewMode('events')}
-                        className={`px-2 py-1 text-xs rounded ${
-                          viewMode === 'events'
-                            ? 'bg-blue-600 dark:bg-blue-700 text-white'
-                            : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                        }`}
-                      >
-                        Events
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setViewMode('preview')}
-                        className={`px-2 py-1 text-xs rounded ${
-                          viewMode === 'preview'
-                            ? 'bg-blue-600 dark:bg-blue-700 text-white'
-                            : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                        }`}
-                      >
-                        Preview
-                      </button>
-                    )}
-                  </div>
-                )}
-                {shouldShowDownloadButton && (
-                  <button
-                    type="button"
-                    onClick={handleDownloadResponse}
-                    className="px-2 py-1 text-xs rounded bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-600"
-                  >
-                    Download
-                  </button>
-                )}
-                <CopyButton
-                  textToCopy={
-                    (isHTMLContent || isImageContent || isSseContent
-                      ? (sourcePayload ?? '')
-                      : formatPayload(sourcePayload, contentType)) ?? ''
-                  }
-                />
-              </div>
-            </span>
-            <ChevronIcon open={showResponseBody} />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('preview')}
+                      className={`px-2 py-1 text-xs rounded ${
+                        viewMode === 'preview'
+                          ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                          : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                      }`}
+                    >
+                      Preview
+                    </button>
+                  )}
+                </div>
+              )}
+              {shouldShowDownloadButton && (
+                <button
+                  type="button"
+                  onClick={handleDownloadResponse}
+                  className="px-2 py-1 text-xs rounded bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-600"
+                >
+                  Download
+                </button>
+              )}
+              <CopyButton
+                textToCopy={
+                  (isHTMLContent || isImageContent || isSseContent
+                    ? (sourcePayload ?? '')
+                    : formatPayload(sourcePayload, contentType)) ?? ''
+                }
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowResponseBody(!showResponseBody)}
+              className="inline-flex items-center justify-center cursor-pointer"
+              aria-label={showResponseBody ? 'Collapse response body' : 'Expand response body'}
+            >
+              <ChevronIcon open={showResponseBody} />
+            </button>
           </span>
-        </button>
+        </div>
         {showResponseBody ? (
           <div ref={responseBodyContentRef} className="flex flex-1 min-h-[320px] flex-col">
             {hasEvents && viewMode === 'events' ? (
