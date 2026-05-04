@@ -121,6 +121,16 @@ export default function InspectrEmbeddedApp({
     });
   }, [moduleOrder, effectiveFeatureConfig.modules]);
 
+  if (visibleModules.length === 0) {
+    return (
+      <div className={classNames('inspectr-embedded-root', className)} style={style}>
+        <div className="rounded border border-[var(--inspectr-border-subtle)] bg-[var(--inspectr-surface-muted)] px-4 py-3 text-sm text-[var(--inspectr-text-secondary)]">
+          No embedded modules are enabled.
+        </div>
+      </div>
+    );
+  }
+
   const fallbackModule = normalizeModuleKey(defaultModule, 'history');
   const initialModule = visibleModules[0] || fallbackModule;
   const [internalModule, setInternalModule] = useState(initialModule);
