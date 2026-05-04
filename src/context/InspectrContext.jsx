@@ -47,32 +47,33 @@ const stableStringify = (value) => {
 const applySessionBootstrap = (bootstrap, setters) => {
   if (!bootstrap || typeof bootstrap !== 'object') return;
 
-  if (bootstrap.apiEndpoint) {
-    setters.setApiEndpoint(bootstrap.apiEndpoint);
-  }
-  if (bootstrap.channelCode) {
-    setters.setChannelCode(String(bootstrap.channelCode));
-  }
-  if (bootstrap.channel) {
-    setters.setChannel(String(bootstrap.channel));
-  }
-  if (bootstrap.token) {
-    setters.setToken(String(bootstrap.token));
-  }
-  if (bootstrap.expires) {
-    setters.setExpires(String(bootstrap.expires));
-  }
-  if (bootstrap.sseEndpoint) {
-    setters.setSseEndpoint(String(bootstrap.sseEndpoint));
-  }
-  if (bootstrap.ingressEndpoint) {
-    setters.setIngressEndpoint(String(bootstrap.ingressEndpoint));
-  }
-  if (bootstrap.proxyEndpoint) {
-    setters.setProxyEndpoint(String(bootstrap.proxyEndpoint));
-  }
+  const applyStringValue = (setter, value) => {
+    if (value === undefined || value === null) {
+      setter(null);
+      return;
+    }
+
+    const normalized = String(value).trim();
+    if (!normalized) {
+      setter(null);
+      return;
+    }
+
+    setter(normalized);
+  };
+
+  applyStringValue(setters.setApiEndpoint, bootstrap.apiEndpoint);
+  applyStringValue(setters.setChannelCode, bootstrap.channelCode);
+  applyStringValue(setters.setChannel, bootstrap.channel);
+  applyStringValue(setters.setToken, bootstrap.token);
+  applyStringValue(setters.setExpires, bootstrap.expires);
+  applyStringValue(setters.setSseEndpoint, bootstrap.sseEndpoint);
+  applyStringValue(setters.setIngressEndpoint, bootstrap.ingressEndpoint);
+  applyStringValue(setters.setProxyEndpoint, bootstrap.proxyEndpoint);
   if (typeof bootstrap.expose === 'boolean') {
     setters.setExposeLocalStorage(bootstrap.expose ? 'true' : 'false');
+  } else {
+    setters.setExposeLocalStorage(null);
   }
 };
 
@@ -171,6 +172,10 @@ export const InspectrProvider = ({
   );
   const apiEndpoint = normalizeApiEndpoint(rawApiEndpoint);
   const setApiEndpoint = (value) => {
+    if (value === undefined || value === null || String(value).trim() === '') {
+      setRawApiEndpoint(null);
+      return;
+    }
     setRawApiEndpoint(normalizeApiEndpoint(value));
   };
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
