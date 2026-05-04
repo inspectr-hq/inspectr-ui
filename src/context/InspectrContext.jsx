@@ -1,7 +1,7 @@
 // src/context/InspectrContext.jsx
 import React, { createContext, useState, useContext, useRef, useEffect, useMemo } from 'react';
 import useStorageAdapter from '../hooks/useStorageAdapter.jsx';
-import InspectrClient from '../utils/inspectrSdk';
+import InspectrClient, { normalizeEndpoint as normalizeApiEndpoint } from '../utils/inspectrSdk';
 import eventDB, { createEventDB, getNamespacedEventDBName } from '../utils/eventDB';
 import {
   createDefaultStorageAdapter,
@@ -14,16 +14,6 @@ const EMPTY_APP_AUTH_CONTEXT = Object.freeze({
   tokenType: null,
   tokenExpiresAt: null
 });
-
-const normalizeApiEndpoint = (value) => {
-  const raw = String(value || '').trim();
-  if (!raw) return 'api';
-  if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(raw)) {
-    return raw.replace(/\/+$/, '');
-  }
-  const normalized = raw.replace(/^\/+/, '').replace(/\/+$/, '');
-  return normalized || 'api';
-};
 
 const stableStringify = (value) => {
   const normalize = (input) => {

@@ -17,7 +17,7 @@
  * Helper function to normalize API endpoints by removing trailing slashes
  * @private
  */
-const normalizeEndpoint = (endpoint) => {
+export const normalizeEndpoint = (endpoint) => {
   const raw = String(endpoint || '').trim();
   if (!raw) return 'api';
 
