@@ -121,6 +121,16 @@ export default function InspectrEmbeddedApp({
     });
   }, [moduleOrder, effectiveFeatureConfig.modules]);
 
+  const fallbackModule = normalizeModuleKey(defaultModule, 'history');
+  const initialModule = visibleModules[0] || fallbackModule;
+  const [internalModule, setInternalModule] = useState(() => initialModule);
+
+  useEffect(() => {
+    if (activeModule != null) return;
+    if (visibleModules.includes(internalModule)) return;
+    setInternalModule(initialModule);
+  }, [activeModule, visibleModules, internalModule, initialModule]);
+
   if (visibleModules.length === 0) {
     return (
       <div className={classNames('inspectr-embedded-root', className)} style={style}>
@@ -131,10 +141,6 @@ export default function InspectrEmbeddedApp({
     );
   }
 
-  const fallbackModule = normalizeModuleKey(defaultModule, 'history');
-  const initialModule = visibleModules[0] || fallbackModule;
-  const [internalModule, setInternalModule] = useState(initialModule);
-
   const selectedVisibleModule =
     visibleModules.includes(activeModule) && activeModule
       ? activeModule
@@ -144,12 +150,6 @@ export default function InspectrEmbeddedApp({
   const selectedModule = normalizeModuleKey(selectedVisibleModule, initialModule);
   const ActiveModuleComponent =
     MODULE_COMPONENTS[selectedModule] || MODULE_COMPONENTS[initialModule];
-
-  useEffect(() => {
-    if (activeModule != null) return;
-    if (visibleModules.includes(internalModule)) return;
-    setInternalModule(initialModule);
-  }, [activeModule, visibleModules, internalModule, initialModule]);
 
   const handleModuleChange = (nextModule) => {
     if (!nextModule || nextModule === selectedModule) return;
