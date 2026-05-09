@@ -103,12 +103,13 @@ const SseFramesViewer = ({ frames, raw }) => {
   return (
     <div className="overflow-auto h-full">
       <table className="w-full border-collapse border border-slate-200 dark:border-dark-tremor-border">
-        {/* Control column widths: Time gets a tight 12ch */}
         <colgroup>
-          <col className="w-1/6" /> {/* ID */}
-          <col className="w-1/6" /> {/* Type */}
-          <col /> {/* Data grows */}
-          <col className="w-[12ch]" /> {/* Time */}
+          {[
+            <col key="id" className="w-1/6" />,
+            <col key="type" className="w-1/6" />,
+            <col key="data" />,
+            <col key="time" className="w-[12ch]" />
+          ]}
         </colgroup>
 
         <thead>
