@@ -372,9 +372,9 @@ const ResponseContent = ({ operation }) => {
   const copyValue =
     viewMode === 'json' && hasSingleSseJson
       ? jsonModeValue
-      : (isHTMLContent || isImageContent || isSseContent
+      : ((isHTMLContent || isImageContent || isSseContent
           ? (sourcePayload ?? '')
-          : formatPayload(sourcePayload, contentType)) ?? '';
+          : formatPayload(sourcePayload, contentType)) ?? '');
 
   return (
     <div className="flex min-h-full flex-col">
