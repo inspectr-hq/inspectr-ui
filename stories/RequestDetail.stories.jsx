@@ -3,7 +3,7 @@ import React from 'react';
 import RequestDetail from '../src/components/operations/RequestDetail.jsx';
 
 export default {
-  title: 'Components/RequestDetail',
+  title: 'Components/Operations/RequestDetail',
   component: RequestDetail
 };
 

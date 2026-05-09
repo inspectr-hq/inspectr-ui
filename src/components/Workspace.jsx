@@ -16,8 +16,7 @@ import DialogExportRecords from './operations/DialogExportRecords.jsx';
 import DialogImportOperations from './operations/DialogImportOperations.jsx';
 import { InspectrProvider, useInspectr } from '../context/InspectrContext';
 import { useLiveQuery } from 'dexie-react-hooks';
-import eventDB from '../utils/eventDB.js';
-import useLocalStorage from '../hooks/useLocalStorage.jsx';
+import useInspectrStorage from '../hooks/useInspectrStorage.jsx';
 import useFeaturePreview from '../hooks/useFeaturePreview.jsx';
 import { normalizeTimestamp, isTimestampAfter } from '../utils/timestampUtils.js';
 import DialogVersionUpdate from './DialogVersionUpdate.jsx';
@@ -39,6 +38,14 @@ const BASE_NAVIGATION = [
   { name: 'Settings', slug: 'settings', component: SettingsApp }
 ];
 
+const NAVIGATION_MODULE_MAP = Object.freeze({
+  inspectr: 'history',
+  traces: 'trace',
+  statistics: 'statistics',
+  rules: 'rules',
+  settings: 'settings'
+});
+
 const Logo = (props) => (
   <svg
     fill="currentColor"
@@ -56,6 +63,18 @@ const Logo = (props) => (
 );
 
 export default function Workspace() {
+  return (
+    <InspectrProvider>
+      <WorkspaceContent />
+    </InspectrProvider>
+  );
+}
+
+function WorkspaceContent() {
+  const { eventDB, featureConfig } = useInspectr();
+  const moduleFlags = featureConfig?.modules || {};
+  const actionFlags = featureConfig?.actions || {};
+  const allowExport = actionFlags.allowExport !== false;
   const [workspaceFeatureEnabled] = useFeaturePreview('feat_insights_display', false, true);
 
   // Deprecate old features
@@ -69,8 +88,18 @@ export default function Workspace() {
       items = items.filter((item) => item.slug !== 'insights');
     }
 
+    items = items.filter((item) => {
+      const moduleKey = NAVIGATION_MODULE_MAP[item.slug];
+      if (!moduleKey) return true;
+      return moduleFlags[moduleKey] !== false;
+    });
+
+    if (!items.length) {
+      return [BASE_NAVIGATION[0]];
+    }
+
     return items;
-  }, [workspaceFeatureEnabled]);
+  }, [workspaceFeatureEnabled, moduleFlags]);
 
   const [currentTab, setCurrentTab] = useState(() => navigation[0]);
   const { route, currentNav, handleTabClick } = useHashRouter(navigation);
@@ -78,7 +107,7 @@ export default function Workspace() {
   const ActiveComponent = currentNav.component;
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [recordStart, setRecordStart] = useLocalStorage('recordStart', null);
+  const [recordStart, setRecordStart] = useInspectrStorage('recordStart', null);
   const [isRecording, setIsRecording] = useState(() => !!recordStart);
   useEffect(() => {
     setIsRecording(!!recordStart);
@@ -94,10 +123,10 @@ export default function Workspace() {
   const recordCount = useLiveQuery(async () => {
     if (!isRecording || !recordStart) return 0;
     return await eventDB.db.events.where('time').above(recordStart).count();
-  }, [isRecording, recordStart]);
+  }, [eventDB, isRecording, recordStart]);
 
   return (
-    <InspectrProvider>
+    <>
       <DialogMockLaunch />
 
       <div className="flex flex-col min-h-screen">
@@ -106,7 +135,7 @@ export default function Workspace() {
             <div className="flex h-16 items-center gap-6">
               {/* ———Logo ——— */}
               <div className="hidden shrink-0 sm:flex sm:items-center">
-                <a href="/" className="p-1.5">
+                <a href="./" className="p-1.5">
                   <Logo
                     className="size-4 shrink-0 w-8 h-8 text-tremor-content-strong dark:text-dark-tremor-content-strong"
                     aria-hidden={true}
@@ -149,9 +178,11 @@ export default function Workspace() {
               {/* ——— Workspace Actions ——— */}
               <div className="ml-auto flex items-center space-x-2">
                 <DialogVersionUpdate />
-                <HeaderActionButton onClick={() => setIsExportOpen(true)}>
-                  Export
-                </HeaderActionButton>
+                {allowExport ? (
+                  <HeaderActionButton onClick={() => setIsExportOpen(true)}>
+                    Export
+                  </HeaderActionButton>
+                ) : null}
                 <HeaderActionButton onClick={() => setIsImportOpen(true)}>
                   Import
                 </HeaderActionButton>
@@ -161,7 +192,7 @@ export default function Workspace() {
                   disabled={isRecordExportOpen}
                   onClick={() => {
                     if (isRecording) {
-                      if (recordCount > 0) {
+                      if (allowExport && recordCount > 0) {
                         setIsRecordExportOpen(true);
                       } else {
                         setIsRecording(false);
@@ -196,26 +227,30 @@ export default function Workspace() {
         <ToastNotificationFromContext />
 
         {/* Export/Import/Record dialogs */}
-        <DialogExportOperations open={isExportOpen} onClose={() => setIsExportOpen(false)} />
+        {allowExport ? (
+          <DialogExportOperations open={isExportOpen} onClose={() => setIsExportOpen(false)} />
+        ) : null}
         <DialogImportOperations open={isImportOpen} onClose={() => setIsImportOpen(false)} />
 
-        <DialogExportRecords
-          open={isRecordExportOpen}
-          onContinue={() => {
-            // Simply close and keep recording
-            setIsRecordExportOpen(false);
-          }}
-          onCancelRecording={() => {
-            // Stop recording and clear start time
-            setIsRecordExportOpen(false);
-            setIsRecording(false);
-            setRecordStart(null);
-          }}
-          onClose={() => setIsRecordExportOpen(false)}
-          startTime={recordStart}
-        />
+        {allowExport ? (
+          <DialogExportRecords
+            open={isRecordExportOpen}
+            onContinue={() => {
+              // Simply close and keep recording
+              setIsRecordExportOpen(false);
+            }}
+            onCancelRecording={() => {
+              // Stop recording and clear start time
+              setIsRecordExportOpen(false);
+              setIsRecording(false);
+              setRecordStart(null);
+            }}
+            onClose={() => setIsRecordExportOpen(false)}
+            startTime={recordStart}
+          />
+        ) : null}
       </div>
-    </InspectrProvider>
+    </>
   );
 }
 
@@ -237,8 +272,8 @@ const ToastNotificationFromContext = () => {
 
 // Specialized nav button for the Inspectr tab that shows unread count and connection-colored badge
 const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
-  const { connectionStatus } = useInspectr();
-  const [lastSeenAt, setLastSeenAt] = useLocalStorage('inspectrLastSeenAt', null);
+  const { connectionStatus, eventDB } = useInspectr();
+  const [lastSeenAt, setLastSeenAt] = useInspectrStorage('inspectrLastSeenAt', null);
   const [trackedLastSeenAt, setTrackedLastSeenAt] = useState(() => normalizeTimestamp(lastSeenAt));
 
   // Latest event time in Dexie
@@ -249,7 +284,7 @@ const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
     } catch (e) {
       return null;
     }
-  }, []);
+  }, [eventDB]);
 
   // Count unread events newer than lastSeenAt
   const unreadCount = useLiveQuery(async () => {
@@ -259,7 +294,7 @@ const InspectrNavButton = ({ navItem, isActive, onClick, isCurrent }) => {
     } catch (e) {
       return 0;
     }
-  }, [trackedLastSeenAt]);
+  }, [eventDB, trackedLastSeenAt]);
 
   useEffect(() => {
     const normalizedLast = normalizeTimestamp(lastSeenAt);

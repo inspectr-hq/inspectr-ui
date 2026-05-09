@@ -5,7 +5,7 @@ import RequestListSidePanel from '../src/components/operations/RequestListSidePa
 const action = () => () => {};
 
 export default {
-  title: 'Components/RequestListSidePanel',
+  title: 'Components/Operations/RequestListSidePanel',
   component: RequestListSidePanel
 };
 

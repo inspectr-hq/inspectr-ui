@@ -3,6 +3,7 @@
 import React from 'react';
 import { Badge, Card, Text } from '@tremor/react';
 import { summarizeSchema } from '../../utils/mcp.js';
+import CollapsibleSection from './CollapsibleSection.jsx';
 
 const renderBadge = (condition, label, color = 'slate') =>
   condition ? (
@@ -11,18 +12,60 @@ const renderBadge = (condition, label, color = 'slate') =>
     </Badge>
   ) : null;
 
+const JsonPre = ({ value }) => (
+  <pre className="max-h-100 overflow-auto whitespace-pre-wrap px-3 py-2 text-xs text-tremor-content dark:text-dark-tremor-content">
+    {value}
+  </pre>
+);
+
+const formatConstraintValue = (value) => {
+  if (Array.isArray(value)) return value.map((item) => String(item)).join(', ');
+  if (typeof value === 'string') return value;
+  return JSON.stringify(value);
+};
+
+const summarizeConstraints = (schema) => {
+  if (!schema || typeof schema !== 'object') return [];
+
+  const constraints = [];
+  if (Array.isArray(schema.enum)) constraints.push(`enum: ${formatConstraintValue(schema.enum)}`);
+  if (schema.format) constraints.push(`format: ${schema.format}`);
+  if (schema.default !== undefined) {
+    constraints.push(`default: ${formatConstraintValue(schema.default)}`);
+  }
+  if (schema.minimum !== undefined) constraints.push(`min: ${schema.minimum}`);
+  if (schema.maximum !== undefined) constraints.push(`max: ${schema.maximum}`);
+  if (schema.minLength !== undefined) constraints.push(`minLength: ${schema.minLength}`);
+  if (schema.maxLength !== undefined) constraints.push(`maxLength: ${schema.maxLength}`);
+  if (schema.pattern) constraints.push(`pattern: ${schema.pattern}`);
+  return constraints;
+};
+
 const ToolCard = ({ tool }) => {
   const { total, required } = summarizeSchema(tool.inputSchema);
+  const outputSummary = summarizeSchema(tool.outputSchema);
   const props = Object.entries(tool.inputSchema?.properties || {});
   const requiredList = new Set(tool.inputSchema?.required || []);
+  const hasOutputSchema = Boolean(tool.outputSchema && typeof tool.outputSchema === 'object');
+  const outputSchemaText = hasOutputSchema ? JSON.stringify(tool.outputSchema, null, 2) : '';
+  const metadata = tool._meta || tool.metadata;
+  const hasMetadata = Boolean(metadata && typeof metadata === 'object');
+  const metadataText = hasMetadata ? JSON.stringify(metadata, null, 2) : '';
 
   return (
     <Card className="space-y-2 rounded-tremor-small border border-tremor-border p-3 shadow-sm dark:border-dark-tremor-border">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-            {tool.title || tool.annotations?.title || tool.name}
-          </Text>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+              {tool.title || tool.annotations?.title || tool.name}
+            </Text>
+            {tool.name ? (
+              <Text className="font-mono text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+                {tool.name}
+              </Text>
+            ) : null}
+          </div>
           {tool.description ? (
             <Text className="mt-0.5 text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
               {tool.description}
@@ -52,26 +95,81 @@ const ToolCard = ({ tool }) => {
 
       {props.length ? (
         <div className="space-y-1">
-          {props.map(([name, schema]) => (
-            <div
-              key={name}
-              className="flex items-start gap-2 rounded-tremor-small bg-tremor-background-subtle px-2 py-1 dark:bg-dark-tremor-background-subtle"
-            >
-              <div className="font-mono text-xs text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                {name}
+          {props.map(([name, schema]) => {
+            const constraints = summarizeConstraints(schema);
+            return (
+              <div
+                key={name}
+                className={`grid gap-2 rounded-tremor-small bg-tremor-background-subtle px-2 py-1 text-xs dark:bg-dark-tremor-background-subtle ${
+                  requiredList.has(name)
+                    ? 'sm:grid-cols-[220px_72px_minmax(0,1fr)_96px]'
+                    : 'sm:grid-cols-[220px_72px_minmax(0,1fr)]'
+                }`}
+              >
+                <div className="min-w-0 font-mono text-xs text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {name}
+                </div>
+                <div className="text-xs text-tremor-content dark:text-dark-tremor-content">
+                  {schema?.type ? `${schema.type}` : 'any'}
+                </div>
+                <div className="min-w-0 text-xs text-tremor-content dark:text-dark-tremor-content">
+                  {schema?.description || ''}
+                  {constraints.length ? (
+                    <div className="mt-0.5 font-mono text-[11px] text-tremor-content-subtle dark:text-dark-tremor-content">
+                      {constraints.join(' · ')}
+                    </div>
+                  ) : null}
+                </div>
+                {requiredList.has(name) ? (
+                  <div className="flex items-start justify-start text-xs sm:justify-end">
+                    <Badge color="rose" size="xs">
+                      required
+                    </Badge>
+                  </div>
+                ) : null}
               </div>
-              <div className="flex-1 text-[11px] text-tremor-content dark:text-dark-tremor-content">
-                {schema?.type ? `${schema.type}` : 'any'}
-                {schema?.description ? ` — ${schema.description}` : ''}
-              </div>
-              {requiredList.has(name) ? (
-                <Badge color="rose" size="xs">
-                  required
-                </Badge>
-              ) : null}
-            </div>
-          ))}
+            );
+          })}
         </div>
+      ) : null}
+
+      {hasOutputSchema ? (
+        <CollapsibleSection
+          title="Output schema"
+          defaultOpen={false}
+          copyText={outputSchemaText}
+          copyShowLabel={false}
+          className="bg-white dark:bg-dark-tremor-background"
+          contentClassName="p-0"
+          headerRight={
+            outputSummary.total ? (
+              <Badge color="slate" size="xs">
+                {outputSummary.total} fields
+                {outputSummary.required ? ` (${outputSummary.required} required)` : ''}
+              </Badge>
+            ) : null
+          }
+        >
+          <JsonPre value={outputSchemaText} />
+        </CollapsibleSection>
+      ) : null}
+
+      {hasMetadata ? (
+        <CollapsibleSection
+          title="Metadata"
+          defaultOpen={false}
+          copyText={metadataText}
+          copyShowLabel={false}
+          className="bg-white dark:bg-dark-tremor-background"
+          contentClassName="p-0"
+          headerRight={
+            <Badge color="slate" size="xs">
+              {Object.keys(metadata).length} keys
+            </Badge>
+          }
+        >
+          <JsonPre value={metadataText} />
+        </CollapsibleSection>
       ) : null}
     </Card>
   );

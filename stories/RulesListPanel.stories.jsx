@@ -10,7 +10,7 @@ import {
 const action = () => () => {};
 
 export default {
-  title: 'Components/RulesListPanel',
+  title: 'Components/Rules/RulesListPanel',
   component: RulesListPanel
 };
 

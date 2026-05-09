@@ -3,7 +3,7 @@ import TracingApp from '../src/components/tracing/TracingApp.jsx';
 import InspectrContext from '../src/context/InspectrContext.jsx';
 
 export default {
-  title: 'Components/TracingApp',
+  title: 'Apps/Tracing/TracingApp',
   component: TracingApp
 };
 

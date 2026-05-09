@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import RequestList from '../src/components/operations/RequestList.jsx';
 
 export default {
-  title: 'Components/RequestList',
+  title: 'Components/Operations/RequestList',
   component: RequestList
 };
 

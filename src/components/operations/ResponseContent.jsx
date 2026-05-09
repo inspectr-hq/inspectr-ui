@@ -6,6 +6,7 @@ import CopyButton from '../CopyButton.jsx';
 import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
 import { formatXML } from '../../utils/formatXml.js';
 import SseFramesViewer from './SseFramesViewer.jsx';
+import { analyzeSseResponse } from '../../utils/mcp.js';
 
 // Decode base64 payloads in a browser-safe way so Source view can show raw bytes
 const decodeBase64ToBinaryString = (value) => {
@@ -163,12 +164,14 @@ const ResponseContent = ({ operation }) => {
   const isImageContent = typeof contentType === 'string' && contentType.startsWith('image/');
 
   // Check if content is SSE stream
-  const isSseContent = typeof contentType === 'string' && contentType.includes('text/event-stream');
-
-  // New SSE frames field from backend
-  const availableSseFrames = operation?.response?.event_frames || [];
-  const hasEvents =
-    (Array.isArray(availableSseFrames) && availableSseFrames.length > 0) || isSseContent;
+  const sseAnalysis = analyzeSseResponse(operation);
+  const isSseContent = sseAnalysis.isSse;
+  const availableSseFrames = Array.isArray(operation?.response?.event_frames)
+    ? operation.response.event_frames
+    : [];
+  const hasEvents = sseAnalysis.hasEvents;
+  const hasSingleSseJson = sseAnalysis.hasSingleJsonFrame;
+  const singleSseJsonPayload = sseAnalysis.singleJsonPayload;
 
   // Method to map the editor language
   const getEditorLanguage = (type) => {
@@ -196,13 +199,15 @@ const ResponseContent = ({ operation }) => {
 
   useEffect(() => {
     if (!currentOperationId) return;
-    if (isSseContent) {
+    if (isSseContent && hasSingleSseJson) {
+      setViewMode('json');
+    } else if (isSseContent) {
       setViewMode('events');
     } else {
       setViewMode(shouldDefaultToPreview ? 'preview' : 'source');
     }
     lastEventsCountRef.current = Array.isArray(availableSseFrames) ? availableSseFrames.length : 0;
-  }, [currentOperationId, isSseContent, shouldDefaultToPreview]);
+  }, [currentOperationId, hasSingleSseJson, isSseContent, shouldDefaultToPreview]);
 
   useEffect(() => {
     if (!currentOperationId) return;
@@ -363,6 +368,13 @@ const ResponseContent = ({ operation }) => {
   };
 
   const streamState = getStreamState();
+  const jsonModeValue = hasSingleSseJson ? JSON.stringify(singleSseJsonPayload, null, 2) : '';
+  const copyValue =
+    viewMode === 'json' && hasSingleSseJson
+      ? jsonModeValue
+      : ((isHTMLContent || isImageContent || isSseContent
+          ? (sourcePayload ?? '')
+          : formatPayload(sourcePayload, contentType)) ?? '');
 
   return (
     <div className="flex min-h-full flex-col">
@@ -407,93 +419,122 @@ const ResponseContent = ({ operation }) => {
           showResponseBody ? 'rounded-tremor-small rounded-b-none' : 'rounded-tremor-small'
         } bg-white dark:bg-dark-tremor-background-subtle`}
       >
-        <button
-          type="button"
-          onClick={() => setShowResponseBody(!showResponseBody)}
-          className="w-full p-2 text-left font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong cursor-pointer flex items-center justify-between"
-        >
-          <span className="inline-flex items-center gap-2">
-            <span>Response Body</span>
-            {streamState ? (
-              <span
-                className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-medium ${streamState.className}`}
-              >
-                {streamState.label}
-              </span>
-            ) : null}
-          </span>
+        <div className="w-full p-2 font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setShowResponseBody(!showResponseBody)}
+            className="min-w-0 flex-1 text-left cursor-pointer"
+          >
+            <span className="inline-flex items-center gap-2">
+              <span>Response Body</span>
+              {streamState ? (
+                <span
+                  className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-medium ${streamState.className}`}
+                >
+                  {streamState.label}
+                </span>
+              ) : null}
+            </span>
+          </button>
           <span className="flex items-center gap-2">
-            <span className="flex items-center" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center space-x-2 mr-2">
-                {supportsPreview && (
-                  <div className="flex space-x-1">
+            <div className="flex items-center space-x-2 mr-2">
+              {supportsPreview && (
+                <div className="flex space-x-1">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('source')}
+                    className={`px-2 py-1 text-xs rounded ${
+                      viewMode === 'source'
+                        ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                        : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                    }`}
+                  >
+                    Source
+                  </button>
+                  {hasEvents ? (
                     <button
                       type="button"
-                      onClick={() => setViewMode('source')}
+                      onClick={() => setViewMode('events')}
                       className={`px-2 py-1 text-xs rounded ${
-                        viewMode === 'source'
+                        viewMode === 'events'
                           ? 'bg-blue-600 dark:bg-blue-700 text-white'
                           : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                       }`}
                     >
-                      Source
+                      Events
                     </button>
-                    {hasEvents ? (
-                      <button
-                        type="button"
-                        onClick={() => setViewMode('events')}
-                        className={`px-2 py-1 text-xs rounded ${
-                          viewMode === 'events'
-                            ? 'bg-blue-600 dark:bg-blue-700 text-white'
-                            : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                        }`}
-                      >
-                        Events
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setViewMode('preview')}
-                        className={`px-2 py-1 text-xs rounded ${
-                          viewMode === 'preview'
-                            ? 'bg-blue-600 dark:bg-blue-700 text-white'
-                            : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                        }`}
-                      >
-                        Preview
-                      </button>
-                    )}
-                  </div>
-                )}
-                {shouldShowDownloadButton && (
-                  <button
-                    type="button"
-                    onClick={handleDownloadResponse}
-                    className="px-2 py-1 text-xs rounded bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-600"
-                  >
-                    Download
-                  </button>
-                )}
-                <CopyButton
-                  textToCopy={
-                    (isHTMLContent || isImageContent || isSseContent
-                      ? (sourcePayload ?? '')
-                      : formatPayload(sourcePayload, contentType)) ?? ''
-                  }
-                />
-              </div>
-            </span>
-            <ChevronIcon open={showResponseBody} />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('preview')}
+                      className={`px-2 py-1 text-xs rounded ${
+                        viewMode === 'preview'
+                          ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                          : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                      }`}
+                    >
+                      Preview
+                    </button>
+                  )}
+                  {isSseContent && hasSingleSseJson ? (
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('json')}
+                      className={`px-2 py-1 text-xs rounded ${
+                        viewMode === 'json'
+                          ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                          : 'bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                      }`}
+                    >
+                      JSON
+                    </button>
+                  ) : null}
+                </div>
+              )}
+              {shouldShowDownloadButton && (
+                <button
+                  type="button"
+                  onClick={handleDownloadResponse}
+                  className="px-2 py-1 text-xs rounded bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-600"
+                >
+                  Download
+                </button>
+              )}
+              <CopyButton textToCopy={copyValue} />
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowResponseBody(!showResponseBody)}
+              className="inline-flex items-center justify-center cursor-pointer"
+              aria-label={showResponseBody ? 'Collapse response body' : 'Expand response body'}
+            >
+              <ChevronIcon open={showResponseBody} />
+            </button>
           </span>
-        </button>
+        </div>
         {showResponseBody ? (
           <div ref={responseBodyContentRef} className="flex flex-1 min-h-[320px] flex-col">
             {hasEvents && viewMode === 'events' ? (
               <SseFramesViewer frames={availableSseFrames} raw={sourcePayload ?? ''} />
+            ) : isSseContent && viewMode === 'json' && hasSingleSseJson ? (
+              <Editor
+                height={`${responseEditorHeight}px`}
+                language="json"
+                value={jsonModeValue}
+                theme={getMonacoTheme()}
+                beforeMount={defineMonacoThemes}
+                options={{
+                  readOnly: true,
+                  minimap: { enabled: false },
+                  automaticLayout: true,
+                  fontFamily:
+                    '"Cascadia Code", "Jetbrains Mono", "Fira Code", "Menlo", "Consolas", monospace',
+                  tabSize: 2,
+                  scrollBeyondLastLine: false
+                }}
+              />
             ) : isSseContent ? (
-              viewMode === 'events' ? (
-                <SseFramesViewer frames={availableSseFrames} raw={sourcePayload ?? ''} />
-              ) : isEmptySourcePayload ? (
+              isEmptySourcePayload ? (
                 <div className="p-4 flex-1 bg-white dark:bg-dark-tremor-background-subtle rounded-b shadow dark:shadow-dark-tremor-shadow dark:text-dark-tremor-content">
                   No payload
                 </div>

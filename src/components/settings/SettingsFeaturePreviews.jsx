@@ -3,7 +3,7 @@ import React from 'react';
 import { Divider } from '@tremor/react';
 import { Switch } from '@headlessui/react';
 import useFeaturePreview from '../../hooks/useFeaturePreview.jsx';
-import useLocalStorage from '../../hooks/useLocalStorage.jsx';
+import useInspectrStorage from '../../hooks/useInspectrStorage.jsx';
 import { cx } from '../../utils/cx.js';
 
 const PREVIEWS = [
@@ -67,7 +67,7 @@ const FUTURE_FEATURES = [
 ];
 
 export default function SettingsFeaturePreviews() {
-  const [futureFlag] = useLocalStorage('future', 'false');
+  const [futureFlag] = useInspectrStorage('future', 'false');
   const isFutureEnabled = futureFlag === 'true';
 
   const previewDefinitions = React.useMemo(

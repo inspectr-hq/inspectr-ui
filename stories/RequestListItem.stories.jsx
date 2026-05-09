@@ -3,7 +3,7 @@ import React from 'react';
 import RequestListItem from '../src/components/operations/RequestListItem.jsx';
 
 export default {
-  title: 'Components/RequestListItem',
+  title: 'Components/Operations/RequestListItem',
   component: RequestListItem
 };
 

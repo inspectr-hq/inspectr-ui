@@ -309,17 +309,26 @@ const RequestContent = ({ operation }) => {
           showRequestBody ? 'rounded-tremor-small rounded-b-none' : 'rounded-tremor-small'
         } bg-white dark:bg-dark-tremor-background-subtle`}
       >
-        <button
-          type="button"
-          onClick={() => setShowRequestBody(!showRequestBody)}
-          className="w-full p-2 text-left font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong cursor-pointer flex items-center justify-between"
-        >
-          <span>Request Body</span>
+        <div className="w-full p-2 font-bold bg-gray-200 dark:bg-dark-tremor-background-subtle dark:text-dark-tremor-content-strong flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setShowRequestBody(!showRequestBody)}
+            className="min-w-0 flex-1 text-left cursor-pointer"
+          >
+            <span>Request Body</span>
+          </button>
           <span className="flex items-center gap-2">
             <CopyButton textToCopy={formatPayload(payload)} showLabel={true} />
-            <ChevronIcon open={showRequestBody} />
+            <button
+              type="button"
+              onClick={() => setShowRequestBody(!showRequestBody)}
+              className="inline-flex items-center justify-center cursor-pointer"
+              aria-label={showRequestBody ? 'Collapse request body' : 'Expand request body'}
+            >
+              <ChevronIcon open={showRequestBody} />
+            </button>
           </span>
-        </button>
+        </div>
 
         {showRequestBody ? (
           <div

@@ -1,20 +1,76 @@
 // src/context/InspectrContext.jsx
-import React, {
-  createContext,
-  useState,
-  useContext,
-  useRef,
-  useEffect,
-  useLayoutEffect
-} from 'react';
-import useLocalStorage from '../hooks/useLocalStorage.jsx';
-import InspectrClient from '../utils/inspectrSdk';
-import eventDB from '../utils/eventDB';
+import React, { createContext, useState, useContext, useRef, useEffect, useMemo } from 'react';
+import useStorageAdapter from '../hooks/useStorageAdapter.jsx';
+import InspectrClient, { normalizeEndpoint as normalizeApiEndpoint } from '../utils/inspectrSdk';
+import eventDB, { createEventDB, getNamespacedEventDBName } from '../utils/eventDB';
+import {
+  createDefaultStorageAdapter,
+  createNamespacedStorageAdapter
+} from '../utils/storageAdapter.js';
+
+const EMPTY_APP_AUTH_CONTEXT = Object.freeze({
+  appAuthEnabled: false,
+  authenticated: false,
+  tokenType: null,
+  tokenExpiresAt: null
+});
+
+const stableStringify = (value) => {
+  const normalize = (input) => {
+    if (Array.isArray(input)) {
+      return input.map(normalize);
+    }
+    if (input && typeof input === 'object') {
+      return Object.keys(input)
+        .sort()
+        .reduce((acc, key) => {
+          acc[key] = normalize(input[key]);
+          return acc;
+        }, {});
+    }
+    return input;
+  };
+
+  return JSON.stringify(normalize(value));
+};
+
+const applySessionBootstrap = (bootstrap, setters) => {
+  if (!bootstrap || typeof bootstrap !== 'object') return;
+
+  const applyStringValue = (setter, value) => {
+    if (value === undefined || value === null) {
+      setter(null);
+      return;
+    }
+
+    const normalized = String(value).trim();
+    if (!normalized) {
+      setter(null);
+      return;
+    }
+
+    setter(normalized);
+  };
+
+  applyStringValue(setters.setApiEndpoint, bootstrap.apiEndpoint);
+  applyStringValue(setters.setChannelCode, bootstrap.channelCode);
+  applyStringValue(setters.setChannel, bootstrap.channel);
+  applyStringValue(setters.setToken, bootstrap.token);
+  applyStringValue(setters.setExpires, bootstrap.expires);
+  applyStringValue(setters.setSseEndpoint, bootstrap.sseEndpoint);
+  applyStringValue(setters.setIngressEndpoint, bootstrap.ingressEndpoint);
+  applyStringValue(setters.setProxyEndpoint, bootstrap.proxyEndpoint);
+  if (typeof bootstrap.expose === 'boolean') {
+    setters.setExposeLocalStorage(bootstrap.expose ? 'true' : 'false');
+  } else {
+    setters.setExposeLocalStorage(null);
+  }
+};
 
 // Create the context with default values
 const InspectrContext = createContext({
   // Settings
-  apiEndpoint: '/api',
+  apiEndpoint: 'api',
   setApiEndpoint: () => {},
 
   // Connection status
@@ -29,6 +85,13 @@ const InspectrContext = createContext({
   channel: '',
   setChannel: () => {},
   token: '',
+  mode: 'standalone',
+  namespace: '',
+  featureConfig: null,
+  themeConfig: null,
+  sessionBootstrap: null,
+  storageAdapter: createDefaultStorageAdapter(),
+  eventDB,
 
   // Refs
   reRegistrationFailedRef: { current: false },
@@ -45,6 +108,9 @@ const InspectrContext = createContext({
   // Debug mode
   debugMode: false,
 
+  // Hosted app auth bootstrap context
+  appAuthContext: EMPTY_APP_AUTH_CONTEXT,
+
   // SDK client
   client: null
 });
@@ -53,23 +119,78 @@ const InspectrContext = createContext({
 export const useInspectr = () => useContext(InspectrContext);
 
 // Provider component
-export const InspectrProvider = ({ children }) => {
+export const InspectrProvider = ({
+  children,
+  mode = 'standalone',
+  storageAdapter,
+  namespace = '',
+  dbName,
+  sessionBootstrap = null,
+  featureConfig = null,
+  themeConfig = null
+}) => {
+  const resolvedStorageAdapter = useMemo(() => {
+    if (storageAdapter) return storageAdapter;
+    if (mode === 'embedded' && namespace) {
+      return createNamespacedStorageAdapter(namespace, createDefaultStorageAdapter());
+    }
+    return createDefaultStorageAdapter();
+  }, [storageAdapter, mode, namespace]);
+
+  const resolvedEventDB = useMemo(() => {
+    if (mode !== 'embedded') {
+      return eventDB;
+    }
+    const resolvedDbName = dbName || getNamespacedEventDBName(namespace);
+    return createEventDB({ dbName: resolvedDbName, namespace });
+  }, [mode, dbName, namespace]);
+
+  useEffect(() => {
+    if (resolvedEventDB === eventDB) return;
+    return () => {
+      try {
+        resolvedEventDB.db.close();
+      } catch {}
+    };
+  }, [resolvedEventDB]);
+
   // Settings state
-  const [rawApiEndpoint, setRawApiEndpoint] = useLocalStorage('apiEndpoint', '/api');
-  const apiEndpoint = rawApiEndpoint ? rawApiEndpoint.replace(/\/+$/, '') : '/api';
+  const [rawApiEndpoint, setRawApiEndpoint] = useStorageAdapter(
+    'apiEndpoint',
+    'api',
+    resolvedStorageAdapter
+  );
+  const apiEndpoint = normalizeApiEndpoint(rawApiEndpoint);
   const setApiEndpoint = (value) => {
-    setRawApiEndpoint(value ? value.replace(/\/+$/, '') : value);
+    if (value === undefined || value === null || String(value).trim() === '') {
+      setRawApiEndpoint(null);
+      return;
+    }
+    setRawApiEndpoint(normalizeApiEndpoint(value));
   };
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
-  const [sseEndpoint, setSseEndpoint] = useLocalStorage('sseEndpoint', '');
-  const [ingressEndpoint, setIngressEndpoint] = useLocalStorage('ingressEndpoint', '');
-  const [channelCode, setChannelCode] = useLocalStorage('channelCode', '');
-  const [channel, setChannel] = useLocalStorage('channel', '');
-  const [token, setToken] = useLocalStorage('token', '');
-  const [expires, setExpires] = useLocalStorage('expires', '');
-  const [, setExposeLocalStorage] = useLocalStorage('expose', 'false');
+  const [sseEndpoint, setSseEndpoint] = useStorageAdapter(
+    'sseEndpoint',
+    '',
+    resolvedStorageAdapter
+  );
+  const [ingressEndpoint, setIngressEndpoint] = useStorageAdapter(
+    'ingressEndpoint',
+    '',
+    resolvedStorageAdapter
+  );
+  const [channelCode, setChannelCode] = useStorageAdapter(
+    'channelCode',
+    '',
+    resolvedStorageAdapter
+  );
+  const [channel, setChannel] = useStorageAdapter('channel', '', resolvedStorageAdapter);
+  const [token, setToken] = useStorageAdapter('token', '', resolvedStorageAdapter);
+  const [expires, setExpires] = useStorageAdapter('expires', '', resolvedStorageAdapter);
+  const [, setExposeLocalStorage] = useStorageAdapter('expose', 'false', resolvedStorageAdapter);
   const [isInitialized, setIsInitialized] = useState(false);
   const [toast, setToast] = useState(null);
+  const [appAuthContext, setAppAuthContext] = useState(EMPTY_APP_AUTH_CONTEXT);
 
   // SSE connection reference
   const registrationRetryCountRef = useRef(0);
@@ -78,7 +199,8 @@ export const InspectrProvider = ({ children }) => {
   const retryDelay = 5000; // milliseconds
 
   const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-  const debugMode = typeof window !== 'undefined' && localStorage.getItem('debug') === 'true';
+  const [debugModeValue] = useStorageAdapter('debug', 'false', resolvedStorageAdapter);
+  const debugMode = debugModeValue === 'true';
 
   useEffect(() => {
     if (debugMode) {
@@ -137,15 +259,77 @@ export const InspectrProvider = ({ children }) => {
   };
 
   // Proxy URL state (persisted)
-  const [proxyEndpoint, setProxyEndpoint] = useLocalStorage('proxyEndpoint', '');
+  const [proxyEndpoint, setProxyEndpoint] = useStorageAdapter(
+    'proxyEndpoint',
+    '',
+    resolvedStorageAdapter
+  );
 
   // Create an InspectrClient instance
-  const [inspectrClient, setInspectrClient] = useState(() => new InspectrClient({ apiEndpoint }));
+  const [inspectrClient] = useState(() => new InspectrClient({ apiEndpoint }));
+  const sessionBootstrapFingerprint = useMemo(
+    () => stableStringify(sessionBootstrap || null),
+    [sessionBootstrap]
+  );
+  const lastAppliedSessionBootstrapRef = useRef(null);
 
   // Update the client when apiEndpoint changes
   useEffect(() => {
     inspectrClient.configure({ apiEndpoint });
   }, [apiEndpoint]);
+
+  // Embedded mode uses runtime JWT for API calls as Bearer auth.
+  // SSE still authenticates with `?token=...` because EventSource cannot set headers.
+  useEffect(() => {
+    if (mode !== 'embedded') return;
+    inspectrClient.setAuthorizationToken(token || '');
+  }, [mode, token, inspectrClient]);
+
+  // Bootstrap hosted app auth context and keep bearer token in memory only.
+  useEffect(() => {
+    let cancelled = false;
+    if (mode === 'embedded') {
+      inspectrClient.setAuthorizationToken('');
+      setAppAuthContext(EMPTY_APP_AUTH_CONTEXT);
+      return;
+    }
+
+    const applyBootstrap = (payload) => {
+      const appAuthEnabled = Boolean(payload?.app_auth_enabled);
+      const authenticated = Boolean(payload?.authenticated);
+      const token = typeof payload?.token === 'string' ? payload.token.trim() : '';
+      const shouldAttachToken = appAuthEnabled && authenticated && token;
+
+      inspectrClient.setAuthorizationToken(shouldAttachToken ? token : '');
+      setAppAuthContext({
+        appAuthEnabled,
+        authenticated,
+        tokenType: payload?.token_type || null,
+        tokenExpiresAt: payload?.token_expires_at || null
+      });
+    };
+
+    const loadAuthBootstrap = async () => {
+      try {
+        const payload = await inspectrClient.registration.getAuthBootstrap();
+        if (cancelled) return;
+        applyBootstrap(payload);
+      } catch (err) {
+        if (cancelled) return;
+        inspectrClient.setAuthorizationToken('');
+        setAppAuthContext(EMPTY_APP_AUTH_CONTEXT);
+        if (debugMode) {
+          console.warn('[Inspectr] Hosted auth bootstrap unavailable, using local auth behavior.');
+        }
+      }
+    };
+
+    loadAuthBootstrap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiEndpoint, inspectrClient, debugMode, mode]);
 
   // Load credentials from REST API
   const loadCredentialsFromApi = async () => {
@@ -174,6 +358,17 @@ export const InspectrProvider = ({ children }) => {
     newToken = token,
     showNotification
   ) => {
+    if (mode === 'embedded') {
+      // Embedded mode receives runtime/session bootstrap from the host app and
+      // must not call runtime /api/register from a different origin.
+      if (newToken && sseEndpoint) {
+        setConnectionStatus('connected');
+        return true;
+      }
+      setConnectionStatus('disconnected');
+      throw new Error('registration_disabled_in_embedded_mode');
+    }
+
     try {
       // Construct request body
       let requestBody = {};
@@ -234,6 +429,10 @@ export const InspectrProvider = ({ children }) => {
   };
 
   const attemptReRegistration = () => {
+    if (mode === 'embedded') {
+      // In embedded mode we rely on SSE reconnect behavior only.
+      return;
+    }
     if (reRegistrationFailedRef.current) return;
 
     setConnectionStatus('reconnecting');
@@ -274,6 +473,26 @@ export const InspectrProvider = ({ children }) => {
     const loadCredentials = async () => {
       if (typeof window === 'undefined') return;
 
+      if (mode === 'embedded') {
+        if (lastAppliedSessionBootstrapRef.current !== sessionBootstrapFingerprint) {
+          applySessionBootstrap(sessionBootstrap, {
+            setApiEndpoint,
+            setChannelCode,
+            setChannel,
+            setToken,
+            setExpires,
+            setSseEndpoint,
+            setIngressEndpoint,
+            setProxyEndpoint,
+            setExposeLocalStorage
+          });
+          lastAppliedSessionBootstrapRef.current = sessionBootstrapFingerprint;
+        }
+        setIsInitialized(true);
+        return;
+      }
+      lastAppliedSessionBootstrapRef.current = null;
+
       if (!loadCredentialsFromQueryParams()) {
         if (!loadCredentialsFromLocalStorage() && isLocalhost) {
           await loadCredentialsFromApi();
@@ -284,7 +503,7 @@ export const InspectrProvider = ({ children }) => {
     };
 
     loadCredentials();
-  }, []);
+  }, [mode, sessionBootstrapFingerprint, isLocalhost]);
 
   /**
    * 🏁 Step 2: When `isInitialized` is true, register using stored credentials
@@ -294,6 +513,7 @@ export const InspectrProvider = ({ children }) => {
 
   useEffect(() => {
     if (!isInitialized) return;
+    if (mode === 'embedded') return;
 
     // Skip auto-registration if it was triggered by the user via SettingsPanel
     if (userInitiatedRegistrationRef.current) {
@@ -325,10 +545,14 @@ export const InspectrProvider = ({ children }) => {
     } else {
       console.log('⚠️ Missing credentials for auto-registration, skipping.');
     }
-  }, [isInitialized, channel, channelCode, token, sseEndpoint]);
+  }, [isInitialized, channel, channelCode, token, sseEndpoint, mode]);
 
   // ——— SSE connection lifecycle (moved from InspectrConnectionContext) ———
-  const [lastEventId, setLastEventId] = useLocalStorage('lastEventId', '');
+  const [lastEventId, setLastEventId] = useStorageAdapter(
+    'lastEventId',
+    '',
+    resolvedStorageAdapter
+  );
   const eventSourceRef = useRef(null);
   const wasConnectedRef = useRef(false);
 
@@ -363,9 +587,17 @@ export const InspectrProvider = ({ children }) => {
 
     const eventSource = new EventSource(sseUrl);
     eventSourceRef.current = eventSource;
-    console.log(`🔄 SSE connecting with ${sseUrl}`);
+    let logEndpoint = sseEndpoint;
+    try {
+      const parsed = new URL(sseUrl);
+      logEndpoint = `${parsed.origin}${parsed.pathname}`;
+    } catch {}
+    console.log(`🔄 SSE connecting with ${logEndpoint}`);
 
-    setConnectionStatus(wasConnectedRef.current ? 'reconnecting' : 'connecting');
+    // Use "connecting" for normal (re)connects. Reserve "reconnecting" for
+    // actual SSE error recovery paths so embedded guards don't trigger refresh
+    // loops on healthy reconnects (e.g. token/session rotation).
+    setConnectionStatus('connecting');
 
     eventSource.onopen = () => {
       wasConnectedRef.current = true;
@@ -399,13 +631,13 @@ export const InspectrProvider = ({ children }) => {
             burstBufferRef.current = [];
             burstCountRef.current = 0;
             burstStartRef.current = performance.now();
-            await eventDB.bulkUpsertEvents(buffered);
+            await resolvedEventDB.bulkUpsertEvents(buffered);
           }
           if (debugMode) {
             console.log(`[Inspectr] Sync complete: ${syncedCount} synced`);
           }
           if (activeSyncId) {
-            const deletedCount = await eventDB.removeEventsNotSynced(activeSyncId);
+            const deletedCount = await resolvedEventDB.removeEventsNotSynced(activeSyncId);
             if (debugMode) {
               console.log(`[Inspectr] Sync cleanup: ${deletedCount} removed`);
             }
@@ -466,7 +698,7 @@ export const InspectrProvider = ({ children }) => {
         }
 
         if (burstCountRef.current < BURST_THRESHOLD) {
-          eventDB
+          resolvedEventDB
             .upsertEvent(event)
             .catch((err) => console.error('Error saving event to DB:', err));
         } else {
@@ -474,7 +706,7 @@ export const InspectrProvider = ({ children }) => {
           if (burstCountRef.current === BURST_THRESHOLD) {
             setTimeout(async () => {
               try {
-                await eventDB.bulkUpsertEvents(burstBufferRef.current);
+                await resolvedEventDB.bulkUpsertEvents(burstBufferRef.current);
               } catch (err) {
                 console.error('bulk save failed', err);
               } finally {
@@ -498,6 +730,11 @@ export const InspectrProvider = ({ children }) => {
     eventSource.onerror = (err) => {
       console.error('❌ SSE connection error:', err);
       setConnectionStatus('reconnecting');
+
+      if (mode === 'embedded') {
+        // Avoid cross-origin /api/register attempts in embedded mode.
+        return;
+      }
 
       if (reRegistrationFailedRef.current) {
         console.log('❌ Maximum re-registration attempts reached. Closing EventSource.');
@@ -544,7 +781,7 @@ export const InspectrProvider = ({ children }) => {
     };
     // We intentionally omit lastEventId here to avoid reconnects when it changes during streaming
     // Sync action explicitly reconnects with override.
-  }, [sseEndpoint, token]);
+  }, [sseEndpoint, token, resolvedEventDB, mode]);
 
   // Close on full page unload
   useEffect(() => {
@@ -559,6 +796,13 @@ export const InspectrProvider = ({ children }) => {
 
   // Context value
   const contextValue = {
+    mode,
+    namespace,
+    featureConfig,
+    themeConfig,
+    sessionBootstrap,
+    storageAdapter: resolvedStorageAdapter,
+    eventDB: resolvedEventDB,
     apiEndpoint,
     setApiEndpoint,
     connectionStatus,
@@ -580,6 +824,7 @@ export const InspectrProvider = ({ children }) => {
     toast,
     setToast,
     debugMode,
+    appAuthContext,
     client: inspectrClient,
     // Expose connection helpers/state
     lastEventId,

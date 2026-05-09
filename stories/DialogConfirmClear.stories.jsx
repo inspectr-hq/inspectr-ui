@@ -5,7 +5,7 @@ import DialogConfirmClear from '../src/components/DialogConfirmClear';
 const action = () => () => {};
 
 export default {
-  title: 'Components/DialogConfirmClear',
+  title: 'Components/Dialogs/DialogConfirmClear',
   component: DialogConfirmClear,
   argTypes: {
     open: { control: 'boolean' },

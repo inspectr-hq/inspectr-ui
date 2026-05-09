@@ -4,7 +4,7 @@ import DialogMockConfig from '../src/components/settings/DialogMockConfig.jsx';
 const action = () => () => {};
 
 export default {
-  title: 'Components/DialogMockConfig',
+  title: 'Components/Dialogs/DialogMockConfig',
   component: DialogMockConfig
 };
 

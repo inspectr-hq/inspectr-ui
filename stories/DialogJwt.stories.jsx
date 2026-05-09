@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import DialogJwt from '../src/components/operations/DialogJwt.jsx';
 
 export default {
-  title: 'Components/DialogJwt',
+  title: 'Components/Dialogs/DialogJwt',
   component: DialogJwt
 };
 

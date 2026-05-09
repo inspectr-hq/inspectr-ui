@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 
 function parseValue(storedValue, defaultValue) {
   if (storedValue === null) return defaultValue;
@@ -20,13 +20,14 @@ function serializeValue(value) {
 }
 
 export default function useSessionStorage(key, defaultValue, options = {}) {
-  const { resetOnReload = false } = options;
+  const { resetOnReload = false, keyPrefix = '' } = options;
   const valueRef = useRef();
+  const resolvedKey = useMemo(() => `${keyPrefix}${key}`, [keyPrefix, key]);
 
   const readValue = () => {
     if (typeof window === 'undefined') return defaultValue;
 
-    const storedValue = sessionStorage.getItem(key);
+    const storedValue = sessionStorage.getItem(resolvedKey);
     return parseValue(storedValue, defaultValue);
   };
 
@@ -40,19 +41,20 @@ export default function useSessionStorage(key, defaultValue, options = {}) {
     if (!resetOnReload || typeof window === 'undefined') return undefined;
 
     const handleBeforeUnload = () => {
-      sessionStorage.removeItem(key);
+      sessionStorage.removeItem(resolvedKey);
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [key, resetOnReload]);
+  }, [resolvedKey, resetOnReload]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const handleStorage = (e) => {
-      if (e.key && e.key !== key) return;
-      const storedValue = sessionStorage.getItem(key);
+      const eventKey = e?.key ?? e?.detail?.key;
+      if (eventKey && eventKey !== resolvedKey) return;
+      const storedValue = sessionStorage.getItem(resolvedKey);
       const newValue = parseValue(storedValue, defaultValue);
       const currentSerialized = serializeValue(valueRef.current);
 
@@ -68,28 +70,28 @@ export default function useSessionStorage(key, defaultValue, options = {}) {
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('session-storage', handleStorage);
     };
-  }, [key, defaultValue]);
+  }, [resolvedKey, defaultValue]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const serialized = serializeValue(value);
-    const existing = sessionStorage.getItem(key);
+    const existing = sessionStorage.getItem(resolvedKey);
 
     if (serialized === null) {
       if (existing === null) return;
-      sessionStorage.removeItem(key);
+      sessionStorage.removeItem(resolvedKey);
     } else {
       if (existing === serialized) return;
-      sessionStorage.setItem(key, serialized);
+      sessionStorage.setItem(resolvedKey, serialized);
     }
 
     window.dispatchEvent(
       new CustomEvent('session-storage', {
-        detail: { key, value }
+        detail: { key: resolvedKey, value }
       })
     );
-  }, [key, value]);
+  }, [resolvedKey, value]);
 
   return [value, setValue];
 }

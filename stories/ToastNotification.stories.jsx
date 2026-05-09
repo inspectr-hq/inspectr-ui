@@ -5,7 +5,7 @@ import ToastNotification from '../src/components/ToastNotification';
 const action = () => () => {};
 
 export default {
-  title: 'Components/ToastNotification',
+  title: 'Components/Common/ToastNotification',
   component: ToastNotification,
   argTypes: {
     message: { control: 'text' },

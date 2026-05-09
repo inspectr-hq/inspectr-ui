@@ -35,9 +35,10 @@ import {
   parseJson,
   validateArgsAgainstSchema
 } from '../../utils/mcp.js';
+import { useInspectr } from '../../context/InspectrContext.jsx';
 
 export default function TraceOperationMcpDetail({ operation, isLoading }) {
-  const debugMode = typeof window !== 'undefined' && localStorage.getItem('debug') === 'true';
+  const { debugMode } = useInspectr();
   if (debugMode) {
     console.log('OP', operation);
   }

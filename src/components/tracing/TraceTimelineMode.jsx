@@ -6,7 +6,7 @@ import TraceOperationDetail from './TraceOperationDetail.jsx';
 import TraceOperationMcpDetail from './TraceOperationMcpDetail.jsx';
 import { pickAgentLabel } from './traceUtils.js';
 import { useTraceExplorer } from './useTraceExplorer.js';
-import useLocalStorage from '../../hooks/useLocalStorage.jsx';
+import useInspectrStorage from '../../hooks/useInspectrStorage.jsx';
 import TraceGroupRow from './timeline/TraceGroupRow.jsx';
 import PanelResizer from './timeline/PanelResizer.jsx';
 import TraceTimelineHeader from './timeline/TraceTimelineHeader.jsx';
@@ -93,15 +93,15 @@ export default function TraceTimelineMode({
   });
 
   const [expandedGroups, setExpandedGroups] = useState(() => new Set());
-  const [timelineWidthRaw, setTimelineWidthRaw] = useLocalStorage(
+  const [timelineWidthRaw, setTimelineWidthRaw] = useInspectrStorage(
     TIMELINE_WIDTH_STORAGE_KEY,
     String(DEFAULT_TIMELINE_WIDTH)
   );
-  const [persistFiltersRaw, setPersistFiltersRaw] = useLocalStorage(
+  const [persistFiltersRaw, setPersistFiltersRaw] = useInspectrStorage(
     FILTERS_PERSIST_STORAGE_KEY,
     'false'
   );
-  const [storedFilters, setStoredFilters] = useLocalStorage(FILTERS_STORAGE_KEY, '');
+  const [storedFilters, setStoredFilters] = useInspectrStorage(FILTERS_STORAGE_KEY, '');
   const timelineWidth = useMemo(() => {
     const parsed = Number(timelineWidthRaw);
     if (Number.isFinite(parsed) && parsed >= MIN_TIMELINE_WIDTH && parsed <= MAX_TIMELINE_WIDTH) {

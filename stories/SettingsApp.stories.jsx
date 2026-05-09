@@ -3,7 +3,7 @@ import SettingsApp from '../src/components/SettingsApp';
 import { InspectrProvider } from '../src/context/InspectrContext';
 
 export default {
-  title: 'Components/SettingsApp',
+  title: 'Apps/Settings/SettingsApp',
   component: SettingsApp
 };
 

@@ -4,6 +4,8 @@ import Editor from '@monaco-editor/react';
 import { parseSseStream } from '../../utils/sse.js';
 import { defineMonacoThemes, getMonacoTheme } from '../../utils/monacoTheme.js';
 
+const RAW_COLLAPSE_THRESHOLD = 120;
+
 /**
  * Visualize Server-Sent Event frames in a simple table.
  * @param {{frames?: Array, raw?: string}} props
@@ -101,12 +103,13 @@ const SseFramesViewer = ({ frames, raw }) => {
   return (
     <div className="overflow-auto h-full">
       <table className="w-full border-collapse border border-slate-200 dark:border-dark-tremor-border">
-        {/* Control column widths: Time gets a tight 12ch */}
         <colgroup>
-          <col className="w-1/6" /> {/* ID */}
-          <col className="w-1/6" /> {/* Type */}
-          <col /> {/* Data grows */}
-          <col className="w-[12ch]" /> {/* Time */}
+          {[
+            <col key="id" className="w-1/6" />,
+            <col key="type" className="w-1/6" />,
+            <col key="data" />,
+            <col key="time" className="w-[12ch]" />
+          ]}
         </colgroup>
 
         <thead>
@@ -163,6 +166,10 @@ const SseFramesViewer = ({ frames, raw }) => {
             const key = f.id ?? i; // stable key for toggle state
             const json = parseJson(f.data);
             const isOpen = !!showJson[key];
+            const collapsedRaw =
+              json && isOpen && typeof f.data === 'string' && f.data.length > RAW_COLLAPSE_THRESHOLD
+                ? `${f.data.slice(0, RAW_COLLAPSE_THRESHOLD)}...`
+                : f.data;
 
             return (
               <React.Fragment key={key}>
@@ -186,15 +193,17 @@ const SseFramesViewer = ({ frames, raw }) => {
                   </td>
                   <td className="border px-2 py-1 font-mono text-xs whitespace-pre-wrap break-all dark:text-dark-tremor-content">
                     <div className="flex items-start gap-2">
-                      <div className="flex-1 min-w-0 break-all whitespace-pre-wrap">{f.data}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="break-all whitespace-pre-wrap pr-1">{collapsedRaw}</div>
+                      </div>
                       {json && (
                         <button
                           className="self-start shrink-0 px-2 py-1 text-xs rounded bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                          title={isOpen ? 'Hide formatted JSON' : 'Show formatted JSON'}
+                          title={isOpen ? 'Show raw data' : 'Show formatted JSON'}
                           aria-expanded={isOpen}
                           onClick={() => setShowJson((prev) => ({ ...prev, [key]: !prev[key] }))}
                         >
-                          {isOpen ? 'Hide' : 'Preview'}
+                          {isOpen ? 'RAW' : 'JSON'}
                         </button>
                       )}
                     </div>

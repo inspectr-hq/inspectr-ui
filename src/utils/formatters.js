@@ -28,19 +28,23 @@ const formatTimestamp = (isoString, options) => {
 const formatDuration = (milliseconds) => {
   if (milliseconds === undefined || milliseconds === null) return 'N/A';
 
-  // Convert to number
   const ms = Number(milliseconds);
+  if (!Number.isFinite(ms)) return 'N/A';
 
-  if (ms < 1000) {
-    // Less than a second, show in milliseconds
-    return `${ms}ms`;
-  } else if (ms < 60000) {
-    // Less than a minute, show in seconds with 2 decimal places
-    return `${(ms / 1000).toFixed(2)}s`;
-  } else {
-    // Show in minutes with 2 decimal places
-    return `${(ms / 60000).toFixed(2)}m`;
-  }
+  const sign = ms < 0 ? '-' : '';
+  const absMs = Math.abs(ms);
+
+  const trim = (value, maxFractionDigits = 2) => {
+    const text = value.toFixed(maxFractionDigits);
+    if (maxFractionDigits === 0) return text;
+    return text.replace(/\.?0+$/, '');
+  };
+
+  if (absMs < 1000) return `${sign}${trim(absMs, 0)}ms`;
+  if (absMs < 60000) return `${sign}${trim(absMs / 1000)}s`;
+  if (absMs < 3600000) return `${sign}${trim(absMs / 60000)}m`;
+  if (absMs < 86400000) return `${sign}${trim(absMs / 3600000)}h`;
+  return `${sign}${trim(absMs / 86400000)}d`;
 };
 
 // Format a size in bytes to a human-readable format (B, KB, MB, etc.)

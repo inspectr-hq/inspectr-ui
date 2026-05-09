@@ -33,3 +33,6 @@ inspiration
 .claude
 .codex
 PLAN.md
+docs/plans
+/.agents/
+/skills-lock.json

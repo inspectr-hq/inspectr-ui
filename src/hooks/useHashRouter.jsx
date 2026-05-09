@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
  * into { slug, operationId, subTab, params }
  */
 export function parseHash() {
-  const raw = window.location.hash.slice(1); // drop "#"
+  const raw = window.location.hash.slice(1).replace(/^\/+/, ''); // drop "#" and optional leading "/"
   const [path, qs] = raw.split('?'); // "inspectr/42/details", "view=raw..."
   const decodePart = (value) => {
     if (value == null) return value;

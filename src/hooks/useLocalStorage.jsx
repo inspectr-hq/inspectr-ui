@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 
+/**
+ * @deprecated Use `useStorageAdapter` (or `useInspectrStorage` inside provider context) instead.
+ */
 export default function useLocalStorage(key, defaultValue) {
   const [value, setValue] = useState(() => {
     if (typeof window === 'undefined') return defaultValue;

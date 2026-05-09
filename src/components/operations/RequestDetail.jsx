@@ -11,7 +11,7 @@ import { Tooltip } from '../ToolTip.jsx';
 import AuthIndicator from './AuthIndicator.jsx';
 import McpIndicator from './McpIndicator.jsx';
 import { normalizeTags, normalizeTag } from '../../utils/normalizeTags.js';
-import useLocalStorage from '../../hooks/useLocalStorage.jsx';
+import useInspectrStorage from '../../hooks/useInspectrStorage.jsx';
 import DialogDeleteConfirm from '../DialogDeleteConfirm.jsx';
 import TagPill from '../TagPill.jsx';
 import RequestDetailActions from './RequestDetailActions.jsx';
@@ -19,7 +19,11 @@ import { shouldIncludeHeaderInCurl } from '../../utils/curlHeaders.js';
 
 const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = false }) => {
   // Get the client from context
-  const { client, setToast, proxyEndpoint } = useInspectr();
+  const { client, setToast, proxyEndpoint, featureConfig } = useInspectr();
+  const actionFlags = featureConfig?.actions || {};
+  const allowReplay = actionFlags.allowReplay !== false;
+  const allowExport = actionFlags.allowExport !== false;
+  const allowTagEdit = actionFlags.allowTagEdit !== false;
 
   const [copiedCurl, setCopiedCurl] = useState(false);
   const [copiedOperation, setCopiedOperation] = useState(false);
@@ -27,8 +31,8 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
   const [showUrlToast, setShowUrlToast] = useState(false);
   const [showReplayToast, setShowReplayToast] = useState(false);
   const [replayed, setReplayed] = useState(false);
-  const [copyActionValue, setCopyActionValue] = useLocalStorage('copyActionPreference', 'curl');
-  const [replayTargetValue, setReplayTargetValue] = useLocalStorage(
+  const [copyActionValue, setCopyActionValue] = useInspectrStorage('copyActionPreference', 'curl');
+  const [replayTargetValue, setReplayTargetValue] = useInspectrStorage(
     'replayTargetPreference',
     'original'
   );
@@ -209,6 +213,7 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
 
   // Replay the request using the SDK
   const handleReplay = () => {
+    if (!allowReplay) return;
     client.operations
       .replay(operation, { replayTarget })
       .then(() => {
@@ -223,6 +228,7 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
 
   // Download the operation as a JSON file
   const handleDownloadOperation = () => {
+    if (!allowExport) return;
     try {
       const data = operation ? { ...operation } : {};
       const json = JSON.stringify(data, null, 2);
@@ -244,6 +250,7 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
 
   // Tag delete handlers
   const handleRequestDeleteTag = (tag) => {
+    if (!allowTagEdit) return;
     setPendingTag(tag);
     setDeleteTagError('');
   };
@@ -395,6 +402,8 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
           replayed={replayed}
           onRefresh={onRefresh}
           isRefreshing={isRefreshing}
+          allowExport={allowExport}
+          allowReplay={allowReplay}
         />
       </div>
       <div className="flex flex-col space-y-1">
@@ -468,7 +477,11 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
             <>
               <span> • Proxy </span>
               <div className="relative inline-block align-middle">
-                <Tooltip side="right" content={operation.meta.proxy.url}>
+                <Tooltip
+                  side="right"
+                  content={operation.meta.proxy.url}
+                  className="max-w-sm whitespace-normal break-all"
+                >
                   <InfoIcon className="relative inline-block" />
                 </Tooltip>
               </div>
@@ -487,8 +500,8 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
               <TagPill
                 key={tag.token || tag.display}
                 tag={tag}
-                showRemove
-                onRemove={() => handleRequestDeleteTag(tag)}
+                showRemove={allowTagEdit}
+                onRemove={allowTagEdit ? () => handleRequestDeleteTag(tag) : undefined}
               />
             ))}
           </div>
@@ -497,7 +510,7 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
 
       {/* Confirm delete single tag dialog */}
       <DialogDeleteConfirm
-        open={Boolean(pendingTag)}
+        open={allowTagEdit && Boolean(pendingTag)}
         isDeleting={isDeletingTag}
         error={deleteTagError}
         onCancel={handleCancelDeleteTag}

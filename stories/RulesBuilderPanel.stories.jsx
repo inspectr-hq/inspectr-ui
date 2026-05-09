@@ -158,7 +158,7 @@ const Template = (args) => {
 };
 
 export default {
-  title: 'Components/RulesBuilderPanel',
+  title: 'Components/Rules/RulesBuilderPanel',
   component: RulesBuilderPanel
 };
 

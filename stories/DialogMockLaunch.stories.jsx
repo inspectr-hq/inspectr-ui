@@ -3,7 +3,7 @@ import DialogMockLaunch from '../src/components/settings/DialogMockLaunch.jsx';
 import { InspectrProvider } from '../src/context/InspectrContext';
 
 export default {
-  title: 'Components/DialogMockLaunch',
+  title: 'Components/Dialogs/DialogMockLaunch',
   component: DialogMockLaunch
 };
 

@@ -2,7 +2,7 @@
 
 import React, { Fragment, useEffect, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import useLocalStorage from '../hooks/useLocalStorage.jsx';
+import useInspectrStorage from '../hooks/useInspectrStorage.jsx';
 import { useInspectr } from '../context/InspectrContext.jsx';
 
 const VERSION_CHECK_STORAGE_KEY = 'inspectrVersionMuteUntil';
@@ -10,7 +10,7 @@ const VERSION_CHECK_DELAY_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 
 export default function DialogVersionUpdate() {
   const { client } = useInspectr();
-  const [snoozeUntil, setSnoozeUntil] = useLocalStorage(VERSION_CHECK_STORAGE_KEY, '');
+  const [snoozeUntil, setSnoozeUntil] = useInspectrStorage(VERSION_CHECK_STORAGE_KEY, '');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const [versionInfo, setVersionInfo] = useState(null);

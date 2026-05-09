@@ -16,7 +16,6 @@ import {
   Title
 } from '@tremor/react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import eventDB from '../../utils/eventDB.js';
 import { useInspectr } from '../../context/InspectrContext.jsx';
 import { parseHash } from '../../hooks/useHashRouter.jsx';
 import EndpointMode from './EndpointMode.jsx';
@@ -68,7 +67,7 @@ const getInitialInsightsState = () => {
 };
 
 export default function InsightsApp() {
-  const { client } = useInspectr();
+  const { client, eventDB } = useInspectr();
   const initialInsightsState = useMemo(() => getInitialInsightsState(), []);
   const [summary, setSummary] = useState(null);
   const [summaryError, setSummaryError] = useState(null);
@@ -81,11 +80,11 @@ export default function InsightsApp() {
   });
 
   const latestEventMeta =
-    useLiveQuery(() => eventDB.db.events.orderBy('time').last(), [], null, { throttle: 300 }) ||
+    useLiveQuery(() => eventDB.db.events.orderBy('time').last(), [eventDB], null, { throttle: 300 }) ||
     null;
 
   const records =
-    useLiveQuery(() => eventDB.db.events.orderBy('time').reverse().toArray(), [], [], {
+    useLiveQuery(() => eventDB.db.events.orderBy('time').reverse().toArray(), [eventDB], [], {
       throttle: 200
     }) || [];
 

@@ -5,7 +5,7 @@ import RequestListPagination from '../src/components/ListPagination';
 const action = () => () => {};
 
 export default {
-  title: 'Components/ListPagination',
+  title: 'Components/Operations/ListPagination',
   component: RequestListPagination
 };
 

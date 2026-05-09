@@ -103,15 +103,17 @@ const RequestListItem = ({
         <div className="w-16 text-gray-500 dark:text-dark-tremor-content text-center text-xs hidden [@container(min-width:520px)]:inline">
           {formatDuration(operation?.duration ?? operation?.timing?.duration)}
         </div>
-        <button
-          className="w-8 h-8 flex items-center justify-center cursor-pointer text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove(opId);
-          }}
-        >
-          ✕
-        </button>
+        {typeof onRemove === 'function' ? (
+          <button
+            className="w-8 h-8 flex items-center justify-center cursor-pointer text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(opId);
+            }}
+          >
+            ✕
+          </button>
+        ) : null}
       </div>
     </li>
   );

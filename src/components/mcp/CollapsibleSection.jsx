@@ -30,7 +30,8 @@ const CollapsibleSection = ({
   className = '',
   withBorderTop = true,
   onToggle,
-  copyText
+  copyText,
+  copyShowLabel = true
 }) => {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -66,8 +67,8 @@ const CollapsibleSection = ({
           {title}
         </Text>
         <span className="flex items-center gap-2">
-          {copyText ? <CopyButton textToCopy={copyText} showLabel={true} /> : null}
           {headerRight}
+          {copyText ? <CopyButton textToCopy={copyText} showLabel={copyShowLabel} /> : null}
           <ChevronIcon open={open} />
         </span>
       </div>

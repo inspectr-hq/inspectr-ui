@@ -1,6 +1,6 @@
 // src/components/JsonPathPicker.jsx
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { JSONPath } from 'jsonpath-plus';
+import { query as jsonpathQuery } from 'jsonpathly';
 import { inspectrJsonPathTree, flattenJsonPathTree } from '../utils/inspectrJsonPaths';
 import useRecentOperations from '../hooks/useRecentOperations.jsx';
 import useOperationDetails from '../hooks/useOperationDetails.jsx';
@@ -210,7 +210,7 @@ export default function JsonPathPicker({
     setIsEvaluating(true);
     try {
       const evaluationTarget = prepareOperationForPreview(operation);
-      const rawResult = JSONPath({ path: trimmedValue, json: evaluationTarget });
+      const rawResult = jsonpathQuery(evaluationTarget, trimmedValue, { returnArray: true });
       const matches = Array.isArray(rawResult) ? rawResult : [rawResult];
       const matchesCount = matches.length;
 

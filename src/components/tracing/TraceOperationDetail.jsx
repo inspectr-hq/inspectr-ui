@@ -12,6 +12,7 @@ import { formatXML } from '../../utils/formatXml.js';
 import PropertiesAccordion from '../mcp/PropertiesAccordion.jsx';
 import CollapsibleSection from '../mcp/CollapsibleSection.jsx';
 import HeaderList from '../mcp/HeaderList.jsx';
+import { useInspectr } from '../../context/InspectrContext.jsx';
 
 const normalizeHeaders = (headers) => {
   if (!headers) return [];
@@ -81,7 +82,7 @@ const formatPayload = (payload, contentType) => {
 };
 
 export default function TraceOperationDetail({ operation, isLoading }) {
-  const debugMode = typeof window !== 'undefined' && localStorage.getItem('debug') === 'true';
+  const { debugMode } = useInspectr();
   if (debugMode) {
     console.log('OP', operation);
   }

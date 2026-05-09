@@ -2,7 +2,7 @@ import React from 'react';
 import CopyButton from '../src/components/CopyButton';
 
 export default {
-  title: 'Components/CopyButton',
+  title: 'Components/Common/CopyButton',
   component: CopyButton,
   argTypes: {
     textToCopy: { control: 'text' },

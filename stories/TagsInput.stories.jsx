@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import TagsInput from '../src/components/TagsInput.jsx';
 
 export default {
-  title: 'Components/TagsInput',
+  title: 'Components/Common/TagsInput',
   component: TagsInput
 };
 

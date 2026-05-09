@@ -1,16 +1,16 @@
 // src/components/InspectrApp.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import RequestList from './operations/RequestList';
 import RequestDetailsPanel from './operations/RequestDetailsPanel';
 import SettingsPanel from './operations/SettingsPanel';
-import eventDB from '../utils/eventDB';
 import useInspectrRouter from '../hooks/useInspectrRouter.jsx';
-import useLocalStorage from '../hooks/useLocalStorage.jsx';
+import useInspectrStorage from '../hooks/useInspectrStorage.jsx';
 import useSessionStorage from '../hooks/useSessionStorage.jsx';
 import { useInspectr } from '../context/InspectrContext';
 import { parseHash } from '../hooks/useHashRouter.jsx';
 import { normalizeTimestamp, isTimestampAfter } from '../utils/timestampUtils.js';
+import { resolveNamespacedStorageKey } from '../utils/storageAdapter.js';
 
 const toId = (value) => (value == null ? null : String(value));
 const FILTER_STORAGE_KEY = 'requestFilters';
@@ -19,7 +19,9 @@ const SESSION_FILTER_OPTIONS = Object.freeze({ resetOnReload: true });
 
 const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
   // Get all the shared state from context
-  const { toast, setToast, client } = useInspectr();
+  const { toast, setToast, client, eventDB, featureConfig, mode, namespace } = useInspectr();
+  const actionFlags = featureConfig?.actions || {};
+  const allowDelete = actionFlags.allowDelete !== false;
 
   const { syncOperations: connectionSync, setLastEventId: setConnectionLastEventId } =
     useInspectr();
@@ -29,29 +31,39 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
 
   const [page, setPage] = useState(1);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [leftPanelWidthValue, setLeftPanelWidthValue] = useLocalStorage(
+  const [leftPanelWidthValue, setLeftPanelWidthValue] = useInspectrStorage(
     'leftPanelWidth',
     LEFT_PANEL_WIDTH
   );
-  const [, setLastSeenAt] = useLocalStorage('inspectrLastSeenAt', null);
+  const [, setLastSeenAt] = useInspectrStorage('inspectrLastSeenAt', null);
   const leftPanelWidth = parseFloat(leftPanelWidthValue || LEFT_PANEL_WIDTH);
   const isResizingRef = useRef(false);
 
-  const [persistSortValue, setPersistSortValue] = useLocalStorage('persistSortOnReload', 'false');
+  const [persistSortValue, setPersistSortValue] = useInspectrStorage(
+    'persistSortOnReload',
+    'false'
+  );
   const persistSort = persistSortValue === 'true';
+  const sessionStorageKeyPrefix = useMemo(
+    () => (mode === 'embedded' ? `${resolveNamespacedStorageKey(namespace, 'session:')}` : ''),
+    [mode, namespace]
+  );
   const [sortField, setSortField] = useSessionStorage('requestSortField', 'time', {
-    resetOnReload: !persistSort
+    resetOnReload: !persistSort,
+    keyPrefix: sessionStorageKeyPrefix
   });
   const [sortDirection, setSortDirection] = useSessionStorage('requestSortDirection', 'desc', {
-    resetOnReload: !persistSort
+    resetOnReload: !persistSort,
+    keyPrefix: sessionStorageKeyPrefix
   });
-  const [persistFiltersValue, setPersistFiltersValue] = useLocalStorage(
+  const [persistFiltersValue, setPersistFiltersValue] = useInspectrStorage(
     'persistFiltersOnReload',
     'false'
   );
   const persistFilters = persistFiltersValue === 'true';
   const [filters, setFilters] = useSessionStorage(FILTER_STORAGE_KEY, DEFAULT_FILTERS, {
-    resetOnReload: !persistFilters
+    resetOnReload: !persistFilters,
+    keyPrefix: sessionStorageKeyPrefix
   });
   const hasAppliedRouteParams = useRef(false);
   const parseListParam = (value) =>
@@ -148,23 +160,23 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
           page,
           pageSize
         }),
-      [filters, sortField, sortDirection, page],
+      [eventDB, filters, sortField, sortDirection, page],
       { results: [], totalCount: 0 },
       { throttle: 100 }
     ) || {};
 
   const tagOptions =
-    useLiveQuery(() => eventDB.getAllTagOptions(), [], [], { throttle: 300 }) || [];
+    useLiveQuery(() => eventDB.getAllTagOptions(), [eventDB], [], { throttle: 300 }) || [];
   const mcpToolOptions =
-    useLiveQuery(() => eventDB.getAllMcpToolOptions(), [], [], { throttle: 300 }) || [];
+    useLiveQuery(() => eventDB.getAllMcpToolOptions(), [eventDB], [], { throttle: 300 }) || [];
   const mcpResourceOptions =
-    useLiveQuery(() => eventDB.getAllMcpResourceOptions(), [], [], { throttle: 300 }) || [];
+    useLiveQuery(() => eventDB.getAllMcpResourceOptions(), [eventDB], [], { throttle: 300 }) || [];
   const mcpPromptOptions =
-    useLiveQuery(() => eventDB.getAllMcpPromptOptions(), [], [], { throttle: 300 }) || [];
+    useLiveQuery(() => eventDB.getAllMcpPromptOptions(), [eventDB], [], { throttle: 300 }) || [];
   const mcpCategoryOptions =
-    useLiveQuery(() => eventDB.getAllMcpCategoryOptions(), [], [], { throttle: 300 }) || [];
+    useLiveQuery(() => eventDB.getAllMcpCategoryOptions(), [eventDB], [], { throttle: 300 }) || [];
   const mcpMethodOptions =
-    useLiveQuery(() => eventDB.getAllMcpMethodOptions(), [], [], { throttle: 300 }) || [];
+    useLiveQuery(() => eventDB.getAllMcpMethodOptions(), [eventDB], [], { throttle: 300 }) || [];
 
   // Count unread events newer than lastSeenAt
   const latestEventTime =
@@ -175,7 +187,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
       } catch (error) {
         return null;
       }
-    }, []) || null;
+    }, [eventDB]) || null;
 
   const routeSlug = route?.slug || null;
   const isInspectrRoute = routeSlug === 'inspectr';
@@ -251,6 +263,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
 
   // Clear all operations.
   const clearOperations = async () => {
+    if (!allowDelete) return;
     clearSelection();
 
     try {
@@ -269,6 +282,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
 
   // Clear only the operations matching the active filters.
   const clearFilteredOperations = async () => {
+    if (!allowDelete) return;
     try {
       // Query all filtered operations using a very high pageSize.
       const filteredOperations = await eventDB.queryEvents({
@@ -298,6 +312,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
 
   // Remove a single request.
   const removeOperation = async (opId) => {
+    if (!allowDelete) return;
     const isCurrentlySelected = selectedOperation && toId(selectedOperation.id) === toId(opId);
     const operation = await eventDB.getEvent(opId);
 
@@ -398,6 +413,7 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
             onRemove={removeOperation}
             clearOperations={clearOperations}
             clearFilteredOperations={clearFilteredOperations}
+            allowDeleteActions={allowDelete}
             selectedOperation={selectedOperation}
             currentPage={page}
             totalPages={totalPages}
@@ -467,8 +483,8 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
           </div>
         </div>
       </div>
-      {/* Bottom Panel */}
-      <SettingsPanel />
+      {/* Bottom Panel (standalone only) */}
+      {mode !== 'embedded' ? <SettingsPanel /> : null}
     </div>
   );
 };
