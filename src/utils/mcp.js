@@ -107,3 +107,40 @@ export const getSseJsonPayload = (eventFrames = []) => {
   if (!messages.length) return null;
   return messages.map((m) => m.data).join('\n');
 };
+
+const getContentTypeValue = (headers) => {
+  if (!headers) return '';
+  const normalized = Array.isArray(headers)
+    ? headers
+    : typeof headers === 'object'
+      ? Object.entries(headers).map(([name, value]) => ({ name, value }))
+      : [];
+  const raw = normalized.find(
+    (header) => String(header?.name ?? header?.key ?? '').toLowerCase() === 'content-type'
+  )?.value;
+  return typeof raw === 'string' ? raw.split(';')[0].trim().toLowerCase() : '';
+};
+
+export const analyzeSseResponse = (operation = {}) => {
+  const contentType = getContentTypeValue(operation?.response?.headers);
+  const isSse = contentType.includes('text/event-stream');
+  const frames = Array.isArray(operation?.response?.event_frames)
+    ? operation.response.event_frames
+    : [];
+  const hasEvents = frames.length > 0 || isSse;
+  const singleFrame = frames.length === 1 ? frames[0] : null;
+  const eventType = String(singleFrame?.event || '').toLowerCase();
+  const isMessageLike = eventType === '' || eventType === 'message';
+  const parsedSingleFrameJson =
+    singleFrame && isMessageLike && typeof singleFrame.data === 'string'
+      ? parseJson(singleFrame.data)
+      : null;
+  const hasSingleJsonFrame = Boolean(parsedSingleFrameJson);
+
+  return {
+    isSse,
+    hasEvents,
+    hasSingleJsonFrame,
+    singleJsonPayload: parsedSingleFrameJson
+  };
+};

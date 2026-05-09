@@ -10,6 +10,7 @@ export default {
 export const DefaultPanel = () => (
   <RequestDetailsPanel
     operation={{
+      id: 'story-op',
       request: {
         method: 'POST',
         url: 'http://localhost:3000/api/create',
@@ -38,6 +39,7 @@ export const DefaultPanel = () => (
 export const ResponseTab = () => (
   <RequestDetailsPanel
     operation={{
+      id: 'story-op',
       request: {
         method: 'POST',
         url: 'http://localhost:3000/api/create',
@@ -66,6 +68,7 @@ export const ResponseTab = () => (
 export const SseResponseBasic = () => (
   <RequestDetailsPanel
     operation={{
+      id: 'story-op',
       request: {
         method: 'GET',
         url: 'http://localhost:3000/stream',
@@ -99,6 +102,7 @@ export const SseResponseBasic = () => (
 export const SseResponse = () => (
   <RequestDetailsPanel
     operation={{
+      id: 'story-op',
       request: {
         method: 'GET',
         url: 'http://localhost:3000/stream',
@@ -131,7 +135,75 @@ export const SseResponse = () => (
           {
             id: 'evt-3',
             event: 'tick',
-            data: '{"idx":3,"kind":"sse","now":"2025-08-18T20:16:31.326Z","payload":"world"}',
+            data: JSON.stringify(
+              {
+                idx: 3,
+                kind: 'sse',
+                now: '2025-08-18T20:16:31.326Z',
+                payload: 'world',
+                session: {
+                  id: '6a8b582f94b041ffb119081a2fc57af6',
+                  correlation_id: 'xyz-7890',
+                  protocol: 'mcp'
+                },
+                request: {
+                  method: 'POST',
+                  path: '/mcp',
+                  headers: {
+                    accept: 'application/json, text/event-stream',
+                    content_type: 'application/json'
+                  },
+                  body: {
+                    jsonrpc: '2.0',
+                    id: 1,
+                    method: 'tools/list',
+                    params: {}
+                  }
+                },
+                result: {
+                  tools: [
+                    {
+                      name: 'search_tags',
+                      title: 'Search Tags',
+                      description:
+                        'Find or list TrendMiner tags by name or equipment identifier.',
+                      inputSchema: {
+                        type: 'object',
+                        required: ['name'],
+                        properties: {
+                          name: { type: 'string', minLength: 3, maxLength: 200 },
+                          page: { type: 'integer', minimum: 1, default: 1 },
+                          page_size: {
+                            type: 'integer',
+                            minimum: 1,
+                            maximum: 100,
+                            default: 20
+                          }
+                        }
+                      }
+                    },
+                    {
+                      name: 'navigate_asset_hierarchy',
+                      title: 'Navigate Asset Hierarchy',
+                      description: 'Retrieve TrendMiner asset structure and linked tags.'
+                    }
+                  ],
+                  pagination: {
+                    page: 1,
+                    page_size: 20,
+                    total: 2,
+                    has_more: false
+                  }
+                },
+                timing: {
+                  request_ts: '2026-05-06T16:19:44.945014Z',
+                  response_ts: '2026-05-06T16:19:45.030249Z',
+                  duration_ms: 85
+                }
+              },
+              null,
+              0
+            ),
             timestamp: '2025-08-18T20:16:31.327409Z'
           },
           {
@@ -186,6 +258,112 @@ export const SseResponse = () => (
   />
 );
 
+export const SseSingleJsonDefaultsToJson = () => (
+  <RequestDetailsPanel
+    operation={{
+      id: 'story-op',
+      request: {
+        method: 'POST',
+        url: 'http://localhost:8765/mcp',
+        path: '/mcp',
+        headers: [{ name: 'Accept', value: 'application/json, text/event-stream' }],
+        timestamp: new Date()
+      },
+      response: {
+        status: 200,
+        status_text: 'OK',
+        headers: [{ name: 'Content-Type', value: 'text/event-stream' }],
+        event_frames: [
+          {
+            event: 'message',
+            data: '{"jsonrpc":"2.0","id":1,"result":{"ok":true,"name":"demo"}}',
+            timestamp: '2026-05-09T11:41:01.120Z'
+          }
+        ],
+        body:
+          'event: message\n' +
+          'data: {"jsonrpc":"2.0","id":1,"result":{"ok":true,"name":"demo"}}\n\n'
+      },
+      timing: {
+        duration: 85
+      }
+    }}
+    currentTab="response"
+    setCurrentTab={() => {}}
+  />
+);
+
+export const SseSingleJsonMcpDefaultsToJson = () => (
+  <RequestDetailsPanel
+    operation={{
+      id: 'story-op',
+      request: {
+        method: 'POST',
+        url: 'http://localhost:8765/mcp',
+        path: '/mcp',
+        headers: [{ name: 'Accept', value: 'application/json, text/event-stream' }],
+        timestamp: new Date()
+      },
+      response: {
+        status: 200,
+        status_text: 'OK',
+        headers: [{ name: 'Content-Type', value: 'text/event-stream' }],
+        event_frames: [
+          {
+            event: 'message',
+            data: '{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"search_tags"}]}}',
+            timestamp: '2026-05-09T11:41:02.100Z'
+          }
+        ],
+        body:
+          'event: message\n' +
+          'data: {"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"search_tags"}]}}\n\n'
+      },
+      meta: {
+        mcp: {
+          method: 'tools/list',
+          category: 'tool'
+        }
+      },
+      timing: {
+        duration: 85
+      }
+    }}
+    currentTab="response"
+    setCurrentTab={() => {}}
+  />
+);
+
+export const SseMultiFrameStaysEvents = () => (
+  <RequestDetailsPanel
+    operation={{
+      id: 'story-op',
+      request: {
+        method: 'GET',
+        url: 'http://localhost:3000/stream',
+        path: '/stream',
+        headers: [{ name: 'Accept', value: 'text/event-stream' }],
+        timestamp: new Date()
+      },
+      response: {
+        status: 200,
+        status_text: 'OK',
+        headers: [{ name: 'Content-Type', value: 'text/event-stream' }],
+        event_frames: [
+          { event: 'message', data: '{"step":1}', timestamp: '2026-05-09T11:42:01.100Z' },
+          { event: 'message', data: '{"step":2}', timestamp: '2026-05-09T11:42:02.100Z' }
+        ],
+        body: 'event: message\ndata: {"step":1}\n\nevent: message\ndata: {"step":2}\n\n'
+      },
+      timing: {
+        duration: 123
+      }
+    }}
+    currentTab="response"
+    setCurrentTab={() => {}}
+  />
+);
+
 export const NoOperation = () => (
   <RequestDetailsPanel operation={null} currentTab="request" setCurrentTab={() => {}} />
 );
@@ -193,6 +371,7 @@ export const NoOperation = () => (
 export const InfoTab = () => (
   <RequestDetailsPanel
     operation={{
+      id: 'story-op',
       request: {
         method: 'POST',
         url: 'http://localhost:3000/api/create',
@@ -230,6 +409,7 @@ export const AuthToken = () => {
   return (
     <RequestDetailsPanel
       operation={{
+        id: 'story-op',
         request: {
           method: 'GET',
           url: 'http://localhost:3000/api/secure',
@@ -253,6 +433,7 @@ export const AuthKey = () => {
   return (
     <RequestDetailsPanel
       operation={{
+        id: 'story-op',
         request: {
           method: 'GET',
           url: 'http://localhost:3000/api/secure',
@@ -274,6 +455,7 @@ AuthKey.storyName = 'Guard Key';
 export const ApiKeyHeader = () => (
   <RequestDetailsPanel
     operation={{
+      id: 'story-op',
       request: {
         method: 'GET',
         url: 'http://localhost:3000/api/secure',
@@ -295,6 +477,7 @@ export const ApiKeyHeader = () => (
 export const ApiKeyHeaderVariants = () => (
   <RequestDetailsPanel
     operation={{
+      id: 'story-op',
       request: {
         method: 'GET',
         url: 'http://localhost:3000/api/secure',
@@ -317,6 +500,7 @@ export const ApiKeyHeaderVariants = () => (
 export const BasicAuthHeader = () => (
   <RequestDetailsPanel
     operation={{
+      id: 'story-op',
       request: {
         method: 'GET',
         url: 'http://localhost:3000/api/secure',
@@ -338,6 +522,7 @@ export const BasicAuthHeader = () => (
 export const BearerAuthHeader = () => (
   <RequestDetailsPanel
     operation={{
+      id: 'story-op',
       request: {
         method: 'GET',
         url: 'http://localhost:3000/api/secure',
@@ -359,6 +544,7 @@ export const BearerAuthHeader = () => (
 export const OtherAuthHeader = () => (
   <RequestDetailsPanel
     operation={{
+      id: 'story-op',
       request: {
         method: 'GET',
         url: 'http://localhost:3000/api/secure',
@@ -380,6 +566,7 @@ export const OtherAuthHeader = () => (
 export const NoAuth = () => (
   <RequestDetailsPanel
     operation={{
+      id: 'story-op',
       request: {
         method: 'GET',
         url: 'http://localhost:3000/api/public',
