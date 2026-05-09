@@ -1,5 +1,5 @@
 // src/components/operations/RequestDetail.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { getStatusClass } from '../../utils/getStatusClass.js';
 import ToastNotification from '../ToastNotification';
 import { getMethodTextClass } from '../../utils/getMethodClass.js';
@@ -53,11 +53,8 @@ const RequestDetail = ({
     'requestDetailCollapsed',
     initialCollapsed ? 'true' : 'false'
   );
-  const [isCollapsed, setIsCollapsed] = useState(storedCollapsedValue === 'true');
-
-  useEffect(() => {
-    setIsCollapsed(storedCollapsedValue === 'true');
-  }, [storedCollapsedValue]);
+  const isCollapsed = storedCollapsedValue === 'true';
+  const contentId = useId();
 
   // Local tag state for UI updates after delete
   const [localTagsRaw, setLocalTagsRaw] = useState(() => operation?.meta?.tags || []);
@@ -391,7 +388,7 @@ const RequestDetail = ({
       type="button"
       onClick={() => setStoredCollapsedValue(isCollapsed ? 'false' : 'true')}
       aria-expanded={!isCollapsed}
-      aria-controls="request-detail-content"
+      aria-controls={contentId}
       aria-label={isCollapsed ? 'Expand request details' : 'Collapse request details'}
       className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-dark-tremor-border dark:text-dark-tremor-content dark:hover:bg-dark-tremor-background-subtle"
     >
@@ -434,29 +431,30 @@ const RequestDetail = ({
       allowReplay={allowReplay}
     />
   );
+  const requestLine = (
+    <div className="flex min-w-0 items-center space-x-2 font-mono text-base">
+      <span className={`font-bold ${getMethodTextClass(operation?.request?.method)}`}>
+        {operation?.request?.method}
+      </span>
+      <span className="truncate text-blue-600 dark:text-blue-400">{operation?.request?.path}</span>
+      <span
+        className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(
+          operation?.response?.status
+        )}`}
+      >
+        {operation?.response?.status}
+      </span>
+      <span className="text-sm dark:text-dark-tremor-content">
+        {operation?.response?.status_text}
+      </span>
+    </div>
+  );
 
   return (
     <div className="mb-4 p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded shadow dark:shadow-dark-tremor-shadow relative [container-type:inline-size] [container-name:requestdetail] ">
       {isCollapsed ? (
         <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center space-x-2 font-mono text-base">
-            <span className={`font-bold ${getMethodTextClass(operation?.request?.method)}`}>
-              {operation?.request?.method}
-            </span>
-            <span className="truncate text-blue-600 dark:text-blue-400">
-              {operation?.request?.path}
-            </span>
-            <span
-              className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(
-                operation?.response?.status
-              )}`}
-            >
-              {operation?.response?.status}
-            </span>
-            <span className="text-sm dark:text-dark-tremor-content">
-              {operation?.response?.status_text}
-            </span>
-          </div>
+          {requestLine}
           <div className="flex items-center gap-2">
             {actionsBlock}
             {collapseToggleButton}
@@ -477,25 +475,8 @@ const RequestDetail = ({
           </div>
         </div>
       )}
-      <div id="request-detail-content" className="flex flex-col space-y-1">
-        {!isCollapsed && (
-          <div className="mt-2 flex items-center space-x-2 font-mono text-base">
-            <span className={`font-bold ${getMethodTextClass(operation?.request?.method)}`}>
-              {operation?.request?.method}
-            </span>
-            <span className="text-blue-600 dark:text-blue-400">{operation?.request?.path}</span>
-            <span
-              className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(
-                operation?.response?.status
-              )}`}
-            >
-              {operation?.response?.status}
-            </span>
-            <span className="text-sm dark:text-dark-tremor-content">
-              {operation?.response?.status_text}
-            </span>
-          </div>
-        )}
+      <div id={contentId} className="flex flex-col space-y-1">
+        {!isCollapsed && <div className="mt-2">{requestLine}</div>}
         {!isCollapsed && (
           <>
             <div className="mt-2 flex items-center text-gray-600 dark:text-dark-tremor-content">
