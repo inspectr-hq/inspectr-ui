@@ -18,6 +18,29 @@ const JsonPre = ({ value }) => (
   </pre>
 );
 
+const formatConstraintValue = (value) => {
+  if (Array.isArray(value)) return value.map((item) => String(item)).join(', ');
+  if (typeof value === 'string') return value;
+  return JSON.stringify(value);
+};
+
+const summarizeConstraints = (schema) => {
+  if (!schema || typeof schema !== 'object') return [];
+
+  const constraints = [];
+  if (Array.isArray(schema.enum)) constraints.push(`enum: ${formatConstraintValue(schema.enum)}`);
+  if (schema.format) constraints.push(`format: ${schema.format}`);
+  if (schema.default !== undefined) {
+    constraints.push(`default: ${formatConstraintValue(schema.default)}`);
+  }
+  if (schema.minimum !== undefined) constraints.push(`min: ${schema.minimum}`);
+  if (schema.maximum !== undefined) constraints.push(`max: ${schema.maximum}`);
+  if (schema.minLength !== undefined) constraints.push(`minLength: ${schema.minLength}`);
+  if (schema.maxLength !== undefined) constraints.push(`maxLength: ${schema.maxLength}`);
+  if (schema.pattern) constraints.push(`pattern: ${schema.pattern}`);
+  return constraints;
+};
+
 const ToolCard = ({ tool }) => {
   const { total, required } = summarizeSchema(tool.inputSchema);
   const outputSummary = summarizeSchema(tool.outputSchema);
@@ -72,33 +95,41 @@ const ToolCard = ({ tool }) => {
 
       {props.length ? (
         <div className="space-y-1">
-          {props.map(([name, schema]) => (
-            <div
-              key={name}
-              className={`grid gap-2 rounded-tremor-small bg-tremor-background-subtle px-2 py-1 text-xs dark:bg-dark-tremor-background-subtle ${
-                requiredList.has(name)
-                  ? 'sm:grid-cols-[220px_72px_minmax(0,1fr)_96px]'
-                  : 'sm:grid-cols-[220px_72px_minmax(0,1fr)]'
-              }`}
-            >
-              <div className="min-w-0 font-mono text-xs text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                {name}
-              </div>
-              <div className="text-xs text-tremor-content dark:text-dark-tremor-content">
-                {schema?.type ? `${schema.type}` : 'any'}
-              </div>
-              <div className="min-w-0 text-xs text-tremor-content dark:text-dark-tremor-content">
-                {schema?.description || ''}
-              </div>
-              {requiredList.has(name) ? (
-                <div className="flex items-start justify-start text-xs sm:justify-end">
-                  <Badge color="rose" size="xs">
-                    required
-                  </Badge>
+          {props.map(([name, schema]) => {
+            const constraints = summarizeConstraints(schema);
+            return (
+              <div
+                key={name}
+                className={`grid gap-2 rounded-tremor-small bg-tremor-background-subtle px-2 py-1 text-xs dark:bg-dark-tremor-background-subtle ${
+                  requiredList.has(name)
+                    ? 'sm:grid-cols-[220px_72px_minmax(0,1fr)_96px]'
+                    : 'sm:grid-cols-[220px_72px_minmax(0,1fr)]'
+                }`}
+              >
+                <div className="min-w-0 font-mono text-xs text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  {name}
                 </div>
-              ) : null}
-            </div>
-          ))}
+                <div className="text-xs text-tremor-content dark:text-dark-tremor-content">
+                  {schema?.type ? `${schema.type}` : 'any'}
+                </div>
+                <div className="min-w-0 text-xs text-tremor-content dark:text-dark-tremor-content">
+                  {schema?.description || ''}
+                  {constraints.length ? (
+                    <div className="mt-0.5 font-mono text-[11px] text-tremor-content-subtle dark:text-dark-tremor-content">
+                      {constraints.join(' · ')}
+                    </div>
+                  ) : null}
+                </div>
+                {requiredList.has(name) ? (
+                  <div className="flex items-start justify-start text-xs sm:justify-end">
+                    <Badge color="rose" size="xs">
+                      required
+                    </Badge>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
       ) : null}
 

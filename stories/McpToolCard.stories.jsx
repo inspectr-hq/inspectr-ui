@@ -34,7 +34,8 @@ const toolsListResponse = {
             },
             include_body: {
               type: 'boolean',
-              description: 'Include captured request and response bodies.'
+              description: 'Include captured request and response bodies.',
+              default: false
             },
             debug_context: {
               type: 'object',
@@ -44,7 +45,14 @@ const toolsListResponse = {
             response_projection: {
               type: 'string',
               description:
-                'Selects which nested response fields should be returned for detailed inspection, including headers, timing information, tags, matched rules, and decoded MCP metadata.'
+                'Selects which nested response fields should be returned for detailed inspection, including headers, timing information, tags, matched rules, and decoded MCP metadata.',
+              enum: ['summary', 'full', 'debug']
+            },
+            trace_id: {
+              type: 'string',
+              description: 'Optional trace identifier used to correlate captured operations.',
+              format: 'uuid',
+              pattern: '^[0-9a-f-]{36}$'
             }
           },
           required: ['operation_id', 'response_projection']
