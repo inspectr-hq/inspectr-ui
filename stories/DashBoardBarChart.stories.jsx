@@ -2,7 +2,7 @@ import React from 'react';
 import DashBoardBarChart from '../src/components/dashboards/DashBoardBarChart.jsx';
 
 export default {
-  title: 'Components/DashBoardBarChart',
+  title: 'Components/Dashboard/DashBoardBarChart',
   component: DashBoardBarChart
 };
 

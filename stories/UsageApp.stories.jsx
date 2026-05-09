@@ -3,7 +3,7 @@ import UsageApp from '../src/components/UsageApp.jsx';
 import InspectrContext from '../src/context/InspectrContext.jsx';
 
 export default {
-  title: 'Components/UsageApp',
+  title: 'Apps/Usage/UsageApp',
   component: UsageApp
 };
 

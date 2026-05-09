@@ -2,7 +2,7 @@ import React from 'react';
 import DashBoardBarList from '../src/components/dashboards/DashBoardBarList.jsx';
 
 export default {
-  title: 'Components/DashBoardBarList',
+  title: 'Components/Dashboard/DashBoardBarList',
   component: DashBoardBarList
 };
 

@@ -2,7 +2,7 @@ import React from 'react';
 import ConnectionStatusIndicator from '../src/components/ConnectionStatusIndicator';
 
 export default {
-  title: 'Components/ConnectionStatusIndicator',
+  title: 'Components/Common/ConnectionStatusIndicator',
   component: ConnectionStatusIndicator,
   argTypes: {
     status: { control: { type: 'select' }, options: ['connected', 'reconnecting', 'disconnected'] }

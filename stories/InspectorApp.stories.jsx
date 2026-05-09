@@ -3,7 +3,7 @@ import React from 'react';
 import InspectrApp from '../src/components/InspectrApp.jsx';
 
 export default {
-  title: 'Inspectr/InspectrApp',
+  title: 'Apps/Inspectr/InspectrApp',
   component: InspectrApp
 };
 

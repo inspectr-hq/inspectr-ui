@@ -2,7 +2,7 @@ import React from 'react';
 import NotificationBadge from '../src/components/NotificationBadge';
 
 export default {
-  title: 'Components/NotificationBadge',
+  title: 'Components/Common/NotificationBadge',
   component: NotificationBadge,
   argTypes: {
     count: { control: 'number' }

@@ -3,7 +3,7 @@ import SettingsPanel from '../src/components/operations/SettingsPanel.jsx';
 import { InspectrProvider, useInspectr } from '../src/context/InspectrContext';
 
 export default {
-  title: 'Components/SettingsPanel',
+  title: 'Components/Settings/SettingsPanel',
   component: SettingsPanel,
   argTypes: {
     connectionStatus: {

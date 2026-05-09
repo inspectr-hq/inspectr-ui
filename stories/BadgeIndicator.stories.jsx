@@ -2,7 +2,7 @@ import React from 'react';
 import BadgeIndicator from '../src/components/BadgeIndicator';
 
 export default {
-  title: 'Components/BadgeIndicator',
+  title: 'Components/Common/BadgeIndicator',
   component: BadgeIndicator,
   argTypes: {
     variant: { control: { type: 'select' }, options: ['auto', 'success', 'error', 'neutral'] },

@@ -2,7 +2,7 @@ import React from 'react';
 import DashBoardKpi from '../src/components/dashboards/DashBoardKpi.jsx';
 
 export default {
-  title: 'Components/DashBoardKpi',
+  title: 'Components/Dashboard/DashBoardKpi',
   component: DashBoardKpi
 };
 

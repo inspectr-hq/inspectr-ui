@@ -3,7 +3,7 @@ import DialogVersionUpdate from '../src/components/DialogVersionUpdate.jsx';
 import InspectrContext from '../src/context/InspectrContext.jsx';
 
 export default {
-  title: 'Components/DialogVersionUpdate',
+  title: 'Components/Dialogs/DialogVersionUpdate',
   component: DialogVersionUpdate,
   argTypes: {
     latestVersion: { control: 'text' },

@@ -178,7 +178,7 @@ const RulesAppStory = ({ initialRules, initialTags }) => {
 const Template = (args) => <RulesAppStory {...args} />;
 
 export default {
-  title: 'Components/RulesApp',
+  title: 'Apps/Rules/RulesApp',
   component: RulesApp
 };
 

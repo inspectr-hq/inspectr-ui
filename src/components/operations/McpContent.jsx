@@ -11,6 +11,7 @@ import ToolCard from '../mcp/ToolCard.jsx';
 import { Badge, Tab, TabGroup, TabList, TabPanel, TabPanels } from '@tremor/react';
 import McpContentItems from '../mcp/McpContentItems.jsx';
 import McpTokensCard from '../mcp/McpTokensCard.jsx';
+import CollapsibleSection from '../mcp/CollapsibleSection.jsx';
 
 const ChevronIcon = ({ open, className = '' }) => (
   <svg
@@ -62,12 +63,16 @@ const McpContent = ({ operation }) => {
   const effectiveResponseBody = rawResponseBody || ssePayload || '';
   const mcpRequest = parseJson(rawRequestBody);
   const mcpResponse = parseJson(effectiveResponseBody);
+  const rawResponseJson = mcpResponse
+    ? JSON.stringify(mcpResponse, null, 2)
+    : effectiveResponseBody || 'No response body';
   const hasInputArgs = Boolean(
     mcpRequest?.params?.arguments && Object.keys(mcpRequest.params.arguments).length
   );
   const [resultTab, setResultTab] = useState('structured');
   const mcpMethod = mcp?.method || mcpRequest?.method;
   const view = useMemo(() => deriveMcpView(mcpMethod, mcpResponse), [mcpMethod, mcpResponse]);
+  const showRawResponse = mcpMethod === 'tools/list' && Boolean(effectiveResponseBody);
   const hasStructuredContent = useMemo(
     () => Boolean(view.structuredContent),
     [view.structuredContent]
@@ -317,6 +322,20 @@ const McpContent = ({ operation }) => {
               </div>
             )}
           </McpOutputCard>
+          {showRawResponse ? (
+            <CollapsibleSection
+              title="Raw"
+              defaultOpen={false}
+              copyText={rawResponseJson}
+              copyShowLabel={false}
+              className="rounded-tremor-small border border-tremor-border bg-white shadow-sm dark:border-dark-tremor-border dark:bg-dark-tremor-background-subtle"
+              contentClassName="p-0"
+            >
+              <pre className="max-h-100 overflow-auto whitespace-pre-wrap px-3 py-2 text-xs text-tremor-content dark:text-dark-tremor-content">
+                {rawResponseJson}
+              </pre>
+            </CollapsibleSection>
+          ) : null}
         </div>
       ) : null}
     </div>

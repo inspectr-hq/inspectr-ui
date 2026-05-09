@@ -9,7 +9,7 @@ const sampleData = [
 ];
 
 export default {
-  title: 'Components/DashBoardPercentileChart',
+  title: 'Components/Dashboard/DashBoardPercentileChart',
   component: DashBoardPercentileChart,
   args: {
     title: 'HTTP Request duration percentiles',

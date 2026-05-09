@@ -2,7 +2,7 @@ import React from 'react';
 import Terminal from '../src/components/Terminal';
 
 export default {
-  title: 'Components/Terminal',
+  title: 'Components/Common/Terminal',
   component: Terminal,
   argTypes: {
     endpoint: { control: 'text' },

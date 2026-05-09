@@ -3,7 +3,7 @@ import DashBoardApp from '../src/components/DashBoardApp';
 import { InspectrProvider } from '../src/context/InspectrContext';
 
 export default {
-  title: 'Components/DashBoardApp',
+  title: 'Apps/Dashboard/DashBoardApp',
   component: DashBoardApp
 };
 

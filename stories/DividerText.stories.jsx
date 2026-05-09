@@ -2,7 +2,7 @@ import React from 'react';
 import DividerText from '../src/components/DividerText';
 
 export default {
-  title: 'Components/DividerText',
+  title: 'Components/Common/DividerText',
   component: DividerText,
   argTypes: {
     text: { control: 'text' },

@@ -3,7 +3,7 @@ import React from 'react';
 import ResponseContent from '../src/components/operations/ResponseContent.jsx';
 
 export default {
-  title: 'Components/ResponseContent',
+  title: 'Components/Operations/ResponseContent',
   component: ResponseContent
 };
 

@@ -3,7 +3,7 @@ import InspectrEmbeddedApp from '../src/components/InspectrEmbeddedApp.jsx';
 import { InspectrProvider } from '../src/context/InspectrContext.jsx';
 
 export default {
-  title: 'Inspectr/InspectrEmbeddedApp',
+  title: 'Apps/Inspectr/InspectrEmbeddedApp',
   component: InspectrEmbeddedApp
 };
 

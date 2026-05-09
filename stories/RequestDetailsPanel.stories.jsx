@@ -3,7 +3,7 @@ import React from 'react';
 import RequestDetailsPanel from '../src/components/operations/RequestDetailsPanel.jsx';
 
 export default {
-  title: 'Components/RequestDetailsPanel',
+  title: 'Components/Operations/RequestDetailsPanel',
   component: RequestDetailsPanel
 };
 

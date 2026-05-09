@@ -3,7 +3,7 @@ import Workspace from '../src/components/Workspace';
 import { InspectrProvider } from '../src/context/InspectrContext';
 
 export default {
-  title: 'Components/Workspace',
+  title: 'Apps/Workspace/Workspace',
   component: Workspace
 };
 

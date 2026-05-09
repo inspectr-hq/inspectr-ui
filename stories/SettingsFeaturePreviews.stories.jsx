@@ -3,7 +3,7 @@ import SettingsFeaturePreviews from '../src/components/settings/SettingsFeatureP
 import { InspectrProvider } from '../src/context/InspectrContext';
 
 export default {
-  title: 'Components/SettingsFeaturePreviews',
+  title: 'Components/Settings/SettingsFeaturePreviews',
   component: SettingsFeaturePreviews
 };
 
