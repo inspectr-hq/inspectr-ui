@@ -122,7 +122,9 @@ export default function InspectrEmbeddedApp({
   }, [moduleOrder, effectiveFeatureConfig.modules]);
 
   const fallbackModule = normalizeModuleKey(defaultModule, 'history');
-  const initialModule = visibleModules[0] || fallbackModule;
+  const initialModule = visibleModules.includes(fallbackModule)
+    ? fallbackModule
+    : visibleModules[0];
   const [internalModule, setInternalModule] = useState(() => initialModule);
 
   useEffect(() => {
