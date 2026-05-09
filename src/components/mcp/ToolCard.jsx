@@ -4,7 +4,6 @@ import React from 'react';
 import { Badge, Card, Text } from '@tremor/react';
 import { summarizeSchema } from '../../utils/mcp.js';
 import CollapsibleSection from './CollapsibleSection.jsx';
-import StructuredBlock from './StructuredBlock.jsx';
 
 const renderBadge = (condition, label, color = 'slate') =>
   condition ? (
@@ -12,6 +11,12 @@ const renderBadge = (condition, label, color = 'slate') =>
       {label}
     </Badge>
   ) : null;
+
+const JsonPre = ({ value }) => (
+  <pre className="max-h-100 overflow-auto whitespace-pre-wrap px-3 py-2 text-xs text-tremor-content dark:text-dark-tremor-content">
+    {value}
+  </pre>
+);
 
 const ToolCard = ({ tool }) => {
   const { total, required } = summarizeSchema(tool.inputSchema);
@@ -86,8 +91,10 @@ const ToolCard = ({ tool }) => {
         <CollapsibleSection
           title="Output schema"
           defaultOpen={false}
-          contentClassName="p-2"
+          copyText={outputSchemaText}
+          copyShowLabel={false}
           className="bg-white dark:bg-dark-tremor-background"
+          contentClassName="p-0"
           headerRight={
             outputSummary.total ? (
               <Badge color="slate" size="xs">
@@ -97,7 +104,7 @@ const ToolCard = ({ tool }) => {
             ) : null
           }
         >
-          <StructuredBlock data={tool.outputSchema} copyText={outputSchemaText} />
+          <JsonPre value={outputSchemaText} />
         </CollapsibleSection>
       ) : null}
 
@@ -105,15 +112,17 @@ const ToolCard = ({ tool }) => {
         <CollapsibleSection
           title="Metadata"
           defaultOpen={false}
-          contentClassName="p-2"
+          copyText={metadataText}
+          copyShowLabel={false}
           className="bg-white dark:bg-dark-tremor-background"
+          contentClassName="p-0"
           headerRight={
             <Badge color="slate" size="xs">
               {Object.keys(metadata).length} keys
             </Badge>
           }
         >
-          <StructuredBlock data={metadata} copyText={metadataText} />
+          <JsonPre value={metadataText} />
         </CollapsibleSection>
       ) : null}
     </Card>

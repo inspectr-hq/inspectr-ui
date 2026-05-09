@@ -17,7 +17,8 @@ const toolsListResponse = {
         description: 'Fetch one captured operation by id.',
         annotations: {
           readOnlyHint: true,
-          idempotentHint: true
+          idempotentHint: true,
+          openWorldHint: true
         },
         _meta: {
           source: 'inspectr',
@@ -53,6 +54,38 @@ const toolsListResponse = {
             }
           },
           required: ['operation']
+        }
+      },
+      {
+        name: 'inspectr_delete_operation',
+        description: 'Delete one captured operation from local storage.',
+        annotations: {
+          title: 'Delete operation',
+          destructiveHint: true
+        },
+        metadata: {
+          confirmationRequired: true,
+          auditEvent: 'operation.deleted'
+        },
+        inputSchema: {
+          type: 'object',
+          properties: {
+            operation_id: {
+              type: 'string',
+              description: 'Operation UUID to delete.'
+            }
+          },
+          required: ['operation_id']
+        },
+        outputSchema: {
+          type: 'object',
+          properties: {
+            deleted: {
+              type: 'boolean',
+              description: 'Whether the operation was deleted.'
+            }
+          },
+          required: ['deleted']
         }
       },
       {
