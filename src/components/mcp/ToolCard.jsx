@@ -68,19 +68,27 @@ const ToolCard = ({ tool }) => {
           {props.map(([name, schema]) => (
             <div
               key={name}
-              className="flex items-start gap-2 rounded-tremor-small bg-tremor-background-subtle px-2 py-1 dark:bg-dark-tremor-background-subtle"
+              className={`grid gap-2 rounded-tremor-small bg-tremor-background-subtle px-2 py-1 text-xs dark:bg-dark-tremor-background-subtle ${
+                requiredList.has(name)
+                  ? 'sm:grid-cols-[220px_72px_minmax(0,1fr)_96px]'
+                  : 'sm:grid-cols-[220px_72px_minmax(0,1fr)]'
+              }`}
             >
-              <div className="font-mono text-xs text-tremor-content-strong dark:text-dark-tremor-content-strong">
+              <div className="min-w-0 font-mono text-xs text-tremor-content-strong dark:text-dark-tremor-content-strong">
                 {name}
               </div>
-              <div className="flex-1 text-[11px] text-tremor-content dark:text-dark-tremor-content">
+              <div className="text-xs text-tremor-content dark:text-dark-tremor-content">
                 {schema?.type ? `${schema.type}` : 'any'}
-                {schema?.description ? ` — ${schema.description}` : ''}
+              </div>
+              <div className="min-w-0 text-xs text-tremor-content dark:text-dark-tremor-content">
+                {schema?.description || ''}
               </div>
               {requiredList.has(name) ? (
-                <Badge color="rose" size="xs">
-                  required
-                </Badge>
+                <div className="flex items-start justify-start text-xs sm:justify-end">
+                  <Badge color="rose" size="xs">
+                    required
+                  </Badge>
+                </div>
               ) : null}
             </div>
           ))}

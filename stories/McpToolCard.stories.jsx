@@ -35,9 +35,19 @@ const toolsListResponse = {
             include_body: {
               type: 'boolean',
               description: 'Include captured request and response bodies.'
+            },
+            debug_context: {
+              type: 'object',
+              description:
+                'Optional diagnostic context returned alongside the operation so reviewers can compare transport metadata, trace linkage, and rule evaluation details without changing the primary response payload.'
+            },
+            response_projection: {
+              type: 'string',
+              description:
+                'Selects which nested response fields should be returned for detailed inspection, including headers, timing information, tags, matched rules, and decoded MCP metadata.'
             }
           },
-          required: ['operation_id']
+          required: ['operation_id', 'response_projection']
         },
         outputSchema: {
           type: 'object',
