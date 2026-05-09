@@ -32,10 +32,17 @@ const ToolCard = ({ tool }) => {
   return (
     <Card className="space-y-2 rounded-tremor-small border border-tremor-border p-3 shadow-sm dark:border-dark-tremor-border">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-            {tool.title || tool.annotations?.title || tool.name}
-          </Text>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <Text className="text-sm font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+              {tool.title || tool.annotations?.title || tool.name}
+            </Text>
+            {tool.name ? (
+              <Text className="font-mono text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
+                {tool.name}
+              </Text>
+            ) : null}
+          </div>
           {tool.description ? (
             <Text className="mt-0.5 text-xs text-tremor-content-subtle dark:text-dark-tremor-content">
               {tool.description}
