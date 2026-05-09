@@ -27,7 +27,9 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   const [ingressEndpoint, setIngressEndpoint] = useInspectrStorage('ingressEndpoint', '');
   const [proxyEndpoint, setProxyEndpoint] = useInspectrStorage('proxyEndpoint', '');
   const [exposeValue] = useInspectrStorage('expose', 'false');
+  const [requestDetailCollapsedValue] = useInspectrStorage('requestDetailCollapsed', 'false');
   const expose = exposeValue === 'true';
+  const isRequestDetailCollapsed = requestDetailCollapsedValue === 'true';
   const [isLoaded, setIsLoaded] = useState(false);
   const { detailOperation, fetchDetail, isFetching } = useOperationDetails(
     operation?.id,
@@ -52,9 +54,14 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   );
   const hasTags =
     Array.isArray(detailOperation?.meta?.tags) && detailOperation.meta.tags.length > 0;
-  // Offset breakdown: request-detail bar (270px) + navbar (64px) = 334px base;
-  // tags row adds an extra 48px when present → 382px.
-  const contentHeightOffset = hasTags ? 382 : 334;
+  // Offset breakdown:
+  // expanded -> request-detail block (270px) + navbar (64px) = 334px base
+  // expanded with tags adds ~48px => 382px
+  // collapsed -> compact request-detail row + navbar, leaving more editor height
+  const expandedOffset = hasTags ? 382 : 334;
+  // compact request-detail row (~188px) + navbar (64px) = 252px
+  const collapsedOffset = 252;
+  const contentHeightOffset = isRequestDetailCollapsed ? collapsedOffset : expandedOffset;
   const contentMaxHeight = `max(calc(100vh - ${contentHeightOffset}px), 22rem)`;
 
   useEffect(() => {
