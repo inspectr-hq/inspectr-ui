@@ -3,6 +3,8 @@
 import React from 'react';
 import { Badge, Card, Text } from '@tremor/react';
 import { summarizeSchema } from '../../utils/mcp.js';
+import CollapsibleSection from './CollapsibleSection.jsx';
+import StructuredBlock from './StructuredBlock.jsx';
 
 const renderBadge = (condition, label, color = 'slate') =>
   condition ? (
@@ -13,8 +15,14 @@ const renderBadge = (condition, label, color = 'slate') =>
 
 const ToolCard = ({ tool }) => {
   const { total, required } = summarizeSchema(tool.inputSchema);
+  const outputSummary = summarizeSchema(tool.outputSchema);
   const props = Object.entries(tool.inputSchema?.properties || {});
   const requiredList = new Set(tool.inputSchema?.required || []);
+  const hasOutputSchema = Boolean(tool.outputSchema && typeof tool.outputSchema === 'object');
+  const outputSchemaText = hasOutputSchema ? JSON.stringify(tool.outputSchema, null, 2) : '';
+  const metadata = tool._meta || tool.metadata;
+  const hasMetadata = Boolean(metadata && typeof metadata === 'object');
+  const metadataText = hasMetadata ? JSON.stringify(metadata, null, 2) : '';
 
   return (
     <Card className="space-y-2 rounded-tremor-small border border-tremor-border p-3 shadow-sm dark:border-dark-tremor-border">
@@ -72,6 +80,41 @@ const ToolCard = ({ tool }) => {
             </div>
           ))}
         </div>
+      ) : null}
+
+      {hasOutputSchema ? (
+        <CollapsibleSection
+          title="Output schema"
+          defaultOpen={false}
+          contentClassName="p-2"
+          className="bg-white dark:bg-dark-tremor-background"
+          headerRight={
+            outputSummary.total ? (
+              <Badge color="slate" size="xs">
+                {outputSummary.total} fields
+                {outputSummary.required ? ` (${outputSummary.required} required)` : ''}
+              </Badge>
+            ) : null
+          }
+        >
+          <StructuredBlock data={tool.outputSchema} copyText={outputSchemaText} />
+        </CollapsibleSection>
+      ) : null}
+
+      {hasMetadata ? (
+        <CollapsibleSection
+          title="Metadata"
+          defaultOpen={false}
+          contentClassName="p-2"
+          className="bg-white dark:bg-dark-tremor-background"
+          headerRight={
+            <Badge color="slate" size="xs">
+              {Object.keys(metadata).length} keys
+            </Badge>
+          }
+        >
+          <StructuredBlock data={metadata} copyText={metadataText} />
+        </CollapsibleSection>
       ) : null}
     </Card>
   );
