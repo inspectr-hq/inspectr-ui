@@ -447,6 +447,8 @@ const RequestDetail = ({
       <span className="text-sm dark:text-dark-tremor-content">
         {operation?.response?.status_text}
       </span>
+      {isCollapsed && <AuthIndicator operation={operation} onClick={handleAuthIndicatorClick} />}
+      {isCollapsed && <McpIndicator mcp={mcpMeta} showCategory={true} onClick={handleOpenMcp} />}
     </div>
   );
 
