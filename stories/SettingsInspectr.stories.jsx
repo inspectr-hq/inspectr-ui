@@ -8,7 +8,11 @@ export default {
 };
 
 const createMockClient = ({ health, metrics, failMetrics = false }) => {
-  const getMetrics = failMetrics ? async () => Promise.reject(new Error('metrics unavailable')) : async () => metrics;
+  const getMetrics = failMetrics
+    ? async () => {
+        throw new Error('metrics unavailable');
+      }
+    : async () => metrics;
   return {
     service: {
       getHealth: async () => health,
