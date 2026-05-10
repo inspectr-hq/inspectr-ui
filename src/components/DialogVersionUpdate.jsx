@@ -9,7 +9,7 @@ const VERSION_CHECK_STORAGE_KEY = 'inspectrVersionMuteUntil';
 const VERSION_CHECK_DELAY_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 
 export default function DialogVersionUpdate() {
-  const { client } = useInspectr();
+  const { client, debugMode } = useInspectr();
   const [snoozeUntil, setSnoozeUntil] = useInspectrStorage(VERSION_CHECK_STORAGE_KEY, '');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
@@ -31,6 +31,9 @@ export default function DialogVersionUpdate() {
       .then((info) => {
         if (cancelled) return;
         setVersionInfo(info);
+        if (debugMode) {
+          console.log('[Inspectr] Current version:', info?.current_version || info);
+        }
         if (info?.update_available) {
           setIsUpdateAvailable(true);
         } else {
@@ -47,7 +50,7 @@ export default function DialogVersionUpdate() {
     return () => {
       cancelled = true;
     };
-  }, [client, snoozeUntil]);
+  }, [client, snoozeUntil, debugMode]);
 
   const handleClose = () => {
     setIsDialogOpen(false);
