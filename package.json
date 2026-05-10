@@ -40,8 +40,8 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@remixicon/react": "^4.9.0",
     "@tremor/react": "^3.18.7",
-    "dexie": "^4.2.0",
-    "dexie-react-hooks": "^4.2.0",
+    "dexie": "^4.4.2",
+    "dexie-react-hooks": "^4.4.0",
     "jsonpathly": "^3.0.0",
     "monaco-editor": "^0.52.2",
     "tailwindcss": "^3.4.17",
@@ -61,7 +61,7 @@
     "@types/react-dom": "^18.3.6",
     "@vitejs/plugin-react-swc": "^4.2.3",
     "autoprefixer": "^10.4.24",
-    "storybook": "^10.2.8",
+    "storybook": "^10.3.6",
     "vite": "^7.3.2"
   },
   "publishConfig": {
