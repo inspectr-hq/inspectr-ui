@@ -20,6 +20,28 @@ const formatBytes = (value) => {
   return `${size.toFixed(size >= 10 ? 1 : 2)} ${units[unitIndex]}`;
 };
 
+const formatRetentionTtl = (rawValue) => {
+  const normalized = rawValue == null ? '' : String(rawValue).trim();
+  if (!normalized) return '';
+  if (normalized === '0') return 'Unlimited';
+
+  const durationMatch = normalized.match(/^(\d+)h(\d+)m(\d+)s$/);
+  if (!durationMatch) return normalized;
+
+  const totalHours = Number.parseInt(durationMatch[1], 10);
+  const minutes = Number.parseInt(durationMatch[2], 10);
+  const seconds = Number.parseInt(durationMatch[3], 10);
+  if (!Number.isFinite(totalHours) || totalHours < 24) return normalized;
+
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+  const parts = [`${days}d`];
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (seconds > 0) parts.push(`${seconds}s`);
+  return parts.join(' ');
+};
+
 export default function SettingsInspectr() {
   const { apiEndpoint, proxyEndpoint, ingressEndpoint, client } = useInspectr();
   const [statusInfo, setStatusInfo] = useState(null);
@@ -47,7 +69,7 @@ export default function SettingsInspectr() {
   const maxStored = storagePolicy?.operations_max_stored;
   const normalizedRetentionTtl = retentionTtl == null ? '' : String(retentionTtl).trim();
   const hasActiveTtl = normalizedRetentionTtl !== '';
-  const retentionTtlLabel = normalizedRetentionTtl === '0' ? 'Unlimited' : normalizedRetentionTtl;
+  const retentionTtlLabel = formatRetentionTtl(retentionTtl);
   const normalizedMaxStored = maxStored == null ? '' : String(maxStored).trim();
   const hasActiveMaxStored = true;
   const maxStoredLabel =
