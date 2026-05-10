@@ -250,6 +250,8 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
       const match = operations.find((op) => toId(op.id) === operationId);
       if (match) {
         handleSelect(match);
+      } else {
+        clearSelection();
       }
       return;
     }

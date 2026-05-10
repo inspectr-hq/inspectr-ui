@@ -668,6 +668,26 @@ export const InspectrProvider = ({
         if (debugMode) console.log('[Inspectr] Received event:', event);
 
         // ========================================================================================
+        // operation delete event
+        // ========================================================================================
+        if (event?.type === 'dev.inspectr.operation.http.v1.deleted') {
+          const deletedOperationId = event?.operation_id || event?.data?.operation_id;
+          if (!deletedOperationId) {
+            if (debugMode) {
+              console.warn(
+                '[Inspectr] Received delete event without operation_id, skipping:',
+                event
+              );
+            }
+            return;
+          }
+          resolvedEventDB
+            .deleteEventByOperationId(deletedOperationId)
+            .catch((err) => console.error('Error deleting event from DB by operation_id:', err));
+          return;
+        }
+
+        // ========================================================================================
         // operation event
         // ========================================================================================
         // Normalize IDs and maintain lastEventId when operation_id is present.

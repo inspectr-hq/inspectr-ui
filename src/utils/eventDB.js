@@ -144,6 +144,21 @@ class EventDB {
     return await this.db.events.delete(id);
   }
 
+  // Delete event(s) by operation_id. Returns number of rows removed.
+  async deleteEventByOperationId(operationId) {
+    if (operationId == null) return 0;
+    const normalized = String(operationId).trim();
+    if (!normalized) return 0;
+
+    return await this.db.transaction('rw', this.db.events, async () => {
+      const ids = await this.db.events.where('operation_id').equals(normalized).primaryKeys();
+
+      if (!ids.length) return 0;
+      await this.db.events.bulkDelete(ids);
+      return ids.length;
+    });
+  }
+
   // Retrieve a single event by id.
   async getEvent(id) {
     return await this.db.events.get(id);
