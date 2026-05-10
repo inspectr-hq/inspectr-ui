@@ -6,6 +6,20 @@ import BadgeIndicator from '../BadgeIndicator.jsx';
 import CopyButton from '../CopyButton.jsx';
 import ServiceStatus from './ServiceStatus.jsx';
 
+const formatBytes = (value) => {
+  const bytes = Number(value);
+  if (!Number.isFinite(bytes) || bytes < 0) return '-';
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  let size = bytes / 1024;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+  return `${size.toFixed(size >= 10 ? 1 : 2)} ${units[unitIndex]}`;
+};
+
 export default function SettingsInspectr() {
   const { apiEndpoint, proxyEndpoint, ingressEndpoint, client } = useInspectr();
   const [statusInfo, setStatusInfo] = useState(null);
@@ -29,28 +43,14 @@ export default function SettingsInspectr() {
     }
   };
 
-  const formatBytes = (value) => {
-    const bytes = Number(value);
-    if (!Number.isFinite(bytes) || bytes < 0) return '-';
-    if (bytes < 1024) return `${bytes} B`;
-    const units = ['KB', 'MB', 'GB', 'TB'];
-    let size = bytes / 1024;
-    let unitIndex = 0;
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex += 1;
-    }
-    return `${size.toFixed(size >= 10 ? 1 : 2)} ${units[unitIndex]}`;
-  };
-
   const retentionTtl = storagePolicy?.operations_retention_ttl;
   const maxStored = storagePolicy?.operations_max_stored;
-  const normalizedRetentionTtl =
-    retentionTtl === undefined || retentionTtl === null ? '' : String(retentionTtl).trim();
+  const normalizedRetentionTtl = retentionTtl == null ? '' : String(retentionTtl).trim();
   const hasActiveTtl = normalizedRetentionTtl !== '';
   const retentionTtlLabel = normalizedRetentionTtl === '0' ? 'Unlimited' : normalizedRetentionTtl;
-  const hasActiveMaxStored =
-    maxStored !== undefined && maxStored !== null && String(maxStored).trim() !== '';
+  const normalizedMaxStored = maxStored == null ? '' : String(maxStored).trim();
+  const hasActiveMaxStored = normalizedMaxStored !== '';
+  const maxStoredLabel = normalizedMaxStored === '0' ? 'Unlimited' : normalizedMaxStored;
 
   useEffect(() => {
     fetchServiceInfo();
@@ -217,7 +217,7 @@ export default function SettingsInspectr() {
                   Max Operations Stored
                 </span>
                 <span className="text-tremor-content dark:text-dark-tremor-content">
-                  {String(maxStored)}
+                  {maxStoredLabel}
                 </span>
               </ListItem>
             )}

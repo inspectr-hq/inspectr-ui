@@ -7,20 +7,23 @@ export default {
   component: SettingsInspectr
 };
 
-const createMockClient = ({ health, metrics }) => ({
-  service: {
-    getHealth: async () => health,
-    getMetrics: async () => metrics,
-    ping: async () => ({ status: 'up' })
-  }
-});
+const createMockClient = ({ health, metrics, failMetrics = false }) => {
+  const getMetrics = failMetrics ? async () => Promise.reject(new Error('metrics unavailable')) : async () => metrics;
+  return {
+    service: {
+      getHealth: async () => health,
+      getMetrics,
+      ping: async () => ({ status: 'up' })
+    }
+  };
+};
 
-const Template = ({ health, metrics, proxyEndpoint, ingressEndpoint }) => {
+const Template = ({ health, metrics, proxyEndpoint, ingressEndpoint, failMetrics = false }) => {
   const value = {
     apiEndpoint: 'api',
     proxyEndpoint,
     ingressEndpoint,
-    client: createMockClient({ health, metrics })
+    client: createMockClient({ health, metrics, failMetrics })
   };
 
   return (
@@ -57,6 +60,72 @@ WithStoragePolicy.args = {
         evicted_ttl_total: 593,
         storage_bytes: 21873654,
         last_evicted_at: '2026-05-10T09:41:22.184512Z'
+      }
+    }
+  }
+};
+
+export const WithoutMetrics = Template.bind({});
+WithoutMetrics.args = {
+  proxyEndpoint: 'http://localhost:4004',
+  ingressEndpoint: 'https://ingress.inspectr.dev/hello',
+  failMetrics: true,
+  health: {
+    message: 'OK',
+    version: '1.2.3',
+    start_time: '2026-05-10T08:00:00.000Z',
+    mode: 'catch',
+    backend: 'http://localhost:4010',
+    expose: true,
+    app: true
+  },
+  metrics: null
+};
+
+export const WithTtlOnly = Template.bind({});
+WithTtlOnly.args = {
+  proxyEndpoint: 'http://localhost:4004',
+  ingressEndpoint: 'https://ingress.inspectr.dev/hello',
+  health: {
+    message: 'OK',
+    version: '1.2.3',
+    start_time: '2026-05-10T08:00:00.000Z',
+    mode: 'catch',
+    backend: 'http://localhost:4010',
+    expose: true,
+    app: true
+  },
+  metrics: {
+    operations: {
+      storage_policy: {
+        operations_retention_ttl: '24h',
+        operations_stored: 5231,
+        storage_bytes: 21873654
+      }
+    }
+  }
+};
+
+export const WithMaxStoredUnlimited = Template.bind({});
+WithMaxStoredUnlimited.args = {
+  proxyEndpoint: 'http://localhost:4004',
+  ingressEndpoint: 'https://ingress.inspectr.dev/hello',
+  health: {
+    message: 'OK',
+    version: '1.2.3',
+    start_time: '2026-05-10T08:00:00.000Z',
+    mode: 'catch',
+    backend: 'http://localhost:4010',
+    expose: true,
+    app: true
+  },
+  metrics: {
+    operations: {
+      storage_policy: {
+        operations_retention_ttl: '24h',
+        operations_max_stored: 0,
+        operations_stored: 5231,
+        storage_bytes: 21873654
       }
     }
   }
