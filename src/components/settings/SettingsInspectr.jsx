@@ -6,22 +6,52 @@ import BadgeIndicator from '../BadgeIndicator.jsx';
 import CopyButton from '../CopyButton.jsx';
 import ServiceStatus from './ServiceStatus.jsx';
 
+const formatBytes = (value) => {
+  const bytes = Number(value);
+  if (!Number.isFinite(bytes) || bytes < 0) return '-';
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  let size = bytes / 1024;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+  return `${size.toFixed(size >= 10 ? 1 : 2)} ${units[unitIndex]}`;
+};
+
 export default function SettingsInspectr() {
   const { apiEndpoint, proxyEndpoint, ingressEndpoint, client } = useInspectr();
   const [statusInfo, setStatusInfo] = useState(null);
+  const [storagePolicy, setStoragePolicy] = useState(null);
   const [error, setError] = useState(null);
 
   const fetchServiceInfo = async () => {
     try {
       setError(null);
       setStatusInfo(null);
-      const data = await client.service.getHealth();
-      setStatusInfo(data);
+      setStoragePolicy(null);
+      const [healthData, metricsData] = await Promise.all([
+        client.service.getHealth(),
+        client.service.getMetrics().catch(() => null)
+      ]);
+      setStatusInfo(healthData);
+      setStoragePolicy(metricsData?.operations?.storage_policy || null);
     } catch (err) {
       console.error('Health error', err);
       setError(err.message);
     }
   };
+
+  const retentionTtl = storagePolicy?.operations_retention_ttl;
+  const maxStored = storagePolicy?.operations_max_stored;
+  const normalizedRetentionTtl = retentionTtl == null ? '' : String(retentionTtl).trim();
+  const hasActiveTtl = normalizedRetentionTtl !== '';
+  const retentionTtlLabel = normalizedRetentionTtl === '0' ? 'Unlimited' : normalizedRetentionTtl;
+  const normalizedMaxStored = maxStored == null ? '' : String(maxStored).trim();
+  const hasActiveMaxStored = true;
+  const maxStoredLabel =
+    normalizedMaxStored === '' || normalizedMaxStored === '0' ? 'Unlimited' : normalizedMaxStored;
 
   useEffect(() => {
     fetchServiceInfo();
@@ -157,6 +187,57 @@ export default function SettingsInspectr() {
                 </ListItem>
               </>
             )}
+          </List>
+        </div>
+      </div>
+      <Divider className="my-10" />
+      <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
+        <div>
+          <h2 className="font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+            Operations Storage
+          </h2>
+          <p className="mt-1 text-tremor-default leading-6 text-tremor-content dark:text-dark-tremor-content">
+            Active storage policy and current usage.
+          </p>
+        </div>
+        <div className="sm:max-w-3xl md:col-span-2">
+          <List className="mt-4 divide-y divide-tremor-border dark:divide-dark-tremor-border">
+            {hasActiveTtl && (
+              <ListItem className="py-3 flex justify-between">
+                <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  Retention Window
+                </span>
+                <span className="text-tremor-content dark:text-dark-tremor-content">
+                  {retentionTtlLabel}
+                </span>
+              </ListItem>
+            )}
+            {hasActiveMaxStored && (
+              <ListItem className="py-3 flex justify-between">
+                <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                  Max Operations Stored
+                </span>
+                <span className="text-tremor-content dark:text-dark-tremor-content">
+                  {maxStoredLabel}
+                </span>
+              </ListItem>
+            )}
+            <ListItem className="py-3 flex justify-between">
+              <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                Current Operations Stored
+              </span>
+              <span className="text-tremor-content dark:text-dark-tremor-content">
+                {storagePolicy?.operations_stored ?? '0'}
+              </span>
+            </ListItem>
+            <ListItem className="py-3 flex justify-between">
+              <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                Current Storage Size
+              </span>
+              <span className="text-tremor-content dark:text-dark-tremor-content">
+                {formatBytes(storagePolicy?.storage_bytes)}
+              </span>
+            </ListItem>
           </List>
         </div>
       </div>
