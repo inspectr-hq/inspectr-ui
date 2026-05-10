@@ -214,10 +214,10 @@ const ResponseContent = ({ operation }) => {
     if (!hasEvents) return;
     const count = Array.isArray(availableSseFrames) ? availableSseFrames.length : 0;
     if (count > lastEventsCountRef.current) {
-      setViewMode('events');
+      setViewMode(hasSingleSseJson ? 'json' : 'events');
     }
     lastEventsCountRef.current = count;
-  }, [availableSseFrames, currentOperationId, hasEvents]);
+  }, [availableSseFrames, currentOperationId, hasEvents, hasSingleSseJson]);
 
   // Ensure we only try rendering when we actually have binary-safe data in hand
   const previewPayloadString = typeof previewPayload === 'string' ? previewPayload : '';
