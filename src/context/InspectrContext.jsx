@@ -558,10 +558,13 @@ export const InspectrProvider = ({
 
   const BURST_WINDOW_MS = 50;
   const BURST_THRESHOLD = 50;
+  const AUTO_SYNC_THROTTLE_MS = 15000;
   const burstStartRef = useRef(0);
   const burstCountRef = useRef(0);
   const burstBufferRef = useRef([]);
   const syncRunIdRef = useRef(null);
+  const lastAutoSyncAtRef = useRef(0);
+  const suppressAutoSyncOnOpenRef = useRef(false);
 
   const closeEventSource = () => {
     if (eventSourceRef.current) {
@@ -570,6 +573,15 @@ export const InspectrProvider = ({
       } catch {}
       eventSourceRef.current = null;
     }
+  };
+
+  const triggerThrottledSyncOnConnect = () => {
+    const now = Date.now();
+    if (now - lastAutoSyncAtRef.current < AUTO_SYNC_THROTTLE_MS) {
+      return;
+    }
+    lastAutoSyncAtRef.current = now;
+    syncOperations();
   };
 
   const connect = (overrideLastEventId) => {
@@ -603,6 +615,11 @@ export const InspectrProvider = ({
       wasConnectedRef.current = true;
       setConnectionStatus('connected');
       if (debugMode) console.log('📡️ SSE connection opened.');
+      if (suppressAutoSyncOnOpenRef.current) {
+        suppressAutoSyncOnOpenRef.current = false;
+        return;
+      }
+      triggerThrottledSyncOnConnect();
     };
 
     // SSE sync event handlers
@@ -666,6 +683,26 @@ export const InspectrProvider = ({
         }
         const event = JSON.parse(e.data);
         if (debugMode) console.log('[Inspectr] Received event:', event);
+
+        // ========================================================================================
+        // operation delete event
+        // ========================================================================================
+        if (event?.type === 'dev.inspectr.operation.http.v1.deleted') {
+          const deletedOperationId = event?.operation_id || event?.data?.operation_id;
+          if (!deletedOperationId) {
+            if (debugMode) {
+              console.warn(
+                '[Inspectr] Received delete event without operation_id, skipping:',
+                event
+              );
+            }
+            return;
+          }
+          resolvedEventDB
+            .deleteEventByOperationId(deletedOperationId)
+            .catch((err) => console.error('Error deleting event from DB by operation_id:', err));
+          return;
+        }
 
         // ========================================================================================
         // operation event
@@ -764,6 +801,8 @@ export const InspectrProvider = ({
     }
 
     syncRunIdRef.current = Date.now();
+    lastAutoSyncAtRef.current = Date.now();
+    suppressAutoSyncOnOpenRef.current = true;
     setLastEventId(SYNC_LAST_EVENT_ID);
     connect(SYNC_LAST_EVENT_ID);
   };
