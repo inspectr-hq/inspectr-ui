@@ -1,5 +1,5 @@
 // src/components/operations/RequestDetail.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { getStatusClass } from '../../utils/getStatusClass.js';
 import ToastNotification from '../ToastNotification';
 import { getMethodTextClass } from '../../utils/getMethodClass.js';
@@ -17,7 +17,13 @@ import TagPill from '../TagPill.jsx';
 import RequestDetailActions from './RequestDetailActions.jsx';
 import { shouldIncludeHeaderInCurl } from '../../utils/curlHeaders.js';
 
-const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = false }) => {
+const RequestDetail = ({
+  operation,
+  setCurrentTab,
+  onRefresh,
+  isRefreshing = false,
+  initialCollapsed = false
+}) => {
   // Get the client from context
   const { client, setToast, proxyEndpoint, featureConfig } = useInspectr();
   const actionFlags = featureConfig?.actions || {};
@@ -43,6 +49,12 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
         ? 'proxy_curl'
         : 'curl';
   const replayTarget = replayTargetValue === 'proxy' ? 'proxy' : 'original';
+  const [storedCollapsedValue, setStoredCollapsedValue] = useInspectrStorage(
+    'requestDetailCollapsed',
+    initialCollapsed ? 'true' : 'false'
+  );
+  const isCollapsed = storedCollapsedValue === 'true';
+  const contentId = useId();
 
   // Local tag state for UI updates after delete
   const [localTagsRaw, setLocalTagsRaw] = useState(() => operation?.meta?.tags || []);
@@ -371,126 +383,177 @@ const RequestDetail = ({ operation, setCurrentTab, onRefresh, isRefreshing = fal
       setCurrentTab('mcp');
     }
   };
+  const collapseToggleButton = (
+    <button
+      type="button"
+      onClick={() => setStoredCollapsedValue(isCollapsed ? 'false' : 'true')}
+      aria-expanded={!isCollapsed}
+      aria-controls={contentId}
+      aria-label={isCollapsed ? 'Expand request details' : 'Collapse request details'}
+      className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-dark-tremor-border dark:text-dark-tremor-content dark:hover:bg-dark-tremor-background-subtle"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        className={`h-4 w-4 transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}
+      >
+        <path
+          fillRule="evenodd"
+          d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.293l3.71-4.06a.75.75 0 1 1 1.1 1.02l-4.25 4.65a.75.75 0 0 1-1.1 0l-4.25-4.65a.75.75 0 0 1 .02-1.06Z"
+          clipRule="evenodd"
+        />
+      </svg>
+    </button>
+  );
+  const actionsBlock = (
+    <RequestDetailActions
+      hasTrace={hasTrace}
+      traceHref={traceHref}
+      onViewTrace={handleViewTrace}
+      onDownload={handleDownloadOperation}
+      onCopyCurl={handleCopyCurl}
+      onCopyInspectrCurl={handleCopyInspectrCurl}
+      onCopyOperation={handleCopyOperation}
+      copyActionKey={copyActionKey}
+      onCopyActionChange={setCopyActionValue}
+      copiedCurl={copiedCurl}
+      copiedOperation={copiedOperation}
+      hasInspectrCurl={hasInspectrCurl}
+      onReplay={handleReplay}
+      replayTarget={replayTarget}
+      onReplayTargetChange={setReplayTargetValue}
+      hasProxy={hasProxy}
+      replayed={replayed}
+      onRefresh={onRefresh}
+      isRefreshing={isRefreshing}
+      allowExport={allowExport}
+      allowReplay={allowReplay}
+    />
+  );
+  const requestLine = (
+    <div className="flex min-w-0 items-center space-x-2 font-mono text-base">
+      <span className={`font-bold ${getMethodTextClass(operation?.request?.method)}`}>
+        {operation?.request?.method}
+      </span>
+      <span className="truncate text-blue-600 dark:text-blue-400">{operation?.request?.path}</span>
+      <span
+        className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(
+          operation?.response?.status
+        )}`}
+      >
+        {operation?.response?.status}
+      </span>
+      <span className="text-sm dark:text-dark-tremor-content">
+        {operation?.response?.status_text}
+      </span>
+      {isCollapsed && <AuthIndicator operation={operation} onClick={handleAuthIndicatorClick} />}
+      {isCollapsed && <McpIndicator mcp={mcpMeta} showCategory={true} onClick={handleOpenMcp} />}
+    </div>
+  );
 
   return (
     <div className="mb-4 p-4 bg-white dark:bg-dark-tremor-background border border-gray-300 dark:border-dark-tremor-border rounded shadow dark:shadow-dark-tremor-shadow relative [container-type:inline-size] [container-name:requestdetail] ">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <h2 className="font-bold text-xl text-tremor-content-strong dark:text-dark-tremor-content-strong">
-            Request Details
-          </h2>
-          <AuthIndicator operation={operation} onClick={handleAuthIndicatorClick} />
-          <McpIndicator mcp={mcpMeta} showCategory={true} onClick={handleOpenMcp} />
+      {isCollapsed ? (
+        <div className="flex items-center justify-between gap-3">
+          {requestLine}
+          <div className="flex items-center gap-2">
+            {actionsBlock}
+            {collapseToggleButton}
+          </div>
         </div>
-        <RequestDetailActions
-          hasTrace={hasTrace}
-          traceHref={traceHref}
-          onViewTrace={handleViewTrace}
-          onDownload={handleDownloadOperation}
-          onCopyCurl={handleCopyCurl}
-          onCopyInspectrCurl={handleCopyInspectrCurl}
-          onCopyOperation={handleCopyOperation}
-          copyActionKey={copyActionKey}
-          onCopyActionChange={setCopyActionValue}
-          copiedCurl={copiedCurl}
-          copiedOperation={copiedOperation}
-          hasInspectrCurl={hasInspectrCurl}
-          onReplay={handleReplay}
-          replayTarget={replayTarget}
-          onReplayTargetChange={setReplayTargetValue}
-          hasProxy={hasProxy}
-          replayed={replayed}
-          onRefresh={onRefresh}
-          isRefreshing={isRefreshing}
-          allowExport={allowExport}
-          allowReplay={allowReplay}
-        />
-      </div>
-      <div className="flex flex-col space-y-1">
-        <div className="flex items-center space-x-2 font-mono text-base">
-          <span className={`font-bold ${getMethodTextClass(operation?.request?.method)}`}>
-            {operation?.request?.method}
-          </span>
-          <span className="text-blue-600 dark:text-blue-400">{operation?.request?.path}</span>
-          <span
-            className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(
-              operation?.response?.status
-            )}`}
-          >
-            {operation?.response?.status}
-          </span>
-          <span className="text-sm dark:text-dark-tremor-content">
-            {operation?.response?.status_text}
-          </span>
+      ) : (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="font-bold text-xl text-tremor-content-strong dark:text-dark-tremor-content-strong">
+              Request Details
+            </h2>
+            <AuthIndicator operation={operation} onClick={handleAuthIndicatorClick} />
+            <McpIndicator mcp={mcpMeta} showCategory={true} onClick={handleOpenMcp} />
+          </div>
+          <div className="flex items-center gap-2">
+            {actionsBlock}
+            {collapseToggleButton}
+          </div>
         </div>
-        <div className="flex items-center text-gray-600 dark:text-dark-tremor-content">
-          <span onClick={handleCopyUrl} className="cursor-pointer">
-            {operation?.request?.url}
-          </span>
-          <CopyButton textToCopy={operation.request.url} showLabel={false} />
-        </div>
-        <div className="text-gray-500 dark:text-dark-tremor-content text-xs">
-          Received on{' '}
-          <span className="font-semibold">{formatTimestamp(operation?.request?.timestamp)}</span> •
-          Took <span className="font-semibold">{formatDuration(operation?.timing?.duration)}</span>{' '}
-          to respond •
-          <Popover className="relative inline-block">
-            <span className="flex items-center pl-1">
-              size
-              <span className="font-semibold pl-1">{formatSize(responseSize.total)}</span>
-              <Popover.Button className="cursor-pointer pl-1">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  width="12"
-                  height="12"
-                >
-                  <path d="M20 22H4C3.44772 22 3 21.5523 3 21V3C3 2.44772 3.44772 2 4 2H20C20.5523 2 21 2.44772 21 3V21C21 21.5523 20.5523 22 20 22ZM19 20V4H5V20H19ZM8 7H16V9H8V7ZM8 11H16V13H8V11ZM8 15H16V17H8V15Z"></path>
-                </svg>
-              </Popover.Button>
-            </span>
-            <Popover.Panel className="absolute z-10 mt-2 w-72 -translate-x-1/2 transform px-4 sm:px-0">
-              <div className="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 bg-white dark:bg-dark-tremor-background p-3">
-                <div className="text-sm font-semibold mb-2">Request Size</div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>Total:</div>
-                  <div className="font-mono text-right">{formatSize(requestSize.total)}</div>
-                  <div>Headers:</div>
-                  <div className="font-mono text-right">{formatSize(requestSize.headers)}</div>
-                  <div>Body:</div>
-                  <div className="font-mono text-right">{formatSize(requestSize.body)}</div>
-                </div>
-                <div className="text-sm font-semibold mt-3 mb-2">Response Size</div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>Total:</div>
-                  <div className="font-mono text-right">{formatSize(responseSize.total)}</div>
-                  <div>Headers:</div>
-                  <div className="font-mono text-right">{formatSize(responseSize.headers)}</div>
-                  <div>Body:</div>
-                  <div className="font-mono text-right">{formatSize(responseSize.body)}</div>
-                </div>
-              </div>
-            </Popover.Panel>
-          </Popover>
-          {operation?.meta?.proxy?.url && (
-            <>
-              <span> • Proxy </span>
-              <div className="relative inline-block align-middle">
-                <Tooltip
-                  side="right"
-                  content={operation.meta.proxy.url}
-                  className="max-w-sm whitespace-normal break-all"
-                >
-                  <InfoIcon className="relative inline-block" />
-                </Tooltip>
-              </div>
-            </>
-          )}
-        </div>
+      )}
+      <div id={contentId} className="flex flex-col space-y-1">
+        {!isCollapsed && <div className="mt-2">{requestLine}</div>}
+        {!isCollapsed && (
+          <>
+            <div className="mt-2 flex items-center text-gray-600 dark:text-dark-tremor-content">
+              <span onClick={handleCopyUrl} className="cursor-pointer">
+                {operation?.request?.url}
+              </span>
+              <CopyButton textToCopy={operation.request.url} showLabel={false} />
+            </div>
+            <div className="text-gray-500 dark:text-dark-tremor-content text-xs">
+              Received on{' '}
+              <span className="font-semibold">
+                {formatTimestamp(operation?.request?.timestamp)}
+              </span>{' '}
+              • Took{' '}
+              <span className="font-semibold">{formatDuration(operation?.timing?.duration)}</span>{' '}
+              to respond •
+              <Popover className="relative inline-block">
+                <span className="flex items-center pl-1">
+                  size
+                  <span className="font-semibold pl-1">{formatSize(responseSize.total)}</span>
+                  <Popover.Button className="cursor-pointer pl-1">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      width="12"
+                      height="12"
+                    >
+                      <path d="M20 22H4C3.44772 22 3 21.5523 3 21V3C3 2.44772 3.44772 2 4 2H20C20.5523 2 21 2.44772 21 3V21C21 21.5523 20.5523 22 20 22ZM19 20V4H5V20H19ZM8 7H16V9H8V7ZM8 11H16V13H8V11ZM8 15H16V17H8V15Z"></path>
+                    </svg>
+                  </Popover.Button>
+                </span>
+                <Popover.Panel className="absolute z-10 mt-2 w-72 -translate-x-1/2 transform px-4 sm:px-0">
+                  <div className="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 bg-white dark:bg-dark-tremor-background p-3">
+                    <div className="text-sm font-semibold mb-2">Request Size</div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>Total:</div>
+                      <div className="font-mono text-right">{formatSize(requestSize.total)}</div>
+                      <div>Headers:</div>
+                      <div className="font-mono text-right">{formatSize(requestSize.headers)}</div>
+                      <div>Body:</div>
+                      <div className="font-mono text-right">{formatSize(requestSize.body)}</div>
+                    </div>
+                    <div className="text-sm font-semibold mt-3 mb-2">Response Size</div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>Total:</div>
+                      <div className="font-mono text-right">{formatSize(responseSize.total)}</div>
+                      <div>Headers:</div>
+                      <div className="font-mono text-right">{formatSize(responseSize.headers)}</div>
+                      <div>Body:</div>
+                      <div className="font-mono text-right">{formatSize(responseSize.body)}</div>
+                    </div>
+                  </div>
+                </Popover.Panel>
+              </Popover>
+              {operation?.meta?.proxy?.url && (
+                <>
+                  <span> • Proxy </span>
+                  <div className="relative inline-block align-middle">
+                    <Tooltip
+                      side="right"
+                      content={operation.meta.proxy.url}
+                      className="max-w-sm whitespace-normal break-all"
+                    >
+                      <InfoIcon className="relative inline-block" />
+                    </Tooltip>
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
-      {hasTags && (
+      {!isCollapsed && hasTags && (
         <div className="mt-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-dark-tremor-content">
             Tags

@@ -50,3 +50,22 @@ export const RequestDetailWithTags = () => (
     setCurrentTab={() => {}}
   />
 );
+
+export const CollapsedRequestDetail = () => (
+  <RequestDetail
+    initialCollapsed={true}
+    operation={{
+      request: {
+        method: 'GET',
+        path: '/api/test',
+        url: 'http://example.com/api/test',
+        timestamp: '2024-02-09T12:00:00Z'
+      },
+      response: { status: 200, status_text: 'OK' },
+      timing: {
+        duration: 150
+      },
+      meta: { proxy: { instance: 'inspectr-1234' } }
+    }}
+  />
+);

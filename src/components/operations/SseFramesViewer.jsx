@@ -115,7 +115,7 @@ const SseFramesViewer = ({ frames, raw }) => {
         <thead>
           <tr className="bg-gray-100 dark:bg-dark-tremor-background-subtle">
             <th
-              className="sticky top-0 z-10 border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white bg-gray-100 dark:bg-dark-tremor-background-subtle cursor-pointer select-none"
+              className="sticky top-0 z-10 border px-2 py-1 text-left text-sm font-semibold text-gray-700 dark:text-white bg-gray-100 dark:bg-dark-tremor-background-subtle cursor-pointer select-none"
               onClick={() => handleSort('id')}
               aria-sort={
                 sortKey === 'id' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'
@@ -126,7 +126,7 @@ const SseFramesViewer = ({ frames, raw }) => {
               </span>
             </th>
             <th
-              className="sticky top-0 z-10 border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white bg-gray-100 dark:bg-dark-tremor-background-subtle cursor-pointer select-none"
+              className="sticky top-0 z-10 border px-2 py-1 text-left text-sm font-semibold text-gray-700 dark:text-white bg-gray-100 dark:bg-dark-tremor-background-subtle cursor-pointer select-none"
               onClick={() => handleSort('type')}
               aria-sort={
                 sortKey === 'type' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'
@@ -137,7 +137,7 @@ const SseFramesViewer = ({ frames, raw }) => {
               </span>
             </th>
             <th
-              className="sticky top-0 z-10 border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white bg-gray-100 dark:bg-dark-tremor-background-subtle cursor-pointer select-none"
+              className="sticky top-0 z-10 border px-2 py-1 text-left text-sm font-semibold text-gray-700 dark:text-white bg-gray-100 dark:bg-dark-tremor-background-subtle cursor-pointer select-none"
               onClick={() => handleSort('data')}
               aria-sort={
                 sortKey === 'data' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'
@@ -148,7 +148,7 @@ const SseFramesViewer = ({ frames, raw }) => {
               </span>
             </th>
             <th
-              className="sticky top-0 z-10 border px-2 py-1 text-left font-semibold text-gray-700 dark:text-white bg-gray-100 dark:bg-dark-tremor-background-subtle whitespace-nowrap cursor-pointer select-none"
+              className="sticky top-0 z-10 border px-2 py-1 text-left text-sm font-semibold text-gray-700 dark:text-white bg-gray-100 dark:bg-dark-tremor-background-subtle whitespace-nowrap cursor-pointer select-none"
               onClick={() => handleSort('time')}
               aria-sort={
                 sortKey === 'time' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'

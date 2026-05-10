@@ -80,8 +80,9 @@ export default function InsightsApp() {
   });
 
   const latestEventMeta =
-    useLiveQuery(() => eventDB.db.events.orderBy('time').last(), [eventDB], null, { throttle: 300 }) ||
-    null;
+    useLiveQuery(() => eventDB.db.events.orderBy('time').last(), [eventDB], null, {
+      throttle: 300
+    }) || null;
 
   const records =
     useLiveQuery(() => eventDB.db.events.orderBy('time').reverse().toArray(), [eventDB], [], {
