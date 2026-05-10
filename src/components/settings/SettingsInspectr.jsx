@@ -49,8 +49,9 @@ export default function SettingsInspectr() {
   const hasActiveTtl = normalizedRetentionTtl !== '';
   const retentionTtlLabel = normalizedRetentionTtl === '0' ? 'Unlimited' : normalizedRetentionTtl;
   const normalizedMaxStored = maxStored == null ? '' : String(maxStored).trim();
-  const hasActiveMaxStored = normalizedMaxStored !== '';
-  const maxStoredLabel = normalizedMaxStored === '0' ? 'Unlimited' : normalizedMaxStored;
+  const hasActiveMaxStored = true;
+  const maxStoredLabel =
+    normalizedMaxStored === '' || normalizedMaxStored === '0' ? 'Unlimited' : normalizedMaxStored;
 
   useEffect(() => {
     fetchServiceInfo();
