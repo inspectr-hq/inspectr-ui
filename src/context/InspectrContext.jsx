@@ -558,13 +558,10 @@ export const InspectrProvider = ({
 
   const BURST_WINDOW_MS = 50;
   const BURST_THRESHOLD = 50;
-  const AUTO_SYNC_THROTTLE_MS = 15000;
   const burstStartRef = useRef(0);
   const burstCountRef = useRef(0);
   const burstBufferRef = useRef([]);
   const syncRunIdRef = useRef(null);
-  const lastAutoSyncAtRef = useRef(0);
-  const suppressAutoSyncOnOpenRef = useRef(false);
 
   const closeEventSource = () => {
     if (eventSourceRef.current) {
@@ -573,15 +570,6 @@ export const InspectrProvider = ({
       } catch {}
       eventSourceRef.current = null;
     }
-  };
-
-  const triggerThrottledSyncOnConnect = () => {
-    const now = Date.now();
-    if (now - lastAutoSyncAtRef.current < AUTO_SYNC_THROTTLE_MS) {
-      return;
-    }
-    lastAutoSyncAtRef.current = now;
-    syncOperations();
   };
 
   const connect = (overrideLastEventId) => {
@@ -615,11 +603,6 @@ export const InspectrProvider = ({
       wasConnectedRef.current = true;
       setConnectionStatus('connected');
       if (debugMode) console.log('📡️ SSE connection opened.');
-      if (suppressAutoSyncOnOpenRef.current) {
-        suppressAutoSyncOnOpenRef.current = false;
-        return;
-      }
-      triggerThrottledSyncOnConnect();
     };
 
     // SSE sync event handlers
@@ -801,8 +784,6 @@ export const InspectrProvider = ({
     }
 
     syncRunIdRef.current = Date.now();
-    lastAutoSyncAtRef.current = Date.now();
-    suppressAutoSyncOnOpenRef.current = true;
     setLastEventId(SYNC_LAST_EVENT_ID);
     connect(SYNC_LAST_EVENT_ID);
   };
