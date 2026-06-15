@@ -591,7 +591,7 @@ const RulesListPanel = ({
                                   <polygon points="10 8 16 12 10 16"></polygon>
                                 </svg>
                               )}
-                              {rule.active ? 'Pause' : 'Play'}
+                              {rule.active ? 'Pause' : 'Activate'}
                             </button>
                           </div>
                         </div>
