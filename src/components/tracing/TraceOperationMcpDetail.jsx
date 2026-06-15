@@ -33,6 +33,7 @@ import {
   getSseJsonPayload,
   getMcpMethodColor,
   parseJson,
+  parseMcpResponse,
   validateArgsAgainstSchema
 } from '../../utils/mcp.js';
 import { useInspectr } from '../../context/InspectrContext.jsx';
@@ -66,16 +67,19 @@ export default function TraceOperationMcpDetail({ operation, isLoading }) {
         : '';
   const ssePayload = getSseJsonPayload(operation?.response?.event_frames);
   const effectiveResponseBody = rawResponseBody || ssePayload || '';
+  const eventFrames = operation?.response?.event_frames;
 
   const mcpRequest = parseJson(rawRequestBody);
-  const mcpResponse = parseJson(effectiveResponseBody);
+  const mcpResponse = parseMcpResponse({ rawBody: rawResponseBody, eventFrames });
   const mcpMethod = mcpMeta.method || mcpRequest?.method || '';
   const mcpCategory = mcpMeta.category || '';
-  const tools = mcpResponse?.result?.tools || mcpResponse?.tools || [];
   const hasToolTag =
     Array.isArray(operation?.meta?.tags) &&
     operation.meta.tags.some((tag) => typeof tag === 'string' && tag.startsWith('mcp.tool.'));
-  const view = useMemo(() => deriveMcpView(mcpMethod, mcpResponse), [mcpMethod, mcpResponse]);
+  const view = useMemo(
+    () => deriveMcpView(mcpMethod, mcpResponse, { eventFrames }),
+    [eventFrames, mcpMethod, mcpResponse]
+  );
   const isToolsList = view.type === 'toolsList' && Array.isArray(view.tools);
   const isToolsCall = mcpMethod === 'tools/call' || mcpMethod === 'tool/call' || hasToolTag;
   const isPromptsList = view.type === 'promptsList';

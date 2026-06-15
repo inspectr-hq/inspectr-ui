@@ -65,6 +65,75 @@ export const ResponseTab = () => (
   />
 );
 
+export const ImportedMcpOperation = () => (
+  <RequestDetailsPanel
+    operation={{
+      id: 'story-mcp-op',
+      request: {
+        method: 'POST',
+        url: 'http://localhost:3000/mcp',
+        path: '/mcp',
+        headers: [{ name: 'Content-Type', value: 'application/json' }],
+        body: JSON.stringify(
+          {
+            jsonrpc: '2.0',
+            id: 21,
+            method: 'tools/list',
+            params: {}
+          },
+          null,
+          '\t'
+        ),
+        timestamp: new Date()
+      },
+      response: {
+        status: 200,
+        status_text: 'OK',
+        body: JSON.stringify(
+          {
+            jsonrpc: '2.0',
+            id: 21,
+            result: {
+              tools: [
+                {
+                  name: 'inspectr_get_operation',
+                  title: 'Get operation',
+                  description: 'Fetch one captured operation by id.'
+                },
+                {
+                  name: 'inspectr_delete_operation',
+                  title: 'Delete operation',
+                  description: 'Delete one captured operation from local storage.'
+                }
+              ]
+            }
+          },
+          null,
+          '\t'
+        ),
+        headers: [{ name: 'Content-Type', value: 'application/json' }],
+        timestamp: new Date()
+      },
+      timing: {
+        duration: 123
+      },
+      meta: {
+        protocol: 'mcp',
+        trace: {
+          source: 'mcp'
+        },
+        mcp: {
+          method: 'tools/list',
+          name: 'List tools',
+          category: 'tools'
+        }
+      }
+    }}
+    currentTab="mcp"
+    setCurrentTab={() => {}}
+  />
+);
+
 export const SseResponseBasic = () => (
   <RequestDetailsPanel
     operation={{

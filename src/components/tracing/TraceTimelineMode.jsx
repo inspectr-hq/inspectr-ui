@@ -16,6 +16,7 @@ import { getOperationTiming } from './traceUtils.js';
 import ListPagination from '../ListPagination.jsx';
 import TraceTimelineFilterPanel from './TraceTimelineFilterPanel.jsx';
 import { normalizeTagFilters } from '../../utils/normalizeTags.js';
+import { isMcpOperation } from '../../utils/mcp.js';
 
 const toId = (value) => (value == null ? null : String(value));
 const DEFAULT_TIMELINE_WIDTH = 56;
@@ -527,16 +528,7 @@ export default function TraceTimelineMode({
   }, [normalizedOperations]);
 
   const hasMcpOperations = useMemo(
-    () =>
-      normalizedOperations.some((op) => {
-        if (!op) return false;
-        const meta = op.meta || {};
-        const rawMeta = op.raw?.meta || {};
-        const traceMeta = meta.trace || rawMeta.trace || {};
-        const mcpMeta = meta.mcp || rawMeta.mcp || traceMeta.mcp;
-        const hasProtocol = meta.protocol === 'mcp' || rawMeta.protocol === 'mcp';
-        return Boolean((mcpMeta && Object.keys(mcpMeta).length) || hasProtocol);
-      }),
+    () => normalizedOperations.some((op) => isMcpOperation(op)),
     [normalizedOperations]
   );
 
@@ -567,16 +559,6 @@ export default function TraceTimelineMode({
       }
       return next;
     });
-  };
-
-  const isMcpOperation = (op) => {
-    if (!op) return false;
-    const meta = op.meta || {};
-    const rawMeta = op.raw?.meta || {};
-    const traceMeta = meta.trace || rawMeta.trace || {};
-    const mcpMeta = meta.mcp || rawMeta.mcp || traceMeta.mcp;
-    const hasProtocol = meta.protocol === 'mcp' || rawMeta.protocol === 'mcp';
-    return Boolean((mcpMeta && Object.keys(mcpMeta).length) || hasProtocol);
   };
 
   return (
