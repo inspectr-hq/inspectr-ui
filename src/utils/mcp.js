@@ -46,7 +46,9 @@ export const isMcpOperation = (operation = {}) => {
   return getOperationMetaSources(operation).some((meta) => {
     const hasMcpMeta = Boolean(meta?.mcp && Object.keys(meta.mcp).length);
     const hasTraceMcpMeta = Boolean(meta?.trace?.mcp && Object.keys(meta.trace.mcp).length);
-    return meta.protocol === 'mcp' || meta?.trace?.source === 'mcp' || hasMcpMeta || hasTraceMcpMeta;
+    return (
+      meta.protocol === 'mcp' || meta?.trace?.source === 'mcp' || hasMcpMeta || hasTraceMcpMeta
+    );
   });
 };
 
