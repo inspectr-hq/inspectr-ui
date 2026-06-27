@@ -11,7 +11,7 @@ export default function DialogImportOperations({ open, onClose }) {
     if (!file) return;
     setImporting(true);
     try {
-      await client.operations.import(file);
+      await client.operations.importOperations(file);
       setToast({ message: 'Import completed', type: 'success' });
       if (onClose) onClose();
     } catch (err) {

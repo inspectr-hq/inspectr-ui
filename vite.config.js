@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     build: {
+      cssMinify: 'esbuild',
       lib: {
         // Entry point of your library (should export all components/utilities)
         entry: path.resolve(__dirname, 'src/index.jsx'),
