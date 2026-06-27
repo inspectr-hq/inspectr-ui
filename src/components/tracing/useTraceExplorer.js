@@ -291,7 +291,6 @@ export const useTraceExplorer = ({
         clearTimeout(refreshTimer);
       }
       refreshTimer = setTimeout(() => {
-        refreshTraceList();
         refreshTraceDetail();
         refreshTimer = null;
       }, STREAM_REFRESH_DEBOUNCE_MS);
@@ -330,7 +329,7 @@ export const useTraceExplorer = ({
         clearTimeout(refreshTimer);
       }
     };
-  }, [supportsTraces, isActive, selectedTraceId, refreshTraceList, refreshTraceDetail]);
+  }, [supportsTraces, isActive, selectedTraceId, refreshTraceDetail]);
 
   return {
     supportsTraces,
