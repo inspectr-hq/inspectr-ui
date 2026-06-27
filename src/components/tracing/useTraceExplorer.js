@@ -1,6 +1,6 @@
 // src/components/tracing/useTraceExplorer.js
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useInspectr } from '../../context/InspectrContext.jsx';
 import {
   buildTimelineBounds,
@@ -8,8 +8,14 @@ import {
   formatTraceLabel,
   normalizeTraceOperation
 } from './traceUtils.js';
+import {
+  getOperationStreamOperationId,
+  isTerminalOperationStreamEvent,
+  shouldRefreshTraceFromOperationStream
+} from './traceStream.js';
 
 const DEFAULT_LIMIT = 200;
+const STREAM_REFRESH_DEBOUNCE_MS = 250;
 const toId = (value) => (value == null ? null : String(value));
 
 export const useTraceExplorer = ({
@@ -47,6 +53,9 @@ export const useTraceExplorer = ({
   const operationChangeCallbackRef = useRef(onOperationChange);
   const lastTraceNotificationRef = useRef(undefined);
   const lastOperationNotificationRef = useRef(undefined);
+  const knownOperationIdsRef = useRef(new Set());
+  const streamRefreshOperationIdsRef = useRef(new Set());
+  const terminalRefreshOperationIdsRef = useRef(new Set());
 
   useEffect(() => {
     traceChangeCallbackRef.current = onTraceChange;
@@ -118,6 +127,8 @@ export const useTraceExplorer = ({
 
   useEffect(() => {
     setTraceDetailPage(1);
+    streamRefreshOperationIdsRef.current.clear();
+    terminalRefreshOperationIdsRef.current.clear();
   }, [selectedTraceId]);
 
   useEffect(() => {
@@ -177,6 +188,12 @@ export const useTraceExplorer = ({
         return aTime - bTime;
       });
   }, [traceOperations]);
+
+  useEffect(() => {
+    knownOperationIdsRef.current = new Set(
+      normalizedOperations.map((operation) => toId(operation.id)).filter(Boolean)
+    );
+  }, [normalizedOperations]);
 
   useEffect(() => {
     if (!normalizedOperations.length) {
@@ -260,8 +277,60 @@ export const useTraceExplorer = ({
     setSelectedOperationId(toId(operationId));
   };
 
-  const refreshTraceList = () => setTraceListRefreshKey((value) => value + 1);
-  const refreshTraceDetail = () => setTraceDetailRefreshKey((value) => value + 1);
+  const refreshTraceList = useCallback(() => setTraceListRefreshKey((value) => value + 1), []);
+  const refreshTraceDetail = useCallback(() => setTraceDetailRefreshKey((value) => value + 1), []);
+
+  useEffect(() => {
+    if (!supportsTraces || !isActive || !selectedTraceId) return;
+    if (typeof window === 'undefined') return;
+
+    let refreshTimer = null;
+
+    const scheduleRefresh = () => {
+      if (refreshTimer) {
+        clearTimeout(refreshTimer);
+      }
+      refreshTimer = setTimeout(() => {
+        refreshTraceDetail();
+        refreshTimer = null;
+      }, STREAM_REFRESH_DEBOUNCE_MS);
+    };
+
+    const handleOperationStreamUpdate = (event) => {
+      const streamDetail = event?.detail || {};
+      const operationId = getOperationStreamOperationId(streamDetail);
+      const isTerminalEvent = isTerminalOperationStreamEvent(streamDetail.eventType);
+
+      if (
+        !shouldRefreshTraceFromOperationStream(selectedTraceId, streamDetail.payload, {
+          operationId,
+          eventType: streamDetail.eventType,
+          knownOperationIds: knownOperationIdsRef.current
+        })
+      ) {
+        return;
+      }
+
+      if (isTerminalEvent) {
+        if (terminalRefreshOperationIdsRef.current.has(operationId)) return;
+        terminalRefreshOperationIdsRef.current.add(operationId);
+      } else {
+        if (streamRefreshOperationIdsRef.current.has(operationId)) return;
+        streamRefreshOperationIdsRef.current.add(operationId);
+      }
+
+      scheduleRefresh();
+    };
+
+    window.addEventListener('inspectr:operation-stream-update', handleOperationStreamUpdate);
+    return () => {
+      window.removeEventListener('inspectr:operation-stream-update', handleOperationStreamUpdate);
+      if (refreshTimer) {
+        clearTimeout(refreshTimer);
+      }
+    };
+  }, [supportsTraces, isActive, selectedTraceId, refreshTraceDetail]);
+
   return {
     supportsTraces,
     traceList,

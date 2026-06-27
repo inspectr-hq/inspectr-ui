@@ -9,6 +9,7 @@ import Terminal from '../Terminal';
 import { RiExternalLinkLine } from '@remixicon/react';
 import useInspectrStorage from '../../hooks/useInspectrStorage.jsx';
 import useOperationDetails from '../../hooks/useOperationDetails.jsx';
+import { isMcpOperation } from '../../utils/mcp.js';
 
 // CSS for fade-in effect
 const fadeInStyle = {
@@ -46,12 +47,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   const guardHeaders = extractHeaders(detailOperation?.meta?.inspectr?.guard);
   const directiveHeaders = extractHeaders(detailOperation?.meta?.inspectr?.directives);
   const hasInfo = guardHeaders.length > 0 || directiveHeaders.length > 0;
-  const mcp = detailOperation?.meta?.mcp || null;
-  const hasMcp = !!(
-    mcp &&
-    typeof mcp === 'object' &&
-    Object.keys(mcp).some((k) => mcp[k] !== undefined)
-  );
+  const hasMcp = isMcpOperation(detailOperation);
   const hasTags =
     Array.isArray(detailOperation?.meta?.tags) && detailOperation.meta.tags.length > 0;
   // Offset breakdown:

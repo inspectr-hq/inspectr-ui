@@ -27,6 +27,80 @@ export const parseJson = (value) => {
   return null;
 };
 
+export const parseMcpResponse = ({ rawBody, eventFrames = [] } = {}) => {
+  const parsedRaw = parseJson(rawBody);
+  if (parsedRaw) return parsedRaw;
+
+  const ssePayload = getSseJsonPayload(eventFrames);
+  if (!ssePayload) return null;
+
+  return parseJson(ssePayload);
+};
+
+const getOperationMetaSources = (operation = {}) =>
+  [operation?.meta, operation?.raw?.meta, operation?.response?.meta].filter(
+    (meta) => meta && typeof meta === 'object'
+  );
+
+export const isMcpOperation = (operation = {}) => {
+  return getOperationMetaSources(operation).some((meta) => {
+    const hasMcpMeta = Boolean(meta?.mcp && Object.keys(meta.mcp).length);
+    const hasTraceMcpMeta = Boolean(meta?.trace?.mcp && Object.keys(meta.trace.mcp).length);
+    return meta.protocol === 'mcp' || meta?.trace?.source === 'mcp' || hasMcpMeta || hasTraceMcpMeta;
+  });
+};
+
+const extractListArray = (payload, key) => {
+  const parsed = parseJson(payload);
+  if (!parsed) return null;
+
+  if (Array.isArray(parsed)) {
+    return parsed;
+  }
+
+  const list = parsed?.result?.[key] || parsed?.[key];
+  return Array.isArray(list) ? list : null;
+};
+
+const getListPayload = ({ response, eventFrames = [], key }) => {
+  const directList = extractListArray(response, key);
+  if (directList) return directList;
+
+  if (Array.isArray(eventFrames) && eventFrames.length) {
+    for (const frame of eventFrames) {
+      if (String(frame?.event || '').toLowerCase() !== 'message') continue;
+      const list = extractListArray(frame?.data, key);
+      if (list) return list;
+    }
+  }
+
+  const ssePayload = getSseJsonPayload(eventFrames);
+  if (ssePayload) {
+    const list = extractListArray(ssePayload, key);
+    if (list) return list;
+  }
+
+  return null;
+};
+
+export const getMcpToolsList = ({ method = '', response, eventFrames = [] } = {}) => {
+  const lowerMethod = String(method || '').toLowerCase();
+  if (lowerMethod !== 'tools/list') return null;
+  return getListPayload({ response, eventFrames, key: 'tools' });
+};
+
+export const getMcpPromptsList = ({ method = '', response, eventFrames = [] } = {}) => {
+  const lowerMethod = String(method || '').toLowerCase();
+  if (lowerMethod !== 'prompts/list') return null;
+  return getListPayload({ response, eventFrames, key: 'prompts' });
+};
+
+export const getMcpResourcesList = ({ method = '', response, eventFrames = [] } = {}) => {
+  const lowerMethod = String(method || '').toLowerCase();
+  if (lowerMethod !== 'resources/list') return null;
+  return getListPayload({ response, eventFrames, key: 'resources' });
+};
+
 export const summarizeSchema = (schema) => {
   if (!schema || typeof schema !== 'object') return { total: 0, required: 0 };
   const properties = schema.properties || {};
@@ -66,16 +140,23 @@ export const getMcpMethodColor = (method = '') => {
   return 'slate';
 };
 
-export const deriveMcpView = (method = '', response) => {
+export const deriveMcpView = (method = '', response, options = {}) => {
   if (!response) return { type: 'none', raw: null };
 
   const lowerMethod = (method || '').toLowerCase();
   const tools =
+    getMcpToolsList({ method: lowerMethod, response, eventFrames: options.eventFrames }) ||
     response?.result?.tools ||
     response?.tools ||
     (Array.isArray(response?.result?.tools) ? response.result.tools : []);
-  const prompts = response?.result?.prompts;
-  const resources = response?.result?.resources;
+  const prompts =
+    getMcpPromptsList({ method: lowerMethod, response, eventFrames: options.eventFrames }) ||
+    response?.result?.prompts ||
+    response?.prompts;
+  const resources =
+    getMcpResourcesList({ method: lowerMethod, response, eventFrames: options.eventFrames }) ||
+    response?.result?.resources ||
+    response?.resources;
   const structuredContent = response?.result?.structuredContent;
   const content = response?.result?.content || response?.content || [];
   const raw = response?.result ?? response;

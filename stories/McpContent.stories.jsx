@@ -197,14 +197,248 @@ const toolsCallOperation = makeOperation({
   }
 });
 
+const importedToolsCallOperation = {
+  ...toolsCallOperation,
+  request: {
+    ...toolsCallOperation.request,
+    body: JSON.stringify(
+      {
+        method: 'tools/call',
+        params: {
+          name: 'deep_dataset_analysis',
+          arguments: {
+            dataset_handle: '1784f25f-fbb4-49f1-b2ff-8666fc88769c',
+            sql_query: 'SELECT * FROM data LIMIT 5'
+          }
+        },
+        jsonrpc: '2.0',
+        id: 6
+      },
+      null,
+      2
+    )
+  },
+  response: {
+    ...toolsCallOperation.response,
+    body: JSON.stringify(
+      {
+        jsonrpc: '2.0',
+        id: 6,
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: '{"dataset_handle":"1784f25f-fbb4-49f1-b2ff-8666fc88769c","row_count":27}'
+            }
+          ],
+          structuredContent: {
+            dataset_handle: '1784f25f-fbb4-49f1-b2ff-8666fc88769c',
+            row_count: 27
+          }
+        }
+      },
+      null,
+      2
+    )
+  },
+  meta: {
+    protocol: 'mcp',
+    trace: {
+      source: 'mcp'
+    },
+    mcp: {
+      method: 'tools/call',
+      name: 'deep_dataset_analysis',
+      category: 'tool',
+      tokens: {
+        request: 178,
+        response: 3333,
+        total: 3511
+      }
+    }
+  }
+};
+
+const importedToolsListOperation = {
+  ...toolsListOperation,
+  meta: {
+    protocol: 'mcp',
+    trace: {
+      source: 'mcp'
+    },
+    mcp: {
+      method: 'tools/list',
+      name: 'List tools',
+      category: 'tools',
+      tokens: {
+        request: 48,
+        response: 1284,
+        total: 1332
+      }
+    }
+  }
+};
+
+const plainArrayToolsListOperation = makeOperation({
+  method: 'tools/list',
+  name: 'List tools',
+  requestBody: toolsListRequest,
+  responseBody: [
+    {
+      name: 'inspectr_get_operation',
+      title: 'Get operation',
+      description: 'Fetch one captured operation by id.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          operation_id: {
+            type: 'string',
+            description: 'Operation UUID to retrieve.'
+          }
+        },
+        required: ['operation_id']
+      }
+    },
+    {
+      name: 'inspectr_delete_operation',
+      title: 'Delete operation',
+      description: 'Delete one captured operation from local storage.'
+    }
+  ],
+  tokens: {
+    request: 48,
+    response: 512,
+    total: 560
+  }
+});
+
+const rawFallbackToolsListOperation = makeOperation({
+  method: 'tools/list',
+  name: 'List tools',
+  requestBody: toolsListRequest,
+  responseBody: {
+    jsonrpc: '2.0',
+    id: 21,
+    result: {
+      count: 2,
+      note: 'This payload does not expose a tools array.'
+    }
+  },
+  tokens: {
+    request: 48,
+    response: 88,
+    total: 136
+  }
+});
+
+const promptsListRequest = {
+  jsonrpc: '2.0',
+  id: 31,
+  method: 'prompts/list',
+  params: {}
+};
+
+const promptsListOperation = makeOperation({
+  method: 'prompts/list',
+  name: 'List prompts',
+  requestBody: promptsListRequest,
+  responseBody: [
+    {
+      name: 'summarize_request',
+      title: 'Summarize request',
+      description: 'Produce a short summary from a captured request.'
+    },
+    {
+      name: 'explain_trace',
+      title: 'Explain trace',
+      description: 'Generate a readable explanation for a trace.'
+    }
+  ],
+  tokens: {
+    request: 36,
+    response: 274,
+    total: 310
+  }
+});
+
+const resourcesListRequest = {
+  jsonrpc: '2.0',
+  id: 41,
+  method: 'resources/list',
+  params: {}
+};
+
+const resourcesListOperation = makeOperation({
+  method: 'resources/list',
+  name: 'List resources',
+  requestBody: resourcesListRequest,
+  responseBody: [
+    {
+      uri: 'inspectr://operations/1',
+      name: 'Recent operation',
+      title: 'Recent operation',
+      description: 'A captured operation available through import/export.',
+      mimeType: 'application/json'
+    },
+    {
+      uri: 'inspectr://operations/2',
+      name: 'Recent trace',
+      title: 'Recent trace',
+      description: 'A captured trace resource.',
+      mimeType: 'application/json'
+    }
+  ],
+  tokens: {
+    request: 36,
+    response: 312,
+    total: 348
+  }
+});
+
 export const ToolsListOperation = () => (
   <div className="max-w-4xl p-4">
     <McpContent operation={toolsListOperation} />
   </div>
 );
 
+export const ImportedToolsListOperation = () => (
+  <div className="max-w-4xl p-4">
+    <McpContent operation={importedToolsListOperation} />
+  </div>
+);
+
+export const PlainArrayToolsListOperation = () => (
+  <div className="max-w-4xl p-4">
+    <McpContent operation={plainArrayToolsListOperation} />
+  </div>
+);
+
+export const RawFallbackToolsListOperation = () => (
+  <div className="max-w-4xl p-4">
+    <McpContent operation={rawFallbackToolsListOperation} />
+  </div>
+);
+
+export const PromptsListOperation = () => (
+  <div className="max-w-4xl p-4">
+    <McpContent operation={promptsListOperation} />
+  </div>
+);
+
+export const ResourcesListOperation = () => (
+  <div className="max-w-4xl p-4">
+    <McpContent operation={resourcesListOperation} />
+  </div>
+);
+
 export const ToolsCallStructuredOutput = () => (
   <div className="max-w-4xl p-4">
     <McpContent operation={toolsCallOperation} />
+  </div>
+);
+
+export const ImportedToolsCallStructuredOutput = () => (
+  <div className="max-w-4xl p-4">
+    <McpContent operation={importedToolsCallOperation} />
   </div>
 );

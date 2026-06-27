@@ -4,7 +4,14 @@ import ArgumentsTable from '../mcp/ArgumentsTable.jsx';
 import McpInputCard from '../mcp/McpInputCard.jsx';
 import McpOutputCard from '../mcp/McpOutputCard.jsx';
 import StructuredBlock from '../mcp/StructuredBlock.jsx';
-import { deriveMcpView, getMcpMethodColor, getSseJsonPayload, parseJson } from '../../utils/mcp.js';
+import {
+  deriveMcpView,
+  getMcpMethodColor,
+  getSseJsonPayload,
+  isMcpOperation,
+  parseMcpResponse,
+  parseJson
+} from '../../utils/mcp.js';
 import McpBadge from '../mcp/McpBadge.jsx';
 import McpIndicator from './McpIndicator.jsx';
 import ToolCard from '../mcp/ToolCard.jsx';
@@ -30,14 +37,14 @@ const ChevronIcon = ({ open, className = '' }) => (
 );
 
 const McpContent = ({ operation }) => {
+  const isMcp = isMcpOperation(operation);
   const mcp =
     operation?.meta?.mcp ||
     operation?.raw?.meta?.mcp ||
     operation?.meta?.trace?.mcp ||
-    operation?.raw?.meta?.trace?.mcp;
-  const hasMcp =
-    mcp && typeof mcp === 'object' && Object.keys(mcp).filter((k) => mcp[k] !== undefined).length;
-  if (!hasMcp) {
+    operation?.raw?.meta?.trace?.mcp ||
+    {};
+  if (!isMcp) {
     return (
       <div className="text-sm text-gray-500 dark:text-dark-tremor-content">No MCP metadata</div>
     );
@@ -62,7 +69,10 @@ const McpContent = ({ operation }) => {
   const ssePayload = getSseJsonPayload(operation?.response?.event_frames);
   const effectiveResponseBody = rawResponseBody || ssePayload || '';
   const mcpRequest = parseJson(rawRequestBody);
-  const mcpResponse = parseJson(effectiveResponseBody);
+  const mcpResponse = parseMcpResponse({
+    rawBody: rawResponseBody,
+    eventFrames: operation?.response?.event_frames
+  });
   const rawResponseJson = mcpResponse
     ? JSON.stringify(mcpResponse, null, 2)
     : effectiveResponseBody || 'No response body';
@@ -71,7 +81,11 @@ const McpContent = ({ operation }) => {
   );
   const [resultTab, setResultTab] = useState('structured');
   const mcpMethod = mcp?.method || mcpRequest?.method;
-  const view = useMemo(() => deriveMcpView(mcpMethod, mcpResponse), [mcpMethod, mcpResponse]);
+  const eventFrames = operation?.response?.event_frames;
+  const view = useMemo(
+    () => deriveMcpView(mcpMethod, mcpResponse, { eventFrames }),
+    [eventFrames, mcpMethod, mcpResponse]
+  );
   const showRawResponse = mcpMethod === 'tools/list' && Boolean(effectiveResponseBody);
   const hasStructuredContent = useMemo(
     () => Boolean(view.structuredContent),
