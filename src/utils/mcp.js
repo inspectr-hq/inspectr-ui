@@ -37,13 +37,17 @@ export const parseMcpResponse = ({ rawBody, eventFrames = [] } = {}) => {
   return parseJson(ssePayload);
 };
 
-const getOperationMeta = (operation = {}) =>
-  operation?.meta || operation?.raw?.meta || operation?.response?.meta || {};
+const getOperationMetaSources = (operation = {}) =>
+  [operation?.meta, operation?.raw?.meta, operation?.response?.meta].filter(
+    (meta) => meta && typeof meta === 'object'
+  );
 
 export const isMcpOperation = (operation = {}) => {
-  const meta = getOperationMeta(operation);
-  const hasMcpMeta = Boolean(meta?.mcp && Object.keys(meta.mcp).length);
-  return meta.protocol === 'mcp' || meta?.trace?.source === 'mcp' || hasMcpMeta;
+  return getOperationMetaSources(operation).some((meta) => {
+    const hasMcpMeta = Boolean(meta?.mcp && Object.keys(meta.mcp).length);
+    const hasTraceMcpMeta = Boolean(meta?.trace?.mcp && Object.keys(meta.trace.mcp).length);
+    return meta.protocol === 'mcp' || meta?.trace?.source === 'mcp' || hasMcpMeta || hasTraceMcpMeta;
+  });
 };
 
 const extractListArray = (payload, key) => {
