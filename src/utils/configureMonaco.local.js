@@ -7,13 +7,26 @@ import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 
 let didConfigureMonaco = false;
 
+const getVscodeFileRoot = () => {
+  const baseUrl = typeof import.meta.env.BASE_URL === 'string' ? import.meta.env.BASE_URL : '/';
+
+  // Prefer the app base when Vite exposes one; otherwise fall back to the site root.
+  // Using the current page URL is fragile because client-side navigation can move
+  // Monaco's inferred root to a nested route.
+  if (baseUrl && baseUrl !== './') {
+    return new URL(baseUrl, window.location.origin).toString();
+  }
+
+  return new URL('/', window.location.origin).toString();
+};
+
 const ensureVscodeFileRoot = () => {
   if (typeof globalThis._VSCODE_FILE_ROOT === 'string' && globalThis._VSCODE_FILE_ROOT.length) {
     return;
   }
 
   // Monaco's ESM runtime uses this global when it cannot resolve AMD toUrl().
-  globalThis._VSCODE_FILE_ROOT = new URL('./', import.meta.url).toString();
+  globalThis._VSCODE_FILE_ROOT = getVscodeFileRoot();
 };
 
 const configureMonaco = async () => {
