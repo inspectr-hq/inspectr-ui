@@ -435,7 +435,7 @@ class OperationsClient {
    * @param {File|Blob} file - File containing operations
    * @returns {Promise<void>}
    */
-  async import(file) {
+  async importOperations(file) {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -1562,7 +1562,7 @@ class RulesClient {
    * @param {boolean} [options.overwrite=false] - When true, adds ?overwrite=true to the request
    * @returns {Promise<any>} Parsed JSON response
    */
-  async import(yaml, options = {}) {
+  async importRules(yaml, options = {}) {
     const isBlob =
       yaml && typeof yaml === 'object' && (yaml instanceof Blob || yaml instanceof File);
     const body = isBlob ? yaml : String(yaml ?? '');

@@ -29,7 +29,7 @@ export default function RuleImportDialog({ open, onCancel, onImport, onImported 
   };
 
   const handleImport = async () => {
-    if (!client?.rules?.import) return;
+    if (!client?.rules?.importRules) return;
     if (!file && !text.trim()) {
       setError('Select a YAML file or paste YAML content.');
       return;
@@ -51,7 +51,7 @@ export default function RuleImportDialog({ open, onCancel, onImport, onImported 
           return;
         }
       }
-      const res = await client.rules.import(payload, { overwrite });
+      const res = await client.rules.importRules(payload, { overwrite });
 
       // Try to surface a created/updated rule back to parent if they want to open the builder
       const rule = res?.rule || (Array.isArray(res?.rules) ? res.rules[0] : null);
