@@ -1,5 +1,5 @@
 // vite.config.js
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, esmExternalRequirePlugin } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
@@ -34,9 +34,16 @@ export default defineConfig(({ mode }) => {
         // sourcemap: true,
       },
       rollupOptions: {
-        // Externalize peer dependencies to prevent bundling them in your library.
-        // Consumers must install these.
-        external: ['react', 'react-dom'],
+        // Externalize peer dependencies (react, react-dom) so consumers provide them.
+        //
+        // Vite 8 uses Rolldown, which by default preserves `require('react')` calls
+        // made by bundled CJS deps (use-sync-external-store, react-is, ...). Those
+        // become a `__require` runtime shim that throws in the browser. The builtin
+        // esmExternalRequirePlugin rewrites those external `require()` calls into ESM
+        // imports AND handles externalizing the listed modules — so we must NOT also
+        // list them in the top-level `external`, or Rolldown externalizes them via its
+        // shim path before the plugin can convert them.
+        plugins: [esmExternalRequirePlugin({ external: ['react', 'react-dom'] })],
         output: {
           exports: 'named',
           globals: {
