@@ -62,3 +62,11 @@ Commands: `/plan`, `/test`, `/lint`, `/release`
 ## Security & Configuration Tips
 - Externals: React and ReactDOM are externalized in `vite.config.js`—do not bundle them.
 - CSS: Tailwind is used; prefer utility classes and keep any global additions in `src/styles/global.css`.
+
+## Git workflow
+
+- Prefer working on the existing checked-out branch.
+- Do not create or use Git worktrees unless the user approves it first.
+- Keep Git commit messages compact and use Conventional Commit format, such as `feat: add Inspectr tracing`.
+- After each meaningful implementation stage, provide a suggested Conventional Commit message as a review checkpoint.
+- Suggested commit messages are for the user to apply after reviewing the stage; do not create, stage, or amend commits unless the user explicitly asks.
