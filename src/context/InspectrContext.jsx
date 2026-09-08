@@ -7,6 +7,10 @@ import {
   createDefaultStorageAdapter,
   createNamespacedStorageAdapter
 } from '../utils/storageAdapter.js';
+import {
+  sanitizeCredentialParams,
+  shouldSyncInitialOperations
+} from '../utils/queryCredentials.js';
 
 const EMPTY_APP_AUTH_CONTEXT = Object.freeze({
   appAuthEnabled: false,
@@ -191,6 +195,7 @@ export const InspectrProvider = ({
   const [isInitialized, setIsInitialized] = useState(false);
   const [toast, setToast] = useState(null);
   const [appAuthContext, setAppAuthContext] = useState(EMPTY_APP_AUTH_CONTEXT);
+  const initialSyncPendingRef = useRef(false);
 
   // SSE connection reference
   const registrationRetryCountRef = useRef(0);
@@ -223,9 +228,11 @@ export const InspectrProvider = ({
     const resolvedChannel = queryChannel || getParam('channel');
     const resolvedToken = queryToken || getParam('token');
     const resolvedSseEndpoint = querySseEndpoint || getParam('sseEndpoint');
+    const querySync = getParam('sync');
 
     if (resolvedChannelCode || resolvedChannel || resolvedToken || resolvedSseEndpoint) {
       console.log('🔍 Found credentials in query params');
+      initialSyncPendingRef.current = shouldSyncInitialOperations(querySync);
       if (resolvedChannelCode) {
         setChannelCode(resolvedChannelCode);
       }
@@ -238,11 +245,12 @@ export const InspectrProvider = ({
       if (resolvedSseEndpoint) {
         setSseEndpoint(resolvedSseEndpoint);
       }
-      // Update the URL without reloading the page.
+
+      // Remove credentials from the URL while preserving unrelated navigation state.
       window.history.replaceState(
         {},
         '',
-        `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`
+        sanitizeCredentialParams(window.location.href)
       );
       return true;
     }
@@ -793,7 +801,12 @@ export const InspectrProvider = ({
     if (!sseEndpoint || !token) return;
     // Reset re-registration counters and connect with current config
     resetReRegistration();
-    connect();
+    if (initialSyncPendingRef.current) {
+      initialSyncPendingRef.current = false;
+      syncOperations();
+    } else {
+      connect();
+    }
 
     // Cleanup on full unmount of provider (e.g., navigating away from Workspace)
     return () => {
