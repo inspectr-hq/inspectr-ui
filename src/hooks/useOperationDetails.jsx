@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useInspectr } from '../context/InspectrContext.jsx';
+import { OPERATION_REPLAY_EVENT } from '../utils/operationSync.js';
 
 const CACHE_LIMIT = 25;
 const toId = (value) => (value == null ? null : String(value));
@@ -209,8 +210,23 @@ export default function useOperationDetails(operationId, liveOperation = null) {
       }
     };
 
+    const handleReplay = (event) => {
+      const replayedIds = new Set(event.detail);
+      for (const id of replayedIds) {
+        cacheRef.current.delete(id);
+        reconciledOperationIdsRef.current.delete(id);
+      }
+      cacheOrderRef.current = cacheOrderRef.current.filter((id) => !replayedIds.has(id));
+      const currentOperationId = toId(operationId);
+      if (replayedIds.has(currentOperationId)) fetchDetail(currentOperationId, { force: true });
+    };
+
     window.addEventListener('inspectr:operation-stream-update', handleStreamUpdate);
-    return () => window.removeEventListener('inspectr:operation-stream-update', handleStreamUpdate);
+    window.addEventListener(OPERATION_REPLAY_EVENT, handleReplay);
+    return () => {
+      window.removeEventListener('inspectr:operation-stream-update', handleStreamUpdate);
+      window.removeEventListener(OPERATION_REPLAY_EVENT, handleReplay);
+    };
   }, [fetchDetail, operationId]);
 
   return { detailOperation, fetchDetail, isFetching };

@@ -1,3 +1,4 @@
+import { OPERATION_REPLAY_EVENT } from '../../utils/operationSync.js';
 // src/components/tracing/useTraceExplorer.js
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -323,8 +324,10 @@ export const useTraceExplorer = ({
     };
 
     window.addEventListener('inspectr:operation-stream-update', handleOperationStreamUpdate);
+    window.addEventListener(OPERATION_REPLAY_EVENT, scheduleRefresh);
     return () => {
       window.removeEventListener('inspectr:operation-stream-update', handleOperationStreamUpdate);
+      window.removeEventListener(OPERATION_REPLAY_EVENT, scheduleRefresh);
       if (refreshTimer) {
         clearTimeout(refreshTimer);
       }
