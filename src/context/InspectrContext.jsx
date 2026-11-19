@@ -11,6 +11,12 @@ import {
   sanitizeCredentialParams,
   shouldSyncInitialOperations
 } from '../utils/queryCredentials.js';
+import {
+  buildOperationStreamURL,
+  createOperationSync,
+  OPERATION_REPLAY_EVENT,
+  SYNC_LAST_EVENT_ID
+} from '../utils/operationSync.js';
 
 const EMPTY_APP_AUTH_CONTEXT = Object.freeze({
   appAuthEnabled: false,
@@ -556,22 +562,69 @@ export const InspectrProvider = ({
   }, [isInitialized, channel, channelCode, token, sseEndpoint, mode]);
 
   // ——— SSE connection lifecycle (moved from InspectrConnectionContext) ———
-  const [lastEventId, setLastEventId] = useStorageAdapter(
+  const [lastEventId, setStoredLastEventId] = useStorageAdapter(
     'lastEventId',
     '',
     resolvedStorageAdapter
   );
-  const eventSourceRef = useRef(null);
-  const wasConnectedRef = useRef(false);
+  const lastEventIdRef = useRef(lastEventId);
+  useEffect(() => {
+    lastEventIdRef.current = lastEventId;
+  }, [lastEventId]);
+  const setLastEventId = (id) => {
+    lastEventIdRef.current = id;
+    setStoredLastEventId(id);
+  };
 
+  const eventSourceRef = useRef(null);
+  const reconnectTimerRef = useRef(null);
+
+  const RECONNECT_DELAY_MS = 1500;
   const BURST_WINDOW_MS = 50;
   const BURST_THRESHOLD = 50;
   const burstStartRef = useRef(0);
   const burstCountRef = useRef(0);
   const burstBufferRef = useRef([]);
-  const syncRunIdRef = useRef(null);
+  const burstTimerRef = useRef(null);
+  const syncRef = useRef(null);
+  const eventWritesRef = useRef(Promise.resolve());
+
+  const queueEventWrite = (write) => {
+    eventWritesRef.current = eventWritesRef.current.then(write).catch((err) => {
+      console.error('Error writing SSE events to the DB:', err);
+    });
+    return eventWritesRef.current;
+  };
+
+  const commitLiveCursor = (id, replay) => {
+    if (!id) return;
+    if (replay) replay.commitLiveCursor(id);
+    else setLastEventId(id);
+  };
+
+  const flushBurst = () => {
+    clearTimeout(burstTimerRef.current);
+    burstTimerRef.current = null;
+    const events = burstBufferRef.current;
+    burstBufferRef.current = [];
+    burstCountRef.current = 0;
+    burstStartRef.current = performance.now();
+    if (events.length) {
+      const replay = syncRef.current;
+      queueEventWrite(async () => {
+        await resolvedEventDB.bulkUpsertEvents(events);
+        const cursor = events.findLast((event) => event.operation_id)?.operation_id;
+        commitLiveCursor(cursor, replay);
+      });
+    }
+  };
 
   const closeEventSource = () => {
+    clearTimeout(reconnectTimerRef.current);
+    reconnectTimerRef.current = null;
+    syncRef.current?.abort();
+    flushBurst();
+    syncRef.current = null;
     if (eventSourceRef.current) {
       try {
         eventSourceRef.current.close();
@@ -580,21 +633,37 @@ export const InspectrProvider = ({
     }
   };
 
-  const connect = (overrideLastEventId) => {
+  const connect = (overrideLastEventId, recovering = false) => {
     // Close any existing instance first
     closeEventSource();
 
     if (!sseEndpoint || !token) return;
 
-    const storedLastEventId = overrideLastEventId ?? lastEventId;
-    let sseUrl = `${sseEndpoint}?token=${encodeURIComponent(token)}`;
-    if (storedLastEventId) {
-      const join = sseUrl.includes('?') ? '&' : '?';
-      sseUrl = `${sseUrl}${join}last_event_id=${encodeURIComponent(storedLastEventId)}`;
-    }
-
+    const cursor = overrideLastEventId ?? lastEventIdRef.current;
+    const syncing = cursor === SYNC_LAST_EVENT_ID;
+    const startupSync = syncing && initialSyncPendingRef.current;
+    // Clear the sentinel persisted by older UIs so recovery can use a normal cursor.
+    if (lastEventIdRef.current === SYNC_LAST_EVENT_ID) setLastEventId('');
+    const sseUrl = buildOperationStreamURL(sseEndpoint, token, cursor);
     const eventSource = new EventSource(sseUrl);
     eventSourceRef.current = eventSource;
+
+    const replay = cursor
+      ? createOperationSync(resolvedEventDB, {
+          resumeAfter: syncing ? '' : cursor,
+          enqueue: queueEventWrite,
+          onCursor: (id) => {
+            if (startupSync) initialSyncPendingRef.current = false;
+            setLastEventId(id);
+          },
+          onReplay: (operationIds) => {
+            window.dispatchEvent(new CustomEvent(OPERATION_REPLAY_EVENT, { detail: operationIds }));
+          },
+          onError: (err) => console.error('Operation sync failed:', err)
+        })
+      : null;
+    syncRef.current = replay;
+
     let logEndpoint = sseEndpoint;
     try {
       const parsed = new URL(sseUrl);
@@ -605,69 +674,30 @@ export const InspectrProvider = ({
     // Use "connecting" for normal (re)connects. Reserve "reconnecting" for
     // actual SSE error recovery paths so embedded guards don't trigger refresh
     // loops on healthy reconnects (e.g. token/session rotation).
-    setConnectionStatus('connecting');
+    setConnectionStatus(recovering ? 'reconnecting' : 'connecting');
 
+    let opened = false;
     eventSource.onopen = () => {
-      wasConnectedRef.current = true;
+      if (eventSourceRef.current !== eventSource) return;
+      opened = true;
       setConnectionStatus('connected');
       if (debugMode) console.log('📡️ SSE connection opened.');
     };
 
-    // SSE sync event handlers
     const handleSyncEvent = (e) => {
+      if (eventSourceRef.current !== eventSource || !replay || !e.data?.trim()) return;
       try {
-        if (!e.data || e.data.trim() === '') {
-          if (debugMode) console.warn('Received empty sync event data, skipping');
-          return;
-        }
-        const event = JSON.parse(e.data);
-        if (debugMode) console.log('[Inspectr] Received sync event:', event);
-
-        if (event?.type !== 'dev.inspectr.platform.sse.v1.sync_complete') {
-          return;
-        }
-
-        // ========================================================================================
-        // sync_complete event
-        // ========================================================================================
-        const activeSyncId = syncRunIdRef.current;
-        syncRunIdRef.current = null;
-        const flushAndPrune = async () => {
-          const syncedCount = Number(event?.data?.record_count || 0);
-          if (burstBufferRef.current.length) {
-            const buffered = burstBufferRef.current;
-            burstBufferRef.current = [];
-            burstCountRef.current = 0;
-            burstStartRef.current = performance.now();
-            await resolvedEventDB.bulkUpsertEvents(buffered);
-          }
-          if (debugMode) {
-            console.log(`[Inspectr] Sync complete: ${syncedCount} synced`);
-          }
-          if (activeSyncId) {
-            const deletedCount = await resolvedEventDB.removeEventsNotSynced(activeSyncId);
-            if (debugMode) {
-              console.log(`[Inspectr] Sync cleanup: ${deletedCount} removed`);
-            }
-          }
-        };
-
-        flushAndPrune().catch((err) => console.error('Failed to finalize sync pruning', err));
+        replay.handle(JSON.parse(e.data));
       } catch (err) {
+        replay.abort();
         console.error('Error parsing SSE sync event:', err);
       }
     };
 
     // SSE message/operation event handlers
     const handleMessageEvent = (e) => {
+      if (eventSourceRef.current !== eventSource) return;
       try {
-        const now = performance.now();
-        if (now - burstStartRef.current > BURST_WINDOW_MS) {
-          burstStartRef.current = now;
-          burstCountRef.current = 0;
-        }
-        burstCountRef.current++;
-
         if (!e.data || e.data.trim() === '') {
           if (debugMode) console.warn('Received empty SSE data, skipping');
           return;
@@ -689,9 +719,10 @@ export const InspectrProvider = ({
             }
             return;
           }
-          resolvedEventDB
-            .deleteEventByOperationId(deletedOperationId)
-            .catch((err) => console.error('Error deleting event from DB by operation_id:', err));
+          if (!replay?.remove(deletedOperationId)) {
+            if (burstBufferRef.current.length) flushBurst();
+            queueEventWrite(() => resolvedEventDB.deleteEventByOperationId(deletedOperationId));
+          }
           return;
         }
 
@@ -704,7 +735,6 @@ export const InspectrProvider = ({
         if (operationId) {
           event.operation_id = operationId;
           event.id = operationId;
-          setLastEventId(operationId);
           if (typeof window !== 'undefined' && event?.data && typeof event.data === 'object') {
             window.dispatchEvent(
               new CustomEvent('inspectr:operation-stream-update', {
@@ -721,28 +751,19 @@ export const InspectrProvider = ({
           event.id = event.id || `req-${Math.random().toString(36).slice(2, 11)}`;
         }
 
-        if (syncRunIdRef.current) {
-          event.__syncRunId = syncRunIdRef.current;
-        }
-
+        if (replay?.upsert(event)) return;
+        const now = performance.now();
+        if (now - burstStartRef.current > BURST_WINDOW_MS) flushBurst();
+        burstCountRef.current++;
         if (burstCountRef.current < BURST_THRESHOLD) {
-          resolvedEventDB
-            .upsertEvent(event)
-            .catch((err) => console.error('Error saving event to DB:', err));
+          queueEventWrite(async () => {
+            await resolvedEventDB.upsertEvent(event);
+            commitLiveCursor(operationId, replay);
+          });
         } else {
           burstBufferRef.current.push(event);
-          if (burstCountRef.current === BURST_THRESHOLD) {
-            setTimeout(async () => {
-              try {
-                await resolvedEventDB.bulkUpsertEvents(burstBufferRef.current);
-              } catch (err) {
-                console.error('bulk save failed', err);
-              } finally {
-                burstBufferRef.current = [];
-                burstCountRef.current = 0;
-                burstStartRef.current = performance.now();
-              }
-            }, BURST_WINDOW_MS);
+          if (burstTimerRef.current === null) {
+            burstTimerRef.current = setTimeout(flushBurst, BURST_WINDOW_MS);
           }
         }
       } catch (err) {
@@ -756,26 +777,30 @@ export const InspectrProvider = ({
 
     // SSE error handler
     eventSource.onerror = (err) => {
-      console.error('❌ SSE connection error:', err);
+      if (eventSourceRef.current !== eventSource) return;
+      console.error('SSE connection error:', err);
       setConnectionStatus('reconnecting');
 
-      if (mode === 'embedded') {
-        // Avoid cross-origin /api/register attempts in embedded mode.
-        return;
-      }
-
-      if (reRegistrationFailedRef.current) {
-        console.log('❌ Maximum re-registration attempts reached. Closing EventSource.');
+      if (mode !== 'embedded' && reRegistrationFailedRef.current) {
+        console.log('Maximum re-registration attempts reached. Closing EventSource.');
+        closeEventSource();
         setConnectionStatus('disconnected');
-        try {
-          eventSource.close();
-        } catch {}
         return;
       }
 
-      // Attempt to re-register; the EventSource will auto-retry too
-      console.log('🔄 Starting re-registration retry loop due to SSE error.');
-      attemptReRegistration();
+      // A new EventSource uses the persisted operation ID. Native retry of an open
+      // stream would send a CloudEvent ID, which is different from the store cursor.
+      if (opened || syncing) {
+        closeEventSource();
+        reconnectTimerRef.current = setTimeout(
+          () => connect(undefined, true),
+          RECONNECT_DELAY_MS
+        );
+        return;
+      }
+
+      // Before opening, native retries still carry the original query cursor.
+      if (mode !== 'embedded') attemptReRegistration();
     };
   };
 
@@ -785,14 +810,11 @@ export const InspectrProvider = ({
     console.log('📡️ SSE connection closed.');
   };
 
-  const SYNC_LAST_EVENT_ID = 'sync';
   const syncOperations = () => {
     if (debugMode) {
       console.log('[Inspectr] Syncing all operations...');
     }
 
-    syncRunIdRef.current = Date.now();
-    setLastEventId(SYNC_LAST_EVENT_ID);
     connect(SYNC_LAST_EVENT_ID);
   };
 
@@ -802,7 +824,7 @@ export const InspectrProvider = ({
     // Reset re-registration counters and connect with current config
     resetReRegistration();
     if (initialSyncPendingRef.current) {
-      initialSyncPendingRef.current = false;
+      // Registration can replace the credentials while the first sync is still in flight.
       syncOperations();
     } else {
       connect();

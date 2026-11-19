@@ -139,6 +139,14 @@ class EventDB {
     return await this.db.transaction('rw', this.db.events, () => this.db.events.bulkPut(records));
   }
 
+  async getEventIds() {
+    return await this.db.events.toCollection().primaryKeys();
+  }
+
+  async deleteEvents(ids) {
+    return await this.db.events.bulkDelete(ids);
+  }
+
   // Delete an event by its id.
   async deleteEvent(id) {
     return await this.db.events.delete(id);

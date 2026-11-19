@@ -36,3 +36,4 @@ PLAN.md
 docs/plans
 /.agents/
 /skills-lock.json
+/.mcp.json
