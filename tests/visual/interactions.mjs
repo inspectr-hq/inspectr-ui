@@ -21,7 +21,33 @@ try {
     return Array.from(ctx.getImageData(0, 0, 1, 1).data);
   });
   expect(badgePixel).toEqual([235, 242, 254, 255]);
-  console.log('Rules creation and request detail interactions passed');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${baseUrl}/iframe.html?id=apps-workspace-workspace--default&viewMode=story`);
+  await expect(page.getByRole('button', { name: 'Insights' })).toBeVisible();
+  const workspaceText = (await page.locator('body').innerText()).replace(/\s+/g, ' ');
+  expect(workspaceText).toContain('201 POST /v1/checkouts');
+  const workspaceWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(workspaceWidth).toBeLessThanOrEqual(390);
+  await expect(page.getByText('Disconnected', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reconnect' })).toBeVisible();
+
+  await page.goto(`${baseUrl}/iframe.html?id=apps-workspace-workspace--empty&viewMode=story`);
+  await expect(page.getByText('No operations', { exact: true })).toBeVisible();
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`${baseUrl}/iframe.html?id=apps-workspace-workspace--default&viewMode=story`);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'Authentication Guard', exact: true }).click();
+  await expect(page.getByText('Enabled', { exact: true })).toBeVisible();
+
+  await page.goto(`${baseUrl}/iframe.html?id=apps-settings-authenticationguard--enabled&viewMode=story`);
+  await expect(page.getByText('Enabled', { exact: true })).toBeVisible();
+  await page.goto(`${baseUrl}/iframe.html?id=apps-settings-authenticationguard--disabled&viewMode=story`);
+  await expect(page.getByText('Disabled', { exact: true })).toBeVisible();
+  await page.goto(`${baseUrl}/iframe.html?id=apps-settings-authenticationguard--fetch-error&viewMode=story`);
+  await expect(page.getByText('Authentication service unavailable', { exact: true })).toBeVisible();
+  console.log('Rules, request detail, workspace, and authentication settings checks passed');
 } finally {
   await browser.close();
 }

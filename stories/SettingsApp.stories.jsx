@@ -39,8 +39,21 @@ const createSettingsClient = ({ mode = 'populated', delay = 0 } = {}) => {
     },
     auth: {
       getAuthenticationSettings: () =>
-        respond({ enabled: true, secret: 'story-secret', token_ttl: 3600 }),
-      updateAuthenticationSettings: (value) => respond(value)
+        respond({
+          enabled: mode !== 'empty',
+          secret: mode === 'empty' ? '' : 'story-secret',
+          token_ttl: mode === 'empty' ? 0 : 3600,
+          auth_key: mode === 'empty' ? '' : 'inspectr-story-key',
+          auth_token: mode === 'empty' ? '' : 'insptr_tok_story_fixture',
+          auth_token_expiration: mode === 'empty' ? '' : '2027-01-15T12:00:00.000Z'
+        }),
+      updateAuthenticationSettings: (value) =>
+        respond({
+          auth_key: 'inspectr-story-key',
+          auth_token: 'insptr_tok_story_fixture',
+          auth_token_expiration: '2027-01-15T12:00:00.000Z',
+          ...value
+        })
     },
     mock: {
       getConfig: () =>
@@ -94,4 +107,4 @@ export default {
 export const Default = () => <SettingsStory mode="populated" />;
 export const Empty = () => <SettingsStory mode="empty" />;
 export const Loading = () => <SettingsStory mode="populated" delay={30000} />;
-export const Error = () => <SettingsStory mode="error" />;
+export const ServiceError = () => <SettingsStory mode="error" />;

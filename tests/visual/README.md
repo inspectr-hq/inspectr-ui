@@ -6,7 +6,7 @@ These scripts capture Storybook stories in Chrome and compare them with an earli
 2. Run `npm run visual:capture -- /tmp/inspectr-baseline`.
 3. Build and serve the changed version on the same address, then run `npm run visual:capture -- /tmp/inspectr-candidate`.
 4. Run `npm run visual:compare -- /tmp/inspectr-baseline /tmp/inspectr-candidate /tmp/inspectr-diffs`. It reports missing images, changed dimensions, and images with more than 0.1% differing pixels, saving diff images for matching dimensions. Inspect differences before accepting them.
-5. Run `npm run visual:interactions` against each build to check the rules editor, a request detail interaction, and Tremor badge contrast.
+5. Run `npm run visual:interactions` against each build to check the rules editor, request details, Tremor badge contrast, the populated/empty Workspace stories plus connection footer at 390px, and Authentication Guard enabled, disabled, and error states.
 
 Use the same Chrome version, operating system, viewport, and story data for both captures. `STORYBOOK_URL` changes the server URL; `STORY_FILTER` is a regular expression matching story IDs. `THEME=light` or `THEME=dark` captures one theme. Set `VIEWPORT_WIDTH` and/or `VIEWPORT_HEIGHT` to capture one custom viewport. The default matrix is 1440 by 900 and 390 by 844.
 

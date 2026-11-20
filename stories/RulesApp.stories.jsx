@@ -1,6 +1,7 @@
 import React from 'react';
 import RulesApp from '../src/components/RulesApp.jsx';
 import InspectrContext from '../src/context/InspectrContext.jsx';
+import { createEventDB } from '../src/utils/eventDB.js';
 import {
   rulesActions as mockActionsCatalog,
   ruleEvents as mockEvents,
@@ -8,7 +9,8 @@ import {
   rules as mockRules,
   ruleTemplateGroups as mockRuleTemplateGroups,
   ruleTemplates as mockRuleTemplates,
-  ruleTags as mockOperationTags
+  ruleTags as mockOperationTags,
+  httpOperations
 } from './fixtures/inspectrFixtures.js';
 
 const action = () => () => {};
@@ -122,6 +124,10 @@ const makeMockClient = (initialRules, options = {}) => {
 };
 
 const RulesAppStory = ({ initialRules, initialTags, mode = 'populated' }) => {
+  const eventDB = React.useMemo(
+    () => createEventDB({ dbName: `InspectrRulesStory-${mode}` }),
+    [mode]
+  );
   const client = React.useMemo(
     () => makeMockClient(initialRules ?? mockRules, {
       tags: initialTags ?? mockOperationTags,
@@ -132,6 +138,22 @@ const RulesAppStory = ({ initialRules, initialTags, mode = 'populated' }) => {
   );
 
   const toastLogger = React.useMemo(() => action('toast'), []);
+
+  React.useEffect(() => {
+    const seed = async () => {
+      await eventDB.clearEvents();
+      await eventDB.bulkUpsertEvents(
+        httpOperations.map((operation) => ({
+          id: operation.id,
+          operation_id: operation.id,
+          data: operation
+        }))
+      );
+    };
+
+    seed();
+    return () => eventDB.db.close();
+  }, [eventDB]);
 
   React.useEffect(() => {
     const originalFetch = globalThis.fetch;
@@ -162,8 +184,8 @@ const RulesAppStory = ({ initialRules, initialTags, mode = 'populated' }) => {
   }, []);
 
   const providerValue = React.useMemo(
-    () => ({ client, setToast: toastLogger, toast: null }),
-    [client, toastLogger]
+    () => ({ client, eventDB, setToast: toastLogger, toast: null }),
+    [client, eventDB, toastLogger]
   );
 
   return (
