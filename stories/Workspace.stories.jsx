@@ -19,6 +19,24 @@ import {
 
 const STORY_NAMESPACE = 'storybook/workspace';
 const STORY_DB_NAME = 'InspectrWorkspaceStory';
+const WORKSPACE_TRACE_ID = 'trace-checkout-batch-01';
+
+const workspaceTraceOperation = {
+  ...largeWorkspaceOperations[0],
+  correlation_id: WORKSPACE_TRACE_ID,
+  meta: {
+    ...largeWorkspaceOperations[0].meta,
+    trace: { trace_id: WORKSPACE_TRACE_ID, source: 'inspectr-directive' }
+  }
+};
+
+const workspaceTraceSummary = {
+  trace_id: WORKSPACE_TRACE_ID,
+  operation_count: 1,
+  first_seen: workspaceTraceOperation.request.timestamp,
+  last_seen: workspaceTraceOperation.request.timestamp,
+  sources: ['inspectr-directive']
+};
 
 const WorkspaceScenario = ({ mode }) => {
   const operations = mode === 'large' ? largeWorkspaceOperations : httpOperations;
@@ -50,6 +68,17 @@ const WorkspaceScenario = ({ mode }) => {
         delete: async () => {},
         deleteAll: async () => {},
         bulkDeleteTag: async ({ tag }) => ({ removed_tag: tag })
+      },
+      traces: {
+        list: async () => ({
+          traces: [workspaceTraceSummary],
+          meta: { total: 1, page: 1, limit: 50 }
+        }),
+        get: async (traceId) => ({
+          trace: traceId === WORKSPACE_TRACE_ID ? workspaceTraceSummary : null,
+          operations: traceId === WORKSPACE_TRACE_ID ? [workspaceTraceOperation] : [],
+          meta: { total: traceId === WORKSPACE_TRACE_ID ? 1 : 0, page: 1, limit: 200 }
+        })
       },
       stats: dashboardClient.stats,
       rules: {

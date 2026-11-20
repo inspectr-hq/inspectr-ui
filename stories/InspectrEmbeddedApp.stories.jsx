@@ -150,3 +150,19 @@ ThemedAndGated.args = {
     }
   }
 };
+
+export const FullyThemed = Template.bind({});
+FullyThemed.args = {
+  defaultModule: 'history',
+  themeConfig: {
+    tokens: {
+      surfaceBackground: '#111827',
+      surfaceMuted: '#1f2937',
+      borderSubtle: '#374151',
+      textPrimary: '#f9fafb',
+      textSecondary: '#cbd5e1',
+      accentPrimary: '#7c3aed',
+      accentPrimaryContrast: '#ffffff'
+    }
+  }
+};

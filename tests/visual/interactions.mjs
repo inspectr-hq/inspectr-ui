@@ -28,10 +28,15 @@ try {
   const workspaceOperations = page.locator('ul.overflow-y-auto.flex-grow').first();
   await expect(workspaceOperations.locator(':scope > li')).toHaveCount(101);
   await workspaceOperations.locator('li').filter({ hasText: '/v1/checkouts' }).first().click();
-  await expect(page.getByRole('link', { name: /View trace/ })).toHaveAttribute(
+  const workspaceTraceLink = page.getByRole('link', { name: /View trace/ });
+  await expect(workspaceTraceLink).toHaveAttribute(
     'href',
     '#traces/trace-checkout-batch-01/op-volume-001'
   );
+  await workspaceTraceLink.click();
+  await expect(page.getByText('Trace timeline', { exact: true })).toBeVisible();
+  await expect(page.getByText('Trace trace-checkout-batch-01', { exact: true })).toBeVisible();
+  await expect(page.getByText('1 step', { exact: true })).toBeVisible();
   await page.goto(`${baseUrl}/iframe.html?id=apps-inspectr-inspectrembeddedapp--fully-themed&viewMode=story`);
   await expect(page.getByRole('tab', { name: 'History', exact: true })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Settings', exact: true })).toBeVisible();

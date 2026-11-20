@@ -107,6 +107,28 @@ export const httpOperations = [
   }
 ];
 
+export const largeWorkspaceOperations = Array.from({ length: 100 }, (_, index) => {
+  const source = httpOperations[index % httpOperations.length];
+  const sequence = index + 1;
+  const id = `op-volume-${String(sequence).padStart(3, '0')}`;
+
+  return {
+    ...source,
+    id,
+    operation_id: id,
+    request: {
+      ...source.request,
+      timestamp: fixedTime(index)
+    },
+    meta: {
+      ...source.meta,
+      ...(index === 0
+        ? { trace: { trace_id: 'trace-checkout-batch-01', source: 'inspectr-directive' } }
+        : {})
+    }
+  };
+});
+
 export const analyticsSummary = {
   totals: { totalOperations: 1842, totalEndpoints: 12, errorCount: 37, averageDuration: 186 },
   summaries: [
@@ -161,13 +183,24 @@ export const createInsightsClient = ({ mode = 'populated', delay = 0 } = {}) => 
   const summaries = mode === 'empty' ? [] : analyticsSummary.summaries;
   return {
     operations: {
-      summarize: () => wait({
-        totals: mode === 'empty'
-          ? { totalOperations: 0, totalEndpoints: 0, errorCount: 0, averageDuration: 0 }
-          : analyticsSummary.totals,
-        summaries
-      }),
-      getSeries: () => wait(mode === 'empty' ? { series: [] } : analyticsSeries)
+      summarize: () =>
+        wait({
+          totals:
+            mode === 'empty'
+              ? { totalOperations: 0, totalEndpoints: 0, errorCount: 0, averageDuration: 0 }
+              : analyticsSummary.totals,
+          summaries
+        }),
+      getSeries: () => wait(mode === 'empty' ? { series: [] } : analyticsSeries),
+      listCompact: () =>
+        wait({
+          operations: mode === 'empty' ? [] : insightsOperations,
+          meta: {
+            page: 1,
+            total: mode === 'empty' ? 0 : insightsOperations.length,
+            total_pages: 1
+          }
+        })
     }
   };
 };
