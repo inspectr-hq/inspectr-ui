@@ -1,6 +1,7 @@
 import { chromium, expect } from '@playwright/test';
 
 const baseUrl = process.env.STORYBOOK_URL || 'http://127.0.0.1:6106';
+const storyUrl = (id) => `${baseUrl}/iframe.html?id=${id}&viewMode=story`;
 const browser = await chromium.launch({ channel: 'chrome' });
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -19,8 +20,64 @@ try {
   await expect(page.getByRole('tab', { name: 'Tool call', exact: true })).toBeVisible();
   await expect(page.getByText('lookup_inventory').first()).toBeVisible();
   await expect(page.getByText('linen-shirt', { exact: true })).toBeVisible();
+  await page.goto(storyUrl('components-settings-settingsconnector--lifecycle-states'));
+  await expect(page.getByText('Pending', { exact: true })).toBeVisible();
+  await expect(page.getByText('Ready', { exact: true })).toBeVisible();
+  await expect(page.getByText('Disconnected', { exact: true })).toBeVisible();
+  await expect(page.getByText('Disabled', { exact: true })).toHaveCount(2);
+  await page.goto(storyUrl('components-settings-settingsconnector--create-flow'));
+  await page.getByRole('button', { name: 'Create connector', exact: true }).first().click();
+  await page.getByLabel('Name').fill('Storybook alerts');
+  await page.getByLabel('Server URL').fill('https://alerts.acme.test/events');
+  await page.getByRole('button', { name: 'Create connector', exact: true }).last().click();
+  await expect(page.getByText('Storybook alerts', { exact: true })).toBeVisible();
+  await page.goto(storyUrl('components-settings-settingsconnector--edit-flow'));
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
+  await page.getByLabel('Server URL').fill('https://checkout-v2.acme.test/events');
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await expect(page.getByText('https://checkout-v2.acme.test/events', { exact: true })).toBeVisible();
+  await page.goto(storyUrl('components-operations-operationdatadialogs--import-ready'));
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'operations.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{"operations":[]}')
+  });
+  await page.getByRole('button', { name: 'Import', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText('Import completed');
+  await page.goto(storyUrl('components-operations-operationdatadialogs--import-failure'));
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'invalid-operations.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{invalid')
+  });
+  await page.getByRole('button', { name: 'Import', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Import failed');
+  await page.goto(storyUrl('components-operations-operationdatadialogs--export-operations-ready'));
+  const exportDownloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  const exportDownload = await exportDownloadPromise;
+  expect(exportDownload.suggestedFilename()).toContain('inspectr_operations_');
+  await page.goto(storyUrl('components-operations-operationdatadialogs--export-operations-failure'));
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveText('Export service unavailable');
+  await page.goto(storyUrl('components-operations-operationdatadialogs--export-recording'));
+  await expect(page.getByText(/4 operations recorded since/)).toBeVisible();
+  await page.getByRole('button', { name: 'Continue Recording', exact: true }).click();
+  await expect(page.getByText('Export Recording', { exact: true })).toHaveCount(0);
+  await page.goto(storyUrl('components-operations-sseframesviewer--representative-stream'));
+  await page.getByRole('button', { name: 'JSON', exact: true }).first().click();
+  await expect(page.getByRole('button', { name: 'RAW', exact: true }).first()).toBeVisible();
+  await page.goto(storyUrl('components-tracing-tracetimelinefilterpanel--http-and-mcp-filters'));
+  await expect(page.getByText('MCP Tool', { exact: true })).toBeVisible();
+  await expect(page.getByPlaceholder('e.g. /mcp', { exact: true })).toBeVisible();
   await page.goto(`${baseUrl}/iframe.html?id=apps-tracing-tracingapp--large-trace&viewMode=story`);
   await expect(page.getByText('Trace timeline', { exact: true })).toBeVisible();
+  await expect(page.getByText('75 steps', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  await page.getByPlaceholder('e.g. /mcp', { exact: true }).fill('/missing-endpoint');
+  await expect(page.getByText('0 steps', { exact: true })).toBeVisible();
+  await expect(page.getByText('No operations recorded for this trace.', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Reset', exact: true }).first().click();
   await expect(page.getByText('75 steps', { exact: true })).toBeVisible();
   await page.goto(
     `${baseUrl}/iframe.html?id=apps-workspace-workspace--large-operations-with-trace&viewMode=story`
@@ -125,7 +182,7 @@ try {
   await page.goto(`${baseUrl}/iframe.html?id=apps-settings-authenticationguard--fetch-error&viewMode=story`);
   await expect(page.getByText('Authentication service unavailable', { exact: true })).toBeVisible();
   console.log(
-    'Rules, tracing high volume and MCP, Workspace high volume and trace, embedded theme, request detail, Workspace Insights, usage, statistics, and settings checks passed'
+    'Connector, import/export, SSE, trace filters, tracing, MCP, Workspace, theme, and settings checks passed'
   );
 } finally {
   await browser.close();
