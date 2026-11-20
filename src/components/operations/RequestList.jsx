@@ -12,6 +12,8 @@ const toId = (value) => (value == null ? null : String(value));
 
 const RequestList = ({
   operations,
+  loading = false,
+  error = null,
   onSelect,
   onRemove,
   clearOperations,
@@ -225,7 +227,21 @@ const RequestList = ({
         className="overflow-y-auto flex-grow"
         style={{ maxHeight: 'calc(100vh - 40px - 100px - 49px - 64px)' }}
       >
-        {operations.length === 0 ? (
+        {loading ? (
+          <li
+            className="flex items-center justify-center h-full text-sm text-gray-500 dark:text-gray-400"
+            role="status"
+          >
+            Loading request history…
+          </li>
+        ) : error ? (
+          <li
+            className="flex items-center justify-center h-full px-4 text-center text-sm text-red-600 dark:text-red-400"
+            role="alert"
+          >
+            Could not load request history: {error.message || 'Unexpected error'}
+          </li>
+        ) : operations.length === 0 ? (
           <li className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400 text-2xl">
             No operations
           </li>

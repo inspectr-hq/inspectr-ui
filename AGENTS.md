@@ -12,7 +12,7 @@ For non-trivial tasks: create/update PLAN.md using ../.agents/PLAN_TEMPLATE.md
 
 ## Skills & Commands
 
-Skills at `.codex/skills/`:
+Skills at `.codex/skills/` and `.agents/skills/`:
 - **`frontend-react`** - **Read this for React work.** 
 - `plan-first` - Planning workflow for complex tasks
 - `code-review` - For code review

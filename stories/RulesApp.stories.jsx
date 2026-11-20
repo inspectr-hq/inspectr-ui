@@ -1,15 +1,17 @@
 import React from 'react';
 import RulesApp from '../src/components/RulesApp.jsx';
 import InspectrContext from '../src/context/InspectrContext.jsx';
+import { createEventDB } from '../src/utils/eventDB.js';
 import {
-  mockActionsCatalog,
-  mockEvents,
-  mockOperatorCatalog,
-  mockRules,
-  mockRuleTemplateGroups,
-  mockRuleTemplates,
-  mockOperationTags
-} from './rulesMocks.js';
+  rulesActions as mockActionsCatalog,
+  ruleEvents as mockEvents,
+  ruleOperators as mockOperatorCatalog,
+  rules as mockRules,
+  ruleTemplateGroups as mockRuleTemplateGroups,
+  ruleTemplates as mockRuleTemplates,
+  ruleTags as mockOperationTags,
+  httpOperations
+} from './fixtures/inspectrFixtures.js';
 
 const action = () => () => {};
 
@@ -22,7 +24,8 @@ const makeMockClient = (initialRules, options = {}) => {
   let tagsState = deepClone(options.tags ?? mockOperationTags);
 
   const list = async () => {
-    await delay(80);
+    await delay(options.delay ?? 80);
+    if (options.error) throw new Error('Rules service unavailable');
     return { rules: deepClone(rulesState) };
   };
 
@@ -43,8 +46,8 @@ const makeMockClient = (initialRules, options = {}) => {
 
   const create = async (payload) => {
     await delay(100);
-    const now = new Date().toISOString();
-    const created = { ...deepClone(payload), id: `rule-${Math.random().toString(36).slice(2, 10)}`, created_at: now, updated_at: now };
+    const now = '2026-01-15T12:00:00.000Z';
+    const created = { ...deepClone(payload), id: 'rule-story-created', created_at: now, updated_at: now };
     rulesState = [created, ...rulesState];
     return deepClone(created);
   };
@@ -52,7 +55,7 @@ const makeMockClient = (initialRules, options = {}) => {
   const replace = async (id, payload) => {
     await delay(100);
     const existing = rulesState.find((rule) => rule.id === id);
-    const now = new Date().toISOString();
+    const now = '2026-01-15T12:00:00.000Z';
     const next = {
       ...deepClone(payload),
       id,
@@ -66,7 +69,7 @@ const makeMockClient = (initialRules, options = {}) => {
   const update = async (id, payload) => {
     await delay(75);
     const existing = rulesState.find((rule) => rule.id === id);
-    const now = new Date().toISOString();
+    const now = '2026-01-15T12:00:00.000Z';
     const next = {
       ...existing,
       ...deepClone(payload),
@@ -120,16 +123,40 @@ const makeMockClient = (initialRules, options = {}) => {
   return { rules, operations };
 };
 
-const RulesAppStory = ({ initialRules, initialTags }) => {
+const RulesAppStory = ({ initialRules, initialTags, mode = 'populated' }) => {
+  const eventDB = React.useMemo(
+    () => createEventDB({ dbName: `InspectrRulesStory-${mode}` }),
+    [mode]
+  );
   const client = React.useMemo(
-    () => makeMockClient(initialRules ?? mockRules, { tags: initialTags ?? mockOperationTags }),
-    [initialRules, initialTags]
+    () => makeMockClient(initialRules ?? mockRules, {
+      tags: initialTags ?? mockOperationTags,
+      delay: mode === 'loading' ? 30000 : undefined,
+      error: mode === 'error'
+    }),
+    [initialRules, initialTags, mode]
   );
 
   const toastLogger = React.useMemo(() => action('toast'), []);
 
   React.useEffect(() => {
-    const originalFetch = typeof globalThis.fetch === 'function' ? globalThis.fetch : null;
+    const seed = async () => {
+      await eventDB.clearEvents();
+      await eventDB.bulkUpsertEvents(
+        httpOperations.map((operation) => ({
+          id: operation.id,
+          operation_id: operation.id,
+          data: operation
+        }))
+      );
+    };
+
+    seed();
+    return () => eventDB.db.close();
+  }, [eventDB]);
+
+  React.useEffect(() => {
+    const originalFetch = globalThis.fetch;
     const mockFetch = async (input, init) => {
       const url = typeof input === 'string' ? input : input?.url ?? '';
       if (url.includes('/api/rules/templates/group-types')) {
@@ -146,9 +173,6 @@ const RulesAppStory = ({ initialRules, initialTags }) => {
           json: async () => deepClone(mockRuleTemplates)
         };
       }
-      if (originalFetch) {
-        return originalFetch(input, init);
-      }
       return {
         ok: false,
         status: 404,
@@ -156,14 +180,12 @@ const RulesAppStory = ({ initialRules, initialTags }) => {
       };
     };
     globalThis.fetch = mockFetch;
-    return () => {
-      globalThis.fetch = originalFetch;
-    };
+    return () => { globalThis.fetch = originalFetch; };
   }, []);
 
   const providerValue = React.useMemo(
-    () => ({ client, setToast: toastLogger, toast: null }),
-    [client, toastLogger]
+    () => ({ client, eventDB, setToast: toastLogger, toast: null }),
+    [client, eventDB, toastLogger]
   );
 
   return (
@@ -193,3 +215,9 @@ EmptyWorkspace.args = {
   initialRules: [],
   initialTags: ['segment:card']
 };
+
+export const Loading = Template.bind({});
+Loading.args = { mode: 'loading' };
+
+export const Error = Template.bind({});
+Error.args = { mode: 'error' };

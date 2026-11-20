@@ -70,7 +70,7 @@ export default function Workspace() {
   );
 }
 
-function WorkspaceContent() {
+export function WorkspaceContent() {
   const { eventDB, featureConfig } = useInspectr();
   const moduleFlags = featureConfig?.modules || {};
   const actionFlags = featureConfig?.actions || {};
@@ -132,9 +132,9 @@ function WorkspaceContent() {
       <div className="flex flex-col min-h-screen">
         <div className="border-b border-tremor-border dark:border-dark-tremor-border relative h-full bg-gray-50 dark:bg-dark-tremor-background-subtle">
           <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex h-16 items-center gap-6">
+            <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 py-2 sm:flex sm:h-16 sm:gap-6 sm:py-0">
               {/* ———Logo ——— */}
-              <div className="hidden shrink-0 sm:flex sm:items-center">
+              <div className="flex shrink-0 items-center">
                 <a href="./" className="p-1.5">
                   <Logo
                     className="size-4 shrink-0 w-8 h-8 text-tremor-content-strong dark:text-dark-tremor-content-strong"
@@ -143,9 +143,9 @@ function WorkspaceContent() {
                 </a>
               </div>
               {/* ——— Workspace Navigation ——— */}
-              <div className="flex-1 min-w-0">
+              <div className="col-span-2 row-start-2 min-w-0 sm:row-auto sm:flex-1">
                 <nav
-                  className="flex-1 min-w-0 flex space-x-6 overflow-x-auto overflow-y-visible"
+                  className="flex min-w-0 gap-x-4 overflow-x-auto overflow-y-visible sm:flex-1 sm:gap-x-6"
                   aria-label="Tabs"
                 >
                   {visibleNavigation.map((navItem) =>
@@ -176,7 +176,7 @@ function WorkspaceContent() {
                 </nav>
               </div>
               {/* ——— Workspace Actions ——— */}
-              <div className="ml-auto flex items-center space-x-2">
+              <div className="col-start-2 row-start-1 ml-auto flex items-center gap-2 sm:ml-auto">
                 <DialogVersionUpdate />
                 {allowExport ? (
                   <HeaderActionButton onClick={() => setIsExportOpen(true)}>

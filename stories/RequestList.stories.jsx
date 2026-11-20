@@ -1,6 +1,7 @@
 // stories/RequestList.stories.jsx
 import React, { useState } from 'react';
 import RequestList from '../src/components/operations/RequestList.jsx';
+import { httpOperations } from './fixtures/inspectrFixtures.js';
 
 export default {
   title: 'Components/Operations/RequestList',
@@ -17,58 +18,7 @@ export const DefaultList = () => {
 
   return (
     <RequestList
-      operations={[
-          {
-            id: 1,
-            request: {
-              method: 'GET',
-              url: 'http://example.com',
-              timestamp: '2025-03-12T16:06:32.344451Z',
-              headers: [{ name: 'Authorization', value: 'Bearer abc123' }]
-            },
-            response: { status: 200 },
-            timing: { duration: 123 },
-            meta: { inspectr: { guard: { 'inspectr-auth-key': 'demo' } } }
-          },
-          {
-            id: 2,
-            request: {
-              method: 'POST',
-              url: 'http://example.com',
-              timestamp: '2025-03-12T16:06:32.344451Z',
-              headers: [{ name: 'X-API-Key', value: 'abc123' }]
-            },
-            response: { status: 301 },
-            timing: { duration: 123 }
-          },
-          {
-            id: 3,
-            method: 'POST',
-            request: {
-              method: 'POST',
-              url: 'http://example.com',
-              timestamp: '2025-03-12T16:06:32.344451Z'
-            },
-            response: { status: 404 },
-            timing: { duration: 123 }
-          },
-        {
-          id: 4,
-          request: { method: 'POST', url: 'http://example.com', timestamp: '2025-03-11T16:06:32.344451Z' },
-          response: { status: 500 },
-          timing: { duration: 123 }
-        },{
-          id: 5,
-          request: { method: 'POST', url: 'http://example.com', timestamp: '2025-03-11T16:06:32.344451Z' },
-          response: { status: 200 },
-          timing: { duration: 123 }
-        },{
-          id: 6,
-          request: { method: 'POST', url: 'http://example.com', timestamp: '2025-03-11T16:06:32.344451Z' },
-          response: { status: 301 },
-          timing: { duration: 123 }
-        }
-      ]}
+      operations={httpOperations}
       onSelect={() => {
       }}
       onRemove={() => {

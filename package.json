@@ -32,7 +32,10 @@
     "build-storybook": "storybook build",
     "format": "npx prettier --write \"src/**/*.{js,jsx,css}\" --config ./.prettierrc",
     "test": "node --test tests/unit/**/*.test.mjs",
-    "release": "npm run build && npx np --branch main"
+    "release": "npm run build && npx np --branch main",
+    "visual:capture": "node tests/visual/capture.mjs",
+    "visual:compare": "node tests/visual/compare.mjs",
+    "visual:interactions": "node tests/visual/interactions.mjs"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.10",
@@ -40,7 +43,7 @@
     "@radix-ui/react-tooltip": "^1.2.10",
     "@remixicon/react": "^4.9.0",
     "@tremor/react": "^3.18.7",
-    "dexie": "^4.4.2",
+    "dexie": "^4.4.7",
     "dexie-react-hooks": "^4.4.0",
     "jsonpathly": "^4.0.0",
     "monaco-editor": "^0.52.2",
@@ -48,20 +51,21 @@
     "xml-formatter": "^3.7.1"
   },
   "peerDependencies": {
-    "@tailwindcss/postcss": "^4.0.6",
-    "postcss": "^8.5.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@storybook/react-vite": "^10.2.8",
+    "@playwright/test": "^1.65.1",
+    "@storybook/react-vite": "^10.6.7",
     "@tailwindcss/forms": "^0.5.11",
-    "@tailwindcss/vite": "^4.3.1",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^6.3.0",
     "autoprefixer": "^10.4.24",
-    "storybook": "^10.3.6",
+    "pixelmatch": "^8.0.0",
+    "pngjs": "^7.0.0",
+    "postcss": "^8.5.33",
+    "storybook": "^10.6.7",
     "vite": "^8.3.8"
   },
   "publishConfig": {

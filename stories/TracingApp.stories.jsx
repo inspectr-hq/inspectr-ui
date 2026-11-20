@@ -1,6 +1,7 @@
 import React from 'react';
 import TracingApp from '../src/components/tracing/TracingApp.jsx';
 import InspectrContext from '../src/context/InspectrContext.jsx';
+import { httpOperations } from './fixtures/inspectrFixtures.js';
 
 export default {
   title: 'Apps/Tracing/TracingApp',
@@ -237,6 +238,207 @@ const traceDetailResponses = {
   }
 };
 
+const mcpTraceId = 'mcp-inventory-demo';
+const mcpTimestamp = '2026-01-15T12:00:00.000Z';
+const mcpTraceOperations = [
+  {
+    version: '1.0',
+    operation_id: 'mcp-inventory-initialize',
+    correlation_id: mcpTraceId,
+    request: {
+      method: 'POST',
+      url: 'https://mcp.acme.test/mcp',
+      path: '/mcp',
+      server: 'mcp.acme.test',
+      timestamp: mcpTimestamp,
+      headers: [{ name: 'Content-Type', value: 'application/json' }],
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2025-03-26',
+          capabilities: {},
+          clientInfo: { name: 'Inspectr', version: '1.9.3' }
+        }
+      })
+    },
+    response: {
+      status: 200,
+      status_text: 'OK',
+      headers: [{ name: 'Content-Type', value: 'application/json' }],
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        result: {
+          protocolVersion: '2025-03-26',
+          capabilities: { tools: {} },
+          serverInfo: { name: 'Acme Inventory MCP', version: '2.4.0' }
+        }
+      }),
+      timestamp: mcpTimestamp
+    },
+    timing: { duration: 18 },
+    meta: {
+      mcp: { method: 'initialize', category: 'session' },
+      trace: { trace_id: mcpTraceId, source: 'mcp' }
+    }
+  },
+  {
+    version: '1.0',
+    operation_id: 'mcp-inventory-tools-list',
+    correlation_id: mcpTraceId,
+    request: {
+      method: 'POST',
+      url: 'https://mcp.acme.test/mcp',
+      path: '/mcp',
+      server: 'mcp.acme.test',
+      timestamp: '2026-01-15T12:00:00.120Z',
+      headers: [{ name: 'Content-Type', value: 'application/json' }],
+      body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} })
+    },
+    response: {
+      status: 200,
+      status_text: 'OK',
+      headers: [{ name: 'Content-Type', value: 'application/json' }],
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 2,
+        result: {
+          tools: [
+            {
+              name: 'lookup_inventory',
+              description: 'Check available and reserved stock for a SKU in a warehouse.',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  sku: { type: 'string', description: 'Product SKU to look up' },
+                  warehouse: { type: 'string', description: 'Warehouse code' }
+                },
+                required: ['sku', 'warehouse']
+              }
+            }
+          ]
+        }
+      }),
+      timestamp: '2026-01-15T12:00:00.142Z'
+    },
+    timing: { duration: 22 },
+    meta: {
+      mcp: { method: 'tools/list', category: 'tool' },
+      trace: { trace_id: mcpTraceId, source: 'mcp' }
+    }
+  },
+  {
+    ...httpOperations[3],
+    operation_id: 'mcp-inventory-tool-call',
+    correlation_id: mcpTraceId,
+    request: {
+      ...httpOperations[3].request,
+      url: 'https://mcp.acme.test/mcp',
+      path: '/mcp',
+      server: 'mcp.acme.test',
+      timestamp: '2026-01-15T12:00:00.350Z',
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 3,
+        method: 'tools/call',
+        params: { name: 'lookup_inventory', arguments: { sku: 'linen-shirt', warehouse: 'eu-west' } }
+      })
+    },
+    response: {
+      ...httpOperations[3].response,
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 3,
+        result: {
+          content: [{ type: 'text', text: '18 units available, 3 reserved.' }],
+          structuredContent: { sku: 'linen-shirt', warehouse: 'eu-west', available: 18, reserved: 3 }
+        }
+      }),
+      timestamp: '2026-01-15T12:00:00.591Z'
+    },
+    timing: { duration: 241 },
+    meta: {
+      ...httpOperations[3].meta,
+      mcp: {
+        category: 'tool',
+        method: 'tools/call',
+        name: 'lookup_inventory',
+        tokens: { request: 48, response: 32 }
+      },
+      trace: { trace_id: mcpTraceId, source: 'mcp' }
+    }
+  }
+];
+
+const mcpTraceSummary = {
+  trace_id: mcpTraceId,
+  operation_count: mcpTraceOperations.length,
+  first_seen: mcpTimestamp,
+  last_seen: '2026-01-15T12:00:00.591Z',
+  sources: ['mcp']
+};
+
+const mcpTraceListResponse = {
+  traces: [mcpTraceSummary],
+  meta: { total: 1, page: 1, limit: 50, total_pages: 1 },
+  links: { current: '/api/traces?limit=50&page=1' }
+};
+
+const mcpTraceDetailResponses = {
+  [mcpTraceId]: {
+    trace: mcpTraceSummary,
+    operations: mcpTraceOperations,
+    meta: { total: mcpTraceOperations.length, page: 1, limit: 50, total_pages: 1 },
+    links: { current: `/api/traces/${mcpTraceId}?limit=50&page=1` }
+  }
+};
+
+const largeTraceId = 'trace-high-volume-75';
+const largeTraceOperations = Array.from({ length: 75 }, (_, index) => {
+  const source = httpOperations[index % httpOperations.length];
+  const operationId = `trace-operation-${String(index + 1).padStart(3, '0')}`;
+  const timestamp = new Date(Date.UTC(2026, 0, 15, 12, index)).toISOString();
+
+  return {
+    ...source,
+    version: '1.0',
+    id: operationId,
+    operation_id: operationId,
+    correlation_id: largeTraceId,
+    request: { ...source.request, timestamp },
+    response: { ...source.response, timestamp },
+    meta: {
+      ...source.meta,
+      trace: { trace_id: largeTraceId, source: 'inspectr-directive' }
+    }
+  };
+});
+
+const largeTraceSummary = {
+  trace_id: largeTraceId,
+  operation_count: largeTraceOperations.length,
+  first_seen: largeTraceOperations[0].request.timestamp,
+  last_seen: largeTraceOperations.at(-1).request.timestamp,
+  sources: ['inspectr-directive']
+};
+
+const largeTraceListResponse = {
+  traces: [largeTraceSummary],
+  meta: { total: 1, page: 1, limit: 50, total_pages: 1 },
+  links: { current: '/api/traces?limit=50&page=1' }
+};
+
+const largeTraceDetailResponses = {
+  [largeTraceId]: {
+    trace: largeTraceSummary,
+    operations: largeTraceOperations,
+    meta: { total: largeTraceOperations.length, page: 1, limit: 100, total_pages: 1 },
+    links: { current: `/api/traces/${largeTraceId}?limit=100&page=1` }
+  }
+};
+
 const createMockClient = ({
   listResponse = traceListResponse,
   detailResponses = traceDetailResponses,
@@ -316,6 +518,17 @@ export const Empty = () => (
   </MockProvider>
 );
 
+export const Loading = () => (
+  <MockProvider
+    client={createMockClient({
+      listDelay: 30000,
+      detailDelay: 0
+    })}
+  >
+    <TracingApp route={{ params: {} }} />
+  </MockProvider>
+);
+
 export const ListError = () => (
   <MockProvider
     client={createMockClient({
@@ -324,5 +537,31 @@ export const ListError = () => (
     })}
   >
     <TracingApp route={{ params: {} }} />
+  </MockProvider>
+);
+
+export const McpOperations = () => (
+  <MockProvider
+    client={createMockClient({
+      listResponse: mcpTraceListResponse,
+      detailResponses: mcpTraceDetailResponses,
+      listDelay: 0,
+      detailDelay: 0
+    })}
+  >
+    <TracingApp route={{ params: { trace: mcpTraceId, operation: 'mcp-inventory-tool-call' } }} />
+  </MockProvider>
+);
+
+export const LargeTrace = () => (
+  <MockProvider
+    client={createMockClient({
+      listResponse: largeTraceListResponse,
+      detailResponses: largeTraceDetailResponses,
+      listDelay: 0,
+      detailDelay: 0
+    })}
+  >
+    <TracingApp route={{ params: { trace: largeTraceId } }} />
   </MockProvider>
 );

@@ -156,11 +156,11 @@ const mockMetricsLicensed = {
   }
 };
 
-const makeMockClient = (metricsData, licenseData) => ({
+const makeMockClient = (metricsData, licenseData, options = {}) => ({
   service: {
     getMetrics: async () => {
-      // small delay to exercise loading state
-      await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, options.delay ?? 50));
+      if (options.error) throw new Error('Usage service unavailable');
       return metricsData;
     },
     putLicense: async () => {
@@ -194,6 +194,18 @@ export const UsageUnlicensed = () => (
 
 export const UsageLicensed = () => (
   <MockProvider client={makeMockClient(mockMetricsLicensed)}>
+    <UsageApp />
+  </MockProvider>
+);
+
+export const Loading = () => (
+  <MockProvider client={makeMockClient(mockMetricsLicensed, undefined, { delay: 30000 })}>
+    <UsageApp />
+  </MockProvider>
+);
+
+export const Error = () => (
+  <MockProvider client={makeMockClient(mockMetricsLicensed, undefined, { error: true })}>
     <UsageApp />
   </MockProvider>
 );

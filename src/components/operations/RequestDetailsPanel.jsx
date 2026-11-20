@@ -32,7 +32,7 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   const expose = exposeValue === 'true';
   const isRequestDetailCollapsed = requestDetailCollapsedValue === 'true';
   const [isLoaded, setIsLoaded] = useState(false);
-  const { detailOperation, fetchDetail, isFetching } = useOperationDetails(
+  const { detailOperation, detailError, fetchDetail, isFetching } = useOperationDetails(
     operation?.id,
     operation
   );
@@ -92,6 +92,28 @@ const RequestDetailsPanel = ({ operation, currentTab, setCurrentTab }) => {
   useEffect(() => {
     setIsManualRefresh(false);
   }, [operation?.id]);
+
+  if (operation && !detailOperation && isFetching) {
+    return (
+      <div
+        className="flex h-96 min-h-full items-center justify-center rounded-tremor-default border border-dashed border-tremor-border bg-tremor-background-muted px-6 py-10 text-sm text-tremor-content dark:border-dark-tremor-border dark:bg-dark-tremor-background-muted dark:text-dark-tremor-content"
+        role="status"
+      >
+        Loading request details…
+      </div>
+    );
+  }
+
+  if (operation && !detailOperation && detailError) {
+    return (
+      <div
+        className="flex h-96 min-h-full items-center justify-center rounded-tremor-default border border-rose-200 bg-rose-50 px-6 py-10 text-center text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-900/20 dark:text-rose-300"
+        role="alert"
+      >
+        Could not load request details: {detailError.message || 'Unexpected error'}
+      </div>
+    );
+  }
 
   // Apply CSS-based solution to prevent flashing
   if (!operation) {

@@ -151,19 +151,26 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
   }, [route?.params, setFilters]);
 
   // Live query: get the events for the current page.
-  const { results: operations = [], totalCount = 0 } =
-    useLiveQuery(
-      () =>
-        eventDB.queryEvents({
+  const operationQuery = useLiveQuery(
+    async () => {
+      try {
+        return await eventDB.queryEvents({
           filters,
           sort: { field: sortField, order: sortDirection },
           page,
           pageSize
-        }),
-      [eventDB, filters, sortField, sortDirection, page],
-      { results: [], totalCount: 0 },
-      { throttle: 100 }
-    ) || {};
+        });
+      } catch (error) {
+        return { results: [], totalCount: 0, error };
+      }
+    },
+    [eventDB, filters, sortField, sortDirection, page],
+    null,
+    { throttle: 100 }
+  );
+  const isOperationsLoading = operationQuery === null;
+  const { results: operations = [], totalCount = 0, error: operationsError } =
+    operationQuery || {};
 
   const tagOptions =
     useLiveQuery(() => eventDB.getAllTagOptions(), [eventDB], [], { throttle: 300 }) || [];
@@ -411,6 +418,8 @@ const InspectrApp = ({ route = { slug: 'inspectr' } }) => {
         <div className="overflow-y-auto" style={{ width: `${leftPanelWidth}%` }}>
           <RequestList
             operations={operations || []}
+            loading={isOperationsLoading}
+            error={operationsError}
             onSelect={handleSelect}
             onRemove={removeOperation}
             clearOperations={clearOperations}
