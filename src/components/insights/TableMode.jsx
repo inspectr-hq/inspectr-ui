@@ -258,6 +258,10 @@ export default function TableMode({ operations }) {
     return <EmptyState message="No operations available for tabular view." />;
   }
 
+  return <TableModeContent operations={operations} />;
+}
+
+function TableModeContent({ operations }) {
   const { client } = useInspectr();
   const [tablePage, setTablePage] = useState(1);
   const [tableData, setTableData] = useState([]);

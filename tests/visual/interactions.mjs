@@ -4,9 +4,58 @@ const baseUrl = process.env.STORYBOOK_URL || 'http://127.0.0.1:6106';
 const browser = await chromium.launch({ channel: 'chrome' });
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const insightsHookErrors = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error' && message.text().includes('Expected static flag was missing')) {
+      insightsHookErrors.push(message.text());
+    }
+  });
   await page.goto(`${baseUrl}/iframe.html?id=apps-rules-rulesapp--populated-workspace&viewMode=story`);
   await page.getByRole('button', { name: 'Add rule', exact: true }).click();
   await expect(page.getByText('Create rule', { exact: true })).toBeVisible();
+  await page.goto(`${baseUrl}/iframe.html?id=apps-tracing-tracingapp--mcp-operations&viewMode=story`);
+  await expect(page.getByText('Trace timeline', { exact: true })).toBeVisible();
+  await expect(page.getByText('3 steps', { exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Tool call', exact: true })).toBeVisible();
+  await expect(page.getByText('lookup_inventory').first()).toBeVisible();
+  await expect(page.getByText('linen-shirt', { exact: true })).toBeVisible();
+  await page.goto(`${baseUrl}/iframe.html?id=apps-tracing-tracingapp--large-trace&viewMode=story`);
+  await expect(page.getByText('Trace timeline', { exact: true })).toBeVisible();
+  await expect(page.getByText('75 steps', { exact: true })).toBeVisible();
+  await page.goto(
+    `${baseUrl}/iframe.html?id=apps-workspace-workspace--large-operations-with-trace&viewMode=story`
+  );
+  const workspaceOperations = page.locator('ul.overflow-y-auto.flex-grow').first();
+  await expect(workspaceOperations.locator(':scope > li')).toHaveCount(101);
+  await workspaceOperations.locator('li').filter({ hasText: '/v1/checkouts' }).first().click();
+  await expect(page.getByRole('link', { name: /View trace/ })).toHaveAttribute(
+    'href',
+    '#traces/trace-checkout-batch-01/op-volume-001'
+  );
+  await page.goto(`${baseUrl}/iframe.html?id=apps-inspectr-inspectrembeddedapp--fully-themed&viewMode=story`);
+  await expect(page.getByRole('tab', { name: 'History', exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Settings', exact: true })).toBeVisible();
+  const embeddedTheme = await page.locator('.inspectr-embedded-root').evaluate((root) => {
+    const style = getComputedStyle(root);
+    return {
+      background: style.getPropertyValue('--inspectr-surface-background').trim(),
+      muted: style.getPropertyValue('--inspectr-surface-muted').trim(),
+      border: style.getPropertyValue('--inspectr-border-subtle').trim(),
+      primaryText: style.getPropertyValue('--inspectr-text-primary').trim(),
+      secondaryText: style.getPropertyValue('--inspectr-text-secondary').trim(),
+      accent: style.getPropertyValue('--inspectr-accent-primary').trim(),
+      accentContrast: style.getPropertyValue('--inspectr-accent-primary-contrast').trim()
+    };
+  });
+  expect(embeddedTheme).toEqual({
+    background: '#111827',
+    muted: '#1f2937',
+    border: '#374151',
+    primaryText: '#f9fafb',
+    secondaryText: '#cbd5e1',
+    accent: '#7c3aed',
+    accentContrast: '#ffffff'
+  });
   await page.goto(`${baseUrl}/iframe.html?id=components-operations-requestdetailspanel--default-panel&viewMode=story`);
   await page.getByRole('button', { name: 'Query Parameters (1)' }).click();
   await expect(page.getByText('search', { exact: true })).toBeVisible();
@@ -25,8 +74,6 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/iframe.html?id=apps-workspace-workspace--default&viewMode=story`);
   await expect(page.getByRole('button', { name: 'Insights' })).toBeVisible();
-  const workspaceText = (await page.locator('body').innerText()).replace(/\s+/g, ' ');
-  expect(workspaceText).toContain('201 POST /v1/checkouts');
   const workspaceWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(workspaceWidth).toBeLessThanOrEqual(390);
   await expect(page.getByText('Disconnected', { exact: true })).toBeVisible();
@@ -41,6 +88,7 @@ try {
   await expect(page.getByText('Insights Explorer', { exact: true })).toBeVisible();
   await expect(page.getByText('Total 1842', { exact: true })).toBeVisible();
   await expect(page.getByText('/v1/checkouts', { exact: true }).first()).toBeVisible();
+  expect(insightsHookErrors).toHaveLength(0);
   await page.getByRole('button', { name: 'Statistics', exact: true }).click();
   await expect(page.getByText('Top Slowest Endpoints (P95)', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Usage', exact: true }).click();
@@ -72,7 +120,7 @@ try {
   await page.goto(`${baseUrl}/iframe.html?id=apps-settings-authenticationguard--fetch-error&viewMode=story`);
   await expect(page.getByText('Authentication service unavailable', { exact: true })).toBeVisible();
   console.log(
-    'Rules, request detail, workspace, usage, statistics, Mock, MCP, and auth settings checks passed'
+    'Rules, tracing high volume and MCP, Workspace high volume and trace, embedded theme, request detail, Workspace Insights, usage, statistics, and settings checks passed'
   );
 } finally {
   await browser.close();

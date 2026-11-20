@@ -9,6 +9,7 @@ import {
 import {
   createDashboardClient,
   createInsightsClient,
+  largeWorkspaceOperations,
   httpOperations,
   ruleEvents,
   rules,
@@ -20,6 +21,7 @@ const STORY_NAMESPACE = 'storybook/workspace';
 const STORY_DB_NAME = 'InspectrWorkspaceStory';
 
 const WorkspaceScenario = ({ mode }) => {
+  const operations = mode === 'large' ? largeWorkspaceOperations : httpOperations;
   const eventDB = useMemo(
     () => createEventDB({ dbName: STORY_DB_NAME, namespace: STORY_NAMESPACE }),
     []
@@ -41,7 +43,7 @@ const WorkspaceScenario = ({ mode }) => {
         ...dashboardClient.operations,
         ...insightsClient.operations,
         getOperation: async (id) => {
-          const operation = httpOperations.find((item) => item.id === id);
+          const operation = operations.find((item) => item.id === id);
           if (!operation) throw new Error(`Unknown fixture operation: ${id}`);
           return operation;
         },
@@ -81,7 +83,7 @@ const WorkspaceScenario = ({ mode }) => {
             storage_policy: {
               operations_retention_ttl: '168h0m0s',
               operations_max_stored: 25000,
-              operations_stored: mode === 'empty' ? 0 : 4,
+              operations_stored: mode === 'empty' ? 0 : operations.length,
               storage_bytes: mode === 'empty' ? 0 : 2048
             }
           },
@@ -193,9 +195,9 @@ const WorkspaceScenario = ({ mode }) => {
       storage.removeItem(recordingKey);
       await eventDB.clearEvents();
 
-      if (mode === 'populated') {
+      if (mode !== 'empty') {
         await eventDB.bulkUpsertEvents(
-          httpOperations.map((operation) => ({
+          operations.map((operation) => ({
             id: operation.id,
             operation_id: operation.id,
             data: operation
@@ -269,3 +271,4 @@ export default {
 
 export const Default = () => <WorkspaceScenario mode="populated" />;
 export const Empty = () => <WorkspaceScenario mode="empty" />;
+export const LargeOperationsWithTrace = () => <WorkspaceScenario mode="large" />;
