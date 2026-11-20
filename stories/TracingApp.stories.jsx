@@ -316,6 +316,17 @@ export const Empty = () => (
   </MockProvider>
 );
 
+export const Loading = () => (
+  <MockProvider
+    client={createMockClient({
+      listDelay: 30000,
+      detailDelay: 0
+    })}
+  >
+    <TracingApp route={{ params: {} }} />
+  </MockProvider>
+);
+
 export const ListError = () => (
   <MockProvider
     client={createMockClient({

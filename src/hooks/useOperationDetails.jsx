@@ -79,6 +79,7 @@ export default function useOperationDetails(operationId, liveOperation = null) {
   const { client, setToast } = useInspectr();
   const [detailOperation, setDetailOperation] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
+  const [detailError, setDetailError] = useState(null);
   const requestIdRef = useRef(0);
   const cacheRef = useRef(new Map());
   const cacheOrderRef = useRef([]);
@@ -120,17 +121,20 @@ export default function useOperationDetails(operationId, liveOperation = null) {
     async (id, { force } = {}) => {
       if (!id || !client?.operations?.getOperation) {
         setDetailOperation(null);
+        setDetailError(null);
         return;
       }
 
       const cached = force ? null : cacheGet(id);
       if (cached) {
         setDetailOperation(cached);
+        setDetailError(null);
         setIsFetching(false);
         return;
       }
 
       const requestId = ++requestIdRef.current;
+      setDetailError(null);
       setIsFetching(true);
 
       try {
@@ -143,10 +147,12 @@ export default function useOperationDetails(operationId, liveOperation = null) {
           __streamEventTime: result?.__streamEventTime || existing?.__streamEventTime || null
         };
         setDetailOperation(hydrated);
+        setDetailError(null);
         cacheSet(id, hydrated);
         setIsFetching(false);
       } catch (error) {
         if (requestIdRef.current !== requestId) return;
+        setDetailError(error);
         setIsFetching(false);
         setToast({
           message: 'Failed to load request',
@@ -161,6 +167,7 @@ export default function useOperationDetails(operationId, liveOperation = null) {
   useEffect(() => {
     if (!operationId) {
       setDetailOperation(null);
+      setDetailError(null);
       return;
     }
     fetchDetail(operationId);
@@ -229,5 +236,5 @@ export default function useOperationDetails(operationId, liveOperation = null) {
     };
   }, [fetchDetail, operationId]);
 
-  return { detailOperation, fetchDetail, isFetching };
+  return { detailOperation, detailError, fetchDetail, isFetching };
 }

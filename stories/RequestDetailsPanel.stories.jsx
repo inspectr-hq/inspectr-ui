@@ -1,6 +1,8 @@
 // stories/RequestDetailsPanel.stories.jsx
 import React from 'react';
 import RequestDetailsPanel from '../src/components/operations/RequestDetailsPanel.jsx';
+import InspectrContext from '../src/context/InspectrContext.jsx';
+import { httpOperations } from './fixtures/inspectrFixtures.js';
 
 export default {
   title: 'Components/Operations/RequestDetailsPanel',
@@ -650,3 +652,29 @@ export const NoAuth = () => (
     setCurrentTab={() => {}}
   />
 );
+
+const RequestDetailState = ({ mode }) => {
+  const client = React.useMemo(() => ({
+    operations: {
+      getOperation: async () => {
+        if (mode === 'loading') await new Promise((resolve) => setTimeout(resolve, 30000));
+        if (mode === 'error') throw new Error('Operation service unavailable');
+        return httpOperations[0];
+      }
+    }
+  }), [mode]);
+  return (
+    <InspectrContext.Provider value={{ client, setToast: () => {} }}>
+      <div className="min-h-96 p-4">
+        <RequestDetailsPanel
+          operation={{ id: httpOperations[0].id }}
+          currentTab="request"
+          setCurrentTab={() => {}}
+        />
+      </div>
+    </InspectrContext.Provider>
+  );
+};
+
+export const LoadingDetails = () => <RequestDetailState mode="loading" />;
+export const DetailsError = () => <RequestDetailState mode="error" />;
