@@ -8,6 +8,7 @@ import {
 } from '../src/utils/storageAdapter.js';
 import {
   createDashboardClient,
+  createInsightsClient,
   httpOperations,
   ruleEvents,
   rules,
@@ -30,10 +31,15 @@ const WorkspaceScenario = ({ mode }) => {
     () => createDashboardClient({ mode: mode === 'empty' ? 'empty' : 'populated' }),
     [mode]
   );
+  const insightsClient = useMemo(
+    () => createInsightsClient({ mode: mode === 'empty' ? 'empty' : 'populated' }),
+    [mode]
+  );
   const client = useMemo(
     () => ({
       operations: {
         ...dashboardClient.operations,
+        ...insightsClient.operations,
         getOperation: async (id) => {
           const operation = httpOperations.find((item) => item.id === id);
           if (!operation) throw new Error(`Unknown fixture operation: ${id}`);
@@ -170,7 +176,7 @@ const WorkspaceScenario = ({ mode }) => {
         })
       }
     }),
-    [dashboardClient, mode]
+    [dashboardClient, insightsClient, mode]
   );
 
   useEffect(() => {

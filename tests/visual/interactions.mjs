@@ -37,6 +37,10 @@ try {
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${baseUrl}/iframe.html?id=apps-workspace-workspace--default&viewMode=story`);
+  await page.getByRole('button', { name: 'Insights', exact: true }).click();
+  await expect(page.getByText('Insights Explorer', { exact: true })).toBeVisible();
+  await expect(page.getByText('Total 1842', { exact: true })).toBeVisible();
+  await expect(page.getByText('/v1/checkouts', { exact: true }).first()).toBeVisible();
   await page.getByRole('button', { name: 'Statistics', exact: true }).click();
   await expect(page.getByText('Top Slowest Endpoints (P95)', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Usage', exact: true }).click();
@@ -68,7 +72,7 @@ try {
   await page.goto(`${baseUrl}/iframe.html?id=apps-settings-authenticationguard--fetch-error&viewMode=story`);
   await expect(page.getByText('Authentication service unavailable', { exact: true })).toBeVisible();
   console.log(
-    'Rules, request detail, workspace, usage, statistics, and authentication settings checks passed'
+    'Rules, request detail, workspace, usage, statistics, Mock, MCP, and auth settings checks passed'
   );
 } finally {
   await browser.close();
