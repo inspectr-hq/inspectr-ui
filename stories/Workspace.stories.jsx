@@ -6,7 +6,14 @@ import {
   createNamespacedStorageAdapter,
   resolveNamespacedStorageKey
 } from '../src/utils/storageAdapter.js';
-import { httpOperations } from './fixtures/inspectrFixtures.js';
+import {
+  createDashboardClient,
+  httpOperations,
+  ruleEvents,
+  rules,
+  rulesActions,
+  ruleOperators
+} from './fixtures/inspectrFixtures.js';
 
 const STORY_NAMESPACE = 'storybook/workspace';
 const STORY_DB_NAME = 'InspectrWorkspaceStory';
@@ -19,16 +26,32 @@ const WorkspaceScenario = ({ mode }) => {
   const [toast, setToast] = useState(null);
   const [isReady, setIsReady] = useState(false);
   const storageAdapter = useMemo(() => createNamespacedStorageAdapter(STORY_NAMESPACE), []);
+  const dashboardClient = useMemo(
+    () => createDashboardClient({ mode: mode === 'empty' ? 'empty' : 'populated' }),
+    [mode]
+  );
   const client = useMemo(
     () => ({
       operations: {
+        ...dashboardClient.operations,
         getOperation: async (id) => {
           const operation = httpOperations.find((item) => item.id === id);
           if (!operation) throw new Error(`Unknown fixture operation: ${id}`);
           return operation;
         },
         delete: async () => {},
-        deleteAll: async () => {}
+        deleteAll: async () => {},
+        bulkDeleteTag: async ({ tag }) => ({ removed_tag: tag })
+      },
+      stats: dashboardClient.stats,
+      rules: {
+        list: async () => ({
+          rules: mode === 'empty' ? [] : rules,
+          meta: { page: 1, total: mode === 'empty' ? 0 : rules.length, limit: 20 }
+        }),
+        getEvents: async () => ({ events: ruleEvents }),
+        getActions: async () => ({ actions: rulesActions }),
+        getOperators: async () => ruleOperators
       },
       configure: () => {},
       service: {
@@ -40,13 +63,64 @@ const WorkspaceScenario = ({ mode }) => {
         }),
         getMetrics: async () => ({
           operations: {
+            total_requests: mode === 'empty' ? 0 : 1842,
+            total_responses: mode === 'empty' ? 0 : 1805,
+            total_event_frames: mode === 'empty' ? 0 : 560,
+            requests_local: mode === 'empty' ? 0 : 1240,
+            requests_ingress: mode === 'empty' ? 0 : 602,
+            responses_local: mode === 'empty' ? 0 : 1208,
+            responses_ingress: mode === 'empty' ? 0 : 597,
+            event_frames_local: mode === 'empty' ? 0 : 410,
+            event_frames_ingress: mode === 'empty' ? 0 : 150,
             storage_policy: {
               operations_retention_ttl: '168h0m0s',
               operations_max_stored: 25000,
-              operations_stored: 4,
-              storage_bytes: 2048
+              operations_stored: mode === 'empty' ? 0 : 4,
+              storage_bytes: mode === 'empty' ? 0 : 2048
             }
-          }
+          },
+          generic: {
+            totals: {
+              sse: {
+                active: mode === 'empty' ? 0 : 3,
+                reconnect_attempts: mode === 'empty' ? 0 : 4,
+                total_connections: mode === 'empty' ? 0 : 24,
+                total_disconnections: mode === 'empty' ? 0 : 8
+              },
+              mcp: {
+                requests: mode === 'empty' ? 0 : 248,
+                responses: mode === 'empty' ? 0 : 242,
+                tools: mode === 'empty' ? 0 : 186,
+                resources: mode === 'empty' ? 0 : 42,
+                prompts: mode === 'empty' ? 0 : 20
+              },
+              rules: {
+                definitions: mode === 'empty' ? 0 : rules.length,
+                actions_executed: mode === 'empty' ? 0 : 319
+              },
+              features: {
+                registrations: mode === 'empty' ? 0 : 54,
+                token_refresh: mode === 'empty' ? 0 : 18,
+                launches: mode === 'empty' ? 0 : 32,
+                ingress_registrations: mode === 'empty' ? 0 : 9
+              }
+            }
+          },
+          features: {
+            registration_requests: mode === 'empty' ? 0 : 54,
+            token_refresh_requests: mode === 'empty' ? 0 : 18
+          },
+          mcp: {
+            plan: 'open_source',
+            licensed: false,
+            limit: 1000,
+            requests: mode === 'empty' ? 0 : 248
+          },
+          rules: {
+            definitions_total: mode === 'empty' ? 0 : rules.length,
+            actions_executed: mode === 'empty' ? 0 : 319
+          },
+          meta: { installed_at: '2025-09-01T18:02:51Z' }
         }),
         getVersion: async () => ({
           current_version: '1.9.3',
@@ -73,9 +147,30 @@ const WorkspaceScenario = ({ mode }) => {
           ...value
         })
       },
-      mock: { launch: async () => {} }
+      mock: {
+        getConfig: async () => ({
+          status: true,
+          openapi: 'https://api.acme.test/openapi.json',
+          examples: 12
+        }),
+        launch: async () => ({ status: 'ok' })
+      },
+      mcp: {
+        getMCPServerSettings: async () => ({
+          enabled: true,
+          public: false,
+          local_url: 'http://localhost:4005/mcp',
+          public_url: ''
+        }),
+        updateMCPServerSettings: async (value) => ({
+          enabled: true,
+          local_url: 'http://localhost:4005/mcp',
+          public_url: '',
+          ...value
+        })
+      }
     }),
-    []
+    [dashboardClient, mode]
   );
 
   useEffect(() => {

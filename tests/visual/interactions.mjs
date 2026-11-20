@@ -37,7 +37,27 @@ try {
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${baseUrl}/iframe.html?id=apps-workspace-workspace--default&viewMode=story`);
+  await page.getByRole('button', { name: 'Statistics', exact: true }).click();
+  await expect(page.getByText('Top Slowest Endpoints (P95)', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Usage', exact: true }).click();
+  await expect(page.getByText('Usage Overview', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('Error loading metrics: client.service.getMetrics is not a function')
+  ).toHaveCount(0);
+  await expect(page.getByText('1842', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Rules', exact: true }).click();
+  await expect(page.getByText('Escalate high-value card payments', { exact: true })).toBeVisible();
+  await expect(page.getByText('Loading rules…', { exact: true })).toHaveCount(0);
+  await expect(page.getByText(/env:\s*production/i)).toBeVisible();
+
+  await page.goto(`${baseUrl}/iframe.html?id=apps-workspace-workspace--default&viewMode=story`);
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'Mock', exact: true }).click();
+  await expect(page.getByText('https://api.acme.test/openapi.json', { exact: true })).toBeVisible();
+  await expect(page.getByText('Loading mock info…', { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'MCP Server', exact: true }).click();
+  await expect(page.getByText('http://localhost:4005/mcp', { exact: true })).toBeVisible();
+  await expect(page.getByText('MCP server settings are unavailable.', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Authentication Guard', exact: true }).click();
   await expect(page.getByText('Enabled', { exact: true })).toBeVisible();
 
@@ -47,7 +67,9 @@ try {
   await expect(page.getByText('Disabled', { exact: true })).toBeVisible();
   await page.goto(`${baseUrl}/iframe.html?id=apps-settings-authenticationguard--fetch-error&viewMode=story`);
   await expect(page.getByText('Authentication service unavailable', { exact: true })).toBeVisible();
-  console.log('Rules, request detail, workspace, and authentication settings checks passed');
+  console.log(
+    'Rules, request detail, workspace, usage, statistics, and authentication settings checks passed'
+  );
 } finally {
   await browser.close();
 }
